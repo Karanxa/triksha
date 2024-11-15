@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect"
+import { useDebounce } from "@/hooks/useDebounce"
 
 interface Dataset {
   id: string
@@ -24,17 +25,20 @@ const Datasets = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [downloading, setDownloading] = useState<string | null>(null)
+  
+  // Debounce search query to avoid too many API calls
+  const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
   const { data: datasets, isLoading } = useQuery({
-    queryKey: ['datasets', selectedCategory, useCustomSearch, searchQuery],
+    queryKey: ['datasets', selectedCategory, useCustomSearch, debouncedSearchQuery],
     queryFn: async () => {
-      if (!selectedCategory) return []
+      if (!selectedCategory && !debouncedSearchQuery) return []
       
       const { data, error } = await supabase.functions.invoke('fetch-datasets', {
         body: { 
           category: selectedCategory,
           useCustomSearch,
-          searchQuery: useCustomSearch ? searchQuery : undefined
+          searchQuery: useCustomSearch ? debouncedSearchQuery : undefined
         }
       })
 
@@ -63,7 +67,7 @@ const Datasets = () => {
         likes: dataset.likes || 0,
       }))
     },
-    enabled: !!selectedCategory && (!useCustomSearch || !!searchQuery)
+    enabled: !!selectedCategory || (useCustomSearch && !!debouncedSearchQuery)
   })
 
   const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
