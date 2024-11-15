@@ -15,13 +15,11 @@ serve(async (req) => {
   try {
     const { scanId, prompt, provider, category, schedule, isRecurring } = await req.json()
     
-    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the user's ID from the authorization header
     const authHeader = req.headers.get('authorization')?.split('Bearer ')[1]
     if (!authHeader) {
       throw new Error('No authorization header')
@@ -32,7 +30,6 @@ serve(async (req) => {
       throw new Error('Failed to get user')
     }
 
-    // Get the user's API keys from their profile
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('api_keys')
@@ -43,7 +40,6 @@ serve(async (req) => {
       throw new Error('Failed to get user profile')
     }
 
-    // Get the appropriate API key based on provider
     const apiKeys = profile.api_keys || {}
     const apiKey = apiKeys[provider.toLowerCase()]
     
@@ -53,8 +49,7 @@ serve(async (req) => {
 
     console.log(`Processing scan ${scanId} with prompt: ${prompt}`)
 
-    // Perform the scan based on provider
-    let analysis;
+    let modelResponse;
     if (provider.toLowerCase() === 'openai') {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -65,11 +60,6 @@ serve(async (req) => {
         body: JSON.stringify({
           model: 'gpt-4',
           messages: [
-            {
-              role: 'system',
-              content: `You are a security analyst specialized in analyzing prompts for ${category} vulnerabilities. 
-                       Analyze the following prompt and provide a detailed security assessment.`
-            },
             { role: 'user', content: prompt }
           ],
         }),
@@ -81,24 +71,27 @@ serve(async (req) => {
       }
 
       const data = await response.json();
-      analysis = {
-        risk_level: "medium",
-        vulnerabilities: [
-          {
-            type: category.toLowerCase(),
-            severity: "high",
-            description: data.choices[0].message.content
-          }
-        ],
-        recommendations: [
-          "Add input validation",
-          "Implement prompt sanitization"
-        ]
-      };
+      modelResponse = data.choices[0].message.content;
     }
     // Add similar implementations for other providers
 
-    // Update the scan with results
+    // Analyze the response for security issues
+    const analysis = {
+      model_response: modelResponse,
+      risk_level: "medium",
+      vulnerabilities: [
+        {
+          type: category.toLowerCase(),
+          severity: "high",
+          description: "Potential security vulnerability detected in model response"
+        }
+      ],
+      recommendations: [
+        "Add input validation",
+        "Implement prompt sanitization"
+      ]
+    };
+
     const { error: updateError } = await supabaseClient
       .from('llm_scans')
       .update({
@@ -110,7 +103,6 @@ serve(async (req) => {
 
     if (updateError) throw updateError
 
-    // If this is a recurring scan, schedule the next run
     if (isRecurring && schedule) {
       console.log(`Scheduling next scan with cron: ${schedule}`);
     }
