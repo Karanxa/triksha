@@ -12,6 +12,7 @@ import { ResultsTableHeader } from "@/components/llm-results/ResultsTableHeader"
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database } from "@/integrations/supabase/types";
 import { ATTACK_CATEGORIES } from "@/components/datasets/AttackCategorySelect";
+import { getScanType } from "@/utils/scanUtils";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
