@@ -7,45 +7,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const systemPrompt = `You are an AI security expert analyzing prompts for potential vulnerabilities. 
-Analyze the given prompt and provide a structured response in the following format:
-
-{
-  "category": "prompt-injection" | "data-leakage" | "bias" | "uncategorized",
-  "risk_level": "high" | "medium" | "low",
-  "analysis": {
-    "summary": "Brief summary of findings",
-    "vulnerabilities": [
-      {
-        "type": "vulnerability type",
-        "description": "detailed description",
-        "severity": "high" | "medium" | "low",
-        "mitigation": "suggested fix"
-      }
-    ]
-  },
-  "recommendations": [
-    "specific recommendation 1",
-    "specific recommendation 2"
-  ]
-}
-
-Focus on:
-1. Prompt injection attempts
-2. Data leakage risks
-3. Bias and fairness issues
-4. Potential misuse
-5. Security implications
-
-Provide specific, actionable recommendations.`;
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { scanId, prompts, provider } = await req.json();
+    const { scanId, prompts, provider, category } = await req.json();
     
     console.log(`Processing scan ${scanId} with ${prompts.length} prompts`);
 
@@ -82,12 +50,13 @@ serve(async (req) => {
       throw new Error(`${provider} API key not found. Please add it in the Settings.`);
     }
 
-    // Process the first prompt and store its result
+    // Process the first prompt
     const prompt = prompts[0];
     if (!prompt) {
       throw new Error('No prompt provided');
     }
 
+    console.log('Sending request to OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -95,13 +64,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 1000,
       }),
     });
 
@@ -112,31 +79,28 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    const modelResponse = data.choices[0].message.content;
+
+    // Store the simple result format
     const result = {
-      prompt,
-      model_response: data.choices[0].message.content,
-      analysis: null
+      prompt: prompt,
+      model_response: modelResponse
     };
 
-    try {
-      result.analysis = JSON.parse(data.choices[0].message.content);
-    } catch (error) {
-      console.error('Failed to parse analysis:', error);
-    }
-
-    // Update the scan with results
+    console.log('Updating scan with results...');
     const { error: updateError } = await supabaseClient
       .from('llm_scans')
       .update({
         status: 'completed',
         results: result,
+        category: category,
         updated_at: new Date().toISOString()
       })
       .eq('id', scanId);
 
     if (updateError) {
       console.error('Error updating scan:', updateError);
-      throw updateError;
+      throw new Error('Failed to update scan results');
     }
 
     return new Response(
@@ -149,19 +113,9 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error processing scan:', error);
-    
+    console.error('Error in scan-llm function:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        category: 'error',
-        risk_level: 'unknown',
-        analysis: {
-          summary: error.message,
-          vulnerabilities: []
-        },
-        recommendations: ['Try again or contact support']
-      }),
+      JSON.stringify({ error: error.message }),
       { 
         status: 400,
         headers: { 
