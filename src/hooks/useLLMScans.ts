@@ -6,7 +6,7 @@ import { Database } from "@/integrations/supabase/types";
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
 interface CreateScanParams {
-  prompt: string;
+  prompts: string[];
   provider: string;
   category: string;
   label?: string;
@@ -51,7 +51,7 @@ export const useLLMScans = () => {
       const response = await supabase.functions.invoke('scan-llm', {
         body: { 
           scanId: data.id,
-          prompt: params.prompt,
+          prompts: params.prompts,
           provider: params.provider,
           category: params.category,
           schedule: params.schedule,

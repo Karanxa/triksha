@@ -45,9 +45,9 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompt, provider } = await req.json();
+    const { scanId, prompts, provider } = await req.json();
     
-    console.log(`Processing scan ${scanId} with prompt: ${prompt}`);
+    console.log(`Processing scan ${scanId} with ${prompts.length} prompts`);
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -82,8 +82,10 @@ serve(async (req) => {
       throw new Error(`${provider} API key not found. Please add it in the Settings.`);
     }
 
-    let modelResponse;
-    if (provider.toLowerCase() === 'openai') {
+    // Process each prompt and collect results
+    const results = await Promise.all(prompts.map(async (prompt) => {
+      if (!prompt) return null;
+
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -108,39 +110,45 @@ serve(async (req) => {
       }
 
       const data = await response.json();
-      modelResponse = data.choices[0].message.content;
-    } else {
-      throw new Error('Unsupported provider');
-    }
-
-    // Parse the JSON response
-    let analysis;
-    try {
-      analysis = JSON.parse(modelResponse);
-    } catch (error) {
-      console.error('Failed to parse model response:', error);
-      analysis = {
-        category: 'uncategorized',
-        risk_level: 'low',
-        analysis: {
-          summary: 'Failed to analyze prompt',
-          vulnerabilities: []
-        },
-        recommendations: ['Review prompt manually']
+      return {
+        prompt,
+        model_response: data.choices[0].message.content
       };
-    }
+    }));
+
+    // Filter out null results and parse responses
+    const validResults = results.filter(Boolean).map(result => {
+      try {
+        const analysis = JSON.parse(result.model_response);
+        return {
+          prompt: result.prompt,
+          model_response: result.model_response,
+          analysis
+        };
+      } catch (error) {
+        console.error('Failed to parse model response:', error);
+        return {
+          prompt: result.prompt,
+          model_response: result.model_response,
+          analysis: {
+            category: 'uncategorized',
+            risk_level: 'low',
+            analysis: {
+              summary: 'Failed to analyze prompt',
+              vulnerabilities: []
+            },
+            recommendations: ['Review prompt manually']
+          }
+        };
+      }
+    });
 
     // Update the scan with results
     const { error: updateError } = await supabaseClient
       .from('llm_scans')
       .update({
         status: 'completed',
-        category: analysis.category,
-        results: {
-          prompt,
-          model_response: modelResponse,
-          analysis: analysis
-        },
+        results: validResults,
         updated_at: new Date().toISOString()
       })
       .eq('id', scanId);
@@ -151,7 +159,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify(analysis),
+      JSON.stringify(validResults[0]?.analysis || {}),
       { 
         headers: { 
           ...corsHeaders, 

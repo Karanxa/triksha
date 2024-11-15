@@ -13,34 +13,8 @@ const LLMScanner = () => {
   const [scanResult, setScanResult] = useState<any>(null);
   const { createScan, isScanning } = useLLMScans();
 
-  const handleFileUpload = async (file: File) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split("\n");
-      const headers = lines[0].toLowerCase().split(",");
-      const promptIndex = headers.indexOf("prompts");
-
-      if (promptIndex === -1) {
-        toast.error("CSV must have a 'prompts' column");
-        return;
-      }
-
-      const prompts = lines.slice(1).map(line => line.split(",")[promptIndex]).filter(Boolean);
-      handleSubmit({
-        prompt: prompts.join("\n"),
-        provider: "openai",
-        category: "prompt-injection",
-        isRecurring: false
-      });
-      setIsBatchScan(true);
-    };
-
-    reader.readAsText(file);
-  };
-
   const handleSubmit = async (data: {
-    prompt: string;
+    prompts: string[];
     provider: string;
     category: string;
     label?: string;
@@ -50,10 +24,11 @@ const LLMScanner = () => {
     try {
       const result = await createScan(data);
       
-      if (!isBatchScan) {
+      if (data.prompts.length === 1) {
         setScanResult(result);
         toast.success("Scan completed successfully");
       } else {
+        setIsBatchScan(true);
         toast.success("Batch scan initiated successfully");
         navigate("/llm-results");
       }
@@ -70,7 +45,6 @@ const LLMScanner = () => {
         <ScanForm
           onSubmit={handleSubmit}
           isScanning={isScanning}
-          onFileUpload={handleFileUpload}
         />
 
         {scanResult && !isBatchScan && (
