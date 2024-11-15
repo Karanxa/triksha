@@ -4,6 +4,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TruncatedCellProps {
   content: string;
@@ -16,14 +17,16 @@ export const TruncatedCell = ({ content, title, onContentClick }: TruncatedCellP
     <Tooltip>
       <TooltipTrigger asChild>
         <div
-          className="max-w-[200px] truncate cursor-pointer hover:text-primary"
+          className="max-w-[200px] truncate cursor-pointer hover:text-primary transition-colors"
           onClick={() => onContentClick(title, content)}
         >
           {content}
         </div>
       </TooltipTrigger>
-      <TooltipContent>
-        <p className="max-w-[300px] whitespace-normal">Click to view full content</p>
+      <TooltipContent side="bottom" align="start" className="max-w-[400px]">
+        <ScrollArea className="h-[100px]">
+          <p className="whitespace-pre-wrap">{content}</p>
+        </ScrollArea>
       </TooltipContent>
     </Tooltip>
   </TooltipProvider>

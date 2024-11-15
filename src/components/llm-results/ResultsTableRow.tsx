@@ -3,6 +3,7 @@ import { TruncatedCell } from "./TruncatedCell";
 import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
 import { Database } from "@/integrations/supabase/types";
+import { CheckCircle2, Clock, AlertTriangle, XCircle } from "lucide-react";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -13,21 +14,50 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  const results = scan.results as { model_response: string; prompt: string } | null;
+  const results = scan.results as { 
+    model_response: string; 
+    prompt: string;
+    analysis?: {
+      risk_level?: string;
+      summary?: string;
+    };
+  } | null;
   
   const prompt = results?.prompt || 'No prompt';
   const response = results?.model_response || 'No response';
-  const category = scan.category || 'Uncategorized';
+  const category = scan.category || 'uncategorized';
   const label = scan.label || 'No label';
+  const riskLevel = results?.analysis?.risk_level || 'unknown';
 
-  const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
-    const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
-      'prompt-injection': 'destructive',
-      'data-leakage': 'secondary',
-      'bias': 'outline',
-      'uncategorized': 'default'
-    };
-    return variants[category.toLowerCase()] || 'default';
+  const getCategoryVariant = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'prompt-injection':
+        return 'destructive';
+      case 'data-leakage':
+        return 'secondary';
+      case 'bias':
+        return 'outline';
+      default:
+        return 'default';
+    } as const;
+  };
+
+  const getRiskLevelBadge = (level: string) => {
+    const variants = {
+      high: { color: 'destructive', icon: XCircle },
+      medium: { color: 'warning', icon: AlertTriangle },
+      low: { color: 'success', icon: CheckCircle2 },
+      unknown: { color: 'secondary', icon: Clock },
+    } as const;
+
+    const { color, icon: Icon } = variants[level.toLowerCase() as keyof typeof variants] || variants.unknown;
+    
+    return (
+      <Badge variant={color} className="flex items-center gap-1">
+        <Icon className="w-3 h-3" />
+        {level.charAt(0).toUpperCase() + level.slice(1)}
+      </Badge>
+    );
   };
 
   return (
@@ -49,7 +79,10 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         />
       </TableCell>
       <TableCell>
-        <Badge variant={getCategoryVariant(category)}>{category}</Badge>
+        <div className="flex flex-col gap-2">
+          <Badge variant={getCategoryVariant(category)}>{category}</Badge>
+          {getRiskLevelBadge(riskLevel)}
+        </div>
       </TableCell>
       <TableCell>{label}</TableCell>
       <TableCell>
