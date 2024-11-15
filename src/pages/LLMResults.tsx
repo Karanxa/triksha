@@ -46,8 +46,8 @@ const LLMResults = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Type,Timestamp,Prompt,Result,Category,Label\n" +
       scans.map(scan => {
-        const results = scan.results as { model_response: string } | null;
-        return `"${scan.name}","${new Date(scan.created_at).toLocaleString()}","${scan.name}","${results?.model_response || ''}","${scan.category || ''}","${scan.label || ''}"`;
+        const results = scan.results as { model_response: string, prompt: string } | null;
+        return `"${scan.name}","${new Date(scan.created_at).toLocaleString()}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || ''}","${scan.label || ''}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -126,13 +126,13 @@ const LLMResults = () => {
                 </TableRow>
               ) : scans && scans.length > 0 ? (
                 scans.map((scan) => {
-                  const results = scan.results as { model_response: string } | null;
+                  const results = scan.results as { model_response: string, prompt: string } | null;
                   return (
                     <TableRow key={scan.id}>
                       <TableCell>{scan.name}</TableCell>
                       <TableCell>{new Date(scan.created_at).toLocaleString()}</TableCell>
                       <TableCell className="max-w-[200px] truncate">
-                        {scan.name}
+                        {results?.prompt || 'No prompt'}
                       </TableCell>
                       <TableCell className="max-w-[300px] truncate">
                         {results?.model_response || 'No response'}
