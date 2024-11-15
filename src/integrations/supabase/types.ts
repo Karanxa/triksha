@@ -104,6 +104,7 @@ export type Database = {
           created_at: string
           id: string
           is_recurring: boolean | null
+          is_vulnerable: boolean | null
           label: string | null
           name: string
           next_run: string | null
@@ -119,6 +120,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_recurring?: boolean | null
+          is_vulnerable?: boolean | null
           label?: string | null
           name: string
           next_run?: string | null
@@ -134,6 +136,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_recurring?: boolean | null
+          is_vulnerable?: boolean | null
           label?: string | null
           name?: string
           next_run?: string | null
