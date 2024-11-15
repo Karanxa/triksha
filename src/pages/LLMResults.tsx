@@ -75,10 +75,10 @@ const LLMResults = () => {
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Date,Prompt,Response,Category,Label,Risk Level,Matches Category\n" +
+      "Name,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
       scans.map(scan => {
-        const results = scan.results as { model_response: string; prompt: string; analysis?: { risk_level?: string } } | null;
-        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.label || 'N/A'}","${results?.analysis?.risk_level || 'unknown'}","${scan.matches_category ? 'Yes' : 'No'}"`;
+        const results = scan.results as { model_response: string; prompt: string } | null;
+        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable ? 'Vulnerable' : 'Secure'}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -146,7 +146,7 @@ const LLMResults = () => {
                 <TableHead>Prompt</TableHead>
                 <TableHead>Response</TableHead>
                 <TableHead>Category & Risk</TableHead>
-                <TableHead>Matches Category</TableHead>
+                <TableHead>Vulnerability Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
