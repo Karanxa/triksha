@@ -32,7 +32,6 @@ serve(async (req) => {
       throw userError || new Error('User not found')
     }
 
-    // Get the user's Hugging Face API key
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('api_keys')
@@ -48,24 +47,25 @@ serve(async (req) => {
       throw new Error('Hugging Face API key not found')
     }
 
-    // Construct the search query based on category and custom search
-    let searchUrl = 'https://huggingface.co/api/datasets'
-    const searchParams = new URLSearchParams()
-    
+    // Construct the search URL with proper parameters
+    const baseUrl = 'https://huggingface.co/api/datasets'
+    const params = new URLSearchParams()
+
     if (useCustomSearch && searchQuery) {
-      // If using custom search, use the search query directly
-      searchParams.append('search', searchQuery)
-    } else if (category) {
-      // If using category, search by category
-      searchParams.append('filter', category.toLowerCase())
+      params.append('search', searchQuery)
     }
     
-    // Add the search parameters to the URL if they exist
-    if (searchParams.toString()) {
-      searchUrl += `?${searchParams.toString()}`
+    // Add category as a tag for filtering
+    if (category) {
+      params.append('tag', category.toLowerCase().replace(/\s+/g, '-'))
     }
 
-    console.log(`Fetching datasets from: ${searchUrl}`)
+    // Add some basic filters to get high-quality datasets
+    params.append('sort', 'downloads')
+    params.append('limit', '20')
+    
+    const searchUrl = `${baseUrl}?${params.toString()}`
+    console.log('Fetching datasets from:', searchUrl)
 
     const response = await fetch(searchUrl, {
       headers: {
@@ -81,14 +81,20 @@ serve(async (req) => {
     }
 
     const datasets = await response.json()
+    
+    if (!Array.isArray(datasets)) {
+      console.error('Unexpected API response format:', datasets)
+      throw new Error('Invalid response format from Hugging Face API')
+    }
 
-    // Transform the response to match our frontend expectations
     const transformedDatasets = datasets.map((dataset: any) => ({
       id: dataset.id,
       title: dataset.id.split('/').pop(),
       description: dataset.description || 'No description available',
       downloads: dataset.downloads || 0,
       likes: dataset.likes || 0,
+      lastModified: dataset.lastModified || null,
+      tags: dataset.tags || [],
     }))
 
     return new Response(
