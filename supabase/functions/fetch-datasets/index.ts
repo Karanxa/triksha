@@ -6,20 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Category-related keywords mapping
-const categoryKeywords = {
-  'Jailbreaking': ['jailbreak', 'jail', 'break', 'bypass', 'escape', 'exploit', 'hack', 'circumvent'],
-  'Prompt Injection': ['injection', 'inject', 'sql', 'command', 'malicious', 'input'],
-  'Data Extraction': ['extract', 'leak', 'steal', 'scrape', 'harvest', 'collect'],
-  'Prompt Leaking': ['leak', 'expose', 'reveal', 'disclose', 'breach'],
-  'Social Engineering': ['social', 'phish', 'manipulate', 'deceive', 'trick', 'impersonate'],
-  'System Prompt Extraction': ['system', 'prompt', 'extract', 'reveal', 'expose'],
-  'Unauthorized Actions': ['unauthorized', 'forbidden', 'restricted', 'illegal', 'prohibited'],
-  'Model Behavior Manipulation': ['behavior', 'manipulate', 'control', 'influence', 'alter'],
-  'Resource Exhaustion': ['exhaust', 'overload', 'dos', 'denial', 'resource', 'consumption'],
-  'Sensitive Information Disclosure': ['sensitive', 'confidential', 'private', 'secret', 'disclosure']
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -66,13 +52,10 @@ serve(async (req) => {
     const params = new URLSearchParams()
 
     if (useCustomSearch && searchQuery) {
-      // Convert search query to lowercase for case-insensitive search
       params.append('search', searchQuery.toLowerCase())
-    } else if (category && categoryKeywords[category]) {
-      // Create a search query that includes all relevant keywords for the category
-      const keywords = categoryKeywords[category].map(k => k.toLowerCase())
-      const searchTerms = keywords.join(' OR ')
-      params.append('search', searchTerms)
+    } else if (category) {
+      // Use the category directly as a search term
+      params.append('search', category.toLowerCase())
     }
 
     // Add basic filters for quality results
@@ -102,36 +85,25 @@ serve(async (req) => {
       throw new Error('Invalid response format from Hugging Face API')
     }
 
-    // Filter results to ensure they match the category keywords if a category is specified
+    // Filter results to ensure they match the category if specified
     let filteredDatasets = datasets
     if (category && !useCustomSearch) {
-      const keywords = categoryKeywords[category].map(k => k.toLowerCase())
+      const categoryLower = category.toLowerCase()
       filteredDatasets = datasets.filter((dataset: any) => {
         const description = (dataset.description || '').toLowerCase()
         const title = (dataset.id || '').toLowerCase()
         const tags = (dataset.tags || []).map((tag: string) => tag.toLowerCase())
         
-        // Check if any of the category keywords appear in the dataset metadata (case-insensitive)
-        return keywords.some(keyword => 
-          description.includes(keyword) || 
-          title.includes(keyword) || 
-          tags.some(tag => tag.includes(keyword))
+        return (
+          description.includes(categoryLower) || 
+          title.includes(categoryLower) || 
+          tags.includes(categoryLower)
         )
       })
     }
 
-    const transformedDatasets = filteredDatasets.map((dataset: any) => ({
-      id: dataset.id,
-      title: dataset.id.split('/').pop(),
-      description: dataset.description || 'No description available',
-      downloads: dataset.downloads || 0,
-      likes: dataset.likes || 0,
-      lastModified: dataset.lastModified || null,
-      tags: dataset.tags || [],
-    }))
-
     return new Response(
-      JSON.stringify({ datasets: transformedDatasets }),
+      JSON.stringify({ datasets: filteredDatasets }),
       { 
         headers: { 
           ...corsHeaders,
