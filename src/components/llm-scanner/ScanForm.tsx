@@ -124,30 +124,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
           value={label}
           onChange={(e) => setLabel(e.target.value)}
         />
-        <p className="text-sm text-muted-foreground">
-          If provided, all prompts in this scan will be tagged with this label
-        </p>
-      </div>
-
-      <div className="space-y-4">
-        <Label>Schedule (cron expression)</Label>
-        <Input 
-          placeholder="/5 * * * *"
-          value={schedule}
-          onChange={(e) => setSchedule(e.target.value)}
-        />
-        <p className="text-sm text-muted-foreground">
-          Enter a cron expression (e.g., "/5 * * * *" for every 5 minutes)
-        </p>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch 
-          id="recurring"
-          checked={isRecurring}
-          onCheckedChange={setIsRecurring}
-        />
-        <Label htmlFor="recurring">Recurring scan</Label>
       </div>
 
       <Button 
@@ -156,7 +132,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         onClick={handleSubmit}
         disabled={isScanning}
       >
-        {isScanning ? "Starting Scan..." : "Start LLM Scan"}
+        {isScanning ? "Processing Scans..." : "Start LLM Scan"}
       </Button>
     </div>
   );

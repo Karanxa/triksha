@@ -21,7 +21,6 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const prompt = results?.prompt || 'No prompt';
   const response = results?.model_response || 'No response';
   const category = scan.category || 'uncategorized';
-  const label = scan.label || 'No label';
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
@@ -57,7 +56,6 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       <TableCell>
         <Badge variant={getCategoryVariant(category)}>{category}</Badge>
       </TableCell>
-      <TableCell>{label}</TableCell>
       <TableCell>
         <div className="flex gap-2">
           <DeleteButton scanId={scan.id} />

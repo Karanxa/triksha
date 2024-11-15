@@ -50,61 +50,68 @@ serve(async (req) => {
       throw new Error(`${provider} API key not found. Please add it in the Settings.`);
     }
 
-    // Process the first prompt
-    const prompt = prompts[0];
-    if (!prompt) {
-      throw new Error('No prompt provided');
-    }
+    // Process each prompt individually and store results
+    const results = [];
+    for (const prompt of prompts) {
+      try {
+        console.log('Processing prompt:', prompt);
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+          }),
+        });
 
-    console.log('Sending request to OpenAI API...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-      }),
-    });
+        if (!response.ok) {
+          const error = await response.text();
+          console.error('OpenAI API error:', error);
+          throw new Error(`OpenAI API error: ${error}`);
+        }
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
-      throw new Error(`OpenAI API error: ${error}`);
-    }
+        const data = await response.json();
+        const modelResponse = data.choices[0].message.content;
 
-    const data = await response.json();
-    const modelResponse = data.choices[0].message.content;
+        // Create individual scan record for each prompt
+        const { data: scan, error: scanError } = await supabaseClient
+          .from('llm_scans')
+          .insert({
+            user_id: user.id,
+            name: `Scan ${new Date().toISOString()}`,
+            status: 'completed',
+            results: {
+              prompt: prompt,
+              model_response: modelResponse
+            },
+            category: category
+          })
+          .select()
+          .single();
 
-    // Store the simple result format
-    const result = {
-      prompt: prompt,
-      model_response: modelResponse
-    };
+        if (scanError) {
+          console.error('Error creating scan:', scanError);
+          throw new Error('Failed to create scan');
+        }
 
-    console.log('Updating scan with results...');
-    const { error: updateError } = await supabaseClient
-      .from('llm_scans')
-      .update({
-        status: 'completed',
-        results: result,
-        category: category,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', scanId);
-
-    if (updateError) {
-      console.error('Error updating scan:', updateError);
-      throw new Error('Failed to update scan results');
+        results.push(scan);
+      } catch (error) {
+        console.error(`Error processing prompt: ${error}`);
+        results.push({
+          error: error.message,
+          prompt: prompt
+        });
+      }
     }
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({ results }),
       { 
         headers: { 
           ...corsHeaders, 
