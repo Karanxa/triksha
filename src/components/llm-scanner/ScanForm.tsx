@@ -27,7 +27,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [prompts, setPrompts] = useState<string[]>([]);
   const [category, setCategory] = useState("");
   const [label, setLabel] = useState("");
-  const [schedule, setSchedule] = useState("");
+  const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
 
   const handleSubmit = async () => {
@@ -53,7 +53,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       provider,
       category,
       label: label || undefined,
-      schedule: schedule || undefined,
+      schedule: schedule !== "none" ? schedule : undefined,
       isRecurring
     });
 
@@ -61,7 +61,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     setSinglePrompt("");
     setPrompts([]);
     setLabel("");
-    setSchedule("");
+    setSchedule("none");
     setIsRecurring(false);
   };
 
@@ -133,7 +133,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
             <SelectValue placeholder="Select schedule frequency" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No Schedule</SelectItem>
+            <SelectItem value="none">No Schedule</SelectItem>
             <SelectItem value="daily">Daily</SelectItem>
             <SelectItem value="weekly">Weekly</SelectItem>
             <SelectItem value="monthly">Monthly</SelectItem>
@@ -141,7 +141,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         </Select>
       </div>
 
-      {schedule && (
+      {schedule !== "none" && (
         <div className="flex items-center space-x-2">
           <Switch
             id="recurring"
