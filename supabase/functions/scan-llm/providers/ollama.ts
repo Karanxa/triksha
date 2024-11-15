@@ -4,11 +4,20 @@ interface OllamaResponse {
 }
 
 export const handleOllamaRequest = async (prompt: string, endpoint: string): Promise<string> => {
-  console.log(`Attempting to connect to Ollama endpoint: ${endpoint}`);
+  console.log(`Connecting to Ollama endpoint: ${endpoint}`);
   
   try {
-    // First, get available models to validate connection
-    const modelsResponse = await fetch(`${endpoint}/api/tags`, {
+    // First, validate the endpoint
+    if (!endpoint) {
+      throw new Error('Ollama endpoint URL is not configured');
+    }
+
+    // Ensure endpoint doesn't end with a slash
+    const baseUrl = endpoint.endsWith('/') ? endpoint.slice(0, -1) : endpoint;
+    
+    // Check if endpoint is reachable and get available models
+    console.log('Fetching available models from Ollama...');
+    const modelsResponse = await fetch(`${baseUrl}/api/tags`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -16,43 +25,52 @@ export const handleOllamaRequest = async (prompt: string, endpoint: string): Pro
     });
 
     if (!modelsResponse.ok) {
-      throw new Error(`Failed to fetch Ollama models: ${modelsResponse.statusText}`);
+      const errorText = await modelsResponse.text();
+      console.error('Failed to fetch Ollama models:', errorText);
+      throw new Error(`Failed to connect to Ollama: ${modelsResponse.statusText}`);
     }
 
     const models = await modelsResponse.json();
     console.log('Available Ollama models:', models);
 
-    // Use llama2 if available, otherwise use the first available model
-    const defaultModel = models.models?.find((m: any) => m.name === 'llama2')?.name || models.models?.[0]?.name;
+    // Look specifically for llama2
+    const llama2Model = models.models?.find((m: any) => 
+      m.name.toLowerCase().includes('llama2') || 
+      m.name.toLowerCase() === 'llama2'
+    );
     
-    if (!defaultModel) {
-      throw new Error('No models available on the Ollama instance');
-    }
+    const modelToUse = llama2Model?.name || 'llama2';
+    console.log(`Using Ollama model: ${modelToUse}`);
 
-    console.log(`Using Ollama model: ${defaultModel}`);
-
-    const response = await fetch(`${endpoint}/api/generate`, {
+    // Make the generation request
+    console.log('Sending prompt to Ollama...');
+    const response = await fetch(`${baseUrl}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: defaultModel,
+        model: modelToUse,
         prompt: prompt,
-        stream: false
+        stream: false,
+        options: {
+          temperature: 0.7,
+          top_p: 0.9,
+        }
       }),
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Ollama API error:', error);
-      throw new Error(`Ollama API error: ${error}`);
+      const errorText = await response.text();
+      console.error('Ollama API error:', errorText);
+      throw new Error(`Ollama API error: ${response.statusText}`);
     }
 
     const data = await response.json() as OllamaResponse;
+    console.log('Received response from Ollama');
     return data.response;
   } catch (error) {
     console.error('Error in Ollama request:', error);
-    throw new Error(`Failed to connect to Ollama: ${error.message}`);
+    throw new Error(`Failed to get response from Ollama: ${error.message}`);
   }
 };

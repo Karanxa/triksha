@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { CSVUpload } from "./CSVUpload";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ScanFormProps {
   onSubmit: (data: {
@@ -46,28 +47,46 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
+    // Add validation for Ollama endpoint
+    if (provider === 'ollama') {
+      const { data: profile } = await supabase.from('profiles').select('api_keys').single();
+      const ollamaEndpoint = profile?.api_keys?.ollama_endpoint;
+      
+      if (!ollamaEndpoint) {
+        toast.error("Please configure your Ollama endpoint URL in Settings");
+        return;
+      }
+      
+      // Basic URL validation
+      try {
+        new URL(ollamaEndpoint);
+      } catch {
+        toast.error("Invalid Ollama endpoint URL. Please check your settings.");
+        return;
+      }
+    }
+
     const allPrompts = singlePrompt ? [singlePrompt] : prompts;
 
-    await onSubmit({
-      prompts: allPrompts,
-      provider,
-      category,
-      label: label || undefined,
-      schedule: schedule !== "none" ? schedule : undefined,
-      isRecurring
-    });
+    try {
+      await onSubmit({
+        prompts: allPrompts,
+        provider,
+        category,
+        label: label || undefined,
+        schedule: schedule !== "none" ? schedule : undefined,
+        isRecurring
+      });
 
-    // Reset form
-    setSinglePrompt("");
-    setPrompts([]);
-    setLabel("");
-    setSchedule("none");
-    setIsRecurring(false);
-  };
-
-  const handlePromptsExtracted = (extractedPrompts: string[]) => {
-    setPrompts(extractedPrompts);
-    setSinglePrompt(""); // Clear single prompt when CSV is uploaded
+      // Reset form only on success
+      setSinglePrompt("");
+      setPrompts([]);
+      setLabel("");
+      setSchedule("none");
+      setIsRecurring(false);
+    } catch (error) {
+      toast.error(`Scan failed: ${error.message}`);
+    }
   };
 
   return (
