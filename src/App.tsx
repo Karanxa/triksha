@@ -9,6 +9,10 @@ import LLMResults from "./pages/LLMResults";
 import Datasets from "./pages/Datasets";
 import AugmentPrompt from "./pages/AugmentPrompt";
 import FineTuning from "./pages/FineTuning";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import AuthGuard from "./components/AuthGuard";
+import Navigation from "./components/Navigation";
 
 const queryClient = new QueryClient();
 
@@ -19,12 +23,74 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/llm-scanner" element={<LLMScanner />} />
-          <Route path="/llm-results" element={<LLMResults />} />
-          <Route path="/datasets" element={<Datasets />} />
-          <Route path="/augment-prompt" element={<AugmentPrompt />} />
-          <Route path="/fine-tuning" element={<FineTuning />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/"
+            element={
+              <AuthGuard>
+                <>
+                  <Navigation />
+                  <Index />
+                </>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/llm-scanner"
+            element={
+              <AuthGuard>
+                <>
+                  <Navigation />
+                  <LLMScanner />
+                </>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/llm-results"
+            element={
+              <AuthGuard>
+                <>
+                  <Navigation />
+                  <LLMResults />
+                </>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/datasets"
+            element={
+              <AuthGuard>
+                <>
+                  <Navigation />
+                  <Datasets />
+                </>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/augment-prompt"
+            element={
+              <AuthGuard>
+                <>
+                  <Navigation />
+                  <AugmentPrompt />
+                </>
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/fine-tuning"
+            element={
+              <AuthGuard>
+                <>
+                  <Navigation />
+                  <FineTuning />
+                </>
+              </AuthGuard>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
