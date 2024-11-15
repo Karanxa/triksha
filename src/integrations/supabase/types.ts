@@ -109,6 +109,7 @@ export type Database = {
           next_run: string | null
           results: Json | null
           schedule: string | null
+          severity: string | null
           status: string
           updated_at: string
           user_id: string
@@ -123,6 +124,7 @@ export type Database = {
           next_run?: string | null
           results?: Json | null
           schedule?: string | null
+          severity?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -137,6 +139,7 @@ export type Database = {
           next_run?: string | null
           results?: Json | null
           schedule?: string | null
+          severity?: string | null
           status?: string
           updated_at?: string
           user_id?: string

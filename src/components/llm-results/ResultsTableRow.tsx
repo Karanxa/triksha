@@ -21,6 +21,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const prompt = results?.prompt || 'No prompt';
   const response = results?.model_response || 'No response';
   const category = scan.category || 'uncategorized';
+  const severity = scan.severity || 'unknown';
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
@@ -29,6 +30,21 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       case 'data-leakage':
         return 'secondary';
       case 'bias':
+        return 'outline';
+      default:
+        return 'default';
+    }
+  };
+
+  const getSeverityVariant = (severity: string): "default" | "destructive" | "secondary" | "outline" => {
+    switch (severity.toLowerCase()) {
+      case 'critical':
+        return 'destructive';
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'secondary';
+      case 'low':
         return 'outline';
       default:
         return 'default';
@@ -54,7 +70,10 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         />
       </TableCell>
       <TableCell>
-        <Badge variant={getCategoryVariant(category)}>{category}</Badge>
+        <div className="flex flex-col gap-2">
+          <Badge variant={getCategoryVariant(category)}>{category}</Badge>
+          <Badge variant={getSeverityVariant(severity)}>{severity}</Badge>
+        </div>
       </TableCell>
       <TableCell>
         <div className="flex gap-2">
