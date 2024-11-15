@@ -82,6 +82,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
             <SelectItem value="openai">OpenAI</SelectItem>
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
+            <SelectItem value="ollama">Ollama</SelectItem>
           </SelectContent>
         </Select>
       </div>
