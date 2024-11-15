@@ -10,6 +10,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -94,7 +95,8 @@ serve(async (req) => {
             status: 'completed',
             results: {
               prompt: prompt,
-              model_response: modelResponse
+              model_response: modelResponse,
+              is_vulnerable: isVulnerable
             },
             is_vulnerable: isVulnerable
           })
@@ -107,8 +109,8 @@ serve(async (req) => {
 
         results.push({
           prompt,
-          response: modelResponse,
-          isVulnerable
+          model_response: modelResponse,
+          is_vulnerable: isVulnerable
         });
 
         console.log(`Successfully processed prompt with QPS limiting`);
@@ -122,7 +124,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ results }),
+      JSON.stringify(results),
       { 
         headers: { 
           ...corsHeaders, 
