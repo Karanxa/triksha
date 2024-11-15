@@ -3,7 +3,7 @@ import { Upload } from "lucide-react";
 import { toast } from "sonner";
 
 interface CSVUploadProps {
-  onPromptsExtracted: (prompts: string[]) => void;  // Changed to accept array of strings
+  onPromptsExtracted: (prompts: string[]) => void;
 }
 
 export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
@@ -18,7 +18,8 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
 
     try {
       const text = await file.text();
-      const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+      // Split by newlines and handle both \n and \r\n
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
       
       if (lines.length === 0) {
         toast.error("CSV file is empty");
@@ -26,20 +27,22 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
       }
 
       const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
-      const promptIndex = headers.indexOf("prompts");
+      const promptIndex = headers.findIndex(header => 
+        header === "prompts" || header === "prompt" || header === "text"
+      );
 
       if (promptIndex === -1) {
-        toast.error("CSV must have a 'prompts' column");
+        toast.error("CSV must have a 'prompts', 'prompt', or 'text' column");
         return;
       }
 
-      const prompts = lines
-        .slice(1)
-        .map(line => {
-          const columns = line.split(",").map(col => col.trim());
-          return columns[promptIndex];
-        })
-        .filter(Boolean);
+      // Process each line, properly handling quoted values
+      const prompts = lines.slice(1).map(line => {
+        // Handle quoted values containing commas
+        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
+        return cleanedValues[promptIndex];
+      }).filter(Boolean);
 
       if (prompts.length === 0) {
         toast.error("No valid prompts found in the CSV file");
