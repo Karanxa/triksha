@@ -1,5 +1,6 @@
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 interface ScanFormProviderProps {
   provider: string;
@@ -7,37 +8,83 @@ interface ScanFormProviderProps {
 }
 
 export const ScanFormProvider = ({ provider, onProviderChange }: ScanFormProviderProps) => {
+  const [selectedProvider, setSelectedProvider] = useState("");
+
+  const handleProviderChange = (value: string) => {
+    setSelectedProvider(value);
+    // Reset the full provider value when changing main provider
+    onProviderChange("");
+  };
+
+  const handleModelChange = (model: string) => {
+    onProviderChange(`${selectedProvider}-${model}`);
+  };
+
+  const getModelsForProvider = () => {
+    switch (selectedProvider) {
+      case "openai":
+        return [
+          { value: "gpt4o", label: "GPT-4 Optimized" },
+          { value: "gpt4o-mini", label: "GPT-4 Mini" }
+        ];
+      case "anthropic":
+        return [
+          { value: "claude3", label: "Claude 3" },
+          { value: "claude2", label: "Claude 2" }
+        ];
+      case "google":
+        return [
+          { value: "gemini-pro", label: "Gemini Pro" },
+          { value: "gemini-ultra", label: "Gemini Ultra" }
+        ];
+      case "ollama":
+        return [
+          { value: "llama2", label: "Llama 2" },
+          { value: "mistral", label: "Mistral" },
+          { value: "codellama", label: "Code Llama" }
+        ];
+      default:
+        return [];
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <Label>Select Provider & Model</Label>
-      <Select value={provider} onValueChange={onProviderChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select a provider and model" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectLabel>OpenAI</SelectLabel>
-            <SelectItem value="openai-gpt4o">GPT-4 Optimized</SelectItem>
-            <SelectItem value="openai-gpt4o-mini">GPT-4 Mini</SelectItem>
-          </SelectGroup>
-          <SelectGroup>
-            <SelectLabel>Anthropic</SelectLabel>
-            <SelectItem value="anthropic-claude3">Claude 3</SelectItem>
-            <SelectItem value="anthropic-claude2">Claude 2</SelectItem>
-          </SelectGroup>
-          <SelectGroup>
-            <SelectLabel>Google AI</SelectLabel>
-            <SelectItem value="google-gemini-pro">Gemini Pro</SelectItem>
-            <SelectItem value="google-gemini-ultra">Gemini Ultra</SelectItem>
-          </SelectGroup>
-          <SelectGroup>
-            <SelectLabel>Ollama</SelectLabel>
-            <SelectItem value="ollama-llama2">Llama 2</SelectItem>
-            <SelectItem value="ollama-mistral">Mistral</SelectItem>
-            <SelectItem value="ollama-codellama">Code Llama</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      <div className="space-y-2">
+        <Label>Select Provider</Label>
+        <Select value={selectedProvider} onValueChange={handleProviderChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a provider" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="openai">OpenAI</SelectItem>
+            <SelectItem value="anthropic">Anthropic</SelectItem>
+            <SelectItem value="google">Google AI</SelectItem>
+            <SelectItem value="ollama">Ollama</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedProvider && (
+        <div className="space-y-2">
+          <Label>Select Model</Label>
+          <Select 
+            value={provider.split('-')[1] || ""} 
+            onValueChange={handleModelChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a model" />
+            </SelectTrigger>
+            <SelectContent>
+              {getModelsForProvider().map((model) => (
+                <SelectItem key={model.value} value={model.value}>
+                  {model.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 };
