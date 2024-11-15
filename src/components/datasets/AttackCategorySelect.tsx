@@ -5,6 +5,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useToast } from "@/components/ui/use-toast"
+import { supabase } from "@/integrations/supabase/client"
 
 interface AttackCategorySelectProps {
   value: string
@@ -28,9 +30,38 @@ export const AttackCategorySelect = ({
   value,
   onValueChange,
 }: AttackCategorySelectProps) => {
+  const { toast } = useToast()
+
+  const handleValueChange = async (newValue: string) => {
+    try {
+      onValueChange(newValue)
+      
+      const { error } = await supabase
+        .from('datasets')
+        .update({ 
+          category: newValue,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', value) // Assuming value is the dataset ID
+
+      if (error) throw error
+
+      toast({
+        title: "Category updated",
+        description: "Dataset category has been updated successfully."
+      })
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error updating category",
+        description: error.message
+      })
+    }
+  }
+
   return (
     <div className="w-full">
-      <Select value={value} onValueChange={onValueChange}>
+      <Select value={value} onValueChange={handleValueChange}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select Attack Category" />
         </SelectTrigger>
