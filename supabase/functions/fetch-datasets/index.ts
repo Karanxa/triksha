@@ -122,7 +122,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ datasets: [...results.huggingface, ...results.github] }),
+      JSON.stringify(results),
       { 
         headers: { 
           ...corsHeaders,

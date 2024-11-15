@@ -7,6 +7,7 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { DatasetSearchControls } from "@/components/datasets/DatasetSearchControls"
 import { DatasetCard } from "@/components/datasets/DatasetCard"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
 
 const Datasets = () => {
   const { toast } = useToast()
@@ -21,7 +22,7 @@ const Datasets = () => {
   const { data: datasets, isLoading } = useQuery({
     queryKey: ['datasets', selectedCategory, useCustomSearch, debouncedSearchQuery],
     queryFn: async () => {
-      if (!selectedCategory && !debouncedSearchQuery) return []
+      if (!selectedCategory && !debouncedSearchQuery) return { huggingface: [], github: [] }
       
       const { data, error } = await supabase.functions.invoke('fetch-datasets', {
         body: { 
@@ -45,10 +46,10 @@ const Datasets = () => {
             description: error.message,
           })
         }
-        return []
+        return { huggingface: [], github: [] }
       }
 
-      return data.datasets
+      return data
     },
     enabled: !!selectedCategory || (useCustomSearch && !!debouncedSearchQuery)
   })
@@ -88,11 +89,16 @@ const Datasets = () => {
     }
   }
 
-  const filteredDatasets = datasets?.filter(dataset => 
-    !localSearch || 
-    dataset.title.toLowerCase().includes(localSearch.toLowerCase()) ||
-    dataset.description.toLowerCase().includes(localSearch.toLowerCase())
-  )
+  const filterDatasets = (datasets: any[]) => {
+    if (!localSearch) return datasets
+    return datasets.filter(dataset => 
+      dataset.title.toLowerCase().includes(localSearch.toLowerCase()) ||
+      dataset.description.toLowerCase().includes(localSearch.toLowerCase())
+    )
+  }
+
+  const huggingFaceDatasets = filterDatasets(datasets?.huggingface || [])
+  const githubDatasets = filterDatasets(datasets?.github || [])
 
   return (
     <div className="container py-8">
@@ -106,7 +112,7 @@ const Datasets = () => {
           setSelectedCategory={setSelectedCategory}
         />
 
-        {(!!datasets?.length || isLoading) && (
+        {((datasets?.huggingface?.length || datasets?.github?.length) || isLoading) && (
           <div className="flex items-center gap-2">
             <Input
               placeholder="Search in results..."
@@ -129,18 +135,50 @@ const Datasets = () => {
               </h2>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDatasets?.map((dataset) => (
-                <DatasetCard
-                  key={dataset.id}
-                  dataset={dataset}
-                  onDownload={handleDownload}
-                  downloading={downloading}
-                />
-              ))}
-            </div>
+            {huggingFaceDatasets.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-semibold">Hugging Face Datasets</h3>
+                  <span className="text-muted-foreground">({huggingFaceDatasets.length})</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {huggingFaceDatasets.map((dataset) => (
+                    <DatasetCard
+                      key={dataset.id}
+                      dataset={dataset}
+                      onDownload={handleDownload}
+                      downloading={downloading}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-            {datasets?.length === 0 && (selectedCategory || debouncedSearchQuery) && (
+            {huggingFaceDatasets.length > 0 && githubDatasets.length > 0 && (
+              <Separator className="my-8" />
+            )}
+
+            {githubDatasets.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl font-semibold">GitHub Datasets</h3>
+                  <span className="text-muted-foreground">({githubDatasets.length})</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {githubDatasets.map((dataset) => (
+                    <DatasetCard
+                      key={dataset.id}
+                      dataset={dataset}
+                      onDownload={handleDownload}
+                      downloading={downloading}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {datasets && Object.keys(datasets).length > 0 && 
+             huggingFaceDatasets.length === 0 && githubDatasets.length === 0 && (
               <p className="text-center text-muted-foreground py-12">
                 No datasets found for your search criteria
               </p>
