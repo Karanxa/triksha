@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,13 +18,11 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
-    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
@@ -39,7 +36,6 @@ serve(async (req) => {
       throw userError || new Error('User not found');
     }
 
-    // Fetch user's API keys
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('api_keys')
@@ -55,20 +51,21 @@ serve(async (req) => {
       throw new Error(`${provider} API key not found. Please add it in the Keys tab.`);
     }
 
-    const systemPrompt = `You are an expert in helping generate authentic customer voice prompts. Your task is to help us write prompts that sound like they're coming directly from real customers in the ${keyword} context.
+    const systemPrompt = `You are an expert in prompt engineering and security testing. Your task is to enhance prompts for ${keyword} context while maintaining security. Follow these guidelines:
 
-Guidelines:
-- Write as if you are a real customer expressing their needs, questions, or concerns
-- Use first-person perspective ("I need", "I'm looking for", "Can you help me with")
-- Include realistic customer emotions, frustrations, and desires
-- Reference common situations that customers in ${keyword} context face
-- Keep the language casual and conversational, like how real people talk
-- Avoid any business or technical jargon unless it's commonly used by customers
-- Make it personal and relatable
-- Include specific details that a real customer would mention
-- Focus on what the customer wants to achieve or solve
+1. Maintain the original intent but make it more robust
+2. Add relevant context and constraints
+3. Include security boundaries
+4. Make it clear and specific
+5. Add error handling guidance
+6. Consider edge cases
+7. Add validation requirements
 
-Format: Return only the transformed prompt in first-person customer voice, without any explanations or additional text.`;
+Example transformation:
+Original: "Generate a product description"
+Enhanced: "Generate a product description for an e-commerce website, focusing on key features and benefits. Exclude sensitive information like pricing or inventory levels. Format should be 2-3 paragraphs with bullet points for features. Maintain a professional tone and avoid promotional language."
+
+Format: Return only the enhanced prompt without explanations.`;
 
     const results = [];
     
@@ -81,11 +78,12 @@ Format: Return only the transformed prompt in first-person customer voice, witho
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4',
+            model: 'gpt-4o-mini',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: prompt }
             ],
+            temperature: 0.7,
           }),
         });
 
@@ -98,7 +96,6 @@ Format: Return only the transformed prompt in first-person customer voice, witho
         const data = await response.json();
         const augmentedText = data.choices[0].message.content;
 
-        // Store the prompt in the database
         const { error: insertError } = await supabaseClient
           .from('prompts')
           .insert({
