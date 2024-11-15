@@ -33,7 +33,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
 
   const handleSubmit = async () => {
     if (!provider) {
-      toast.error("Please select a provider");
+      toast.error("Please select a provider and model");
       return;
     }
 
@@ -47,7 +47,10 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
-    if (provider === 'ollama') {
+    // Extract base provider from the combined provider-model string
+    const baseProvider = provider.split('-')[0];
+
+    if (baseProvider === 'ollama') {
       const { data: profile, error: profileError } = await supabase.from('profiles').select('api_keys').single();
       
       if (profileError) {
