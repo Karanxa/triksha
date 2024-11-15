@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 interface ScanFormProps {
   onSubmit: (data: {
-    prompt: string;
+    prompts: string[];
     provider: string;
     category: string;
     label?: string;
@@ -19,12 +19,12 @@ interface ScanFormProps {
     isRecurring: boolean;
   }) => Promise<void>;
   isScanning: boolean;
-  onFileUpload: (file: File) => void;
 }
 
 export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [provider, setProvider] = useState("");
-  const [prompt, setPrompt] = useState("");
+  const [singlePrompt, setSinglePrompt] = useState("");
+  const [prompts, setPrompts] = useState<string[]>([]);
   const [category, setCategory] = useState("");
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("");
@@ -36,7 +36,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
-    if (!prompt) {
+    if (!singlePrompt && prompts.length === 0) {
       toast.error("Please enter a prompt or upload a CSV");
       return;
     }
@@ -46,8 +46,10 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
+    const allPrompts = singlePrompt ? [singlePrompt] : prompts;
+
     await onSubmit({
-      prompt,
+      prompts: allPrompts,
       provider,
       category,
       label: label || undefined,
@@ -56,10 +58,16 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     });
 
     // Reset form
-    setPrompt("");
+    setSinglePrompt("");
+    setPrompts([]);
     setLabel("");
     setSchedule("");
     setIsRecurring(false);
+  };
+
+  const handlePromptsExtracted = (extractedPrompts: string[]) => {
+    setPrompts(extractedPrompts);
+    setSinglePrompt(""); // Clear single prompt when CSV is uploaded
   };
 
   return (
@@ -83,12 +91,23 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         <Textarea 
           placeholder="Enter your prompt for scanning"
           className="min-h-[100px]"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
+          value={singlePrompt}
+          onChange={(e) => {
+            setSinglePrompt(e.target.value);
+            setPrompts([]); // Clear CSV prompts when single prompt is entered
+          }}
         />
       </div>
 
-      <CSVUpload onPromptsExtracted={setPrompt} />
+      <div className="space-y-4">
+        <Label>Or Upload Multiple Prompts</Label>
+        <CSVUpload onPromptsExtracted={handlePromptsExtracted} />
+        {prompts.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {prompts.length} prompts loaded from CSV
+          </p>
+        )}
+      </div>
 
       <div className="space-y-4">
         <Label>Attack Category</Label>

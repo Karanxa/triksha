@@ -3,7 +3,7 @@ import { Upload } from "lucide-react";
 import { toast } from "sonner";
 
 interface CSVUploadProps {
-  onPromptsExtracted: (prompts: string) => void;
+  onPromptsExtracted: (prompts: string[]) => void;  // Changed to accept array of strings
 }
 
 export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
@@ -11,7 +11,6 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check both MIME type and file extension
     if (file.type !== "text/csv" && !file.name.endsWith('.csv')) {
       toast.error("Please upload a CSV file");
       return;
@@ -40,16 +39,15 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
           const columns = line.split(",").map(col => col.trim());
           return columns[promptIndex];
         })
-        .filter(Boolean)
-        .join("\n");
+        .filter(Boolean);
 
-      if (!prompts) {
+      if (prompts.length === 0) {
         toast.error("No valid prompts found in the CSV file");
         return;
       }
 
       onPromptsExtracted(prompts);
-      toast.success("CSV file processed successfully");
+      toast.success(`${prompts.length} prompts extracted successfully`);
       
       // Reset the input
       event.target.value = '';
