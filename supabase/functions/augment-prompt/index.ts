@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,11 +15,11 @@ serve(async (req) => {
   try {
     const { prompts, keyword, provider } = await req.json();
     
-    // Validate input
-    if (!prompts || !keyword || !provider) {
+    if (!Array.isArray(prompts) || !keyword || !provider) {
       throw new Error('Missing required parameters');
     }
 
+    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -40,7 +39,7 @@ serve(async (req) => {
       throw userError || new Error('User not found');
     }
 
-    // Fetch user's API keys from profile
+    // Fetch user's API keys
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('api_keys')
@@ -51,10 +50,9 @@ serve(async (req) => {
       throw new Error('Failed to fetch user profile');
     }
 
-    // Get the OpenAI API key from the profile
-    const openaiKey = profile?.api_keys?.openai;
-    if (!openaiKey) {
-      throw new Error('OpenAI API key not configured. Please add it in the Keys tab.');
+    const apiKey = profile?.api_keys?.[provider];
+    if (!apiKey) {
+      throw new Error(`${provider} API key not found. Please add it in the Keys tab.`);
     }
 
     const systemPrompt = `You are an expert in helping generate authentic customer voice prompts. Your task is to help us write prompts that sound like they're coming directly from real customers in the ${keyword} context.
@@ -72,18 +70,18 @@ Guidelines:
 
 Format: Return only the transformed prompt in first-person customer voice, without any explanations or additional text.`;
 
-    // Process each prompt
-    const augmentedPrompts = [];
+    const results = [];
+    
     for (const prompt of prompts) {
       try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${openaiKey}`,
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: prompt }
@@ -116,13 +114,13 @@ Format: Return only the transformed prompt in first-person customer voice, witho
           throw new Error('Failed to store augmented prompt');
         }
 
-        augmentedPrompts.push({
+        results.push({
           original: prompt,
           augmented: augmentedText
         });
       } catch (error) {
         console.error(`Error processing prompt "${prompt}":`, error);
-        augmentedPrompts.push({
+        results.push({
           original: prompt,
           error: error.message
         });
@@ -130,7 +128,7 @@ Format: Return only the transformed prompt in first-person customer voice, witho
     }
 
     return new Response(
-      JSON.stringify({ results: augmentedPrompts }),
+      JSON.stringify({ results }),
       { 
         headers: { 
           ...corsHeaders, 
