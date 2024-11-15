@@ -1,109 +1,44 @@
 import { Link, useLocation } from "react-router-dom";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { Settings } from "lucide-react";
+import { cn } from "@/lib/utils";
+import ThemeToggle from "./ThemeToggle";
 
 const Navigation = () => {
   const location = useLocation();
-  const supabase = useSupabaseClient();
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const isActive = (path: string) => location.pathname === path;
+  
+  const links = [
+    { href: "/", label: "Home" },
+    { href: "/llm-scanner", label: "LLM Scanner" },
+    { href: "/llm-results", label: "Results" },
+    { href: "/datasets", label: "Datasets" },
+    { href: "/augment-prompt", label: "Augment Prompt" },
+    { href: "/fine-tuning", label: "Fine Tuning" },
+    { href: "/settings", label: "Settings" },
+  ];
 
   return (
-    <div className="border-b">
-      <div className="container flex h-16 items-center justify-between">
-        <NavigationMenu>
-          <NavigationMenuList className="gap-6">
-            <NavigationMenuItem>
-              <Link
-                to="/"
-                className={`${navigationMenuTriggerStyle()} ${
-                  isActive("/") ? "bg-accent" : ""
-                }`}
-              >
-                Home
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link
-                to="/llm-scanner"
-                className={`${navigationMenuTriggerStyle()} ${
-                  isActive("/llm-scanner") ? "bg-accent" : ""
-                }`}
-              >
-                LLM Scanner
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link
-                to="/llm-results"
-                className={`${navigationMenuTriggerStyle()} ${
-                  isActive("/llm-results") ? "bg-accent" : ""
-                }`}
-              >
-                Results
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link
-                to="/datasets"
-                className={`${navigationMenuTriggerStyle()} ${
-                  isActive("/datasets") ? "bg-accent" : ""
-                }`}
-              >
-                Datasets
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link
-                to="/augment-prompt"
-                className={`${navigationMenuTriggerStyle()} ${
-                  isActive("/augment-prompt") ? "bg-accent" : ""
-                }`}
-              >
-                Prompt Augmentation
-              </Link>
-            </NavigationMenuItem>
-            <NavigationMenuItem>
-              <Link
-                to="/fine-tuning"
-                className={`${navigationMenuTriggerStyle()} ${
-                  isActive("/fine-tuning") ? "bg-accent" : ""
-                }`}
-              >
-                Fine-tuning
-              </Link>
-            </NavigationMenuItem>
-          </NavigationMenuList>
-        </NavigationMenu>
-
-        <div className="flex items-center gap-4">
-          <Link
-            to="/settings"
-            className={`${navigationMenuTriggerStyle()} ${
-              isActive("/settings") ? "bg-accent" : ""
-            }`}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Link>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign Out
-          </Button>
+    <nav className="border-b">
+      <div className="flex h-16 items-center px-4">
+        <div className="flex items-center space-x-4 lg:space-x-6 mx-6">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              to={link.href}
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                location.pathname === link.href
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center space-x-4">
+          <ThemeToggle />
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
 
