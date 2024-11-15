@@ -29,29 +29,26 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const label = scan.label || 'No label';
   const riskLevel = results?.analysis?.risk_level || 'unknown';
 
-  const getCategoryVariant = (category: string) => {
-    const variant = (() => {
-      switch (category.toLowerCase()) {
-        case 'prompt-injection':
-          return 'destructive';
-        case 'data-leakage':
-          return 'secondary';
-        case 'bias':
-          return 'outline';
-        default:
-          return 'default';
-      }
-    })();
-    return variant as const;
+  const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
+    switch (category.toLowerCase()) {
+      case 'prompt-injection':
+        return 'destructive';
+      case 'data-leakage':
+        return 'secondary';
+      case 'bias':
+        return 'outline';
+      default:
+        return 'default';
+    }
   };
 
   const getRiskLevelBadge = (level: string) => {
     const variants = {
-      high: { color: 'destructive', icon: XCircle },
-      medium: { color: 'warning', icon: AlertTriangle },
-      low: { color: 'success', icon: CheckCircle2 },
-      unknown: { color: 'secondary', icon: Clock },
-    } as const;
+      high: { color: 'destructive' as const, icon: XCircle },
+      medium: { color: 'secondary' as const, icon: AlertTriangle },
+      low: { color: 'default' as const, icon: CheckCircle2 },
+      unknown: { color: 'secondary' as const, icon: Clock },
+    };
 
     const { color, icon: Icon } = variants[level.toLowerCase() as keyof typeof variants] || variants.unknown;
     
