@@ -1,4 +1,4 @@
-import { Brain, Database, FileText, Settings, File } from "lucide-react";
+import { Brain, Database, FileText, Settings, File, List } from "lucide-react";
 import ToolCard from "@/components/ToolCard";
 import { useNavigate } from "react-router-dom";
 
@@ -7,7 +7,7 @@ const Index = () => {
   
   const tools = [
     { icon: Brain, title: "LLM Scanner", path: "/llm-scanner" },
-    { icon: File, title: "LLM Results" },
+    { icon: List, title: "LLM Results", path: "/llm-results" },
     { icon: Database, title: "Datasets" },
     { icon: FileText, title: "Prompt Augmentation" },
     { icon: Settings, title: "Fine-tuning" },
