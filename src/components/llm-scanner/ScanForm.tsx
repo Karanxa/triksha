@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
-import { CSVUpload } from "./CSVUpload";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ScanFormProvider } from "./ScanFormProvider";
+import { ScanFormPrompt } from "./ScanFormPrompt";
+import { ScanFormSchedule } from "./ScanFormSchedule";
+import { Loader2 } from "lucide-react";
 
 interface ScanFormProps {
   onSubmit: (data: {
@@ -47,9 +47,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
-    // Add validation for Ollama endpoint
     if (provider === 'ollama') {
-      console.log("Validating Ollama endpoint configuration...");
       const { data: profile, error: profileError } = await supabase.from('profiles').select('api_keys').single();
       
       if (profileError) {
@@ -59,14 +57,12 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       }
 
       const ollamaEndpoint = profile?.api_keys?.['ollama_endpoint'] as string | undefined;
-      console.log("Retrieved Ollama endpoint:", ollamaEndpoint);
       
       if (!ollamaEndpoint) {
         toast.error("Please configure your Ollama endpoint URL in Settings");
         return;
       }
       
-      // Basic URL validation
       try {
         new URL(ollamaEndpoint);
       } catch (error) {
@@ -89,66 +85,39 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         isRecurring
       });
 
-      console.log("Scan submitted successfully");
-      toast.success("Scan initiated successfully");
-
       // Reset form only on success
       setSinglePrompt("");
       setPrompts([]);
       setLabel("");
       setSchedule("none");
       setIsRecurring(false);
+      
+      toast.success("Scan initiated successfully");
     } catch (error) {
       console.error("Scan failed:", error);
       toast.error(`Scan failed: ${(error as Error).message}`);
     }
   };
 
-  const handlePromptsExtracted = (extractedPrompts: string[]) => {
-    console.log("Extracted prompts from CSV:", extractedPrompts);
-    setPrompts(extractedPrompts);
-    setSinglePrompt(""); // Clear single prompt when CSV is uploaded
-  };
-
   return (
     <div className="space-y-8">
-      <div className="space-y-4">
-        <Label>Select Provider</Label>
-        <Select value={provider} onValueChange={setProvider}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select a provider" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="openai">OpenAI</SelectItem>
-            <SelectItem value="anthropic">Anthropic</SelectItem>
-            <SelectItem value="google">Google AI</SelectItem>
-            <SelectItem value="ollama">Ollama</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <ScanFormProvider 
+        provider={provider}
+        onProviderChange={setProvider}
+      />
 
-      <div className="space-y-4">
-        <Label>Single Prompt</Label>
-        <Textarea 
-          placeholder="Enter your prompt for scanning"
-          className="min-h-[100px]"
-          value={singlePrompt}
-          onChange={(e) => {
-            setSinglePrompt(e.target.value);
-            setPrompts([]); // Clear CSV prompts when single prompt is entered
-          }}
-        />
-      </div>
-
-      <div className="space-y-4">
-        <Label>Or Upload Multiple Prompts</Label>
-        <CSVUpload onPromptsExtracted={handlePromptsExtracted} />
-        {prompts.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            {prompts.length} prompts loaded from CSV
-          </p>
-        )}
-      </div>
+      <ScanFormPrompt
+        singlePrompt={singlePrompt}
+        onSinglePromptChange={(value) => {
+          setSinglePrompt(value);
+          setPrompts([]);
+        }}
+        prompts={prompts}
+        onPromptsExtracted={(extractedPrompts) => {
+          setPrompts(extractedPrompts);
+          setSinglePrompt("");
+        }}
+      />
 
       <div className="space-y-4">
         <Label>Attack Category</Label>
@@ -167,31 +136,12 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         />
       </div>
 
-      <div className="space-y-4">
-        <Label>Schedule (Optional)</Label>
-        <Select value={schedule} onValueChange={setSchedule}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select schedule frequency" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No Schedule</SelectItem>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {schedule !== "none" && (
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="recurring"
-            checked={isRecurring}
-            onCheckedChange={setIsRecurring}
-          />
-          <Label htmlFor="recurring">Make this scan recurring</Label>
-        </div>
-      )}
+      <ScanFormSchedule
+        schedule={schedule}
+        onScheduleChange={setSchedule}
+        isRecurring={isRecurring}
+        onRecurringChange={setIsRecurring}
+      />
 
       <Button 
         className="w-full" 
@@ -199,7 +149,14 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         onClick={handleSubmit}
         disabled={isScanning}
       >
-        {isScanning ? "Processing Scans..." : "Start LLM Scan"}
+        {isScanning ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing Scan...
+          </>
+        ) : (
+          "Start LLM Scan"
+        )}
       </Button>
     </div>
   );
