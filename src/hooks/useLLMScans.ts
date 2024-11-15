@@ -23,8 +23,21 @@ export const useLLMScans = () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
+      const { data, error } = await supabase
+        .from('llm_scans')
+        .insert({
+          user_id: userData.user.id,
+          name: `Scan ${new Date().toISOString()}`,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Call the edge function to perform the scan
       const response = await supabase.functions.invoke('scan-llm', {
-        body: { prompt, userId: userData.user.id },
+        body: { scanId: data.id, prompt }
       });
 
       if (response.error) throw response.error;
@@ -32,10 +45,10 @@ export const useLLMScans = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
-      toast.success("Scan completed successfully");
+      toast.success("Scan initiated successfully");
     },
     onError: (error) => {
-      toast.error("Failed to complete scan: " + error.message);
+      toast.error("Failed to create scan: " + error.message);
     },
   });
 

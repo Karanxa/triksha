@@ -9,7 +9,189 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      datasets: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_path: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "datasets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fine_tuning_jobs: {
+        Row: {
+          created_at: string
+          dataset_id: string | null
+          id: string
+          model: string
+          parameters: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          model: string
+          parameters?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dataset_id?: string | null
+          id?: string
+          model?: string
+          parameters?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fine_tuning_jobs_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fine_tuning_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      llm_scans: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          results: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          results?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          results?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prompts: {
+        Row: {
+          augmented_text: string | null
+          created_at: string
+          id: string
+          keyword: string | null
+          original_text: string
+          provider: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          augmented_text?: string | null
+          created_at?: string
+          id?: string
+          keyword?: string | null
+          original_text: string
+          provider?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          augmented_text?: string | null
+          created_at?: string
+          id?: string
+          keyword?: string | null
+          original_text?: string
+          provider?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
