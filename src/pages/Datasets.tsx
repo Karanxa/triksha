@@ -6,14 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/useDebounce"
 import { DatasetSearchControls } from "@/components/datasets/DatasetSearchControls"
 import { DatasetCard } from "@/components/datasets/DatasetCard"
-
-interface Dataset {
-  id: string
-  title: string
-  description: string
-  downloads: number
-  likes: number
-}
+import { Input } from "@/components/ui/input"
 
 const Datasets = () => {
   const { toast } = useToast()
@@ -21,6 +14,7 @@ const Datasets = () => {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("")
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [localSearch, setLocalSearch] = useState("")
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
@@ -38,11 +32,11 @@ const Datasets = () => {
       })
 
       if (error) {
-        if (error.message.includes("Hugging Face API key not found")) {
+        if (error.message.includes("API key not found")) {
           toast({
             variant: "destructive",
             title: "API Key Missing",
-            description: "Please add your Hugging Face API key in the Settings page.",
+            description: "Please add your API keys in the Settings page.",
           })
         } else {
           toast({
@@ -54,13 +48,7 @@ const Datasets = () => {
         return []
       }
 
-      return data.datasets.map((dataset: any) => ({
-        id: dataset.id,
-        title: dataset.id.split('/').pop(),
-        description: dataset.description || 'No description available',
-        downloads: dataset.downloads || 0,
-        likes: dataset.likes || 0,
-      }))
+      return data.datasets
     },
     enabled: !!selectedCategory || (useCustomSearch && !!debouncedSearchQuery)
   })
@@ -79,7 +67,7 @@ const Datasets = () => {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = data.filename || `dataset.${format}`
+      a.download = `${datasetId.split('/').pop()}.${format}`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -100,26 +88,49 @@ const Datasets = () => {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="container py-12">
-        <div className="space-y-6">
-          <DatasetSearchControls
-            useCustomSearch={useCustomSearch}
-            setUseCustomSearch={setUseCustomSearch}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-          />
+  const filteredDatasets = datasets?.filter(dataset => 
+    !localSearch || 
+    dataset.title.toLowerCase().includes(localSearch.toLowerCase()) ||
+    dataset.description.toLowerCase().includes(localSearch.toLowerCase())
+  )
 
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
+  return (
+    <div className="container py-8">
+      <div className="space-y-6">
+        <DatasetSearchControls
+          useCustomSearch={useCustomSearch}
+          setUseCustomSearch={setUseCustomSearch}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
+
+        {(!!datasets?.length || isLoading) && (
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Search in results..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {selectedCategory && !useCustomSearch && (
+              <h2 className="text-2xl font-semibold mb-6">
+                Adversarial Datasets - {selectedCategory}
+              </h2>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {datasets?.map((dataset) => (
+              {filteredDatasets?.map((dataset) => (
                 <DatasetCard
                   key={dataset.id}
                   dataset={dataset}
@@ -128,8 +139,14 @@ const Datasets = () => {
                 />
               ))}
             </div>
-          )}
-        </div>
+
+            {datasets?.length === 0 && (selectedCategory || debouncedSearchQuery) && (
+              <p className="text-center text-muted-foreground py-12">
+                No datasets found for your search criteria
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

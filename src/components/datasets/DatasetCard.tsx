@@ -1,7 +1,6 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Loader2, Star, Eye } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Download, Users } from "lucide-react"
 
 interface Dataset {
   id: string
@@ -23,45 +22,48 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
 
   return (
     <Card className="flex flex-col h-full">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold">{dataset.title}</CardTitle>
-          <Badge variant="outline">
-            {dataset.source === 'github' ? 'GitHub' : 'Hugging Face'}
-          </Badge>
-        </div>
+      <CardHeader className="pb-4">
+        <h3 className="text-base font-medium leading-none">{dataset.title}</h3>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground">{dataset.description}</p>
-        <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            {dataset.source === 'github' ? <Eye className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-            <span>{dataset.downloads}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Star className="w-4 h-4" />
-            <span>{dataset.likes}</span>
-          </div>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{dataset.description}</p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="h-4 w-4" />
+          <span>{dataset.downloads} downloads</span>
+          <span>•</span>
+          <span>{dataset.likes} likes</span>
         </div>
       </CardContent>
-      <CardFooter className="flex gap-2">
+      <CardFooter className="grid grid-cols-3 gap-2">
         <Button
           variant="outline"
-          className="flex-1"
+          size="sm"
+          className="w-full"
           onClick={() => onDownload(dataset.id, 'csv')}
           disabled={isDownloading}
         >
-          {isDownloading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Downloading...
-            </>
-          ) : (
-            <>
-              <Download className="mr-2 h-4 w-4" />
-              Download CSV
-            </>
-          )}
+          <Download className="mr-2 h-4 w-4" />
+          CSV
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => onDownload(dataset.id, 'txt')}
+          disabled={isDownloading}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          TXT
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => onDownload(dataset.id, 'zip')}
+          disabled={isDownloading}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          ZIP
         </Button>
       </CardFooter>
     </Card>
