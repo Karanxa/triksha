@@ -1,4 +1,3 @@
 project_id = "irdlyshhtwzqjvymilww"
-
-[functions.scan-llm]
+[functions.fetch-datasets]
 verify_jwt = true

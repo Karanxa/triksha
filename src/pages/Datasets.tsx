@@ -16,7 +16,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Database, Download, Search } from "lucide-react";
+import { Database, Download, Search, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Dataset {
   id: string;
@@ -27,43 +30,53 @@ interface Dataset {
   formats: string[];
 }
 
-const mockDatasets: Dataset[] = [
-  {
-    id: "1",
-    title: "prompt-injections",
-    description: "Dataset Card for 'deberta-v3-base-injection-dataset'. More information needed",
-    downloads: 1348,
-    likes: 47,
-    formats: ["CSV", "TXT", "ZIP"],
-  },
-  {
-    id: "2",
-    title: "safe-guard-prompt-injection",
-    description: "We formulated the prompt injection detector problem as a classification problem and trained models.",
-    downloads: 426,
-    likes: 3,
-    formats: ["CSV", "TXT", "ZIP"],
-  },
-  {
-    id: "3",
-    title: "SPML_Chatbot_Prompt_Injection",
-    description: "SPML Chatbot Prompt Injection Dataset Arxiv Paper Introducing the SPML Chatbot Prompt",
-    downloads: 333,
-    likes: 12,
-    formats: ["CSV", "TXT", "ZIP"],
-  },
-];
-
 const Datasets = () => {
+  const { toast } = useToast();
   const [useCustomSearch, setUseCustomSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+
+  const { data: datasets, isLoading } = useQuery({
+    queryKey: ['datasets', selectedCategory],
+    queryFn: async () => {
+      if (!selectedCategory) return [];
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('fetch-datasets', {
+          body: { category: selectedCategory }
+        });
+
+        if (error) throw error;
+
+        // Transform the Hugging Face response to match our interface
+        return data.datasets.map((dataset: any) => ({
+          id: dataset.id,
+          title: dataset.id.split('/').pop(),
+          description: dataset.description || 'No description available',
+          downloads: dataset.downloads || 0,
+          likes: dataset.likes || 0,
+          formats: ['Dataset']
+        }));
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error fetching datasets",
+          description: "Please make sure you've added your Hugging Face API key in settings."
+        });
+        return [];
+      }
+    },
+    enabled: !!selectedCategory
+  });
+
+  const filteredDatasets = datasets?.filter(dataset => 
+    !searchQuery || dataset.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12">
         <div className="space-y-6">
-          {/* Header Controls */}
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center gap-2">
               <Switch
@@ -77,7 +90,6 @@ const Datasets = () => {
             </div>
           </div>
 
-          {/* Category Selection */}
           <div className="w-full">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full">
@@ -91,7 +103,6 @@ const Datasets = () => {
             </Select>
           </div>
 
-          {/* Search Bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -102,41 +113,46 @@ const Datasets = () => {
             />
           </div>
 
-          {/* Dataset Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockDatasets.map((dataset) => (
-              <Card key={dataset.id} className="flex flex-col">
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Database className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">{dataset.title}</CardTitle>
-                  </div>
-                  <CardDescription className="line-clamp-2">
-                    {dataset.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    <span>{dataset.downloads} downloads</span>
-                    <span>{dataset.likes} likes</span>
-                  </div>
-                  <div className="flex gap-2">
-                    {dataset.formats.map((format) => (
-                      <Button
-                        key={format}
-                        variant="secondary"
-                        size="sm"
-                        className="flex items-center gap-1"
-                      >
-                        <Download className="h-4 w-4" />
-                        {format}
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDatasets?.map((dataset) => (
+                <Card key={dataset.id} className="flex flex-col">
+                  <CardHeader>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Database className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg">{dataset.title}</CardTitle>
+                    </div>
+                    <CardDescription className="line-clamp-2">
+                      {dataset.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                      <span>{dataset.downloads} downloads</span>
+                      <span>{dataset.likes} likes</span>
+                    </div>
+                    <div className="flex gap-2">
+                      {dataset.formats.map((format) => (
+                        <Button
+                          key={format}
+                          variant="secondary"
+                          size="sm"
+                          className="flex items-center gap-1"
+                        >
+                          <Download className="h-4 w-4" />
+                          {format}
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
