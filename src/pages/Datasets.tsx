@@ -7,6 +7,7 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { DatasetSearchControls } from "@/components/datasets/DatasetSearchControls"
 import { DatasetCard } from "@/components/datasets/DatasetCard"
 import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const Datasets = () => {
   const { toast } = useToast()
@@ -134,14 +135,20 @@ const Datasets = () => {
               </h2>
             )}
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Hugging Face Column */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-semibold">Hugging Face Datasets</h3>
-                  <span className="text-muted-foreground">({huggingFaceDatasets.length})</span>
-                </div>
-                <div className="grid grid-cols-1 gap-6">
+            <Tabs defaultValue="huggingface" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="huggingface" className="flex items-center gap-2">
+                  Hugging Face
+                  <span className="text-xs text-muted-foreground">({huggingFaceDatasets.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="github" className="flex items-center gap-2">
+                  GitHub
+                  <span className="text-xs text-muted-foreground">({githubDatasets.length})</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="huggingface" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {huggingFaceDatasets.map((dataset) => (
                     <DatasetCard
                       key={dataset.id}
@@ -151,20 +158,15 @@ const Datasets = () => {
                     />
                   ))}
                   {huggingFaceDatasets.length === 0 && (
-                    <p className="text-center text-muted-foreground py-12">
+                    <p className="text-center text-muted-foreground py-12 col-span-full">
                       No Hugging Face datasets found
                     </p>
                   )}
                 </div>
-              </div>
+              </TabsContent>
 
-              {/* GitHub Column */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-semibold">GitHub Datasets</h3>
-                  <span className="text-muted-foreground">({githubDatasets.length})</span>
-                </div>
-                <div className="grid grid-cols-1 gap-6">
+              <TabsContent value="github" className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {githubDatasets.map((dataset) => (
                     <DatasetCard
                       key={dataset.id}
@@ -174,13 +176,13 @@ const Datasets = () => {
                     />
                   ))}
                   {githubDatasets.length === 0 && (
-                    <p className="text-center text-muted-foreground py-12">
+                    <p className="text-center text-muted-foreground py-12 col-span-full">
                       No GitHub datasets found
                     </p>
                   )}
                 </div>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
 
             {datasets && Object.keys(datasets).length > 0 && 
              huggingFaceDatasets.length === 0 && githubDatasets.length === 0 && (
