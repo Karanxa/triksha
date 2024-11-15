@@ -43,67 +43,86 @@ serve(async (req) => {
     }
 
     const huggingFaceApiKey = profile?.api_keys?.huggingface
-    if (!huggingFaceApiKey) {
-      throw new Error('Hugging Face API key not found')
+    const githubToken = profile?.api_keys?.github
+
+    if (!huggingFaceApiKey && !githubToken) {
+      throw new Error('No API keys found (Hugging Face or GitHub)')
     }
 
-    // Construct search parameters
-    const baseUrl = 'https://huggingface.co/api/datasets'
-    const params = new URLSearchParams()
-
-    if (useCustomSearch && searchQuery) {
-      params.append('search', searchQuery.toLowerCase())
-    } else if (category) {
-      // Use the category directly as a search term
-      params.append('search', category.toLowerCase())
+    const results = {
+      huggingface: [],
+      github: []
     }
 
-    // Add basic filters for quality results
-    params.append('sort', 'downloads')
-    params.append('limit', '20')
-    
-    const searchUrl = `${baseUrl}?${params.toString()}`
-    console.log('Fetching datasets from:', searchUrl)
+    // Fetch from Hugging Face if API key exists
+    if (huggingFaceApiKey) {
+      const baseUrl = 'https://huggingface.co/api/datasets'
+      const params = new URLSearchParams()
 
-    const response = await fetch(searchUrl, {
-      headers: {
-        'Authorization': `Bearer ${huggingFaceApiKey}`,
-        'Accept': 'application/json',
-      },
-    })
+      if (useCustomSearch && searchQuery) {
+        params.append('search', searchQuery.toLowerCase())
+      } else if (category) {
+        params.append('search', category.toLowerCase())
+      }
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Hugging Face API error:', errorText)
-      throw new Error(`Failed to fetch datasets: ${response.statusText}`)
-    }
-
-    const datasets = await response.json()
-    
-    if (!Array.isArray(datasets)) {
-      console.error('Unexpected API response format:', datasets)
-      throw new Error('Invalid response format from Hugging Face API')
-    }
-
-    // Filter results to ensure they match the category if specified
-    let filteredDatasets = datasets
-    if (category && !useCustomSearch) {
-      const categoryLower = category.toLowerCase()
-      filteredDatasets = datasets.filter((dataset: any) => {
-        const description = (dataset.description || '').toLowerCase()
-        const title = (dataset.id || '').toLowerCase()
-        const tags = (dataset.tags || []).map((tag: string) => tag.toLowerCase())
-        
-        return (
-          description.includes(categoryLower) || 
-          title.includes(categoryLower) || 
-          tags.includes(categoryLower)
-        )
+      params.append('sort', 'downloads')
+      params.append('limit', '10')
+      
+      const searchUrl = `${baseUrl}?${params.toString()}`
+      
+      const response = await fetch(searchUrl, {
+        headers: {
+          'Authorization': `Bearer ${huggingFaceApiKey}`,
+          'Accept': 'application/json',
+        },
       })
+
+      if (response.ok) {
+        const datasets = await response.json()
+        if (Array.isArray(datasets)) {
+          results.huggingface = datasets.map(dataset => ({
+            id: dataset.id,
+            title: dataset.id.split('/').pop(),
+            description: dataset.description || 'No description available',
+            downloads: dataset.downloads || 0,
+            likes: dataset.likes || 0,
+            source: 'huggingface'
+          }))
+        }
+      }
+    }
+
+    // Fetch from GitHub if token exists
+    if (githubToken) {
+      const query = useCustomSearch ? searchQuery : category
+      if (query) {
+        const githubUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}+topic:dataset&sort=stars&order=desc&per_page=10`
+        
+        const response = await fetch(githubUrl, {
+          headers: {
+            'Authorization': `Bearer ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.items) {
+            results.github = data.items.map((repo: any) => ({
+              id: repo.full_name,
+              title: repo.name,
+              description: repo.description || 'No description available',
+              downloads: repo.watchers_count || 0,
+              likes: repo.stargazers_count || 0,
+              source: 'github'
+            }))
+          }
+        }
+      }
     }
 
     return new Response(
-      JSON.stringify({ datasets: filteredDatasets }),
+      JSON.stringify({ datasets: [...results.huggingface, ...results.github] }),
       { 
         headers: { 
           ...corsHeaders,
