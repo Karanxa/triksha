@@ -10,7 +10,7 @@ const Index = () => {
     { icon: List, title: "LLM Results", path: "/llm-results" },
     { icon: Database, title: "Datasets", path: "/datasets" },
     { icon: FileText, title: "Prompt Augmentation", path: "/augment-prompt" },
-    { icon: Settings, title: "Fine-tuning" },
+    { icon: Settings, title: "Fine-tuning", path: "/fine-tuning" },
   ];
 
   return (
