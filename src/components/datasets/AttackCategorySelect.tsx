@@ -12,21 +12,16 @@ interface AttackCategorySelectProps {
 }
 
 const ATTACK_CATEGORIES = [
-  {
-    label: "Jail Breaking",
-    value: "jail-breaking",
-    subCategories: [
-      "Prompt Injection",
-      "Encoding Based",
-      "Unsafe Prompts",
-      "Uncensored Prompts",
-      "Language Based Adversial Prompts",
-      "Glitch Tokens",
-      "LLM Evasion",
-      "Leaking System Prompts",
-      "Insecure Output Handling"
-    ]
-  }
+  "Prompt Injection",
+  "Encoding Based",
+  "Unsafe Prompts",
+  "Uncensored Prompts",
+  "Language Based Adversial Prompts",
+  "Glitch Tokens",
+  "LLM Evasion",
+  "Leaking System Prompts",
+  "Insecure Output Handling",
+  "Jail Breaking"
 ] as const
 
 export const AttackCategorySelect = ({
@@ -41,17 +36,11 @@ export const AttackCategorySelect = ({
         </SelectTrigger>
         <SelectContent>
           {ATTACK_CATEGORIES.map((category) => (
-            <SelectItem key={category.value} value={category.value}>
-              {category.label}
-            </SelectItem>
-          ))}
-          {value === "jail-breaking" && ATTACK_CATEGORIES[0].subCategories.map((subCategory) => (
             <SelectItem 
-              key={subCategory.toLowerCase().replace(/\s+/g, '-')} 
-              value={subCategory.toLowerCase().replace(/\s+/g, '-')}
-              className="pl-6"
+              key={category.toLowerCase().replace(/\s+/g, '-')} 
+              value={category.toLowerCase().replace(/\s+/g, '-')}
             >
-              {subCategory}
+              {category}
             </SelectItem>
           ))}
         </SelectContent>
