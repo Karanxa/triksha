@@ -11,4 +11,5 @@ export interface ApiKeys {
   huggingface?: string;
   anthropic?: string;
   gemini?: string;
+  github?: string;
 }

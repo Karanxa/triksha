@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { ApiKeys } from "@/integrations/supabase/types";
+import type { ApiKeys } from "@/integrations/supabase/types/common";
 
 const Settings = () => {
   const session = useSession();
@@ -14,7 +14,8 @@ const Settings = () => {
     openai: "",
     huggingface: "",
     anthropic: "",
-    gemini: ""
+    gemini: "",
+    github: ""
   });
 
   useEffect(() => {
@@ -125,6 +126,17 @@ const Settings = () => {
                 value={apiKeys.gemini || ""}
                 onChange={(e) => setApiKeys(prev => ({ ...prev, gemini: e.target.value }))}
                 placeholder="AIza..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="github">GitHub API Key</Label>
+              <Input
+                id="github"
+                type="password"
+                value={apiKeys.github || ""}
+                onChange={(e) => setApiKeys(prev => ({ ...prev, github: e.target.value }))}
+                placeholder="ghp_..."
               />
             </div>
           </div>

@@ -37,18 +37,21 @@ const Datasets = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const { data: datasets, isLoading } = useQuery({
-    queryKey: ['datasets', selectedCategory],
+    queryKey: ['datasets', selectedCategory, useCustomSearch, searchQuery],
     queryFn: async () => {
       if (!selectedCategory) return [];
       
       try {
         const { data, error } = await supabase.functions.invoke('fetch-datasets', {
-          body: { category: selectedCategory }
+          body: { 
+            category: selectedCategory,
+            useCustomSearch,
+            searchQuery: useCustomSearch ? searchQuery : undefined
+          }
         });
 
         if (error) throw error;
 
-        // Transform the Hugging Face response to match our interface
         return data.datasets.map((dataset: any) => ({
           id: dataset.id,
           title: dataset.id.split('/').pop(),
@@ -66,12 +69,8 @@ const Datasets = () => {
         return [];
       }
     },
-    enabled: !!selectedCategory
+    enabled: !!selectedCategory && (!useCustomSearch || !!searchQuery)
   });
-
-  const filteredDatasets = datasets?.filter(dataset => 
-    !searchQuery || dataset.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -103,15 +102,17 @@ const Datasets = () => {
             </Select>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search in results..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          {useCustomSearch && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Enter search keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          )}
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -119,7 +120,7 @@ const Datasets = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDatasets?.map((dataset) => (
+              {datasets?.map((dataset) => (
                 <Card key={dataset.id} className="flex flex-col">
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
