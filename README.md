@@ -4,19 +4,30 @@
 
 **URL**: https://lovable.dev/projects/be33e0b7-385f-407c-bc6c-36be439fca6f
 
-## How can I edit this code?
+## How can I run this project?
 
-There are several ways of editing your application.
+There are several ways to run this application:
 
-**Use Lovable**
+**Using Docker (Recommended)**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/be33e0b7-385f-407c-bc6c-36be439fca6f) and start prompting.
+1. Make sure you have Docker installed on your machine
+2. Clone this repository
+3. Navigate to the project directory
+4. Build and run the Docker container:
 
-Changes made via Lovable will be committed automatically to this repo.
+```sh
+# Build the Docker image
+docker build -t lovable-app .
+
+# Run the container
+docker run -p 5173:5173 lovable-app
+```
+
+5. Open your browser and visit `http://localhost:5173`
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE without Docker, you can:
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
