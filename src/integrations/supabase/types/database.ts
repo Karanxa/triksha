@@ -66,28 +66,49 @@ export interface Database {
       };
       llm_scans: {
         Row: {
+          category: string | null;
           created_at: string;
           id: string;
+          is_recurring: boolean | null;
+          is_vulnerable: boolean | null;
+          label: string | null;
           name: string;
+          next_run: string | null;
           results: Json | null;
+          schedule: string | null;
+          severity: string | null;
           status: string;
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          category?: string | null;
           created_at?: string;
           id?: string;
+          is_recurring?: boolean | null;
+          is_vulnerable?: boolean | null;
+          label?: string | null;
           name: string;
+          next_run?: string | null;
           results?: Json | null;
+          schedule?: string | null;
+          severity?: string | null;
           status?: string;
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          category?: string | null;
           created_at?: string;
           id?: string;
+          is_recurring?: boolean | null;
+          is_vulnerable?: boolean | null;
+          label?: string | null;
           name?: string;
+          next_run?: string | null;
           results?: Json | null;
+          schedule?: string | null;
+          severity?: string | null;
           status?: string;
           updated_at?: string;
           user_id?: string;

@@ -40,7 +40,12 @@ export const useLLMScans = () => {
         .insert({
           user_id: userData.user.id,
           name: params.label || `Scan ${new Date().toISOString()}`,
-          status: 'pending'
+          status: 'pending',
+          category: params.category,
+          label: params.label,
+          schedule: params.schedule,
+          is_recurring: params.isRecurring,
+          is_vulnerable: null // Initialize as null until scan completes
         })
         .select()
         .single();
