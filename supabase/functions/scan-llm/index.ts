@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { handleOpenAIRequest } from "./providers/openai.ts";
-import { analyzeVulnerability } from "./utils.ts";
+import { analyzeVulnerability, rateLimit } from "./utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,10 +47,24 @@ serve(async (req) => {
       throw new Error('Failed to fetch user profile');
     }
 
-    // Process each prompt
+    // Set QPS limits based on provider
+    const qpsLimits: { [key: string]: number } = {
+      'ollama': 10,  // Local instance can handle higher QPS
+      'openai': 3,   // OpenAI has rate limits
+      'anthropic': 3,
+      'google': 5
+    };
+
+    const qps = qpsLimits[provider] || 3; // Default to 3 QPS if provider not found
+    console.log(`Using QPS limit of ${qps} for provider ${provider}`);
+
+    // Process each prompt with rate limiting
     const results = [];
     for (const prompt of prompts) {
       try {
+        // Apply rate limiting before each request
+        await rateLimit(qps);
+
         let modelResponse;
 
         if (provider === 'ollama') {
@@ -96,6 +110,8 @@ serve(async (req) => {
           response: modelResponse,
           isVulnerable
         });
+
+        console.log(`Successfully processed prompt with QPS limiting`);
       } catch (error) {
         console.error(`Error processing prompt: ${error}`);
         results.push({
