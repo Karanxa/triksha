@@ -8,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -22,31 +21,41 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log(`Processing scan ${scanId} with prompt: ${prompt}`)
+    // Get the user's ID from the authorization header
+    const authHeader = req.headers.get('authorization')?.split('Bearer ')[1]
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(authHeader)
+    if (userError || !user) {
+      throw new Error('Failed to get user')
+    }
+
+    // Get the user's API keys from their profile
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      throw new Error('Failed to get user profile')
+    }
 
     // Get the appropriate API key based on provider
-    let apiKey;
-    switch (provider.toLowerCase()) {
-      case 'openai':
-        apiKey = Deno.env.get('OPENAI_API_KEY');
-        break;
-      case 'anthropic':
-        apiKey = Deno.env.get('ANTHROPIC_API_KEY');
-        break;
-      case 'google':
-        apiKey = Deno.env.get('GOOGLE_AI_API_KEY');
-        break;
-      default:
-        throw new Error(`Unsupported provider: ${provider}`);
+    const apiKeys = profile.api_keys || {}
+    const apiKey = apiKeys[provider.toLowerCase()]
+    
+    if (!apiKey) {
+      throw new Error(`Please configure your ${provider} API key in Settings`)
     }
 
-    if (!apiKey) {
-      throw new Error(`API key not configured for provider: ${provider}`);
-    }
+    console.log(`Processing scan ${scanId} with prompt: ${prompt}`)
 
     // Perform the scan based on provider
     let analysis;
-    if (provider === 'openai') {
+    if (provider.toLowerCase() === 'openai') {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -54,7 +63,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4',
           messages: [
             {
               role: 'system',
@@ -66,9 +75,14 @@ serve(async (req) => {
         }),
       });
 
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`OpenAI API error: ${error}`);
+      }
+
       const data = await response.json();
       analysis = {
-        risk_level: "medium", // This should be determined based on the AI's response
+        risk_level: "medium",
         vulnerabilities: [
           {
             type: category.toLowerCase(),
@@ -98,9 +112,6 @@ serve(async (req) => {
 
     // If this is a recurring scan, schedule the next run
     if (isRecurring && schedule) {
-      // Here you would implement the scheduling logic
-      // This could involve creating a new table for scheduled scans
-      // and using a separate worker to process them
       console.log(`Scheduling next scan with cron: ${schedule}`);
     }
 
