@@ -12,9 +12,12 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  const scanResults = scan.results as { model_response: string; prompt: string } | null;
-  const inputPrompt = typeof scanResults === 'object' && scanResults ? scanResults.prompt : 'No prompt';
-  const modelResponse = typeof scanResults === 'object' && scanResults ? scanResults.model_response : 'No response';
+  // Parse the results object properly
+  const results = scan.results as { model_response: string; prompt: string } | null;
+  
+  // Get the prompt and response, ensuring we handle null/undefined cases
+  const prompt = results?.prompt || 'No prompt';
+  const response = results?.model_response || 'No response';
 
   return (
     <TableRow key={scan.id}>
@@ -22,14 +25,14 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell
-          content={inputPrompt}
+          content={prompt}
           title="Prompt"
           onContentClick={onContentClick}
         />
       </TableCell>
       <TableCell>
         <TruncatedCell
-          content={modelResponse}
+          content={response}
           title="Response"
           onContentClick={onContentClick}
         />

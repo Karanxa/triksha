@@ -60,10 +60,10 @@ const LLMResults = () => {
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Type,Date,Prompt,Result,Category,Label,Actions\n" +
+      "Name,Date,Prompt,Response,Category,Label\n" +
       scans.map(scan => {
         const results = scan.results as { model_response: string, prompt: string } | null;
-        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || ''}","${scan.label || ''}"`;
+        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.label || 'N/A'}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -110,10 +110,10 @@ const LLMResults = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Type</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Prompt</TableHead>
-                <TableHead>Result</TableHead>
+                <TableHead>Response</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Label</TableHead>
                 <TableHead>Actions</TableHead>
