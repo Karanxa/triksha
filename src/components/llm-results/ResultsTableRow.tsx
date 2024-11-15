@@ -30,16 +30,19 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const riskLevel = results?.analysis?.risk_level || 'unknown';
 
   const getCategoryVariant = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'prompt-injection':
-        return 'destructive';
-      case 'data-leakage':
-        return 'secondary';
-      case 'bias':
-        return 'outline';
-      default:
-        return 'default';
-    } as const;
+    const variant = (() => {
+      switch (category.toLowerCase()) {
+        case 'prompt-injection':
+          return 'destructive';
+        case 'data-leakage':
+          return 'secondary';
+        case 'bias':
+          return 'outline';
+        default:
+          return 'default';
+      }
+    })();
+    return variant as const;
   };
 
   const getRiskLevelBadge = (level: string) => {
