@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import LLMScanner from "./pages/LLMScanner";
 import LLMResults from "./pages/LLMResults";
 import Datasets from "./pages/Datasets";
+import AugmentPrompt from "./pages/AugmentPrompt";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/llm-scanner" element={<LLMScanner />} />
           <Route path="/llm-results" element={<LLMResults />} />
           <Route path="/datasets" element={<Datasets />} />
+          <Route path="/augment-prompt" element={<AugmentPrompt />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
