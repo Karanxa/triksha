@@ -8,7 +8,7 @@ const Index = () => {
   const tools = [
     { icon: Brain, title: "LLM Scanner", path: "/llm-scanner" },
     { icon: List, title: "LLM Results", path: "/llm-results" },
-    { icon: Database, title: "Datasets" },
+    { icon: Database, title: "Datasets", path: "/datasets" },
     { icon: FileText, title: "Prompt Augmentation" },
     { icon: Settings, title: "Fine-tuning" },
   ];

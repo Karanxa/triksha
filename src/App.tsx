@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import LLMScanner from "./pages/LLMScanner";
 import LLMResults from "./pages/LLMResults";
+import Datasets from "./pages/Datasets";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/llm-scanner" element={<LLMScanner />} />
           <Route path="/llm-results" element={<LLMResults />} />
+          <Route path="/datasets" element={<Datasets />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
