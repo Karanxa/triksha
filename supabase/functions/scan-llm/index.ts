@@ -82,73 +82,54 @@ serve(async (req) => {
       throw new Error(`${provider} API key not found. Please add it in the Settings.`);
     }
 
-    // Process each prompt and collect results
-    const results = await Promise.all(prompts.map(async (prompt) => {
-      if (!prompt) return null;
+    // Process the first prompt and store its result
+    const prompt = prompts[0];
+    if (!prompt) {
+      throw new Error('No prompt provided');
+    }
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('OpenAI API error:', error);
-        throw new Error(`OpenAI API error: ${error}`);
-      }
-
-      const data = await response.json();
-      return {
-        prompt,
-        model_response: data.choices[0].message.content
-      };
-    }));
-
-    // Filter out null results and parse responses
-    const validResults = results.filter(Boolean).map(result => {
-      try {
-        const analysis = JSON.parse(result.model_response);
-        return {
-          prompt: result.prompt,
-          model_response: result.model_response,
-          analysis
-        };
-      } catch (error) {
-        console.error('Failed to parse model response:', error);
-        return {
-          prompt: result.prompt,
-          model_response: result.model_response,
-          analysis: {
-            category: 'uncategorized',
-            risk_level: 'low',
-            analysis: {
-              summary: 'Failed to analyze prompt',
-              vulnerabilities: []
-            },
-            recommendations: ['Review prompt manually']
-          }
-        };
-      }
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      }),
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('OpenAI API error:', error);
+      throw new Error(`OpenAI API error: ${error}`);
+    }
+
+    const data = await response.json();
+    const result = {
+      prompt,
+      model_response: data.choices[0].message.content,
+      analysis: null
+    };
+
+    try {
+      result.analysis = JSON.parse(data.choices[0].message.content);
+    } catch (error) {
+      console.error('Failed to parse analysis:', error);
+    }
 
     // Update the scan with results
     const { error: updateError } = await supabaseClient
       .from('llm_scans')
       .update({
         status: 'completed',
-        results: validResults,
+        results: result,
         updated_at: new Date().toISOString()
       })
       .eq('id', scanId);
@@ -159,7 +140,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify(validResults[0]?.analysis || {}),
+      JSON.stringify(result),
       { 
         headers: { 
           ...corsHeaders, 

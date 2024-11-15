@@ -14,7 +14,6 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  // Parse the results array from the scan
   const results = scan.results as {
     prompt: string;
     model_response: string;
@@ -23,16 +22,13 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       risk_level?: string;
       summary?: string;
     };
-  }[] | null;
-
-  // Get the first result if it exists
-  const firstResult = results?.[0] || null;
+  } | null;
   
-  const prompt = firstResult?.prompt || 'No prompt';
-  const response = firstResult?.model_response || 'No response';
+  const prompt = results?.prompt || 'No prompt';
+  const response = results?.model_response || 'No response';
   const category = scan.category || 'uncategorized';
   const label = scan.label || 'No label';
-  const riskLevel = firstResult?.analysis?.risk_level || 'unknown';
+  const riskLevel = results?.analysis?.risk_level || 'unknown';
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
