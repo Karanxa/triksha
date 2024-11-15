@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,87 +19,91 @@ import Navigation from "./components/Navigation";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <SessionContextProvider supabaseClient={supabase}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route
-              path="/"
-              element={
-                <AuthGuard>
-                  <>
-                    <Navigation />
-                    <Index />
-                  </>
-                </AuthGuard>
-              }
-            />
-            <Route
-              path="/llm-scanner"
-              element={
-                <AuthGuard>
-                  <>
-                    <Navigation />
-                    <LLMScanner />
-                  </>
-                </AuthGuard>
-              }
-            />
-            <Route
-              path="/llm-results"
-              element={
-                <AuthGuard>
-                  <>
-                    <Navigation />
-                    <LLMResults />
-                  </>
-                </AuthGuard>
-              }
-            />
-            <Route
-              path="/datasets"
-              element={
-                <AuthGuard>
-                  <>
-                    <Navigation />
-                    <Datasets />
-                  </>
-                </AuthGuard>
-              }
-            />
-            <Route
-              path="/augment-prompt"
-              element={
-                <AuthGuard>
-                  <>
-                    <Navigation />
-                    <AugmentPrompt />
-                  </>
-                </AuthGuard>
-              }
-            />
-            <Route
-              path="/fine-tuning"
-              element={
-                <AuthGuard>
-                  <>
-                    <Navigation />
-                    <FineTuning />
-                  </>
-                </AuthGuard>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </SessionContextProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <SessionContextProvider supabaseClient={supabase}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route
+                  path="/"
+                  element={
+                    <AuthGuard>
+                      <>
+                        <Navigation />
+                        <Index />
+                      </>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/llm-scanner"
+                  element={
+                    <AuthGuard>
+                      <>
+                        <Navigation />
+                        <LLMScanner />
+                      </>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/llm-results"
+                  element={
+                    <AuthGuard>
+                      <>
+                        <Navigation />
+                        <LLMResults />
+                      </>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/datasets"
+                  element={
+                    <AuthGuard>
+                      <>
+                        <Navigation />
+                        <Datasets />
+                      </>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/augment-prompt"
+                  element={
+                    <AuthGuard>
+                      <>
+                        <Navigation />
+                        <AugmentPrompt />
+                      </>
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/fine-tuning"
+                  element={
+                    <AuthGuard>
+                      <>
+                        <Navigation />
+                        <FineTuning />
+                      </>
+                    </AuthGuard>
+                  }
+                />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </SessionContextProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+};
 
 export default App;
