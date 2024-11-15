@@ -20,6 +20,12 @@ import { Database, Download, Search, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Dataset {
   id: string;
@@ -27,7 +33,6 @@ interface Dataset {
   description: string;
   downloads: number;
   likes: number;
-  formats: string[];
 }
 
 const Datasets = () => {
@@ -35,6 +40,7 @@ const Datasets = () => {
   const [useCustomSearch, setUseCustomSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   const { data: datasets, isLoading } = useQuery({
     queryKey: ['datasets', selectedCategory, useCustomSearch, searchQuery],
@@ -58,7 +64,6 @@ const Datasets = () => {
           description: dataset.description || 'No description available',
           downloads: dataset.downloads || 0,
           likes: dataset.likes || 0,
-          formats: ['Dataset']
         }));
       } catch (error) {
         toast({
@@ -71,6 +76,42 @@ const Datasets = () => {
     },
     enabled: !!selectedCategory && (!useCustomSearch || !!searchQuery)
   });
+
+  const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
+    try {
+      setDownloading(datasetId);
+      
+      const response = await supabase.functions.invoke('download-dataset', {
+        body: { datasetId, format }
+      });
+
+      if (response.error) throw new Error(response.error.message);
+
+      // Create a download link and trigger it
+      const blob = new Blob([response.data], { type: response.headers['Content-Type'] });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = response.headers['Content-Disposition'].split('filename=')[1].replace(/"/g, '');
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success",
+        description: "Dataset downloaded successfully"
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Download failed",
+        description: error.message
+      });
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -136,19 +177,33 @@ const Datasets = () => {
                       <span>{dataset.downloads} downloads</span>
                       <span>{dataset.likes} likes</span>
                     </div>
-                    <div className="flex gap-2">
-                      {dataset.formats.map((format) => (
-                        <Button
-                          key={format}
-                          variant="secondary"
-                          size="sm"
-                          className="flex items-center gap-1"
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="secondary" 
+                          className="w-full"
+                          disabled={downloading === dataset.id}
                         >
-                          <Download className="h-4 w-4" />
-                          {format}
+                          {downloading === dataset.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <Download className="h-4 w-4 mr-2" />
+                          )}
+                          Download Dataset
                         </Button>
-                      ))}
-                    </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleDownload(dataset.id, 'csv')}>
+                          Download as CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(dataset.id, 'txt')}>
+                          Download as TXT
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(dataset.id, 'zip')}>
+                          Download as ZIP
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </CardContent>
                 </Card>
               ))}
