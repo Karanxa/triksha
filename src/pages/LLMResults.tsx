@@ -15,13 +15,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Download, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const LLMResults = () => {
   const queryClient = useQueryClient();
+  const [selectedContent, setSelectedContent] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
 
   const { data: scans, isLoading } = useQuery({
     queryKey: ['llm-scans'],
@@ -83,6 +100,24 @@ const LLMResults = () => {
     document.body.removeChild(link);
   };
 
+  const TruncatedCell = ({ content, title }: { content: string; title: string }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className="max-w-[200px] truncate cursor-pointer hover:text-primary"
+            onClick={() => setSelectedContent({ title, content })}
+          >
+            {content}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="max-w-[300px] whitespace-normal">Click to view full content</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12">
@@ -136,11 +171,17 @@ const LLMResults = () => {
                     <TableRow key={scan.id}>
                       <TableCell>{scan.name}</TableCell>
                       <TableCell>{formatDate(scan.created_at)}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {results?.prompt || 'No prompt'}
+                      <TableCell>
+                        <TruncatedCell
+                          content={results?.prompt || 'No prompt'}
+                          title="Prompt"
+                        />
                       </TableCell>
-                      <TableCell className="max-w-[300px] truncate">
-                        {results?.model_response || 'No response'}
+                      <TableCell>
+                        <TruncatedCell
+                          content={results?.model_response || 'No response'}
+                          title="Response"
+                        />
                       </TableCell>
                       <TableCell>{scan.category || 'N/A'}</TableCell>
                       <TableCell>
@@ -167,6 +208,17 @@ const LLMResults = () => {
             </TableBody>
           </Table>
         </div>
+
+        <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedContent?.title}</DialogTitle>
+            </DialogHeader>
+            <div className="mt-4 whitespace-pre-wrap">
+              {selectedContent?.content}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
