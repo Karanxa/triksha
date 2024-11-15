@@ -1,7 +1,15 @@
 project_id = "irdlyshhtwzqjvymilww"
 
-[functions.scan-llm]
+[global.env]
+SUPABASE_URL = "string"
+SUPABASE_ANON_KEY = "string"
+SUPABASE_SERVICE_ROLE_KEY = "string"
+SUPABASE_DB_URL = "string"
+
+[[functions]]
+name = "scan-llm"
 verify_jwt = true
 
-[functions.process-scheduled-scans]
+[[functions]]
+name = "process-scheduled-scans"
 verify_jwt = true

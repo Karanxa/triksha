@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +19,7 @@ serve(async (req) => {
     );
 
     // Get all scans that are due to run
-    const { data: dueSscans, error: scansError } = await supabaseClient
+    const { data: dueScans, error: scansError } = await supabaseClient
       .from('llm_scans')
       .select('*')
       .eq('is_recurring', true)
@@ -29,7 +30,7 @@ serve(async (req) => {
     }
 
     const results = [];
-    for (const scan of dueSscans || []) {
+    for (const scan of dueScans || []) {
       try {
         // Re-run the scan with the same parameters
         const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/scan-llm`, {
