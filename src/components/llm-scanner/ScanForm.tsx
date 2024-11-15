@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload } from "lucide-react";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
+import { CSVUpload } from "./CSVUpload";
 import { toast } from "sonner";
 
 interface ScanFormProps {
@@ -22,52 +22,13 @@ interface ScanFormProps {
   onFileUpload: (file: File) => void;
 }
 
-export const ScanForm = ({ onSubmit, isScanning, onFileUpload }: ScanFormProps) => {
+export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [provider, setProvider] = useState("");
   const [prompt, setPrompt] = useState("");
   const [category, setCategory] = useState("");
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== "text/csv" && !file.name.endsWith('.csv')) {
-      toast.error("Please upload a CSV file");
-      return;
-    }
-
-    try {
-      const text = await file.text();
-      const lines = text.split("\n");
-      const headers = lines[0].toLowerCase().trim().split(",");
-      const promptIndex = headers.indexOf("prompts");
-
-      if (promptIndex === -1) {
-        toast.error("CSV must have a 'prompts' column");
-        return;
-      }
-
-      const prompts = lines
-        .slice(1)
-        .map(line => line.split(",")[promptIndex]?.trim())
-        .filter(Boolean)
-        .join("\n");
-
-      if (!prompts) {
-        toast.error("No valid prompts found in the CSV file");
-        return;
-      }
-
-      setPrompt(prompts);
-      toast.success("CSV file processed successfully");
-      onFileUpload(file);
-    } catch (error) {
-      toast.error("Error processing CSV file: " + (error as Error).message);
-    }
-  };
 
   const handleSubmit = async () => {
     if (!provider) {
@@ -127,27 +88,7 @@ export const ScanForm = ({ onSubmit, isScanning, onFileUpload }: ScanFormProps) 
         />
       </div>
 
-      <div className="space-y-4">
-        <Label>Or Upload CSV with Prompts</Label>
-        <div className="border-2 border-dashed border-muted rounded-lg p-6 text-center">
-          <Label htmlFor="csv-upload" className="cursor-pointer">
-            <Input
-              id="csv-upload"
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-            <Button variant="outline" className="w-full">
-              <Upload className="mr-2 h-4 w-4" />
-              Upload CSV
-            </Button>
-          </Label>
-          <p className="text-sm text-muted-foreground mt-2">
-            CSV must have a "prompts" column
-          </p>
-        </div>
-      </div>
+      <CSVUpload onPromptsExtracted={setPrompt} />
 
       <div className="space-y-4">
         <Label>Attack Category</Label>
