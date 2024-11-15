@@ -14,7 +14,7 @@ interface ResultsTableRowProps {
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results as { model_response: string; prompt: string } | null;
   const scanType = scan.label || 'Manual Scan';
-  const promptText = results?.prompt || scan.name || 'No prompt'; // Fallback to scan name if prompt not in results
+  const promptText = scan.results?.prompt || 'No prompt'; // Directly access the prompt from results
 
   return (
     <TableRow key={scan.id}>
