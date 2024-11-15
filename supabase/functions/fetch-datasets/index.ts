@@ -94,34 +94,43 @@ serve(async (req) => {
 
     // Fetch from GitHub if token exists
     if (githubToken) {
-      const searchTerm = useCustomSearch ? searchQuery : category
-      if (searchTerm) {
-        const query = encodeURIComponent(`${searchTerm} in:name,description,readme language:python stars:>10`)
-        const githubUrl = `https://api.github.com/search/repositories?q=${query}&sort=stars&order=desc&per_page=10`
-        
-        const response = await fetch(githubUrl, {
-          headers: {
-            'Authorization': `Bearer ${githubToken}`,
-            'Accept': 'application/vnd.github.v3+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          },
-        })
+      let searchTerms = []
+      
+      // Add custom search query or category
+      if (useCustomSearch && searchQuery) {
+        searchTerms.push(searchQuery)
+      } else if (category) {
+        searchTerms.push(category)
+      }
+      
+      // Always include dataset-related terms for better results
+      searchTerms.push('dataset')
+      
+      const query = encodeURIComponent(`${searchTerms.join(' ')} in:name,description,readme language:python stars:>10`)
+      const githubUrl = `https://api.github.com/search/repositories?q=${query}&sort=stars&order=desc&per_page=10`
+      
+      const response = await fetch(githubUrl, {
+        headers: {
+          'Authorization': `Bearer ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+      })
 
-        if (response.ok) {
-          const data = await response.json()
-          if (data.items) {
-            results.github = data.items.map((repo: any) => ({
-              id: repo.full_name,
-              title: repo.name,
-              description: repo.description || 'No description available',
-              downloads: repo.forks_count || 0, // Using forks as a proxy for downloads
-              likes: repo.stargazers_count || 0,
-              source: 'github',
-              url: repo.html_url,
-              language: repo.language,
-              topics: repo.topics || []
-            }))
-          }
+      if (response.ok) {
+        const data = await response.json()
+        if (data.items) {
+          results.github = data.items.map((repo: any) => ({
+            id: repo.full_name,
+            title: repo.name,
+            description: repo.description || 'No description available',
+            downloads: repo.forks_count || 0,
+            likes: repo.stargazers_count || 0,
+            source: 'github',
+            url: repo.html_url,
+            language: repo.language,
+            topics: repo.topics || []
+          }))
         }
       }
     }
