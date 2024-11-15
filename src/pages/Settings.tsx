@@ -15,7 +15,8 @@ const Settings = () => {
     huggingface: "",
     anthropic: "",
     gemini: "",
-    github: ""
+    github: "",
+    ollama_endpoint: ""
   });
 
   useEffect(() => {
@@ -86,6 +87,20 @@ const Settings = () => {
 
           <div className="space-y-6">
             <div className="space-y-2">
+              <Label htmlFor="ollama_endpoint">Ollama Endpoint URL</Label>
+              <Input
+                id="ollama_endpoint"
+                type="text"
+                value={apiKeys.ollama_endpoint || ""}
+                onChange={(e) => setApiKeys(prev => ({ ...prev, ollama_endpoint: e.target.value }))}
+                placeholder="http://localhost:11434"
+              />
+              <p className="text-sm text-muted-foreground">
+                Enter your Ollama endpoint URL (e.g., http://localhost:11434)
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="openai">OpenAI API Key</Label>
               <Input
                 id="openai"
@@ -93,17 +108,6 @@ const Settings = () => {
                 value={apiKeys.openai || ""}
                 onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
                 placeholder="sk-..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="huggingface">Hugging Face API Key</Label>
-              <Input
-                id="huggingface"
-                type="password"
-                value={apiKeys.huggingface || ""}
-                onChange={(e) => setApiKeys(prev => ({ ...prev, huggingface: e.target.value }))}
-                placeholder="hf_..."
               />
             </div>
 
