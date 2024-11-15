@@ -7,20 +7,26 @@ interface FileUploadProps {
 }
 
 const FileUpload = ({ onFileUpload }: FileUploadProps) => {
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "text/csv") {
+    // Check both MIME type and file extension for better compatibility
+    if (file.type !== "text/csv" && !file.name.endsWith('.csv')) {
       toast.error("Please upload a CSV file");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split("\n");
-      const headers = lines[0].toLowerCase().split(",");
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+      
+      if (lines.length === 0) {
+        toast.error("CSV file is empty");
+        return;
+      }
+
+      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
       const promptIndex = headers.indexOf("prompts");
 
       if (promptIndex === -1) {
@@ -28,16 +34,26 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
         return;
       }
 
-      const promptsList = lines
+      const prompts = lines
         .slice(1)
-        .map(line => line.split(",")[promptIndex])
+        .map(line => {
+          const columns = line.split(",").map(col => col.trim());
+          return columns[promptIndex];
+        })
         .filter(Boolean)
         .join("\n");
 
-      onFileUpload(promptsList);
+      if (!prompts) {
+        toast.error("No valid prompts found in the CSV file");
+        return;
+      }
+
+      onFileUpload(prompts);
       toast.success("CSV file uploaded successfully");
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      console.error("CSV processing error:", error);
+      toast.error("Error processing CSV file: " + (error as Error).message);
+    }
   };
 
   return (

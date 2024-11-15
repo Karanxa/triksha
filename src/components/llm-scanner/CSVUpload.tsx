@@ -19,14 +19,14 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
 
     try {
       const text = await file.text();
-      const lines = text.split("\n");
+      const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
       
       if (lines.length === 0) {
         toast.error("CSV file is empty");
         return;
       }
 
-      const headers = lines[0].toLowerCase().trim().split(",");
+      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
       const promptIndex = headers.indexOf("prompts");
 
       if (promptIndex === -1) {
@@ -37,8 +37,8 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
       const prompts = lines
         .slice(1)
         .map(line => {
-          const columns = line.split(",");
-          return columns[promptIndex]?.trim();
+          const columns = line.split(",").map(col => col.trim());
+          return columns[promptIndex];
         })
         .filter(Boolean)
         .join("\n");
@@ -50,6 +50,9 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
 
       onPromptsExtracted(prompts);
       toast.success("CSV file processed successfully");
+      
+      // Reset the input
+      event.target.value = '';
     } catch (error) {
       console.error("CSV processing error:", error);
       toast.error("Error processing CSV file: " + (error as Error).message);
@@ -64,14 +67,14 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
           variant="outline"
           size="sm"
           className="flex items-center gap-2"
-          onClick={() => document.getElementById("csv-upload")?.click()}
+          onClick={() => document.getElementById("csv-upload-scanner")?.click()}
         >
           <Upload className="w-4 h-4" />
           Upload CSV
         </Button>
       </div>
       <input
-        id="csv-upload"
+        id="csv-upload-scanner"
         type="file"
         accept=".csv"
         className="hidden"
