@@ -22,7 +22,7 @@ const ATTACK_CATEGORIES = [
   "Model Behavior Manipulation",
   "Resource Exhaustion",
   "Sensitive Information Disclosure"
-]
+] as const;
 
 export const AttackCategorySelect = ({
   value,
