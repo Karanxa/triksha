@@ -8,21 +8,36 @@ const corsHeaders = {
 }
 
 const systemPrompt = `You are an AI security expert analyzing prompts for potential vulnerabilities. 
-Your task is to:
-1. Analyze the given prompt for security risks
-2. Identify potential vulnerabilities
-3. Classify the type of attack (if any)
-4. Provide a detailed response explaining the risks
-5. Suggest mitigations
+Analyze the given prompt and provide a structured response in the following format:
 
-Focus on these vulnerability categories:
-- Prompt injection
-- Data leakage
-- Bias and fairness
-- Jailbreaking attempts
-- Harmful content generation
+{
+  "category": "prompt-injection" | "data-leakage" | "bias" | "uncategorized",
+  "risk_level": "high" | "medium" | "low",
+  "analysis": {
+    "summary": "Brief summary of findings",
+    "vulnerabilities": [
+      {
+        "type": "vulnerability type",
+        "description": "detailed description",
+        "severity": "high" | "medium" | "low",
+        "mitigation": "suggested fix"
+      }
+    ]
+  },
+  "recommendations": [
+    "specific recommendation 1",
+    "specific recommendation 2"
+  ]
+}
 
-Format your response to be clear and actionable.`;
+Focus on:
+1. Prompt injection attempts
+2. Data leakage risks
+3. Bias and fairness issues
+4. Potential misuse
+5. Security implications
+
+Provide specific, actionable recommendations.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -30,8 +45,10 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompt, provider, category, schedule, isRecurring } = await req.json();
+    const { scanId, prompt, provider } = await req.json();
     
+    console.log(`Processing scan ${scanId} with prompt: ${prompt}`);
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -62,10 +79,8 @@ serve(async (req) => {
 
     const apiKey = profile?.api_keys?.[provider];
     if (!apiKey) {
-      throw new Error(`${provider} API key not found. Please add it in the Keys tab.`);
+      throw new Error(`${provider} API key not found. Please add it in the Settings.`);
     }
-
-    console.log(`Processing scan ${scanId} with prompt: ${prompt}`);
 
     let modelResponse;
     if (provider.toLowerCase() === 'openai') {
@@ -98,41 +113,34 @@ serve(async (req) => {
       throw new Error('Unsupported provider');
     }
 
-    // Analyze the response for risk level
-    const riskIndicators = [
-      'vulnerability', 'risk', 'exploit', 'injection', 'leak', 'sensitive', 'harmful'
-    ];
-    
-    const riskLevel = riskIndicators.some(indicator => 
-      modelResponse.toLowerCase().includes(indicator)) ? 'high' : 'low';
+    // Parse the JSON response
+    let analysis;
+    try {
+      analysis = JSON.parse(modelResponse);
+    } catch (error) {
+      console.error('Failed to parse model response:', error);
+      analysis = {
+        category: 'uncategorized',
+        risk_level: 'low',
+        analysis: {
+          summary: 'Failed to analyze prompt',
+          vulnerabilities: []
+        },
+        recommendations: ['Review prompt manually']
+      };
+    }
 
-    // Store the analysis results
-    const analysis = {
-      prompt,
-      model_response: modelResponse,
-      risk_level: riskLevel,
-      category: category.toLowerCase(),
-      vulnerabilities: [
-        {
-          type: category.toLowerCase(),
-          severity: riskLevel,
-          description: "Potential security vulnerability detected in model response"
-        }
-      ],
-      recommendations: [
-        "Implement input validation",
-        "Add prompt sanitization",
-        "Use content filtering",
-        "Monitor model outputs"
-      ],
-      timestamp: new Date().toISOString()
-    };
-
+    // Update the scan with results
     const { error: updateError } = await supabaseClient
       .from('llm_scans')
       .update({
         status: 'completed',
-        results: analysis,
+        category: analysis.category,
+        results: {
+          prompt,
+          model_response: modelResponse,
+          analysis: analysis
+        },
         updated_at: new Date().toISOString()
       })
       .eq('id', scanId);
@@ -155,7 +163,16 @@ serve(async (req) => {
     console.error('Error processing scan:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        category: 'error',
+        risk_level: 'unknown',
+        analysis: {
+          summary: error.message,
+          vulnerabilities: []
+        },
+        recommendations: ['Try again or contact support']
+      }),
       { 
         status: 400,
         headers: { 

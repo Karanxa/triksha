@@ -20,14 +20,14 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const category = scan.category || 'Uncategorized';
   const label = scan.label || 'No label';
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
+  const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
+    const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
       'prompt-injection': 'destructive',
-      'data-leakage': 'warning',
-      'bias': 'secondary',
-      default: 'default'
+      'data-leakage': 'secondary',
+      'bias': 'outline',
+      'uncategorized': 'default'
     };
-    return colors[category.toLowerCase()] || colors.default;
+    return variants[category.toLowerCase()] || 'default';
   };
 
   return (
@@ -49,7 +49,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         />
       </TableCell>
       <TableCell>
-        <Badge variant={getCategoryColor(category)}>{category}</Badge>
+        <Badge variant={getCategoryVariant(category)}>{category}</Badge>
       </TableCell>
       <TableCell>{label}</TableCell>
       <TableCell>
