@@ -49,8 +49,17 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
 
     // Add validation for Ollama endpoint
     if (provider === 'ollama') {
-      const { data: profile } = await supabase.from('profiles').select('api_keys').single();
+      console.log("Validating Ollama endpoint configuration...");
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('api_keys').single();
+      
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        toast.error("Failed to fetch profile settings");
+        return;
+      }
+
       const ollamaEndpoint = profile?.api_keys?.['ollama_endpoint'] as string | undefined;
+      console.log("Retrieved Ollama endpoint:", ollamaEndpoint);
       
       if (!ollamaEndpoint) {
         toast.error("Please configure your Ollama endpoint URL in Settings");
@@ -60,13 +69,15 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       // Basic URL validation
       try {
         new URL(ollamaEndpoint);
-      } catch {
+      } catch (error) {
+        console.error("Invalid Ollama endpoint URL:", error);
         toast.error("Invalid Ollama endpoint URL. Please check your settings.");
         return;
       }
     }
 
     const allPrompts = singlePrompt ? [singlePrompt] : prompts;
+    console.log("Submitting scan with prompts:", allPrompts);
 
     try {
       await onSubmit({
@@ -78,6 +89,9 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         isRecurring
       });
 
+      console.log("Scan submitted successfully");
+      toast.success("Scan initiated successfully");
+
       // Reset form only on success
       setSinglePrompt("");
       setPrompts([]);
@@ -85,12 +99,13 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       setSchedule("none");
       setIsRecurring(false);
     } catch (error) {
+      console.error("Scan failed:", error);
       toast.error(`Scan failed: ${(error as Error).message}`);
     }
   };
 
-  // Add the handlePromptsExtracted function
   const handlePromptsExtracted = (extractedPrompts: string[]) => {
+    console.log("Extracted prompts from CSV:", extractedPrompts);
     setPrompts(extractedPrompts);
     setSinglePrompt(""); // Clear single prompt when CSV is uploaded
   };

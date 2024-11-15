@@ -43,7 +43,7 @@ export const handleOllamaRequest = async (prompt: string, endpoint: string): Pro
     console.log(`Using Ollama model: ${modelToUse}`);
 
     // Make the generation request
-    console.log('Sending prompt to Ollama...');
+    console.log('Sending prompt to Ollama:', prompt);
     const response = await fetch(`${baseUrl}/api/generate`, {
       method: 'POST',
       headers: {
@@ -67,10 +67,10 @@ export const handleOllamaRequest = async (prompt: string, endpoint: string): Pro
     }
 
     const data = await response.json() as OllamaResponse;
-    console.log('Received response from Ollama');
+    console.log('Received response from Ollama:', data);
     return data.response;
   } catch (error) {
     console.error('Error in Ollama request:', error);
-    throw new Error(`Failed to get response from Ollama: ${error.message}`);
+    throw new Error(`Failed to get response from Ollama: ${(error as Error).message}`);
   }
 };
