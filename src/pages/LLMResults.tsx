@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -21,20 +20,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Download, Trash2 } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Download } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
 
 const LLMResults = () => {
-  const queryClient = useQueryClient();
   const [selectedContent, setSelectedContent] = useState<{
     title: string;
     content: string;
@@ -53,24 +46,6 @@ const LLMResults = () => {
         throw error;
       }
       return data;
-    },
-  });
-
-  const deleteScan = useMutation({
-    mutationFn: async (scanId: string) => {
-      const { error } = await supabase
-        .from('llm_scans')
-        .delete()
-        .eq('id', scanId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
-      toast.success("Scan deleted successfully");
-    },
-    onError: (error) => {
-      toast.error("Failed to delete scan: " + error.message);
     },
   });
 
@@ -100,23 +75,9 @@ const LLMResults = () => {
     document.body.removeChild(link);
   };
 
-  const TruncatedCell = ({ content, title }: { content: string; title: string }) => (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div
-            className="max-w-[200px] truncate cursor-pointer hover:text-primary"
-            onClick={() => setSelectedContent({ title, content })}
-          >
-            {content}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="max-w-[300px] whitespace-normal">Click to view full content</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+  const handleContentClick = (title: string, content: string) => {
+    setSelectedContent({ title, content });
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -165,39 +126,14 @@ const LLMResults = () => {
                   </TableCell>
                 </TableRow>
               ) : scans && scans.length > 0 ? (
-                scans.map((scan) => {
-                  const results = scan.results as { model_response: string, prompt: string } | null;
-                  return (
-                    <TableRow key={scan.id}>
-                      <TableCell>{scan.name}</TableCell>
-                      <TableCell>{formatDate(scan.created_at)}</TableCell>
-                      <TableCell>
-                        <TruncatedCell
-                          content={results?.prompt || 'No prompt'}
-                          title="Prompt"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TruncatedCell
-                          content={results?.model_response || 'No response'}
-                          title="Response"
-                        />
-                      </TableCell>
-                      <TableCell>{scan.category || 'N/A'}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteScan.mutate(scan.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                scans.map((scan) => (
+                  <ResultsTableRow
+                    key={scan.id}
+                    scan={scan}
+                    formatDate={formatDate}
+                    onContentClick={handleContentClick}
+                  />
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4">
