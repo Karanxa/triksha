@@ -13,10 +13,11 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results as { model_response: string; prompt: string } | null;
+  const scanType = scan.label || 'Manual Scan'; // Use label as type, fallback to Manual Scan
 
   return (
     <TableRow key={scan.id}>
-      <TableCell>{scan.name}</TableCell>
+      <TableCell>{scanType}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell
