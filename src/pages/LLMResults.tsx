@@ -25,7 +25,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
-import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
+import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow.tsx";
 
 const LLMResults = () => {
   const [selectedContent, setSelectedContent] = useState<{
