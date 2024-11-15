@@ -1,6 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Users } from "lucide-react"
+import { Download, Users, Star, GitFork, ExternalLink } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 interface Dataset {
   id: string
@@ -9,6 +10,9 @@ interface Dataset {
   downloads: number
   likes: number
   source: 'github' | 'huggingface'
+  url?: string
+  language?: string
+  topics?: string[]
 }
 
 interface DatasetCardProps {
@@ -19,19 +23,62 @@ interface DatasetCardProps {
 
 export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardProps) => {
   const isDownloading = downloading === dataset.id
+  const isGitHub = dataset.source === 'github'
 
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className="pb-4">
-        <h3 className="text-base font-medium leading-none">{dataset.title}</h3>
+        <div className="flex items-start justify-between">
+          <h3 className="text-base font-medium leading-none">{dataset.title}</h3>
+          {isGitHub && dataset.url && (
+            <a 
+              href={dataset.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{dataset.description}</p>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>{dataset.downloads} downloads</span>
-          <span>•</span>
-          <span>{dataset.likes} likes</span>
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+          {dataset.description}
+        </p>
+        
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {isGitHub ? (
+              <>
+                <GitFork className="h-4 w-4" />
+                <span>{dataset.downloads} forks</span>
+              </>
+            ) : (
+              <>
+                <Users className="h-4 w-4" />
+                <span>{dataset.downloads} downloads</span>
+              </>
+            )}
+            <span>•</span>
+            <Star className="h-4 w-4" />
+            <span>{dataset.likes} stars</span>
+          </div>
+
+          {isGitHub && (
+            <div className="flex flex-wrap gap-2">
+              {dataset.language && (
+                <Badge variant="secondary" className="text-xs">
+                  {dataset.language}
+                </Badge>
+              )}
+              {dataset.topics?.slice(0, 3).map((topic) => (
+                <Badge key={topic} variant="outline" className="text-xs">
+                  {topic}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
       <CardFooter className="grid grid-cols-3 gap-2">

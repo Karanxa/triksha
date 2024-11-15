@@ -94,14 +94,16 @@ serve(async (req) => {
 
     // Fetch from GitHub if token exists
     if (githubToken) {
-      const query = useCustomSearch ? searchQuery : category
-      if (query) {
-        const githubUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}+topic:dataset&sort=stars&order=desc&per_page=10`
+      const searchTerm = useCustomSearch ? searchQuery : category
+      if (searchTerm) {
+        const query = encodeURIComponent(`${searchTerm} in:name,description,readme language:python stars:>10`)
+        const githubUrl = `https://api.github.com/search/repositories?q=${query}&sort=stars&order=desc&per_page=10`
         
         const response = await fetch(githubUrl, {
           headers: {
             'Authorization': `Bearer ${githubToken}`,
             'Accept': 'application/vnd.github.v3+json',
+            'X-GitHub-Api-Version': '2022-11-28'
           },
         })
 
@@ -112,9 +114,12 @@ serve(async (req) => {
               id: repo.full_name,
               title: repo.name,
               description: repo.description || 'No description available',
-              downloads: repo.watchers_count || 0,
+              downloads: repo.forks_count || 0, // Using forks as a proxy for downloads
               likes: repo.stargazers_count || 0,
-              source: 'github'
+              source: 'github',
+              url: repo.html_url,
+              language: repo.language,
+              topics: repo.topics || []
             }))
           }
         }
