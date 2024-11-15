@@ -1,9 +1,12 @@
 import { Brain, Database, FileText, Settings, File } from "lucide-react";
 import ToolCard from "@/components/ToolCard";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
+  const navigate = useNavigate();
+  
   const tools = [
-    { icon: Brain, title: "LLM Scanner" },
+    { icon: Brain, title: "LLM Scanner", path: "/llm-scanner" },
     { icon: File, title: "LLM Results" },
     { icon: Database, title: "Datasets" },
     { icon: FileText, title: "Prompt Augmentation" },
@@ -24,7 +27,7 @@ const Index = () => {
               key={tool.title}
               icon={tool.icon}
               title={tool.title}
-              onClick={() => console.log(`Selected ${tool.title}`)}
+              onClick={() => tool.path ? navigate(tool.path) : null}
             />
           ))}
         </div>
