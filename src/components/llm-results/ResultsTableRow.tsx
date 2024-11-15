@@ -4,6 +4,7 @@ import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
 import { Database } from "@/integrations/supabase/types";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { getScanType } from "@/utils/scanUtils";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -23,6 +24,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const response = results?.model_response || 'No response';
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
+  const scanType = getScanType(results);
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
@@ -137,7 +139,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
 
   return (
     <TableRow key={scan.id}>
-      <TableCell>{scan.name}</TableCell>
+      <TableCell>{scanType}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell

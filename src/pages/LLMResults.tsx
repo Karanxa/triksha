@@ -1,31 +1,14 @@
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
+import { ResultsTableHeader } from "@/components/llm-results/ResultsTableHeader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database } from "@/integrations/supabase/types";
 import { ATTACK_CATEGORIES } from "@/components/datasets/AttackCategorySelect";
@@ -49,7 +32,6 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (filterCategory !== 'all') {
-        // Convert filter category to match database format (lowercase and hyphenated)
         const dbCategory = filterCategory.toLowerCase().replace(/ /g, '-');
         query = query.eq('category', dbCategory);
       }
@@ -81,10 +63,11 @@ const LLMResults = () => {
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
+      "Scan Type,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
       scans.map(scan => {
         const results = scan.results as { model_response: string; prompt: string } | null;
-        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
+        const scanType = getScanType(results);
+        return `"${scanType}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -146,17 +129,7 @@ const LLMResults = () => {
 
         <div className="border rounded-lg">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Prompt</TableHead>
-                <TableHead>Response</TableHead>
-                <TableHead>Category & Risk</TableHead>
-                <TableHead>Vulnerability Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+            <ResultsTableHeader />
             <TableBody>
               {isLoading ? (
                 <TableRow>
