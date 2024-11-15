@@ -57,6 +57,10 @@ const LLMResults = () => {
     },
   });
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
   const handleExport = () => {
     if (!scans || scans.length === 0) {
       toast.error("No data to export");
@@ -64,10 +68,10 @@ const LLMResults = () => {
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Type,Timestamp,Prompt,Result,Category,Actions\n" +
+      "Type,Date,Prompt,Result,Category,Actions\n" +
       scans.map(scan => {
         const results = scan.results as { model_response: string, prompt: string } | null;
-        return `"${scan.name}","${new Date(scan.created_at).toLocaleString()}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || ''}","${scan.label || ''}"`;
+        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || ''}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -100,24 +104,6 @@ const LLMResults = () => {
             </Select>
           </div>
 
-          <div className="w-48">
-            <Select defaultValue="all">
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by Label" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Labels</SelectItem>
-                {scans?.map(scan => scan.label).filter((label, index, self) => 
-                  label && self.indexOf(label) === index
-                ).map(label => (
-                  <SelectItem key={label} value={label || ''}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <Button variant="secondary" className="ml-auto" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Export Results
@@ -129,7 +115,7 @@ const LLMResults = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Type</TableHead>
-                <TableHead>Timestamp</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead>Prompt</TableHead>
                 <TableHead>Result</TableHead>
                 <TableHead>Category</TableHead>
@@ -139,7 +125,7 @@ const LLMResults = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     Loading results...
                   </TableCell>
                 </TableRow>
@@ -149,7 +135,7 @@ const LLMResults = () => {
                   return (
                     <TableRow key={scan.id}>
                       <TableCell>{scan.name}</TableCell>
-                      <TableCell>{new Date(scan.created_at).toLocaleString()}</TableCell>
+                      <TableCell>{formatDate(scan.created_at)}</TableCell>
                       <TableCell className="max-w-[200px] truncate">
                         {results?.prompt || 'No prompt'}
                       </TableCell>
@@ -173,7 +159,7 @@ const LLMResults = () => {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     No results found
                   </TableCell>
                 </TableRow>
