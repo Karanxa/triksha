@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Download, Filter } from "lucide-react";
+import { Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -75,10 +75,10 @@ const LLMResults = () => {
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Name,Date,Prompt,Response,Category,Label,Risk Level\n" +
+      "Name,Date,Prompt,Response,Category,Label,Risk Level,Matches Category\n" +
       scans.map(scan => {
         const results = scan.results as { model_response: string; prompt: string; analysis?: { risk_level?: string } } | null;
-        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.label || 'N/A'}","${results?.analysis?.risk_level || 'unknown'}"`;
+        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.label || 'N/A'}","${results?.analysis?.risk_level || 'unknown'}","${scan.matches_category ? 'Yes' : 'No'}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -146,7 +146,7 @@ const LLMResults = () => {
                 <TableHead>Prompt</TableHead>
                 <TableHead>Response</TableHead>
                 <TableHead>Category & Risk</TableHead>
-                <TableHead>Label</TableHead>
+                <TableHead>Matches Category</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
