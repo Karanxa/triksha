@@ -25,9 +25,9 @@ export const ScanResults = ({ result }: ScanResultsProps) => {
         <div className="space-y-6">
           <div>
             <Label className="text-lg font-semibold mb-2">Model Response</Label>
-            <p className="whitespace-pre-wrap rounded-md bg-muted p-4">
+            <div className="whitespace-pre-wrap rounded-md bg-muted p-4">
               {result.model_response}
-            </p>
+            </div>
           </div>
 
           <div>

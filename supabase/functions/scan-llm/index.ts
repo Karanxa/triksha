@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompt, provider, category, schedule, isRecurring } = await req.json()
+    const { scanId, prompt, provider, category } = await req.json()
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -73,9 +73,8 @@ serve(async (req) => {
       const data = await response.json();
       modelResponse = data.choices[0].message.content;
     }
-    // Add similar implementations for other providers
 
-    // Analyze the response for security issues
+    // Store the analysis results
     const analysis = {
       model_response: modelResponse,
       risk_level: "medium",
@@ -92,6 +91,7 @@ serve(async (req) => {
       ]
     };
 
+    // Update scan status and results in database
     const { error: updateError } = await supabaseClient
       .from('llm_scans')
       .update({
@@ -102,12 +102,6 @@ serve(async (req) => {
       .eq('id', scanId)
 
     if (updateError) throw updateError
-
-    if (isRecurring && schedule) {
-      console.log(`Scheduling next scan with cron: ${schedule}`);
-    }
-
-    console.log(`Scan ${scanId} completed successfully`);
 
     return new Response(
       JSON.stringify({ success: true, data: analysis }),
