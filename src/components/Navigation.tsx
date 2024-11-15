@@ -1,40 +1,108 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, LogOut } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { Settings } from "lucide-react";
 
 const Navigation = () => {
-  const navigate = useNavigate();
+  const location = useLocation();
+  const supabase = useSupabaseClient();
 
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Error signing out");
-    } else {
-      toast.success("Logged out successfully");
-      navigate("/login");
-    }
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <div className="flex justify-between items-center p-4 bg-background border-b">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => navigate(-1)}
-        className="mr-2"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        onClick={handleLogout}
-        className="flex items-center gap-2"
-      >
-        <LogOut className="h-4 w-4" />
-        Logout
-      </Button>
+    <div className="border-b">
+      <div className="container flex h-16 items-center justify-between">
+        <NavigationMenu>
+          <NavigationMenuList className="gap-6">
+            <NavigationMenuItem>
+              <Link
+                to="/"
+                className={`${navigationMenuTriggerStyle()} ${
+                  isActive("/") ? "bg-accent" : ""
+                }`}
+              >
+                Home
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link
+                to="/llm-scanner"
+                className={`${navigationMenuTriggerStyle()} ${
+                  isActive("/llm-scanner") ? "bg-accent" : ""
+                }`}
+              >
+                LLM Scanner
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link
+                to="/llm-results"
+                className={`${navigationMenuTriggerStyle()} ${
+                  isActive("/llm-results") ? "bg-accent" : ""
+                }`}
+              >
+                Results
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link
+                to="/datasets"
+                className={`${navigationMenuTriggerStyle()} ${
+                  isActive("/datasets") ? "bg-accent" : ""
+                }`}
+              >
+                Datasets
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link
+                to="/augment-prompt"
+                className={`${navigationMenuTriggerStyle()} ${
+                  isActive("/augment-prompt") ? "bg-accent" : ""
+                }`}
+              >
+                Prompt Augmentation
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link
+                to="/fine-tuning"
+                className={`${navigationMenuTriggerStyle()} ${
+                  isActive("/fine-tuning") ? "bg-accent" : ""
+                }`}
+              >
+                Fine-tuning
+              </Link>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
+
+        <div className="flex items-center gap-4">
+          <Link
+            to="/settings"
+            className={`${navigationMenuTriggerStyle()} ${
+              isActive("/settings") ? "bg-accent" : ""
+            }`}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Link>
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
