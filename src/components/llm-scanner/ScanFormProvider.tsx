@@ -5,38 +5,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState } from "react";
 
+interface CustomEndpoint {
+  url: string;
+  apiKey: string;
+  headers: string;
+  placeholder: string;
+  curlCommand: string;
+  inputType: 'curl' | 'manual';
+}
+
 interface ScanFormProviderProps {
   provider: string;
   onProviderChange: (value: string) => void;
-  customEndpoint?: {
-    url: string;
-    apiKey: string;
-    headers: string;
-    placeholder: string;
-    curlCommand?: string;
-    inputType?: 'curl' | 'manual';
-  };
-  onCustomEndpointChange?: (endpoint: {
-    url: string;
-    apiKey: string;
-    headers: string;
-    placeholder: string;
-    curlCommand?: string;
-    inputType?: 'curl' | 'manual';
-  }) => void;
+  customEndpoint: CustomEndpoint;
+  onCustomEndpointChange: (endpoint: Partial<CustomEndpoint>) => void;
 }
 
 export const ScanFormProvider = ({ 
   provider, 
   onProviderChange,
-  customEndpoint = { 
-    url: '', 
-    apiKey: '', 
-    headers: '', 
-    placeholder: '{PROMPT}',
-    curlCommand: '',
-    inputType: 'manual'
-  },
+  customEndpoint,
   onCustomEndpointChange
 }: ScanFormProviderProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
@@ -50,28 +38,22 @@ export const ScanFormProvider = ({
     onProviderChange(`${selectedProvider}-${model}`);
   };
 
-  const handleCustomEndpointChange = (field: keyof typeof customEndpoint, value: string) => {
-    if (onCustomEndpointChange) {
-      onCustomEndpointChange({
-        ...customEndpoint,
-        [field]: value
-      });
-    }
+  const handleCustomEndpointChange = (field: keyof CustomEndpoint, value: string) => {
+    onCustomEndpointChange({
+      [field]: value
+    });
   };
 
   const handleInputTypeChange = (value: 'curl' | 'manual') => {
-    if (onCustomEndpointChange) {
-      onCustomEndpointChange({
-        ...customEndpoint,
-        inputType: value,
-        // Reset fields when switching input type
-        url: '',
-        apiKey: '',
-        headers: '',
-        curlCommand: '',
-        placeholder: '{PROMPT}'
-      });
-    }
+    onCustomEndpointChange({
+      inputType: value,
+      // Reset fields when switching input type
+      url: '',
+      apiKey: '',
+      headers: '',
+      curlCommand: '',
+      placeholder: '{PROMPT}'
+    });
   };
 
   const getModelsForProvider = () => {

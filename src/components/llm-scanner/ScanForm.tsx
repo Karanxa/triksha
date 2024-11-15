@@ -10,6 +10,15 @@ import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { Loader2 } from "lucide-react";
 
+interface CustomEndpoint {
+  url: string;
+  apiKey: string;
+  headers: string;
+  placeholder: string;
+  curlCommand: string;
+  inputType: 'curl' | 'manual';
+}
+
 interface ScanFormProps {
   onSubmit: (data: {
     prompts: string[];
@@ -18,14 +27,7 @@ interface ScanFormProps {
     label?: string;
     schedule?: string;
     isRecurring: boolean;
-    customEndpoint?: {
-      url: string;
-      apiKey: string;
-      headers: string;
-      placeholder: string;
-      curlCommand?: string;
-      inputType?: 'curl' | 'manual';
-    };
+    customEndpoint?: CustomEndpoint;
   }) => Promise<void>;
   isScanning: boolean;
 }
@@ -38,13 +40,13 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
-  const [customEndpoint, setCustomEndpoint] = useState({
+  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
     headers: '',
     placeholder: '{PROMPT}',
     curlCommand: '',
-    inputType: 'manual' as 'curl' | 'manual'
+    inputType: 'manual'
   });
 
   const handleSubmit = async () => {
@@ -138,7 +140,12 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         provider={provider}
         onProviderChange={setProvider}
         customEndpoint={customEndpoint}
-        onCustomEndpointChange={setCustomEndpoint}
+        onCustomEndpointChange={(endpoint: Partial<CustomEndpoint>) => {
+          setCustomEndpoint(prev => ({
+            ...prev,
+            ...endpoint
+          }));
+        }}
       />
 
       <ScanFormPrompt
