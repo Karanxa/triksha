@@ -15,12 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Download, Trash2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const LLMResults = () => {
+  const queryClient = useQueryClient();
+
   const { data: scans, isLoading } = useQuery({
     queryKey: ['llm-scans'],
     queryFn: async () => {
@@ -37,6 +39,24 @@ const LLMResults = () => {
     },
   });
 
+  const deleteScan = useMutation({
+    mutationFn: async (scanId: string) => {
+      const { error } = await supabase
+        .from('llm_scans')
+        .delete()
+        .eq('id', scanId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
+      toast.success("Scan deleted successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete scan: " + error.message);
+    },
+  });
+
   const handleExport = () => {
     if (!scans || scans.length === 0) {
       toast.error("No data to export");
@@ -44,7 +64,7 @@ const LLMResults = () => {
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Type,Timestamp,Prompt,Result,Category,Label\n" +
+      "Type,Timestamp,Prompt,Result,Category,Actions\n" +
       scans.map(scan => {
         const results = scan.results as { model_response: string, prompt: string } | null;
         return `"${scan.name}","${new Date(scan.created_at).toLocaleString()}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || ''}","${scan.label || ''}"`;
@@ -113,7 +133,6 @@ const LLMResults = () => {
                 <TableHead>Prompt</TableHead>
                 <TableHead>Result</TableHead>
                 <TableHead>Category</TableHead>
-                <TableHead>Label</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -138,26 +157,15 @@ const LLMResults = () => {
                         {results?.model_response || 'No response'}
                       </TableCell>
                       <TableCell>{scan.category || 'N/A'}</TableCell>
-                      <TableCell>{scan.label || 'N/A'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Input
-                            placeholder="Add a label"
-                            className="h-8 w-32"
-                            defaultValue={scan.label || ''}
-                            onBlur={async (e) => {
-                              const { error } = await supabase
-                                .from('llm_scans')
-                                .update({ label: e.target.value })
-                                .eq('id', scan.id);
-                              
-                              if (error) {
-                                toast.error("Failed to update label");
-                              } else {
-                                toast.success("Label updated successfully");
-                              }
-                            }}
-                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteScan.mutate(scan.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
