@@ -12,29 +12,30 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  const results = scan.results as { model_response: string; prompt: string } | null;
-  const scanType = scan.label || 'Manual Scan';
-  const promptText = scan.results?.prompt || 'No prompt'; // Directly access the prompt from results
+  const scanResults = scan.results as { model_response: string; prompt: string } | null;
+  const inputPrompt = typeof scanResults === 'object' && scanResults ? scanResults.prompt : 'No prompt';
+  const modelResponse = typeof scanResults === 'object' && scanResults ? scanResults.model_response : 'No response';
 
   return (
     <TableRow key={scan.id}>
-      <TableCell>{scanType}</TableCell>
+      <TableCell>{scan.name}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell
-          content={promptText}
+          content={inputPrompt}
           title="Prompt"
           onContentClick={onContentClick}
         />
       </TableCell>
       <TableCell>
         <TruncatedCell
-          content={results?.model_response || 'No response'}
+          content={modelResponse}
           title="Response"
           onContentClick={onContentClick}
         />
       </TableCell>
       <TableCell>{scan.category || 'N/A'}</TableCell>
+      <TableCell>{scan.label || 'N/A'}</TableCell>
       <TableCell>
         <div className="flex gap-2">
           <DeleteButton scanId={scan.id} />

@@ -60,10 +60,10 @@ const LLMResults = () => {
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
-      "Type,Date,Prompt,Result,Category,Actions\n" +
+      "Type,Date,Prompt,Result,Category,Label,Actions\n" +
       scans.map(scan => {
         const results = scan.results as { model_response: string, prompt: string } | null;
-        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || ''}"`;
+        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || ''}","${scan.label || ''}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -115,13 +115,14 @@ const LLMResults = () => {
                 <TableHead>Prompt</TableHead>
                 <TableHead>Result</TableHead>
                 <TableHead>Category</TableHead>
+                <TableHead>Label</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     Loading results...
                   </TableCell>
                 </TableRow>
@@ -136,7 +137,7 @@ const LLMResults = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     No results found
                   </TableCell>
                 </TableRow>
