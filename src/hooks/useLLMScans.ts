@@ -5,6 +5,15 @@ import { Database } from "@/integrations/supabase/types";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
+interface CreateScanParams {
+  prompt: string;
+  provider: string;
+  category: string;
+  label?: string;
+  schedule?: string;
+  isRecurring?: boolean;
+}
+
 export const useLLMScans = () => {
   const queryClient = useQueryClient();
 
@@ -22,7 +31,7 @@ export const useLLMScans = () => {
   });
 
   const createScan = useMutation({
-    mutationFn: async (prompt: string) => {
+    mutationFn: async (params: CreateScanParams) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Not authenticated");
 
@@ -30,7 +39,7 @@ export const useLLMScans = () => {
         .from('llm_scans')
         .insert({
           user_id: userData.user.id,
-          name: `Scan ${new Date().toISOString()}`,
+          name: params.label || `Scan ${new Date().toISOString()}`,
           status: 'pending'
         })
         .select()
@@ -40,7 +49,14 @@ export const useLLMScans = () => {
 
       // Call the edge function to perform the scan
       const response = await supabase.functions.invoke('scan-llm', {
-        body: { scanId: data.id, prompt }
+        body: { 
+          scanId: data.id,
+          prompt: params.prompt,
+          provider: params.provider,
+          category: params.category,
+          schedule: params.schedule,
+          isRecurring: params.isRecurring
+        }
       });
 
       if (response.error) throw response.error;
