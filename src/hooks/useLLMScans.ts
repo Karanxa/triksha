@@ -60,11 +60,12 @@ export const useLLMScans = () => {
       });
 
       if (response.error) throw response.error;
+      
+      // Return the scan results for immediate display
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
-      toast.success("Scan initiated successfully");
     },
     onError: (error) => {
       toast.error("Failed to create scan: " + error.message);
@@ -74,7 +75,7 @@ export const useLLMScans = () => {
   return {
     scans,
     isLoading,
-    createScan: createScan.mutate,
+    createScan: createScan.mutateAsync,
     isScanning: createScan.isPending,
   };
 };
