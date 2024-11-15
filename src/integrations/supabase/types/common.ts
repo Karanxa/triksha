@@ -7,6 +7,7 @@ export type Json =
   | Json[]
 
 export interface ApiKeys {
+  [key: string]: string | undefined;
   openai?: string;
   huggingface?: string;
   anthropic?: string;

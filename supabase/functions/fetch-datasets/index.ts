@@ -34,7 +34,12 @@ Deno.serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile?.api_keys?.huggingface) {
+    if (profileError) {
+      throw new Error('Failed to fetch user profile')
+    }
+
+    const huggingFaceApiKey = profile?.api_keys?.huggingface
+    if (!huggingFaceApiKey) {
       throw new Error('Hugging Face API key not found')
     }
 
@@ -50,7 +55,7 @@ Deno.serve(async (req) => {
     // Call Hugging Face API
     const response = await fetch(`https://huggingface.co/api/datasets?search=${encodeURIComponent(query)}`, {
       headers: {
-        'Authorization': `Bearer ${profile.api_keys.huggingface}`,
+        'Authorization': `Bearer ${huggingFaceApiKey}`,
       },
     })
 

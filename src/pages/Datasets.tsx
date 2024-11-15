@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Database, Download, Search, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,32 +47,38 @@ const Datasets = () => {
     queryFn: async () => {
       if (!selectedCategory) return [];
       
-      try {
-        const { data, error } = await supabase.functions.invoke('fetch-datasets', {
-          body: { 
-            category: selectedCategory,
-            useCustomSearch,
-            searchQuery: useCustomSearch ? searchQuery : undefined
-          }
-        });
+      const { data, error } = await supabase.functions.invoke('fetch-datasets', {
+        body: { 
+          category: selectedCategory,
+          useCustomSearch,
+          searchQuery: useCustomSearch ? searchQuery : undefined
+        }
+      });
 
-        if (error) throw error;
-
-        return data.datasets.map((dataset: any) => ({
-          id: dataset.id,
-          title: dataset.id.split('/').pop(),
-          description: dataset.description || 'No description available',
-          downloads: dataset.downloads || 0,
-          likes: dataset.likes || 0,
-        }));
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Error fetching datasets",
-          description: "Please make sure you've added your Hugging Face API key in settings."
-        });
+      if (error) {
+        if (error.message.includes("Hugging Face API key not found")) {
+          toast({
+            variant: "destructive",
+            title: "API Key Missing",
+            description: "Please add your Hugging Face API key in the Settings page.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error fetching datasets",
+            description: error.message,
+          });
+        }
         return [];
       }
+
+      return data.datasets.map((dataset: any) => ({
+        id: dataset.id,
+        title: dataset.id.split('/').pop(),
+        description: dataset.description || 'No description available',
+        downloads: dataset.downloads || 0,
+        likes: dataset.likes || 0,
+      }));
     },
     enabled: !!selectedCategory && (!useCustomSearch || !!searchQuery)
   });
@@ -81,18 +87,18 @@ const Datasets = () => {
     try {
       setDownloading(datasetId);
       
-      const response = await supabase.functions.invoke('download-dataset', {
+      const { data, error } = await supabase.functions.invoke('download-dataset', {
         body: { datasetId, format }
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (error) throw error;
 
-      // Create a download link and trigger it
-      const blob = new Blob([response.data], { type: response.headers['Content-Type'] });
+      // Create a download link
+      const blob = new Blob([data.content], { type: data.contentType });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = response.headers['Content-Disposition'].split('filename=')[1].replace(/"/g, '');
+      a.download = data.filename || `dataset.${format}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -102,7 +108,7 @@ const Datasets = () => {
         title: "Success",
         description: "Dataset downloaded successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Download failed",
