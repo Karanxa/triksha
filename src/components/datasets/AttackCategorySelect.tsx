@@ -11,7 +11,7 @@ interface AttackCategorySelectProps {
   onValueChange: (value: string) => void
 }
 
-const ATTACK_CATEGORIES = [
+export const ATTACK_CATEGORIES = [
   "Jailbreaking",
   "Prompt Injection",
   "Data Extraction",

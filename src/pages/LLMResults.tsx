@@ -28,6 +28,7 @@ import { useState } from "react";
 import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database } from "@/integrations/supabase/types";
+import { ATTACK_CATEGORIES } from "@/components/datasets/AttackCategorySelect";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -48,7 +49,9 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (filterCategory !== 'all') {
-        query = query.eq('category', filterCategory);
+        // Convert filter category to match database format (lowercase and hyphenated)
+        const dbCategory = filterCategory.toLowerCase().replace(/ /g, '-');
+        query = query.eq('category', dbCategory);
       }
 
       const { data, error } = await query;
@@ -126,10 +129,11 @@ const LLMResults = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="prompt-injection">Prompt Injection</SelectItem>
-                <SelectItem value="data-leakage">Data Leakage</SelectItem>
-                <SelectItem value="bias">Bias</SelectItem>
-                <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                {ATTACK_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
