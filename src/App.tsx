@@ -37,6 +37,13 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabase}>
         <TooltipProvider>
+          <style>
+            {`
+              [data-radix-popper-content-wrapper] {
+                background-color: var(--background) !important;
+              }
+            `}
+          </style>
           <Toaster />
           <Sonner />
           <BrowserRouter>

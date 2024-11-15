@@ -12,7 +12,6 @@ const Navigation = () => {
     { href: "/datasets", label: "Datasets" },
     { href: "/augment-prompt", label: "Augment Prompt" },
     { href: "/fine-tuning", label: "Fine Tuning" },
-    { href: "/settings", label: "Settings" },
   ];
 
   return (
@@ -35,6 +34,17 @@ const Navigation = () => {
           ))}
         </div>
         <div className="ml-auto flex items-center space-x-4">
+          <Link
+            to="/settings"
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              location.pathname === "/settings"
+                ? "text-foreground"
+                : "text-muted-foreground"
+            )}
+          >
+            Keys
+          </Link>
           <ThemeToggle />
         </div>
       </div>
