@@ -126,6 +126,32 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         />
       </div>
 
+      <div className="space-y-4">
+        <Label>Schedule (Optional)</Label>
+        <Select value={schedule} onValueChange={setSchedule}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select schedule frequency" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">No Schedule</SelectItem>
+            <SelectItem value="daily">Daily</SelectItem>
+            <SelectItem value="weekly">Weekly</SelectItem>
+            <SelectItem value="monthly">Monthly</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {schedule && (
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="recurring"
+            checked={isRecurring}
+            onCheckedChange={setIsRecurring}
+          />
+          <Label htmlFor="recurring">Make this scan recurring</Label>
+        </div>
+      )}
+
       <Button 
         className="w-full" 
         size="lg"

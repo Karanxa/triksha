@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompts, provider, category } = await req.json();
+    const { scanId, prompts, provider, category, schedule, isRecurring } = await req.json();
     
     console.log(`Processing scan ${scanId} with ${prompts.length} prompts`);
 
@@ -50,6 +50,24 @@ serve(async (req) => {
       throw new Error(`${provider} API key not found. Please add it in the Settings.`);
     }
 
+    // Calculate next run time if scheduling is enabled
+    let nextRun = null;
+    if (schedule && isRecurring) {
+      // Parse schedule string (e.g., "daily", "weekly", "monthly")
+      const now = new Date();
+      switch (schedule.toLowerCase()) {
+        case 'daily':
+          nextRun = new Date(now.setDate(now.getDate() + 1));
+          break;
+        case 'weekly':
+          nextRun = new Date(now.setDate(now.getDate() + 7));
+          break;
+        case 'monthly':
+          nextRun = new Date(now.setMonth(now.getMonth() + 1));
+          break;
+      }
+    }
+
     // Process each prompt individually and store results
     const results = [];
     for (const prompt of prompts) {
@@ -62,7 +80,7 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o-mini',
+            model: 'gpt-4',
             messages: [
               { role: 'user', content: prompt }
             ],
@@ -90,7 +108,10 @@ serve(async (req) => {
               prompt: prompt,
               model_response: modelResponse
             },
-            category: category
+            category: category,
+            schedule: schedule,
+            is_recurring: isRecurring,
+            next_run: nextRun
           })
           .select()
           .single();

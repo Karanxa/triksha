@@ -103,9 +103,12 @@ export type Database = {
           category: string | null
           created_at: string
           id: string
+          is_recurring: boolean | null
           label: string | null
           name: string
+          next_run: string | null
           results: Json | null
+          schedule: string | null
           status: string
           updated_at: string
           user_id: string
@@ -114,9 +117,12 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          is_recurring?: boolean | null
           label?: string | null
           name: string
+          next_run?: string | null
           results?: Json | null
+          schedule?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -125,9 +131,12 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          is_recurring?: boolean | null
           label?: string | null
           name?: string
+          next_run?: string | null
           results?: Json | null
+          schedule?: string | null
           status?: string
           updated_at?: string
           user_id?: string

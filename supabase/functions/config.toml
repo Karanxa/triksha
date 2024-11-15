@@ -1,0 +1,7 @@
+project_id = "irdlyshhtwzqjvymilww"
+
+[functions.scan-llm]
+verify_jwt = true
+
+[functions.process-scheduled-scans]
+verify_jwt = true
