@@ -6,6 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Category-related keywords mapping
+const categoryKeywords = {
+  'Jailbreaking': ['jailbreak', 'jail', 'break', 'bypass', 'escape', 'exploit', 'hack', 'circumvent'],
+  'Prompt Injection': ['injection', 'inject', 'sql', 'command', 'malicious', 'input'],
+  'Data Extraction': ['extract', 'leak', 'steal', 'scrape', 'harvest', 'collect'],
+  'Prompt Leaking': ['leak', 'expose', 'reveal', 'disclose', 'breach'],
+  'Social Engineering': ['social', 'phish', 'manipulate', 'deceive', 'trick', 'impersonate'],
+  'System Prompt Extraction': ['system', 'prompt', 'extract', 'reveal', 'expose'],
+  'Unauthorized Actions': ['unauthorized', 'forbidden', 'restricted', 'illegal', 'prohibited'],
+  'Model Behavior Manipulation': ['behavior', 'manipulate', 'control', 'influence', 'alter'],
+  'Resource Exhaustion': ['exhaust', 'overload', 'dos', 'denial', 'resource', 'consumption'],
+  'Sensitive Information Disclosure': ['sensitive', 'confidential', 'private', 'secret', 'disclosure']
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -47,20 +61,20 @@ serve(async (req) => {
       throw new Error('Hugging Face API key not found')
     }
 
-    // Construct the search URL with proper parameters
+    // Construct search parameters
     const baseUrl = 'https://huggingface.co/api/datasets'
     const params = new URLSearchParams()
 
     if (useCustomSearch && searchQuery) {
       params.append('search', searchQuery)
-    }
-    
-    // Add category as a tag for filtering
-    if (category) {
-      params.append('tag', category.toLowerCase().replace(/\s+/g, '-'))
+    } else if (category && categoryKeywords[category]) {
+      // Create a search query that includes all relevant keywords for the category
+      const keywords = categoryKeywords[category]
+      const searchTerms = keywords.join(' OR ')
+      params.append('search', searchTerms)
     }
 
-    // Add some basic filters to get high-quality datasets
+    // Add basic filters for quality results
     params.append('sort', 'downloads')
     params.append('limit', '20')
     
@@ -87,7 +101,25 @@ serve(async (req) => {
       throw new Error('Invalid response format from Hugging Face API')
     }
 
-    const transformedDatasets = datasets.map((dataset: any) => ({
+    // Filter results to ensure they match the category keywords if a category is specified
+    let filteredDatasets = datasets
+    if (category && !useCustomSearch) {
+      const keywords = categoryKeywords[category].map(k => k.toLowerCase())
+      filteredDatasets = datasets.filter((dataset: any) => {
+        const description = (dataset.description || '').toLowerCase()
+        const title = (dataset.id || '').toLowerCase()
+        const tags = (dataset.tags || []).map((tag: string) => tag.toLowerCase())
+        
+        // Check if any of the category keywords appear in the dataset metadata
+        return keywords.some(keyword => 
+          description.includes(keyword) || 
+          title.includes(keyword) || 
+          tags.some((tag: string) => tag.includes(keyword))
+        )
+      })
+    }
+
+    const transformedDatasets = filteredDatasets.map((dataset: any) => ({
       id: dataset.id,
       title: dataset.id.split('/').pop(),
       description: dataset.description || 'No description available',
@@ -114,7 +146,10 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       { 
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     )
   }
