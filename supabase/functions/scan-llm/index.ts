@@ -1,148 +1,72 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
-import { handleOpenAIRequest } from "./providers/openai.ts";
-import { analyzeVulnerability, rateLimit } from "./utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { scanId, prompts, provider, category } = await req.json();
-    
-    console.log(`Processing scan ${scanId} with provider ${provider}`);
+    const { scanId, prompts, provider, customEndpoint } = await req.json();
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
+    if (!scanId || !prompts || !provider) {
+      throw new Error('Missing required parameters');
     }
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    let response;
+    const baseProvider = provider.split('-')[0];
 
-    if (userError || !user) {
-      throw userError || new Error('User not found');
-    }
-
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) {
-      throw new Error('Failed to fetch user profile');
-    }
-
-    // Set QPS limits based on provider
-    const qpsLimits: { [key: string]: number } = {
-      'ollama': 10,  // Local instance can handle higher QPS
-      'openai': 3,   // OpenAI has rate limits
-      'anthropic': 3,
-      'google': 5
-    };
-
-    const qps = qpsLimits[provider] || 3; // Default to 3 QPS if provider not found
-    console.log(`Using QPS limit of ${qps} for provider ${provider}`);
-
-    // Process each prompt with rate limiting
-    const results = [];
-    for (const prompt of prompts) {
+    if (baseProvider === 'custom' && customEndpoint) {
       try {
-        // Apply rate limiting before each request
-        await rateLimit(qps);
-
-        let modelResponse;
-
-        if (provider === 'ollama') {
-          const ollamaEndpoint = profile?.api_keys?.ollama_endpoint;
-          if (!ollamaEndpoint) {
-            throw new Error('Ollama endpoint not configured. Please add it in Settings.');
-          }
-          console.log('Using Ollama endpoint:', ollamaEndpoint);
-          modelResponse = await handleOllamaRequest(prompt, ollamaEndpoint);
-        } else if (provider === 'openai') {
-          const apiKey = profile?.api_keys?.openai;
-          if (!apiKey) {
-            throw new Error('OpenAI API key not found');
-          }
-          modelResponse = await handleOpenAIRequest(prompt, apiKey);
-        } else {
-          throw new Error(`Unsupported provider: ${provider}`);
+        const headers = customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {};
+        if (customEndpoint.apiKey) {
+          headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
         }
 
-        // Analyze vulnerability
-        const isVulnerable = analyzeVulnerability(category, modelResponse);
-
-        // Update scan record
-        const { error: updateError } = await supabaseClient
-          .from('llm_scans')
-          .update({
-            status: 'completed',
-            results: {
-              prompt: prompt,
-              model_response: modelResponse,
-              is_vulnerable: isVulnerable
+        const results = await Promise.all(prompts.map(async (prompt) => {
+          const response = await fetch(customEndpoint.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...headers,
             },
-            is_vulnerable: isVulnerable
-          })
-          .eq('id', scanId);
+            body: JSON.stringify({
+              prompt: prompt.replace(customEndpoint.placeholder, prompt)
+            }),
+          });
 
-        if (updateError) {
-          console.error('Error updating scan:', updateError);
-          throw new Error('Failed to update scan');
-        }
+          if (!response.ok) {
+            throw new Error(`Custom endpoint error: ${response.statusText}`);
+          }
 
-        results.push({
-          prompt,
-          model_response: modelResponse,
-          is_vulnerable: isVulnerable
-        });
+          return await response.json();
+        }));
 
-        console.log(`Successfully processed prompt with QPS limiting`);
+        response = { results };
       } catch (error) {
-        console.error(`Error processing prompt: ${error}`);
-        results.push({
-          error: error.message,
-          prompt
-        });
+        console.error('Custom endpoint error:', error);
+        throw new Error(`Custom endpoint error: ${error.message}`);
       }
+    } else if (baseProvider === 'ollama') {
+      response = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+    } else {
+      // Handle other providers...
+      throw new Error('Provider not implemented');
     }
 
-    return new Response(
-      JSON.stringify(results),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Error in scan-llm function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 400,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        }
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

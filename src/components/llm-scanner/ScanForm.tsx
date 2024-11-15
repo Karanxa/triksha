@@ -18,6 +18,12 @@ interface ScanFormProps {
     label?: string;
     schedule?: string;
     isRecurring: boolean;
+    customEndpoint?: {
+      url: string;
+      apiKey: string;
+      headers: string;
+      placeholder: string;
+    };
   }) => Promise<void>;
   isScanning: boolean;
 }
@@ -30,11 +36,24 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
+  const [customEndpoint, setCustomEndpoint] = useState({
+    url: '',
+    apiKey: '',
+    headers: '',
+    placeholder: '{PROMPT}'
+  });
 
   const handleSubmit = async () => {
-    if (!provider) {
+    if (!provider && provider !== 'custom') {
       toast.error("Please select a provider and model");
       return;
+    }
+
+    if (provider === 'custom') {
+      if (!customEndpoint.url || !customEndpoint.apiKey) {
+        toast.error("Please provide both custom endpoint URL and API key");
+        return;
+      }
     }
 
     if (!singlePrompt && prompts.length === 0) {
@@ -85,7 +104,8 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         category,
         label: label || undefined,
         schedule: schedule !== "none" ? schedule : undefined,
-        isRecurring
+        isRecurring,
+        customEndpoint: provider === 'custom' ? customEndpoint : undefined
       });
 
       // Reset form only on success
@@ -107,6 +127,8 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       <ScanFormProvider 
         provider={provider}
         onProviderChange={setProvider}
+        customEndpoint={customEndpoint}
+        onCustomEndpointChange={setCustomEndpoint}
       />
 
       <ScanFormPrompt
