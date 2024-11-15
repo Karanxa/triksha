@@ -66,10 +66,11 @@ serve(async (req) => {
     const params = new URLSearchParams()
 
     if (useCustomSearch && searchQuery) {
-      params.append('search', searchQuery)
+      // Convert search query to lowercase for case-insensitive search
+      params.append('search', searchQuery.toLowerCase())
     } else if (category && categoryKeywords[category]) {
       // Create a search query that includes all relevant keywords for the category
-      const keywords = categoryKeywords[category]
+      const keywords = categoryKeywords[category].map(k => k.toLowerCase())
       const searchTerms = keywords.join(' OR ')
       params.append('search', searchTerms)
     }
@@ -110,11 +111,11 @@ serve(async (req) => {
         const title = (dataset.id || '').toLowerCase()
         const tags = (dataset.tags || []).map((tag: string) => tag.toLowerCase())
         
-        // Check if any of the category keywords appear in the dataset metadata
+        // Check if any of the category keywords appear in the dataset metadata (case-insensitive)
         return keywords.some(keyword => 
           description.includes(keyword) || 
           title.includes(keyword) || 
-          tags.some((tag: string) => tag.includes(keyword))
+          tags.some(tag => tag.includes(keyword))
         )
       })
     }
