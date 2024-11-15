@@ -14,9 +14,9 @@ export const ScanResults = ({ result }: ScanResultsProps) => {
   return (
     <Card className="mt-8">
       <CardContent className="pt-6">
-        <div className="whitespace-pre-wrap text-foreground bg-background p-4 rounded-md border">
+        <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
           {result.model_response}
-        </div>
+        </pre>
       </CardContent>
     </Card>
   );
