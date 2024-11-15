@@ -27,6 +27,9 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Database } from "@/integrations/supabase/types";
+
+type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
 const LLMResults = () => {
   const [selectedContent, setSelectedContent] = useState<{
@@ -54,7 +57,7 @@ const LLMResults = () => {
         toast.error("Failed to fetch scan results");
         throw error;
       }
-      return data;
+      return data as LLMScan[];
     },
   });
 
@@ -78,7 +81,7 @@ const LLMResults = () => {
       "Name,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
       scans.map(scan => {
         const results = scan.results as { model_response: string; prompt: string } | null;
-        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable ? 'Vulnerable' : 'Secure'}"`;
+        return `"${scan.name}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
