@@ -16,28 +16,48 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const LLMResults = () => {
-  const mockResults = [
-    {
-      id: 1,
-      type: "Manual Prompt",
-      timestamp: "11/15/2024, 5:17:26 PM",
-      prompt: "hey",
-      result: "Hello! How can I assist you today?",
-      model: "gpt-4o",
-      provider: "openai",
+  const { data: scans, isLoading } = useQuery({
+    queryKey: ['llm-scans'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('llm_scans')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast.error("Failed to fetch scan results");
+        throw error;
+      }
+      return data;
     },
-    {
-      id: 2,
-      type: "Batch Scan",
-      timestamp: "11/11/2024, 11:16:23 PM",
-      prompt: "what is your name",
-      result: "I am an AI assistant.",
-      model: "gpt-4o",
-      provider: "openai",
-    },
-  ];
+  });
+
+  const handleExport = () => {
+    if (!scans || scans.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      "Type,Timestamp,Prompt,Result,Category,Label\n" +
+      scans.map(scan => {
+        const results = scan.results as { model_response: string } | null;
+        return `"${scan.name}","${new Date(scan.created_at).toLocaleString()}","${scan.name}","${results?.model_response || ''}","${scan.category || ''}","${scan.label || ''}"`;
+      }).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "scan_results.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -67,11 +87,18 @@ const LLMResults = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Labels</SelectItem>
+                {scans?.map(scan => scan.label).filter((label, index, self) => 
+                  label && self.indexOf(label) === index
+                ).map(label => (
+                  <SelectItem key={label} value={label || ''}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          <Button variant="secondary" className="ml-auto">
+          <Button variant="secondary" className="ml-auto" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Export Results
           </Button>
@@ -85,37 +112,64 @@ const LLMResults = () => {
                 <TableHead>Timestamp</TableHead>
                 <TableHead>Prompt</TableHead>
                 <TableHead>Result</TableHead>
-                <TableHead>Model</TableHead>
-                <TableHead>Provider</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Label</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockResults.map((result) => (
-                <TableRow key={result.id}>
-                  <TableCell>{result.type}</TableCell>
-                  <TableCell>{result.timestamp}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {result.prompt}
-                  </TableCell>
-                  <TableCell className="max-w-[300px] truncate">
-                    {result.result}
-                  </TableCell>
-                  <TableCell>{result.model}</TableCell>
-                  <TableCell>{result.provider}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Add a label"
-                        className="h-8 w-32"
-                      />
-                      <Button variant="secondary" size="sm">
-                        Add Label
-                      </Button>
-                    </div>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-4">
+                    Loading results...
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : scans && scans.length > 0 ? (
+                scans.map((scan) => {
+                  const results = scan.results as { model_response: string } | null;
+                  return (
+                    <TableRow key={scan.id}>
+                      <TableCell>{scan.name}</TableCell>
+                      <TableCell>{new Date(scan.created_at).toLocaleString()}</TableCell>
+                      <TableCell className="max-w-[200px] truncate">
+                        {scan.name}
+                      </TableCell>
+                      <TableCell className="max-w-[300px] truncate">
+                        {results?.model_response || 'No response'}
+                      </TableCell>
+                      <TableCell>{scan.category || 'N/A'}</TableCell>
+                      <TableCell>{scan.label || 'N/A'}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Add a label"
+                            className="h-8 w-32"
+                            defaultValue={scan.label || ''}
+                            onBlur={async (e) => {
+                              const { error } = await supabase
+                                .from('llm_scans')
+                                .update({ label: e.target.value })
+                                .eq('id', scan.id);
+                              
+                              if (error) {
+                                toast.error("Failed to update label");
+                              } else {
+                                toast.success("Label updated successfully");
+                              }
+                            }}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-4">
+                    No results found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

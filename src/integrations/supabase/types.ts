@@ -100,8 +100,10 @@ export type Database = {
       }
       llm_scans: {
         Row: {
+          category: string | null
           created_at: string
           id: string
+          label: string | null
           name: string
           results: Json | null
           status: string
@@ -109,8 +111,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           id?: string
+          label?: string | null
           name: string
           results?: Json | null
           status?: string
@@ -118,8 +122,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           id?: string
+          label?: string | null
           name?: string
           results?: Json | null
           status?: string
