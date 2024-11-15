@@ -30,16 +30,43 @@ export const ScanForm = ({ onSubmit, isScanning, onFileUpload }: ScanFormProps) 
   const [schedule, setSchedule] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "text/csv") {
+    if (file.type !== "text/csv" && !file.name.endsWith('.csv')) {
       toast.error("Please upload a CSV file");
       return;
     }
 
-    onFileUpload(file);
+    try {
+      const text = await file.text();
+      const lines = text.split("\n");
+      const headers = lines[0].toLowerCase().trim().split(",");
+      const promptIndex = headers.indexOf("prompts");
+
+      if (promptIndex === -1) {
+        toast.error("CSV must have a 'prompts' column");
+        return;
+      }
+
+      const prompts = lines
+        .slice(1)
+        .map(line => line.split(",")[promptIndex]?.trim())
+        .filter(Boolean)
+        .join("\n");
+
+      if (!prompts) {
+        toast.error("No valid prompts found in the CSV file");
+        return;
+      }
+
+      setPrompt(prompts);
+      toast.success("CSV file processed successfully");
+      onFileUpload(file);
+    } catch (error) {
+      toast.error("Error processing CSV file: " + (error as Error).message);
+    }
   };
 
   const handleSubmit = async () => {
