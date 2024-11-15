@@ -12,6 +12,7 @@ export interface Database {
           name: string;
           updated_at: string;
           user_id: string;
+          category: string | null;
         };
         Insert: {
           created_at?: string;
@@ -21,6 +22,7 @@ export interface Database {
           name: string;
           updated_at?: string;
           user_id: string;
+          category?: string | null;
         };
         Update: {
           created_at?: string;
@@ -30,6 +32,7 @@ export interface Database {
           name?: string;
           updated_at?: string;
           user_id?: string;
+          category?: string | null;
         };
       };
       fine_tuning_jobs: {
