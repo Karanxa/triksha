@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { handleOpenAIRequest } from "./providers/openai.ts";
 import { analyzeVulnerability } from "./utils.ts";
@@ -16,9 +15,9 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompts, provider, category, schedule, isRecurring } = await req.json();
+    const { scanId, prompts, provider, category } = await req.json();
     
-    console.log(`Processing scan ${scanId} with ${prompts.length} prompts`);
+    console.log(`Processing scan ${scanId} with provider ${provider}`);
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -48,23 +47,6 @@ serve(async (req) => {
       throw new Error('Failed to fetch user profile');
     }
 
-    // Calculate next run time if scheduling is enabled
-    let nextRun = null;
-    if (schedule && isRecurring) {
-      const now = new Date();
-      switch (schedule.toLowerCase()) {
-        case 'daily':
-          nextRun = new Date(now.setDate(now.getDate() + 1));
-          break;
-        case 'weekly':
-          nextRun = new Date(now.setDate(now.getDate() + 7));
-          break;
-        case 'monthly':
-          nextRun = new Date(now.setMonth(now.getMonth() + 1));
-          break;
-      }
-    }
-
     // Process each prompt
     const results = [];
     for (const prompt of prompts) {
@@ -74,8 +56,9 @@ serve(async (req) => {
         if (provider === 'ollama') {
           const ollamaEndpoint = profile?.api_keys?.ollama_endpoint;
           if (!ollamaEndpoint) {
-            throw new Error('Ollama endpoint not configured');
+            throw new Error('Ollama endpoint not configured. Please add it in Settings.');
           }
+          console.log('Using Ollama endpoint:', ollamaEndpoint);
           modelResponse = await handleOllamaRequest(prompt, ollamaEndpoint);
         } else if (provider === 'openai') {
           const apiKey = profile?.api_keys?.openai;
@@ -90,37 +73,34 @@ serve(async (req) => {
         // Analyze vulnerability
         const isVulnerable = analyzeVulnerability(category, modelResponse);
 
-        // Create scan record
-        const { data: scan, error: scanError } = await supabaseClient
+        // Update scan record
+        const { error: updateError } = await supabaseClient
           .from('llm_scans')
-          .insert({
-            user_id: user.id,
-            name: `Scan ${new Date().toISOString()}`,
+          .update({
             status: 'completed',
             results: {
               prompt: prompt,
               model_response: modelResponse
             },
-            category: category,
-            schedule: schedule,
-            is_recurring: isRecurring,
-            next_run: nextRun,
             is_vulnerable: isVulnerable
           })
-          .select()
-          .single();
+          .eq('id', scanId);
 
-        if (scanError) {
-          console.error('Error creating scan:', scanError);
-          throw new Error('Failed to create scan');
+        if (updateError) {
+          console.error('Error updating scan:', updateError);
+          throw new Error('Failed to update scan');
         }
 
-        results.push(scan);
+        results.push({
+          prompt,
+          response: modelResponse,
+          isVulnerable
+        });
       } catch (error) {
         console.error(`Error processing prompt: ${error}`);
         results.push({
           error: error.message,
-          prompt: prompt
+          prompt
         });
       }
     }
