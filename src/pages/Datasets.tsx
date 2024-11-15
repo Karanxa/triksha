@@ -7,7 +7,6 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { DatasetSearchControls } from "@/components/datasets/DatasetSearchControls"
 import { DatasetCard } from "@/components/datasets/DatasetCard"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 
 const Datasets = () => {
   const { toast } = useToast()
@@ -135,13 +134,14 @@ const Datasets = () => {
               </h2>
             )}
             
-            {huggingFaceDatasets.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Hugging Face Column */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-semibold">Hugging Face Datasets</h3>
                   <span className="text-muted-foreground">({huggingFaceDatasets.length})</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   {huggingFaceDatasets.map((dataset) => (
                     <DatasetCard
                       key={dataset.id}
@@ -150,21 +150,21 @@ const Datasets = () => {
                       downloading={downloading}
                     />
                   ))}
+                  {huggingFaceDatasets.length === 0 && (
+                    <p className="text-center text-muted-foreground py-12">
+                      No Hugging Face datasets found
+                    </p>
+                  )}
                 </div>
               </div>
-            )}
 
-            {huggingFaceDatasets.length > 0 && githubDatasets.length > 0 && (
-              <Separator className="my-8" />
-            )}
-
-            {githubDatasets.length > 0 && (
+              {/* GitHub Column */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-semibold">GitHub Datasets</h3>
                   <span className="text-muted-foreground">({githubDatasets.length})</span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   {githubDatasets.map((dataset) => (
                     <DatasetCard
                       key={dataset.id}
@@ -173,9 +173,14 @@ const Datasets = () => {
                       downloading={downloading}
                     />
                   ))}
+                  {githubDatasets.length === 0 && (
+                    <p className="text-center text-muted-foreground py-12">
+                      No GitHub datasets found
+                    </p>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
 
             {datasets && Object.keys(datasets).length > 0 && 
              huggingFaceDatasets.length === 0 && githubDatasets.length === 0 && (
