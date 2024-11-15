@@ -1,29 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { ApiKeys } from "@/integrations/supabase/types";
 
 const Settings = () => {
-  const { session } = useSession();
+  const session = useSession();
   const { toast } = useToast();
-  const [apiKeys, setApiKeys] = useState({
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({
     openai: "",
     huggingface: "",
     anthropic: "",
     gemini: ""
   });
 
+  useEffect(() => {
+    const fetchApiKeys = async () => {
+      if (!session?.user?.id) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch API keys. Please try again.",
+        });
+        return;
+      }
+
+      if (data?.api_keys) {
+        setApiKeys(data.api_keys as ApiKeys);
+      }
+    };
+
+    fetchApiKeys();
+  }, [session?.user?.id, toast]);
+
   const handleSaveKeys = async () => {
+    if (!session?.user?.id) return;
+
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
           api_keys: apiKeys
         })
-        .eq('id', session?.user?.id);
+        .eq('id', session.user.id);
 
       if (error) throw error;
 
@@ -59,7 +89,7 @@ const Settings = () => {
               <Input
                 id="openai"
                 type="password"
-                value={apiKeys.openai}
+                value={apiKeys.openai || ""}
                 onChange={(e) => setApiKeys(prev => ({ ...prev, openai: e.target.value }))}
                 placeholder="sk-..."
               />
@@ -70,7 +100,7 @@ const Settings = () => {
               <Input
                 id="huggingface"
                 type="password"
-                value={apiKeys.huggingface}
+                value={apiKeys.huggingface || ""}
                 onChange={(e) => setApiKeys(prev => ({ ...prev, huggingface: e.target.value }))}
                 placeholder="hf_..."
               />
@@ -81,7 +111,7 @@ const Settings = () => {
               <Input
                 id="anthropic"
                 type="password"
-                value={apiKeys.anthropic}
+                value={apiKeys.anthropic || ""}
                 onChange={(e) => setApiKeys(prev => ({ ...prev, anthropic: e.target.value }))}
                 placeholder="sk-ant-..."
               />
@@ -92,7 +122,7 @@ const Settings = () => {
               <Input
                 id="gemini"
                 type="password"
-                value={apiKeys.gemini}
+                value={apiKeys.gemini || ""}
                 onChange={(e) => setApiKeys(prev => ({ ...prev, gemini: e.target.value }))}
                 placeholder="AIza..."
               />

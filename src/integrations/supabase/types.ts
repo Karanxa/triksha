@@ -135,16 +135,19 @@ export type Database = {
       }
       profiles: {
         Row: {
+          api_keys: Json | null
           created_at: string
           id: string
           updated_at: string
         }
         Insert: {
+          api_keys?: Json | null
           created_at?: string
           id: string
           updated_at?: string
         }
         Update: {
+          api_keys?: Json | null
           created_at?: string
           id?: string
           updated_at?: string
