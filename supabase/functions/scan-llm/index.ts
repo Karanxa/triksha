@@ -6,6 +6,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: string) => {
+  // Basic cURL command parser
+  const urlMatch = curlCommand.match(/curl ['"]([^'"]+)['"]/);
+  const headersMatch = curlCommand.match(/-H ['"]([^'"]+)['"]/g);
+  const dataMatch = curlCommand.match(/-d ['"]([^'"]+)['"]/);
+  
+  if (!urlMatch) {
+    throw new Error('Invalid cURL command: URL not found');
+  }
+
+  const url = urlMatch[1];
+  const headers: Record<string, string> = {};
+  
+  // Parse headers
+  headersMatch?.forEach(header => {
+    const [key, value] = header.match(/-H ['"]([^'"]+)['"]/)?.[1].split(': ') ?? [];
+    if (key && value) {
+      headers[key] = value;
+    }
+  });
+
+  // Parse body
+  let body = dataMatch?.[1] ?? '{}';
+  body = body.replace(placeholder, prompt);
+
+  try {
+    body = JSON.parse(body);
+  } catch {
+    throw new Error('Invalid JSON body in cURL command');
+  }
+
+  return { url, headers, body };
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -23,21 +57,37 @@ serve(async (req) => {
 
     if (baseProvider === 'custom' && customEndpoint) {
       try {
-        const headers = customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {};
-        if (customEndpoint.apiKey) {
-          headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
-        }
-
         const results = await Promise.all(prompts.map(async (prompt) => {
-          const response = await fetch(customEndpoint.url, {
-            method: 'POST',
-            headers: {
+          let url: string;
+          let headers: Record<string, string> = {};
+          let body: any;
+
+          if (customEndpoint.inputType === 'curl') {
+            const parsed = parseCurlCommand(
+              customEndpoint.curlCommand,
+              customEndpoint.placeholder,
+              prompt
+            );
+            url = parsed.url;
+            headers = parsed.headers;
+            body = parsed.body;
+          } else {
+            url = customEndpoint.url;
+            headers = {
               'Content-Type': 'application/json',
-              ...headers,
-            },
-            body: JSON.stringify({
-              prompt: prompt.replace(customEndpoint.placeholder, prompt)
-            }),
+              ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {}),
+            };
+            if (customEndpoint.apiKey) {
+              headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
+            }
+            body = { prompt: prompt };
+          }
+
+          console.log(`Making request to custom endpoint: ${url}`);
+          const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
           });
 
           if (!response.ok) {

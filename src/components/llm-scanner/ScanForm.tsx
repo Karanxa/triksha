@@ -23,6 +23,8 @@ interface ScanFormProps {
       apiKey: string;
       headers: string;
       placeholder: string;
+      curlCommand?: string;
+      inputType?: 'curl' | 'manual';
     };
   }) => Promise<void>;
   isScanning: boolean;
@@ -40,7 +42,9 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     url: '',
     apiKey: '',
     headers: '',
-    placeholder: '{PROMPT}'
+    placeholder: '{PROMPT}',
+    curlCommand: '',
+    inputType: 'manual' as 'curl' | 'manual'
   });
 
   const handleSubmit = async () => {
@@ -50,9 +54,16 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     }
 
     if (provider === 'custom') {
-      if (!customEndpoint.url || !customEndpoint.apiKey) {
-        toast.error("Please provide both custom endpoint URL and API key");
-        return;
+      if (customEndpoint.inputType === 'curl') {
+        if (!customEndpoint.curlCommand || !customEndpoint.placeholder) {
+          toast.error("Please provide both cURL command and placeholder");
+          return;
+        }
+      } else {
+        if (!customEndpoint.url || !customEndpoint.apiKey) {
+          toast.error("Please provide both custom endpoint URL and API key");
+          return;
+        }
       }
     }
 
@@ -66,7 +77,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
-    // Extract base provider from the combined provider-model string
     const baseProvider = provider.split('-')[0];
 
     if (baseProvider === 'ollama') {
