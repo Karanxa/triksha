@@ -1,51 +1,34 @@
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Database, Download, Search, Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Database, Download, Search, Loader2 } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/hooks/use-toast"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect"
 
 interface Dataset {
-  id: string;
-  title: string;
-  description: string;
-  downloads: number;
-  likes: number;
+  id: string
+  title: string
+  description: string
+  downloads: number
+  likes: number
 }
 
 const Datasets = () => {
-  const { toast } = useToast();
-  const [useCustomSearch, setUseCustomSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [downloading, setDownloading] = useState<string | null>(null);
+  const { toast } = useToast()
+  const [useCustomSearch, setUseCustomSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("")
+  const [downloading, setDownloading] = useState<string | null>(null)
 
   const { data: datasets, isLoading } = useQuery({
     queryKey: ['datasets', selectedCategory, useCustomSearch, searchQuery],
     queryFn: async () => {
-      if (!selectedCategory) return [];
+      if (!selectedCategory) return []
       
       const { data, error } = await supabase.functions.invoke('fetch-datasets', {
         body: { 
@@ -53,7 +36,7 @@ const Datasets = () => {
           useCustomSearch,
           searchQuery: useCustomSearch ? searchQuery : undefined
         }
-      });
+      })
 
       if (error) {
         if (error.message.includes("Hugging Face API key not found")) {
@@ -61,15 +44,15 @@ const Datasets = () => {
             variant: "destructive",
             title: "API Key Missing",
             description: "Please add your Hugging Face API key in the Settings page.",
-          });
+          })
         } else {
           toast({
             variant: "destructive",
             title: "Error fetching datasets",
             description: error.message,
-          });
+          })
         }
-        return [];
+        return []
       }
 
       return data.datasets.map((dataset: any) => ({
@@ -78,46 +61,45 @@ const Datasets = () => {
         description: dataset.description || 'No description available',
         downloads: dataset.downloads || 0,
         likes: dataset.likes || 0,
-      }));
+      }))
     },
     enabled: !!selectedCategory && (!useCustomSearch || !!searchQuery)
-  });
+  })
 
   const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
     try {
-      setDownloading(datasetId);
+      setDownloading(datasetId)
       
       const { data, error } = await supabase.functions.invoke('download-dataset', {
         body: { datasetId, format }
-      });
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
-      // Create a download link
-      const blob = new Blob([data.content], { type: data.contentType });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = data.filename || `dataset.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const blob = new Blob([data.content], { type: data.contentType })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = data.filename || `dataset.${format}`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
 
       toast({
         title: "Success",
         description: "Dataset downloaded successfully"
-      });
+      })
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Download failed",
         description: error.message
-      });
+      })
     } finally {
-      setDownloading(null);
+      setDownloading(null)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -137,16 +119,10 @@ const Datasets = () => {
           </div>
 
           <div className="w-full">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select Attack Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="prompt-injection">Prompt Injection</SelectItem>
-                <SelectItem value="data-extraction">Data Extraction</SelectItem>
-                <SelectItem value="model-manipulation">Model Manipulation</SelectItem>
-              </SelectContent>
-            </Select>
+            <AttackCategorySelect 
+              value={selectedCategory} 
+              onValueChange={setSelectedCategory} 
+            />
           </div>
 
           {useCustomSearch && (
@@ -218,7 +194,7 @@ const Datasets = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Datasets;
+export default Datasets
