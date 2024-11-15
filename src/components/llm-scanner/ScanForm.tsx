@@ -50,7 +50,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     // Add validation for Ollama endpoint
     if (provider === 'ollama') {
       const { data: profile } = await supabase.from('profiles').select('api_keys').single();
-      const ollamaEndpoint = profile?.api_keys?.ollama_endpoint;
+      const ollamaEndpoint = profile?.api_keys?.['ollama_endpoint'] as string | undefined;
       
       if (!ollamaEndpoint) {
         toast.error("Please configure your Ollama endpoint URL in Settings");
@@ -85,8 +85,14 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       setSchedule("none");
       setIsRecurring(false);
     } catch (error) {
-      toast.error(`Scan failed: ${error.message}`);
+      toast.error(`Scan failed: ${(error as Error).message}`);
     }
+  };
+
+  // Add the handlePromptsExtracted function
+  const handlePromptsExtracted = (extractedPrompts: string[]) => {
+    setPrompts(extractedPrompts);
+    setSinglePrompt(""); // Clear single prompt when CSV is uploaded
   };
 
   return (
