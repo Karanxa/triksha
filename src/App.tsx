@@ -49,23 +49,6 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabase}>
         <TooltipProvider>
-          <style>
-            {`
-              :root {
-                --background: #1A1F2C;
-                --foreground: #FFFFFF;
-              }
-              body {
-                background-color: var(--background);
-                color: var(--foreground);
-              }
-              [data-radix-popper-content-wrapper] {
-                background-color: var(--background) !important;
-              }
-            `}
-          </style>
-          <Toaster />
-          <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
@@ -79,6 +62,8 @@ const App = () => {
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             </Routes>
           </BrowserRouter>
+          <Toaster />
+          <Sonner />
         </TooltipProvider>
       </SessionContextProvider>
     </QueryClientProvider>
