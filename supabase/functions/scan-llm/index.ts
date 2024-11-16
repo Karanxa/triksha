@@ -1,14 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
+import { handleOpenAIRequest } from "./providers/openai.ts";
 import { processCustomEndpoint } from "./providers/customEndpoint.ts";
 import { updateScanStatus } from "./db.ts";
 import { analyzeVulnerability } from "./utils.ts";
-import { ScanRequest, ScanResponse } from "./types.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from "./cors.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,37 +13,63 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompts, provider, category, customEndpoint } = await req.json() as ScanRequest;
+    const { scanId, prompts, provider, category, customEndpoint } = await req.json();
     
     if (!scanId || !prompts || !provider) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Missing required parameters' 
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('Missing required parameters');
     }
 
     // Update scan status to processing
     await updateScanStatus(scanId, 'processing');
 
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get user's API keys
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (userError || !user) {
+      throw userError || new Error('User not found');
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      throw new Error('Failed to fetch user profile');
+    }
+
     let response: string;
     const baseProvider = provider.split('-')[0];
+
+    console.log(`Processing scan with provider: ${baseProvider}`);
 
     // Handle different providers
     if (baseProvider === 'custom' && customEndpoint) {
       response = await processCustomEndpoint(customEndpoint, prompts[0]);
     } else if (baseProvider === 'ollama') {
       response = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+    } else if (baseProvider === 'openai') {
+      const apiKey = profile?.api_keys?.openai;
+      response = await handleOpenAIRequest(prompts[0], apiKey);
     } else {
-      throw new Error(`Provider ${baseProvider} not implemented`);
+      throw new Error(`Provider ${baseProvider} not implemented or invalid`);
     }
 
     // Create scan results
-    const scanResults: ScanResponse = {
+    const scanResults = {
       prompt: prompts[0],
       model_response: response,
       category,
@@ -58,21 +81,18 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(scanResults),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in scan-llm function:', error);
     
-    // If we have a scanId, update its status to failed
     try {
       const { scanId } = await req.json();
       if (scanId) {
         await updateScanStatus(scanId, 'failed', {
-          error: error.message,
           prompt: '',
-          model_response: ''
+          model_response: '',
+          error: error.message
         });
       }
     } catch {
@@ -80,9 +100,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Internal server error'
-      }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
