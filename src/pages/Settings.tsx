@@ -75,8 +75,9 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-8">Settings</h1>
-        
+        <h1 className="text-3xl font-bold mb-2">Settings</h1>
+        <p className="text-muted-foreground mb-8">Configure your API keys and preferences for various LLM services</p>
+
         <div className="space-y-8">
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">API Keys</h2>

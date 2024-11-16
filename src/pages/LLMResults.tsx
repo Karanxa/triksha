@@ -88,9 +88,8 @@ const LLMResults = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">LLM Security Analysis Results</h1>
-        </div>
+        <h1 className="text-3xl font-bold mb-2">LLM Security Analysis Results</h1>
+        <p className="text-muted-foreground mb-8">Review and analyze the results of your LLM security scans</p>
 
         <div className="flex flex-wrap gap-4 mb-6">
           <div className="w-48">

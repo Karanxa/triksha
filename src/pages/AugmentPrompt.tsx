@@ -55,9 +55,10 @@ const AugmentPrompt = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container py-12 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-8">Augment Prompts</h1>
-        
+      <div className="container py-12">
+        <h1 className="text-3xl font-bold mb-2">Prompt Augmentation</h1>
+        <p className="text-muted-foreground mb-8">Enhance and optimize your prompts for better security testing results</p>
+
         <div className="space-y-6">
           <ProviderSelect value={provider} onValueChange={setProvider} />
           <FileUpload onFileUpload={setPrompts} />
