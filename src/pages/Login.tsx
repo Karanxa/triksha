@@ -10,12 +10,13 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN") {
-        navigate("/");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN") {
+          navigate("/");
+        }
       }
-    });
-
+    );
     return () => subscription.unsubscribe();
   }, [navigate]);
 
@@ -41,8 +42,8 @@ const Login = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#9b87f5',
-                    brandAccent: '#7E69AB',
+                    brand: 'hsl(var(--primary))',
+                    brandAccent: 'hsl(var(--primary))',
                     inputBackground: 'transparent',
                     inputBorder: 'hsl(var(--input))',
                     inputBorderFocus: 'hsl(var(--ring))',
@@ -65,6 +66,7 @@ const Login = () => {
                 button: 'bg-primary hover:bg-primary/90 text-primary-foreground',
                 input: 'bg-background border border-input',
                 label: 'text-foreground',
+                anchor: 'text-primary hover:text-primary/90',
               },
             }}
             providers={[]}
