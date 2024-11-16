@@ -4,8 +4,7 @@ import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
 import { Database } from "@/integrations/supabase/types";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { getScanType } from "@/utils/scanUtils";
-import { getCategoryVariant, getSeverityVariant, analyzeVulnerability } from "@/utils/vulnerabilityUtils";
+import { getCategoryVariant, getSeverityVariant } from "@/utils/vulnerabilityUtils";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -25,12 +24,11 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const response = results?.model_response || 'No response available';
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
-  const scanType = getScanType(results);
-  const isVulnerable = scan.is_vulnerable ?? analyzeVulnerability(response, category);
+  const isVulnerable = scan.is_vulnerable ?? false;
 
   return (
     <TableRow key={scan.id}>
-      <TableCell>{scanType}</TableCell>
+      <TableCell>{scan.name}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell

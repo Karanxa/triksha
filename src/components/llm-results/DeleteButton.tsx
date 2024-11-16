@@ -24,7 +24,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
       toast.success("Scan deleted successfully");
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error("Failed to delete scan: " + error.message);
     },
   });
@@ -34,6 +34,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
       variant="destructive"
       size="sm"
       onClick={() => deleteScan.mutate(scanId)}
+      disabled={deleteScan.isPending}
     >
       <Trash2 className="h-4 w-4" />
     </Button>

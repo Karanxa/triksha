@@ -83,7 +83,6 @@ serve(async (req) => {
             body = { prompt: prompt };
           }
 
-          console.log(`Making request to custom endpoint: ${url}`);
           const response = await fetch(url, {
             method: 'POST',
             headers,
@@ -94,7 +93,11 @@ serve(async (req) => {
             throw new Error(`Custom endpoint error: ${response.statusText}`);
           }
 
-          return await response.json();
+          const responseData = await response.json();
+          return {
+            prompt,
+            model_response: responseData.response || responseData.model_response || responseData.text || JSON.stringify(responseData)
+          };
         }));
 
         response = { results };
@@ -105,7 +108,6 @@ serve(async (req) => {
     } else if (baseProvider === 'ollama') {
       response = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
     } else {
-      // Handle other providers...
       throw new Error('Provider not implemented');
     }
 

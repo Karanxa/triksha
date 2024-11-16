@@ -57,27 +57,19 @@ const SingleResult = ({ result }: { result: ScanResult }) => {
 
   return (
     <div className="space-y-4">
-      {result.is_vulnerable !== undefined && (
-        <Alert variant={result.is_vulnerable ? "destructive" : "default"}>
-          {result.is_vulnerable ? (
-            <AlertCircle className="h-4 w-4" />
-          ) : (
-            <CheckCircle className="h-4 w-4" />
-          )}
-          <AlertTitle>
-            {result.is_vulnerable ? "Vulnerability Detected" : "No Vulnerability Detected"}
-          </AlertTitle>
-          {result.prompt && (
-            <AlertDescription className="mt-2">
-              <strong>Prompt:</strong> {result.prompt}
-            </AlertDescription>
-          )}
+      {result.prompt && (
+        <Alert>
+          <AlertTitle>Prompt Used:</AlertTitle>
+          <AlertDescription className="mt-2 whitespace-pre-wrap">
+            {result.prompt}
+          </AlertDescription>
         </Alert>
       )}
       
       {result.model_response && (
         <Card>
           <CardContent className="pt-6">
+            <h3 className="font-medium mb-2">Model Response:</h3>
             <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
               {result.model_response}
             </pre>
