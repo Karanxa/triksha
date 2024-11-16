@@ -24,11 +24,18 @@ const LLMScanner = () => {
   }) => {
     try {
       const result = await createScan(data);
+      console.log("Scan result:", result); // Debug log
       setScanResult(result);
       setIsBatchScan(data.prompts.length > 1);
+      
+      if (data.prompts.length > 1) {
+        toast.success("Batch scan completed. View results in the Results page.");
+      } else {
+        toast.success("Scan completed successfully");
+      }
     } catch (error) {
       console.error('Scan creation failed:', error);
-      toast.error('Failed to create scan');
+      toast.error('Failed to create scan: ' + (error as Error).message);
     }
   };
 

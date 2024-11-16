@@ -76,6 +76,7 @@ export const useLLMScans = () => {
       
       // Format the response consistently
       const formattedResults = formatScanResponse(response.data);
+      console.log("Formatted results:", formattedResults); // Debug log
       
       // Update the scan with the results
       const { error: updateError } = await supabase
