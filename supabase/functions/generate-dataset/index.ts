@@ -55,6 +55,7 @@ serve(async (req) => {
 
     let metadata = {}
     let prompts = []
+    let fileContent = ''
     
     if (method === 'recipe') {
       metadata = {
@@ -62,16 +63,17 @@ serve(async (req) => {
         targetModel,
         numSamples
       }
+      // Generate recipe-based prompts here
+      prompts = [`Recipe: ${recipe}, Target: ${targetModel}`] // Placeholder
     } else if (method === 'adversarial') {
       // Generate base adversarial prompts
       prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
       
       // Enhance prompts using OpenAI with user's API key
-      const enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
+      prompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
       
       metadata = {
         ...adversarialConfig,
-        prompts: enhancedPrompts,
         numSamples
       }
     } else {
@@ -79,14 +81,40 @@ serve(async (req) => {
         basePrompt,
         numSamples
       }
+      // Generate variations of base prompt
+      prompts = [basePrompt] // Placeholder for manual variations
     }
 
+    // Create CSV content
+    fileContent = 'prompt,category,method\n'
+    prompts.forEach((prompt) => {
+      fileContent += `"${prompt.replace(/"/g, '""')}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
+    })
+
+    // Generate unique filename
+    const timestamp = new Date().getTime()
+    const filePath = `${user.id}/${timestamp}_${name.toLowerCase().replace(/\s+/g, '_')}.csv`
+
+    // Upload file to storage
+    const { error: uploadError } = await supabase.storage
+      .from('datasets')
+      .upload(filePath, fileContent, {
+        contentType: 'text/csv',
+        upsert: true
+      })
+
+    if (uploadError) {
+      throw new Error(`Failed to upload dataset: ${uploadError.message}`)
+    }
+
+    // Create dataset record
     const { data: dataset, error: datasetError } = await supabase
       .from('datasets')
       .insert({
         name,
         description,
         user_id: user.id,
+        file_path: filePath,
         category: method === 'recipe' ? 'easyjailbreak' : method === 'adversarial' ? 'adversarial' : 'manual',
         metadata
       })
@@ -94,7 +122,7 @@ serve(async (req) => {
       .single()
 
     if (datasetError) {
-      throw new Error('Failed to create dataset')
+      throw new Error('Failed to create dataset record')
     }
 
     return new Response(

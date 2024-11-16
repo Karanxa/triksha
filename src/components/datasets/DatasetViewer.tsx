@@ -37,29 +37,34 @@ export const DatasetViewer = ({ datasetId, onClose }: DatasetViewerProps) => {
         return null
       }
 
-      const { data: fileData, error: fileError } = await supabase.storage
-        .from('datasets')
-        .download(dataset.file_path)
+      try {
+        const { data: fileData, error: fileError } = await supabase.storage
+          .from('datasets')
+          .download(dataset.file_path)
 
-      if (fileError) {
+        if (fileError) throw fileError
+
+        const text = await fileData.text()
+        
+        // Try to parse as CSV
+        const rows = text.split('\n').map(row => 
+          row.split(',').map(cell => 
+            cell.startsWith('"') && cell.endsWith('"') 
+              ? cell.slice(1, -1).replace(/""/g, '"') 
+              : cell
+          )
+        )
+        const headers = rows[0]
+        const data = rows.slice(1).filter(row => row.length === headers.length)
+        
+        return { type: 'csv', headers, data, raw: text }
+      } catch (error: any) {
         toast({
           variant: "destructive",
           title: "Error fetching file",
-          description: fileError.message
+          description: error.message
         })
         return null
-      }
-
-      const text = await fileData.text()
-      try {
-        // Try to parse as CSV
-        const rows = text.split('\n').map(row => row.split(','))
-        const headers = rows[0]
-        const data = rows.slice(1).filter(row => row.length === headers.length)
-        return { type: 'csv', headers, data, raw: text }
-      } catch {
-        // If parsing fails, return as raw text
-        return { type: 'text', raw: text }
       }
     },
     enabled: !!datasetId
