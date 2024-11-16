@@ -48,15 +48,17 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
       return;
     }
 
-    if (customEndpoint && customEndpoint.inputType === 'curl') {
-      if (!customEndpoint.curlCommand || !customEndpoint.placeholder) {
-        toast.error("Please provide both cURL command and placeholder");
-        return;
-      }
-    } else if (customEndpoint && customEndpoint.inputType === 'manual') {
-      if (!customEndpoint.url || !customEndpoint.apiKey) {
-        toast.error("Please provide both endpoint URL and API key");
-        return;
+    if (customEndpoint) {
+      if (customEndpoint.inputType === 'curl') {
+        if (!customEndpoint.curlCommand || !customEndpoint.placeholder) {
+          toast.error("Please provide both cURL command and placeholder");
+          return;
+        }
+      } else if (customEndpoint.inputType === 'manual') {
+        if (!customEndpoint.url || !customEndpoint.apiKey) {
+          toast.error("Please provide both endpoint URL and API key");
+          return;
+        }
       }
     }
 
@@ -82,7 +84,7 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
 
       const result = await onSubmit({
         prompts: promptsToScan,
-        provider: customEndpoint ? 'custom' : provider,
+        provider: customEndpoint ? undefined : provider,
         category,
         label,
         schedule,
@@ -90,6 +92,10 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         qps,
         customEndpoint
       });
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
 
       setResult(result);
       toast.success("Scan completed successfully");
