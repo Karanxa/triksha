@@ -6,11 +6,12 @@ import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ScanFormProvider } from "./ScanFormProvider";
-import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { QPSControl } from "./QPSControl";
 import { Loader2 } from "lucide-react";
 import { ScanResults } from "../llm-results/ScanResults";
+import { ScanTypeSelect } from "./ScanTypeSelect";
+import { ScanPromptInput } from "./ScanPromptInput";
 
 interface CustomEndpoint {
   url: string;
@@ -36,6 +37,7 @@ interface ScanFormProps {
 }
 
 export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
+  const [scanType, setScanType] = useState("manual");
   const [provider, setProvider] = useState("");
   const [singlePrompt, setSinglePrompt] = useState("");
   const [prompts, setPrompts] = useState<string[]>([]);
@@ -43,7 +45,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
-  const [qps, setQPS] = useState(5); // Default QPS value
+  const [qps, setQPS] = useState(5);
   const [scanResult, setScanResult] = useState<any>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
@@ -74,8 +76,13 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       }
     }
 
-    if (!singlePrompt && prompts.length === 0) {
-      toast.error("Please enter a prompt or upload a CSV");
+    if (scanType === "manual" && !singlePrompt) {
+      toast.error("Please enter a prompt");
+      return;
+    }
+
+    if (scanType === "batch" && prompts.length === 0) {
+      toast.error("Please upload a CSV file with prompts");
       return;
     }
 
@@ -111,7 +118,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       }
     }
 
-    const allPrompts = singlePrompt ? [singlePrompt] : prompts;
+    const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
     setScanResult(null);
 
     try {
@@ -142,6 +149,8 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
 
   return (
     <div className="space-y-8">
+      <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
+
       <ScanFormProvider 
         provider={provider}
         onProviderChange={setProvider}
@@ -154,17 +163,12 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         }}
       />
 
-      <ScanFormPrompt
+      <ScanPromptInput
+        scanType={scanType}
         singlePrompt={singlePrompt}
-        onSinglePromptChange={(value) => {
-          setSinglePrompt(value);
-          setPrompts([]);
-        }}
+        onSinglePromptChange={setSinglePrompt}
         prompts={prompts}
-        onPromptsExtracted={(extractedPrompts) => {
-          setPrompts(extractedPrompts);
-          setSinglePrompt("");
-        }}
+        onPromptsExtracted={setPrompts}
       />
 
       <div className="space-y-4">
