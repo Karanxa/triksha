@@ -19,7 +19,6 @@ const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: stri
   const url = urlMatch[1];
   const headers: Record<string, string> = {};
   
-  // Parse headers
   headersMatch?.forEach(header => {
     const [key, value] = header.match(/-H ['"]([^'"]+)['"]/)?.[1].split(': ') ?? [];
     if (key && value) {
@@ -27,7 +26,6 @@ const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: stri
     }
   });
 
-  // Parse body
   let body = dataMatch?.[1] ?? '{}';
   body = body.replace(placeholder, prompt);
 
@@ -52,19 +50,25 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
-    console.log(`Processing scan ${scanId} with provider ${provider}`);
+    console.log(`Starting scan ${scanId} with ${prompts.length} prompts for provider ${provider}`);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    let response;
+    // Update scan status to processing
+    await supabase
+      .from('llm_scans')
+      .update({ status: 'processing' })
+      .eq('id', scanId);
+
+    let results;
     const baseProvider = provider.split('-')[0];
 
     if (baseProvider === 'custom' && customEndpoint) {
       try {
-        const results = await Promise.all(prompts.map(async (prompt) => {
+        const processedResults = await Promise.all(prompts.map(async (prompt) => {
           let url: string;
           let headers: Record<string, string> = {};
           let body: any;
@@ -87,7 +91,7 @@ serve(async (req) => {
             if (customEndpoint.apiKey) {
               headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
             }
-            body = { prompt: prompt };
+            body = { prompt };
           }
 
           const response = await fetch(url, {
@@ -107,57 +111,65 @@ serve(async (req) => {
           };
         }));
 
-        // Store results in database
-        const resultsData = prompts.length > 1 ? { results } : results[0];
-        console.log(`Storing results for scan ${scanId}:`, resultsData);
+        // Format results consistently for both single and batch scans
+        results = prompts.length > 1 
+          ? { results: processedResults }
+          : { 
+              prompt: processedResults[0].prompt,
+              model_response: processedResults[0].model_response
+            };
 
-        const { error: updateError } = await supabase
-          .from('llm_scans')
-          .update({
-            results: resultsData,
-            status: 'completed'
-          })
-          .eq('id', scanId);
-
-        if (updateError) {
-          console.error(`Error updating scan ${scanId}:`, updateError);
-          throw updateError;
-        }
-
-        response = resultsData;
       } catch (error) {
         console.error('Custom endpoint error:', error);
-        throw new Error(`Custom endpoint error: ${error.message}`);
+        // Update scan status to failed
+        await supabase
+          .from('llm_scans')
+          .update({ 
+            status: 'failed',
+            results: { error: error.message }
+          })
+          .eq('id', scanId);
+        throw error;
       }
     } else if (baseProvider === 'ollama') {
-      const result = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
-      
-      // Format response for single prompt
-      response = {
-        prompt: prompts[0],
-        model_response: result
-      };
-
-      console.log(`Storing Ollama result for scan ${scanId}:`, response);
-
-      // Store result in database
-      const { error: updateError } = await supabase
-        .from('llm_scans')
-        .update({
-          results: response,
-          status: 'completed'
-        })
-        .eq('id', scanId);
-
-      if (updateError) {
-        console.error(`Error updating scan ${scanId}:`, updateError);
-        throw updateError;
+      try {
+        const result = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+        results = {
+          prompt: prompts[0],
+          model_response: result
+        };
+      } catch (error) {
+        console.error('Ollama error:', error);
+        await supabase
+          .from('llm_scans')
+          .update({ 
+            status: 'failed',
+            results: { error: error.message }
+          })
+          .eq('id', scanId);
+        throw error;
       }
     } else {
       throw new Error('Provider not implemented');
     }
 
-    return new Response(JSON.stringify(response), {
+    console.log(`Storing results for scan ${scanId}:`, results);
+
+    // Update scan with results and mark as completed
+    const { error: updateError } = await supabase
+      .from('llm_scans')
+      .update({
+        results,
+        status: 'completed'
+      })
+      .eq('id', scanId);
+
+    if (updateError) {
+      console.error(`Error updating scan ${scanId}:`, updateError);
+      throw updateError;
+    }
+
+    return new Response(JSON.stringify(results), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

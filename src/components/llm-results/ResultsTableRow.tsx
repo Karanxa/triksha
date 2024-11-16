@@ -18,23 +18,28 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const results = scan.results as any;
 
   // Extract prompt and response based on scan type
-  let prompt = '';
-  let response = '';
+  let prompt = 'No prompt available';
+  let response = 'No response available';
+  let scanType = 'Manual Scan';
 
   if (results) {
-    if (results.results && Array.isArray(results.results)) {
-      // For batch results
+    if (results.error) {
+      response = `Error: ${results.error}`;
+    } else if (results.results && Array.isArray(results.results)) {
+      // Batch scan results
+      scanType = 'Batch Scan';
       const firstResult = results.results[0];
-      prompt = firstResult?.prompt || 'No prompt available';
-      response = firstResult?.model_response || 'No response available';
+      if (firstResult) {
+        prompt = firstResult.prompt || prompt;
+        response = firstResult.model_response || response;
+      }
     } else if (results.prompt && results.model_response) {
-      // For single results
+      // Single scan results
       prompt = results.prompt;
       response = results.model_response;
     }
   }
 
-  const scanType = results?.results && Array.isArray(results.results) ? 'Batch Scan' : 'Manual Scan';
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const isVulnerable = scan.is_vulnerable ?? false;
@@ -65,7 +70,17 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
-          {isVulnerable ? (
+          {scan.status === 'failed' ? (
+            <div className="flex items-center text-destructive">
+              <XCircle className="w-5 h-5 mr-1" />
+              Failed
+            </div>
+          ) : scan.status === 'processing' ? (
+            <div className="flex items-center text-muted-foreground">
+              <span className="loading loading-spinner loading-sm mr-1"></span>
+              Processing
+            </div>
+          ) : isVulnerable ? (
             <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
               <CheckCircle2 className="w-5 h-5 mr-1" />
               Vulnerable
