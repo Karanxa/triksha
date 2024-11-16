@@ -7,12 +7,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TruncatedCellProps {
-  content: string;
+  content?: string;
   title: string;
   onContentClick: (title: string, content: string) => void;
 }
 
-export const TruncatedCell = ({ content, title, onContentClick }: TruncatedCellProps) => (
+export const TruncatedCell = ({ content = "N/A", title, onContentClick }: TruncatedCellProps) => (
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
