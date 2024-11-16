@@ -5,6 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
+interface GarakResult {
+  prompt: string;
+  result?: any;
+  error?: string;
+}
+
+interface GarakScan {
+  id: string;
+  name: string;
+  status: string;
+  model: string;
+  test_suites: string[];
+  prompts: string[];
+  results: GarakResult[] | null;
+  created_at: string;
+}
+
 export const GarakResults = () => {
   const { data: scans, isLoading } = useQuery({
     queryKey: ['garak-scans'],
@@ -16,9 +33,9 @@ export const GarakResults = () => {
         .limit(10);
 
       if (error) throw error;
-      return data;
+      return data as GarakScan[];
     },
-    refetchInterval: 5000, // Refresh every 5 seconds for active scans
+    refetchInterval: 5000,
   });
 
   if (isLoading) {
@@ -37,6 +54,13 @@ export const GarakResults = () => {
     );
   }
 
+  const calculateProgress = (scan: GarakScan) => {
+    if (!scan.results || !Array.isArray(scan.results)) return 0;
+    const completedPrompts = scan.results.filter(r => r.result || r.error).length;
+    const totalPrompts = scan.prompts.length;
+    return (completedPrompts / totalPrompts) * 100;
+  };
+
   return (
     <ScrollArea className="h-[600px] rounded-md border">
       <div className="p-4 space-y-4">
@@ -52,14 +76,9 @@ export const GarakResults = () => {
             
             {scan.status === 'pending' && scan.results && (
               <div className="space-y-2">
-                <Progress 
-                  value={
-                    (scan.results.filter((r: any) => r.result || r.error).length / 
-                    scan.prompts.length) * 100
-                  } 
-                />
+                <Progress value={calculateProgress(scan)} />
                 <p className="text-sm text-muted-foreground">
-                  {scan.results.filter((r: any) => r.result || r.error).length} / {scan.prompts.length} prompts processed
+                  {scan.results.filter(r => r.result || r.error).length} / {scan.prompts.length} prompts processed
                 </p>
               </div>
             )}
@@ -75,9 +94,21 @@ export const GarakResults = () => {
               ))}
             </div>
             {scan.results && (
-              <pre className="mt-2 p-2 bg-muted rounded-md text-xs overflow-auto">
-                {JSON.stringify(scan.results, null, 2)}
-              </pre>
+              <div className="mt-2 space-y-2">
+                <h4 className="font-medium text-sm">Results:</h4>
+                <div className="max-h-60 overflow-y-auto">
+                  {Array.isArray(scan.results) && scan.results.map((result, index) => (
+                    <div key={index} className="p-2 bg-muted rounded-md text-xs space-y-1">
+                      <p><strong>Prompt:</strong> {result.prompt}</p>
+                      {result.error ? (
+                        <p className="text-red-500"><strong>Error:</strong> {result.error}</p>
+                      ) : (
+                        <p><strong>Result:</strong> {JSON.stringify(result.result, null, 2)}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         ))}
