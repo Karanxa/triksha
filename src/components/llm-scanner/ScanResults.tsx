@@ -74,46 +74,48 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
   return (
     <div className="mt-6 space-y-4">
       <Alert>
-        <AlertTitle>Prompt Used:</AlertTitle>
-        <AlertDescription className="mt-2 whitespace-pre-wrap">
-          {result.prompt}
+        <AlertTitle>Scan Results</AlertTitle>
+        <AlertDescription className="mt-2">
+          {result.model_response || "No response available. Please try again with a more specific prompt."}
         </AlertDescription>
       </Alert>
       
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="font-medium">Model Response:</h3>
-            <div className="flex gap-2">
-              {result.category && (
-                <Badge variant="secondary">{result.category}</Badge>
-              )}
-              {result.severity && (
-                <Badge variant="outline">{result.severity}</Badge>
-              )}
-              <Badge 
-                variant={result.is_vulnerable ? "destructive" : "default"}
-                className="flex items-center gap-1"
-              >
-                {result.is_vulnerable ? (
-                  <>
-                    <AlertCircle className="h-3 w-3" />
-                    Vulnerable
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-3 w-3" />
-                    Secure
-                  </>
+      {result.prompt && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="font-medium">Original Prompt:</h3>
+              <div className="flex gap-2">
+                {result.category && (
+                  <Badge variant="secondary">{result.category}</Badge>
                 )}
-              </Badge>
+                {result.severity && (
+                  <Badge variant="outline">{result.severity}</Badge>
+                )}
+                <Badge 
+                  variant={result.is_vulnerable ? "destructive" : "default"}
+                  className="flex items-center gap-1"
+                >
+                  {result.is_vulnerable ? (
+                    <>
+                      <AlertCircle className="h-3 w-3" />
+                      Vulnerable
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-3 w-3" />
+                      Secure
+                    </>
+                  )}
+                </Badge>
+              </div>
             </div>
-          </div>
-          <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
-            {result.model_response}
-          </pre>
-        </CardContent>
-      </Card>
+            <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
+              {result.prompt}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
