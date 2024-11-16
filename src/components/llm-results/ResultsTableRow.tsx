@@ -18,11 +18,12 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const results = scan.results as {
     prompt: string;
     model_response: string;
+    raw_response: any;
   } | null;
   
   const prompt = results?.prompt || 'No prompt';
   const response = results?.model_response || 'No response';
-  const rawJson = JSON.stringify(scan.results, null, 2);
+  const rawJson = JSON.stringify(results?.raw_response || scan.results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const scanType = getScanType(results);
