@@ -1,18 +1,16 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface ScanResult {
-  prompt?: string;
+  prompt: string;
   model_response?: string;
-  category?: string;
-  is_vulnerable?: boolean;
   error?: string;
+  is_vulnerable?: boolean;
 }
 
 interface ScanResultsProps {
-  result: ScanResult | null;
+  result: ScanResult | ScanResult[];
   isLoading?: boolean;
 }
 
@@ -29,9 +27,25 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
 
   if (!result) return null;
 
+  // Handle array of results (batch scan)
+  if (Array.isArray(result)) {
+    return (
+      <div className="mt-8 space-y-4">
+        {result.map((item, index) => (
+          <SingleResult key={index} result={item} />
+        ))}
+      </div>
+    );
+  }
+
+  // Handle single result
+  return <SingleResult result={result} />;
+};
+
+const SingleResult = ({ result }: { result: ScanResult }) => {
   if (result.error) {
     return (
-      <Alert variant="destructive" className="mt-6">
+      <Alert variant="destructive" className="mt-8">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Scan Failed</AlertTitle>
         <AlertDescription>{result.error}</AlertDescription>
@@ -40,52 +54,34 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
   }
 
   return (
-    <div className="mt-6 space-y-4">
-      <Alert>
-        <AlertTitle className="flex items-center justify-between">
-          Scan Results
-          <div className="flex items-center gap-2">
-            {result.category && (
-              <Badge variant="secondary">{result.category}</Badge>
-            )}
-            <Badge 
-              variant={result.is_vulnerable ? "destructive" : "default"}
-              className="flex items-center gap-1"
-            >
-              {result.is_vulnerable ? (
-                <>
-                  <AlertCircle className="h-3 w-3" />
-                  Vulnerable
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-3 w-3" />
-                  Secure
-                </>
-              )}
-            </Badge>
-          </div>
-        </AlertTitle>
-      </Alert>
+    <div className="space-y-4">
+      {result.is_vulnerable !== undefined && (
+        <Alert variant={result.is_vulnerable ? "destructive" : "default"}>
+          {result.is_vulnerable ? (
+            <AlertCircle className="h-4 w-4" />
+          ) : (
+            <CheckCircle className="h-4 w-4" />
+          )}
+          <AlertTitle>
+            {result.is_vulnerable ? "Vulnerability Detected" : "No Vulnerability Detected"}
+          </AlertTitle>
+          {result.prompt && (
+            <AlertDescription className="mt-2">
+              <strong>Prompt:</strong> {result.prompt}
+            </AlertDescription>
+          )}
+        </Alert>
+      )}
       
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium mb-2">Prompt:</h3>
-              <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-md">
-                {result.prompt}
-              </pre>
-            </div>
-            <div>
-              <h3 className="font-medium mb-2">Response:</h3>
-              <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-md">
-                {result.model_response}
-              </pre>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {result.model_response && (
+        <Card>
+          <CardContent className="pt-6">
+            <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
+              {result.model_response}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

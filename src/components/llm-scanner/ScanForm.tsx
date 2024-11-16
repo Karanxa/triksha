@@ -1,17 +1,36 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ScanFormHeader } from "./ScanFormHeader";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
-import { ScanFormLabel } from "./ScanFormLabel";
-import { ScanFormSubmit } from "./ScanFormSubmit";
-import { ScanResults } from "./ScanResults";
-import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
-import { Label } from "@/components/ui/label";
-import { useScanSubmission } from "./hooks/useScanSubmission";
-import { CustomEndpoint, ScanFormProps } from "./types";
+import { Loader2 } from "lucide-react";
+
+interface CustomEndpoint {
+  url: string;
+  apiKey: string;
+  headers: string;
+  placeholder: string;
+  curlCommand: string;
+  inputType: 'curl' | 'manual';
+}
+
+interface ScanFormProps {
+  onSubmit: (data: {
+    prompts: string[];
+    provider: string;
+    category: string;
+    label?: string;
+    schedule?: string;
+    isRecurring: boolean;
+    customEndpoint?: CustomEndpoint;
+  }) => Promise<void>;
+  isScanning: boolean;
+}
 
 export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [provider, setProvider] = useState("");
@@ -21,7 +40,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
-  const [scanType, setScanType] = useState<"manual" | "batch">("manual");
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -30,8 +48,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     curlCommand: '',
     inputType: 'manual'
   });
-
-  const { scanResult, submitScan } = useScanSubmission();
 
   const handleSubmit = async () => {
     if (!provider && provider !== 'custom') {
@@ -53,13 +69,8 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       }
     }
 
-    if (scanType === "manual" && !singlePrompt) {
-      toast.error("Please enter a prompt for manual scan");
-      return;
-    }
-
-    if (scanType === "batch" && prompts.length === 0) {
-      toast.error("Please upload a CSV file for batch scan");
+    if (!singlePrompt && prompts.length === 0) {
+      toast.error("Please enter a prompt or upload a CSV");
       return;
     }
 
@@ -68,36 +79,63 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
-    const result = await submitScan({
-      provider,
-      scanType,
-      singlePrompt,
-      prompts,
-      category,
-      label,
-      schedule,
-      isRecurring,
-      customEndpoint
-    });
+    const baseProvider = provider.split('-')[0];
 
-    if (result) {
-      if (scanType === "manual") {
-        setSinglePrompt("");
-      } else {
-        setPrompts([]);
+    if (baseProvider === 'ollama') {
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('api_keys').single();
+      
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        toast.error("Failed to fetch profile settings");
+        return;
       }
+
+      const ollamaEndpoint = profile?.api_keys?.['ollama_endpoint'] as string | undefined;
+      
+      if (!ollamaEndpoint) {
+        toast.error("Please configure your Ollama endpoint URL in Settings");
+        return;
+      }
+      
+      try {
+        new URL(ollamaEndpoint);
+      } catch (error) {
+        console.error("Invalid Ollama endpoint URL:", error);
+        toast.error("Invalid Ollama endpoint URL. Please check your settings.");
+        return;
+      }
+    }
+
+    const allPrompts = singlePrompt ? [singlePrompt] : prompts;
+    console.log("Submitting scan with prompts:", allPrompts);
+
+    try {
+      await onSubmit({
+        prompts: allPrompts,
+        provider,
+        category,
+        label: label || undefined,
+        schedule: schedule !== "none" ? schedule : undefined,
+        isRecurring,
+        customEndpoint: provider === 'custom' ? customEndpoint : undefined
+      });
+
+      // Reset form only on success
+      setSinglePrompt("");
+      setPrompts([]);
       setLabel("");
       setSchedule("none");
       setIsRecurring(false);
       
-      toast.success("Scan completed successfully");
+      toast.success("Scan initiated successfully");
+    } catch (error) {
+      console.error("Scan failed:", error);
+      toast.error(`Scan failed: ${(error as Error).message}`);
     }
   };
 
   return (
     <div className="space-y-8">
-      <ScanFormHeader scanType={scanType} onScanTypeChange={setScanType} />
-
       <ScanFormProvider 
         provider={provider}
         onProviderChange={setProvider}
@@ -121,7 +159,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
           setPrompts(extractedPrompts);
           setSinglePrompt("");
         }}
-        scanType={scanType}
       />
 
       <div className="space-y-4">
@@ -132,7 +169,14 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         />
       </div>
 
-      <ScanFormLabel label={label} onLabelChange={setLabel} />
+      <div className="space-y-4">
+        <Label>Scan Label (Optional)</Label>
+        <Input 
+          placeholder="Enter a label for this scan"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
+      </div>
 
       <ScanFormSchedule
         schedule={schedule}
@@ -141,14 +185,21 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         onRecurringChange={setIsRecurring}
       />
 
-      <ScanFormSubmit onSubmit={handleSubmit} isScanning={isScanning} />
-
-      {scanResult && (
-        <ScanResults 
-          result={scanResult}
-          isLoading={isScanning}
-        />
-      )}
+      <Button 
+        className="w-full" 
+        size="lg"
+        onClick={handleSubmit}
+        disabled={isScanning}
+      >
+        {isScanning ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing Scan...
+          </>
+        ) : (
+          "Start LLM Scan"
+        )}
+      </Button>
     </div>
   );
 };

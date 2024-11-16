@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ApiKeys } from "@/integrations/supabase/types/common";
+import type { ApiKeys } from "@/integrations/supabase/types/common";
 
 const Settings = () => {
   const session = useSession();
@@ -49,20 +49,11 @@ const Settings = () => {
   const handleSaveKeys = async () => {
     if (!session?.user?.id) return;
 
-    const keysToSave = {
-      openai: apiKeys.openai || '',
-      huggingface: apiKeys.huggingface || '',
-      anthropic: apiKeys.anthropic || '',
-      gemini: apiKeys.gemini || '',
-      github: apiKeys.github || '',
-      ollama_endpoint: apiKeys.ollama_endpoint || ''
-    };
-
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          api_keys: keysToSave
+          api_keys: apiKeys
         })
         .eq('id', session.user.id);
 
@@ -84,9 +75,8 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12 max-w-2xl">
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground mb-8">Configure your API keys and preferences for various LLM services</p>
-
+        <h1 className="text-3xl font-bold mb-8">Settings</h1>
+        
         <div className="space-y-8">
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">API Keys</h2>

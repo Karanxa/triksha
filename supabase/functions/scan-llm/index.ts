@@ -1,11 +1,44 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
-import { handleOpenAIRequest } from "./providers/openai.ts";
-import { processCustomEndpoint } from "./providers/customEndpoint.ts";
-import { updateScanStatus } from "./db.ts";
-import { analyzeVulnerability } from "./utils.ts";
-import { corsHeaders } from "./cors.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: string) => {
+  // Basic cURL command parser
+  const urlMatch = curlCommand.match(/curl ['"]([^'"]+)['"]/);
+  const headersMatch = curlCommand.match(/-H ['"]([^'"]+)['"]/g);
+  const dataMatch = curlCommand.match(/-d ['"]([^'"]+)['"]/);
+  
+  if (!urlMatch) {
+    throw new Error('Invalid cURL command: URL not found');
+  }
+
+  const url = urlMatch[1];
+  const headers: Record<string, string> = {};
+  
+  // Parse headers
+  headersMatch?.forEach(header => {
+    const [key, value] = header.match(/-H ['"]([^'"]+)['"]/)?.[1].split(': ') ?? [];
+    if (key && value) {
+      headers[key] = value;
+    }
+  });
+
+  // Parse body
+  let body = dataMatch?.[1] ?? '{}';
+  body = body.replace(placeholder, prompt);
+
+  try {
+    body = JSON.parse(body);
+  } catch {
+    throw new Error('Invalid JSON body in cURL command');
+  }
+
+  return { url, headers, body };
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,98 +46,77 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompts, provider, category, customEndpoint } = await req.json();
-    
+    const { scanId, prompts, provider, customEndpoint } = await req.json();
+
     if (!scanId || !prompts || !provider) {
       throw new Error('Missing required parameters');
     }
 
-    // Update scan status to processing
-    await updateScanStatus(scanId, 'processing');
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Get user's API keys
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (userError || !user) {
-      throw userError || new Error('User not found');
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) {
-      throw new Error('Failed to fetch user profile');
-    }
-
-    let response: string;
+    let response;
     const baseProvider = provider.split('-')[0];
 
-    console.log(`Processing scan with provider: ${baseProvider}`);
-
-    // Handle different providers
     if (baseProvider === 'custom' && customEndpoint) {
-      response = await processCustomEndpoint(customEndpoint, prompts[0]);
+      try {
+        const results = await Promise.all(prompts.map(async (prompt) => {
+          let url: string;
+          let headers: Record<string, string> = {};
+          let body: any;
+
+          if (customEndpoint.inputType === 'curl') {
+            const parsed = parseCurlCommand(
+              customEndpoint.curlCommand,
+              customEndpoint.placeholder,
+              prompt
+            );
+            url = parsed.url;
+            headers = parsed.headers;
+            body = parsed.body;
+          } else {
+            url = customEndpoint.url;
+            headers = {
+              'Content-Type': 'application/json',
+              ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {}),
+            };
+            if (customEndpoint.apiKey) {
+              headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
+            }
+            body = { prompt: prompt };
+          }
+
+          console.log(`Making request to custom endpoint: ${url}`);
+          const response = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(body),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Custom endpoint error: ${response.statusText}`);
+          }
+
+          return await response.json();
+        }));
+
+        response = { results };
+      } catch (error) {
+        console.error('Custom endpoint error:', error);
+        throw new Error(`Custom endpoint error: ${error.message}`);
+      }
     } else if (baseProvider === 'ollama') {
       response = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
-    } else if (baseProvider === 'openai') {
-      const apiKey = profile?.api_keys?.openai;
-      response = await handleOpenAIRequest(prompts[0], apiKey);
     } else {
-      throw new Error(`Provider ${baseProvider} not implemented or invalid`);
+      // Handle other providers...
+      throw new Error('Provider not implemented');
     }
 
-    // Create scan results
-    const scanResults = {
-      prompt: prompts[0],
-      model_response: response,
-      category,
-      is_vulnerable: analyzeVulnerability(category, response)
-    };
-
-    // Update scan with results
-    await updateScanStatus(scanId, 'completed', scanResults);
-
-    return new Response(
-      JSON.stringify(scanResults),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Error in scan-llm function:', error);
-    
-    try {
-      const { scanId } = await req.json();
-      if (scanId) {
-        await updateScanStatus(scanId, 'failed', {
-          prompt: '',
-          model_response: '',
-          error: error.message
-        });
-      }
-    } catch {
-      // Ignore error if we can't parse the request body
-    }
-
-    return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

@@ -3,18 +3,12 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 
 const ThemeToggle = () => {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    // Set initial theme to dark
-    document.documentElement.classList.add("dark");
-    
-    // Check if there's a stored preference
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme === "light") {
-      setIsDark(false);
-      document.documentElement.classList.remove("dark");
-    }
+    // Check initial theme
+    const isDarkMode = document.documentElement.classList.contains("dark");
+    setIsDark(isDarkMode);
   }, []);
 
   const toggleTheme = () => {
@@ -23,10 +17,8 @@ const ThemeToggle = () => {
     
     if (newIsDark) {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
     }
   };
 

@@ -7,18 +7,16 @@ interface ScanFormPromptProps {
   onSinglePromptChange: (value: string) => void;
   prompts: string[];
   onPromptsExtracted: (prompts: string[]) => void;
-  scanType: "manual" | "batch";
 }
 
 export const ScanFormPrompt = ({ 
   singlePrompt, 
   onSinglePromptChange,
   prompts,
-  onPromptsExtracted,
-  scanType
+  onPromptsExtracted
 }: ScanFormPromptProps) => {
-  if (scanType === "manual") {
-    return (
+  return (
+    <>
       <div className="space-y-4">
         <Label>Single Prompt</Label>
         <Textarea 
@@ -28,18 +26,16 @@ export const ScanFormPrompt = ({
           onChange={(e) => onSinglePromptChange(e.target.value)}
         />
       </div>
-    );
-  }
 
-  return (
-    <div className="space-y-4">
-      <Label>Upload Multiple Prompts</Label>
-      <CSVUpload onPromptsExtracted={onPromptsExtracted} />
-      {prompts.length > 0 && (
-        <p className="text-sm text-muted-foreground">
-          {prompts.length} prompts loaded from CSV
-        </p>
-      )}
-    </div>
+      <div className="space-y-4">
+        <Label>Or Upload Multiple Prompts</Label>
+        <CSVUpload onPromptsExtracted={onPromptsExtracted} />
+        {prompts.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {prompts.length} prompts loaded from CSV
+          </p>
+        )}
+      </div>
+    </>
   );
 };

@@ -71,6 +71,6 @@ export const handleOllamaRequest = async (prompt: string, endpoint: string): Pro
     return data.response;
   } catch (error) {
     console.error('Error in Ollama request:', error);
-    throw error;
+    throw new Error(`Failed to get response from Ollama: ${(error as Error).message}`);
   }
 };

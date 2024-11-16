@@ -3,17 +3,17 @@ import { Button } from "@/components/ui/button"
 import { Download, Users, Star, GitFork, ExternalLink } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { Tables } from "@/integrations/supabase/types"
 
-// Extend the database type with UI-specific properties
-interface Dataset extends Tables<'datasets'> {
-  downloads?: number
-  likes?: number
-  source?: 'github' | 'huggingface'
+interface Dataset {
+  id: string
+  title: string
+  description: string
+  downloads: number
+  likes: number
+  source: 'github' | 'huggingface'
   url?: string
   language?: string
   topics?: string[]
-  title?: string
 }
 
 interface DatasetCardProps {
@@ -44,7 +44,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
     <Card className="flex flex-col h-full">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <h3 className="text-base font-medium leading-none">{dataset.title || dataset.name}</h3>
+          <h3 className="text-base font-medium leading-none">{dataset.title}</h3>
           {isGitHub && dataset.url && (
             <a 
               href={dataset.url} 
@@ -67,17 +67,17 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
             {isGitHub ? (
               <>
                 <GitFork className="h-4 w-4" />
-                <span>{dataset.downloads || 0} forks</span>
+                <span>{dataset.downloads} forks</span>
               </>
             ) : (
               <>
                 <Users className="h-4 w-4" />
-                <span>{dataset.downloads || 0} downloads</span>
+                <span>{dataset.downloads} downloads</span>
               </>
             )}
             <span>•</span>
             <Star className="h-4 w-4" />
-            <span>{dataset.likes || 0} stars</span>
+            <span>{dataset.likes} stars</span>
           </div>
 
           {isGitHub && (

@@ -1,5 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody } from "@/components/ui/table";
+import { Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -8,10 +11,8 @@ import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
 import { ResultsTableHeader } from "@/components/llm-results/ResultsTableHeader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database } from "@/integrations/supabase/types";
-import { addDays } from "date-fns";
-import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
-import { Loader2 } from "lucide-react";
-import { DateRange } from "react-day-picker";
+import { ATTACK_CATEGORIES } from "@/components/datasets/AttackCategorySelect";
+import { getScanType } from "@/utils/scanUtils";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -22,14 +23,9 @@ const LLMResults = () => {
   } | null>(null);
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: addDays(new Date(), -30),
-    to: new Date(),
-  });
 
   const { data: scans, isLoading } = useQuery({
-    queryKey: ['llm-scans', filterType, filterCategory, searchQuery, dateRange],
+    queryKey: ['llm-scans', filterType, filterCategory],
     queryFn: async () => {
       let query = supabase
         .from('llm_scans')
@@ -37,13 +33,8 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (filterCategory !== 'all') {
-        query = query.eq('category', filterCategory);
-      }
-
-      if (dateRange.from && dateRange.to) {
-        query = query
-          .gte('created_at', dateRange.from.toISOString())
-          .lte('created_at', dateRange.to.toISOString());
+        const dbCategory = filterCategory.toLowerCase().replace(/ /g, '-');
+        query = query.eq('category', dbCategory);
       }
 
       const { data, error } = await query;
@@ -52,33 +43,7 @@ const LLMResults = () => {
         toast.error("Failed to fetch scan results");
         throw error;
       }
-
-      let filteredData = data as LLMScan[];
-
-      // Apply search filter
-      if (searchQuery) {
-        const lowercaseQuery = searchQuery.toLowerCase();
-        filteredData = filteredData.filter(scan => 
-          scan.name?.toLowerCase().includes(lowercaseQuery) ||
-          scan.category?.toLowerCase().includes(lowercaseQuery) ||
-          scan.label?.toLowerCase().includes(lowercaseQuery)
-        );
-      }
-
-      // Apply scan type filter
-      if (filterType !== 'all') {
-        filteredData = filteredData.filter(scan => {
-          const results = scan.results as any;
-          if (!results) return false;
-          
-          // Check if it's a batch scan (has results array) or manual scan
-          const isBatchScan = Array.isArray(results.results);
-          return (filterType === 'batch' && isBatchScan) || 
-                 (filterType === 'manual' && !isBatchScan);
-        });
-      }
-
-      return filteredData;
+      return data as LLMScan[];
     },
   });
 
@@ -101,13 +66,9 @@ const LLMResults = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Scan Type,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
       scans.map(scan => {
-        const results = scan.results as any;
-        const isBatchScan = results && Array.isArray(results.results);
-        const scanType = isBatchScan ? "Batch Scan" : "Manual Scan";
-        const prompt = isBatchScan ? results.results[0]?.prompt : results?.prompt;
-        const response = isBatchScan ? results.results[0]?.model_response : results?.model_response;
-        
-        return `"${scanType}","${formatDate(scan.created_at)}","${prompt || ''}","${response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
+        const results = scan.results as { model_response: string; prompt: string } | null;
+        const scanType = getScanType(results);
+        return `"${scanType}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -124,44 +85,59 @@ const LLMResults = () => {
     setSelectedContent({ title, content });
   };
 
-  const handleDateRangeChange = (range: DateRange | { from: Date; to: Date }) => {
-    if (range.from && range.to) {
-      setDateRange({ from: range.from, to: range.to });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12">
-        <h1 className="text-3xl font-bold mb-2">LLM Security Analysis Results</h1>
-        <p className="text-muted-foreground mb-8">Review and analyze the results of your LLM security scans</p>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">LLM Security Analysis Results</h1>
+        </div>
 
-        <ResultsFilters
-          filterType={filterType}
-          setFilterType={setFilterType}
-          filterCategory={filterCategory}
-          setFilterCategory={setFilterCategory}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          dateRange={dateRange}
-          setDateRange={handleDateRangeChange}
-          onExport={handleExport}
-          resultsCount={scans?.length}
-        />
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div className="w-48">
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Results</SelectItem>
+                <SelectItem value="manual">Manual Prompt</SelectItem>
+                <SelectItem value="batch">Batch Scan</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-48">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {ATTACK_CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button variant="secondary" className="ml-auto" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" />
+            Export Results
+          </Button>
+        </div>
 
         <div className="border rounded-lg">
           <Table>
             <ResultsTableHeader />
             <TableBody>
               {isLoading ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-4">
-                    <div className="flex items-center justify-center">
-                      <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                      Loading results...
-                    </div>
-                  </td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-4">
+                    Loading results...
+                  </TableCell>
+                </TableRow>
               ) : scans && scans.length > 0 ? (
                 scans.map((scan) => (
                   <ResultsTableRow
@@ -172,11 +148,11 @@ const LLMResults = () => {
                   />
                 ))
               ) : (
-                <tr>
-                  <td colSpan={7} className="text-center py-4">
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-4">
                     No results found
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>

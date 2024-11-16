@@ -17,7 +17,6 @@ import FineTuning from "./pages/FineTuning";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import JailbreakBuilder from "./pages/JailbreakBuilder";
 import AuthGuard from "./components/AuthGuard";
 import Navigation from "./components/Navigation";
 
@@ -31,23 +30,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
   </AuthGuard>
 );
 
-// Configure QueryClient with better error handling and retries
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    },
-    mutations: {
-      retry: 1,
-      onError: (error) => {
-        console.error('Mutation error:', error);
-      },
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 const App = () => {
   return (
@@ -57,7 +40,6 @@ const App = () => {
           <style>
             {`
               [data-radix-popper-content-wrapper] {
-                z-index: 100;
                 background-color: var(--background) !important;
               }
             `}
@@ -75,7 +57,6 @@ const App = () => {
               <Route path="/augment-prompt" element={<ProtectedRoute><AugmentPrompt /></ProtectedRoute>} />
               <Route path="/fine-tuning" element={<ProtectedRoute><FineTuning /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/jailbreak-builder" element={<ProtectedRoute><JailbreakBuilder /></ProtectedRoute>} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

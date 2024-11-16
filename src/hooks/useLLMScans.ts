@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Database } from "@/integrations/supabase/types";
-import { formatScanResponse } from "@/utils/scanUtils";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -13,7 +12,6 @@ interface CreateScanParams {
   label?: string;
   schedule?: string;
   isRecurring?: boolean;
-  customEndpoint?: any;
 }
 
 export const useLLMScans = () => {
@@ -27,72 +25,55 @@ export const useLLMScans = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching scans:', error);
-        throw new Error('Failed to fetch scan results');
-      }
-
-      return (data as LLMScan[]).map(scan => ({
-        ...scan,
-        results: formatScanResponse(scan.results)
-      }));
+      if (error) throw error;
+      return data as LLMScan[];
     },
   });
 
   const createScan = useMutation({
     mutationFn: async (params: CreateScanParams) => {
-      // Get the current user's ID
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        throw new Error("Authentication required");
-      }
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Not authenticated");
 
-      // Create the scan record
-      const { data: scan, error: createError } = await supabase
+      const { data, error } = await supabase
         .from('llm_scans')
         .insert({
           user_id: userData.user.id,
-          name: params.label || `Scan ${new Date().toLocaleString()}`,
+          name: params.label || `Scan ${new Date().toISOString()}`,
           status: 'pending',
           category: params.category,
           label: params.label,
           schedule: params.schedule,
           is_recurring: params.isRecurring,
+          is_vulnerable: null // Initialize as null until scan completes
         })
         .select()
         .single();
 
-      if (createError) {
-        console.error('Error creating scan:', createError);
-        throw new Error('Failed to create scan record');
-      }
+      if (error) throw error;
 
-      // Call the edge function
-      const { data: response, error: functionError } = await supabase.functions.invoke('scan-llm', {
+      // Call the edge function to perform the scan
+      const response = await supabase.functions.invoke('scan-llm', {
         body: { 
-          scanId: scan.id,
+          scanId: data.id,
           prompts: params.prompts,
           provider: params.provider,
           category: params.category,
-          customEndpoint: params.customEndpoint
+          schedule: params.schedule,
+          isRecurring: params.isRecurring
         }
       });
 
-      if (functionError || (response && 'error' in response)) {
-        const errorMessage = functionError?.message || (response as any)?.error || 'Scan failed';
-        console.error('Scan function error:', errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      return response;
+      if (response.error) throw response.error;
+      
+      // Return the scan results for immediate display
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
-      toast.success('Scan completed successfully');
     },
-    onError: (error: Error) => {
-      console.error('Mutation error:', error);
-      toast.error(`Scan failed: ${error.message}`);
+    onError: (error) => {
+      toast.error("Failed to create scan: " + error.message);
     },
   });
 
