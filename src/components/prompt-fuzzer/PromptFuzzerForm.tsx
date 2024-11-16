@@ -20,6 +20,10 @@ interface PromptFuzzerFormProps {
     numMutations: number;
     strategy: string;
     model: string;
+    maxTokens?: number;
+    temperature?: number;
+    stopSequences?: string[];
+    topP?: number;
   }) => Promise<void>;
   isScanning: boolean;
 }
@@ -29,6 +33,10 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
   const [numMutations, setNumMutations] = useState(10);
   const [strategy, setStrategy] = useState("random");
   const [model, setModel] = useState("gpt-3.5-turbo");
+  const [maxTokens, setMaxTokens] = useState(100);
+  const [temperature, setTemperature] = useState(0.7);
+  const [topP, setTopP] = useState(1);
+  const [stopSequences, setStopSequences] = useState<string[]>([]);
 
   const handleSubmit = async () => {
     if (!prompt) {
@@ -41,11 +49,15 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
         prompt,
         numMutations,
         strategy,
-        model
+        model,
+        maxTokens,
+        temperature,
+        topP,
+        stopSequences
       });
     } catch (error) {
-      console.error('Fuzzing failed:', error);
-      toast.error('Failed to run prompt fuzzer: ' + (error as Error).message);
+      console.error('Security fuzzing failed:', error);
+      toast.error('Failed to run prompt security fuzzer: ' + (error as Error).message);
     }
   };
 
@@ -56,13 +68,13 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
         <Textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter the prompt you want to fuzz"
+          placeholder="Enter the prompt you want to test for security vulnerabilities"
           className="min-h-[100px]"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Number of Mutations ({numMutations})</Label>
+        <Label>Number of Security Mutations ({numMutations})</Label>
         <Slider
           value={[numMutations]}
           onValueChange={([value]) => setNumMutations(value)}
@@ -74,15 +86,18 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
       </div>
 
       <div className="space-y-2">
-        <Label>Mutation Strategy</Label>
+        <Label>Security Testing Strategy</Label>
         <Select value={strategy} onValueChange={setStrategy}>
           <SelectTrigger>
-            <SelectValue placeholder="Select mutation strategy" />
+            <SelectValue placeholder="Select security testing strategy" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="random">Random</SelectItem>
-            <SelectItem value="targeted">Targeted</SelectItem>
-            <SelectItem value="semantic">Semantic</SelectItem>
+            <SelectItem value="random">Random Mutations</SelectItem>
+            <SelectItem value="targeted">Targeted Attack Vectors</SelectItem>
+            <SelectItem value="semantic">Semantic Preservation</SelectItem>
+            <SelectItem value="adversarial">Adversarial Examples</SelectItem>
+            <SelectItem value="boundary">Boundary Testing</SelectItem>
+            <SelectItem value="injection">Injection Attacks</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -98,8 +113,45 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
             <SelectItem value="gpt-4">GPT-4</SelectItem>
             <SelectItem value="claude-2">Claude 2</SelectItem>
             <SelectItem value="llama2">Llama 2</SelectItem>
+            <SelectItem value="mistral">Mistral</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Maximum Tokens ({maxTokens})</Label>
+        <Slider
+          value={[maxTokens]}
+          onValueChange={([value]) => setMaxTokens(value)}
+          min={1}
+          max={2000}
+          step={1}
+          className="w-full"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Temperature ({temperature})</Label>
+        <Slider
+          value={[temperature]}
+          onValueChange={([value]) => setTemperature(value)}
+          min={0}
+          max={2}
+          step={0.1}
+          className="w-full"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Top P ({topP})</Label>
+        <Slider
+          value={[topP]}
+          onValueChange={([value]) => setTopP(value)}
+          min={0}
+          max={1}
+          step={0.1}
+          className="w-full"
+        />
       </div>
 
       <Button 
@@ -110,10 +162,10 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
         {isScanning ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Running Fuzzer...
+            Running Security Fuzzer...
           </>
         ) : (
-          "Run Prompt Fuzzer"
+          "Run Prompt Security Fuzzer"
         )}
       </Button>
     </div>
