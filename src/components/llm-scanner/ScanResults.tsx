@@ -5,10 +5,10 @@ import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 interface ScanResult {
   prompt?: string;
   model_response?: string;
-  results?: {
+  results?: Array<{
     prompt: string;
     model_response: string;
-  }[];
+  }>;
   error?: string;
   is_vulnerable?: boolean;
 }
@@ -64,8 +64,8 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
   return (
     <SingleResult 
       result={{
-        prompt: result.prompt || result.results?.prompt,
-        model_response: result.model_response || result.results?.model_response,
+        prompt: result.prompt,
+        model_response: result.model_response,
         is_vulnerable: result.is_vulnerable
       }} 
     />
