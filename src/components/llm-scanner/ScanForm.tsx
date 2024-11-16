@@ -7,7 +7,7 @@ import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { QPSControl } from "./QPSControl";
 import { Loader2 } from "lucide-react";
-import { ScanResults } from "../llm-results/ScanResults";
+import { ScanResults } from "./ScanResults";
 import { ScanTypeSelect } from "./ScanTypeSelect";
 import { ScanPromptInput } from "./ScanPromptInput";
 import { useScanSubmit } from "./hooks/useScanSubmit";

@@ -11,6 +11,7 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface ScanRequest {
+  scanId: string;
   prompts: string[];
   provider: string;
   category: string;
@@ -36,14 +37,13 @@ async function processBatch(prompts: string[], provider: string, apiKeys: any, q
     const batch = prompts.slice(i, i + batchSize);
     const batchPromises = batch.map(async (prompt) => {
       try {
-        const baseProvider = provider.split('-')[0];
+        const [baseProvider, model] = provider.split('-');
         let rawResponse;
-        let processedResponse;
 
         switch (baseProvider) {
           case 'openai':
             if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
-            rawResponse = await handleOpenAIRequest(prompt, apiKeys.openai);
+            rawResponse = await handleOpenAIRequest(prompt, apiKeys.openai, model);
             break;
           case 'anthropic':
             if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
@@ -55,13 +55,13 @@ async function processBatch(prompts: string[], provider: string, apiKeys: any, q
             break;
           case 'ollama':
             if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
-            rawResponse = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint);
+            rawResponse = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
             break;
           default:
             throw new Error('Provider not implemented');
         }
 
-        processedResponse = processResponse(rawResponse);
+        const processedResponse = processResponse(rawResponse);
         
         return {
           prompt,
@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch API keys');
     }
 
-    const { prompts, provider, category, label, schedule, isRecurring, qps = 5 } = await req.json() as ScanRequest;
+    const { scanId, prompts, provider, category, label, schedule, isRecurring, qps = 5 } = await req.json() as ScanRequest;
     const apiKeys = profile.api_keys;
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
@@ -130,35 +130,10 @@ Deno.serve(async (req) => {
       throw new Error('Provider is required');
     }
 
-    const batchId = crypto.randomUUID();
-
-    // Create initial batch record
-    const { error: batchError } = await supabase
-      .from('llm_scans')
-      .insert({
-        id: batchId,
-        user_id: user.id,
-        name: `${provider} Batch Scan`,
-        category,
-        label,
-        schedule,
-        is_recurring: isRecurring,
-        results: {
-          prompts: prompts,
-          responses: [],
-          timestamp: new Date().toISOString(),
-        },
-        status: 'processing',
-      });
-
-    if (batchError) {
-      throw new Error('Failed to create batch scan');
-    }
-
     // Process prompts with QPS control
     const results = await processBatch(prompts, provider, apiKeys, qps);
 
-    // Update batch scan with results
+    // Update scan with results
     const { error: updateError } = await supabase
       .from('llm_scans')
       .update({
@@ -173,13 +148,13 @@ Deno.serve(async (req) => {
           r.model_response?.toLowerCase().includes('here is')
         ),
       })
-      .eq('id', batchId);
+      .eq('id', scanId);
 
     if (updateError) {
-      throw new Error('Failed to update batch results');
+      throw new Error('Failed to update scan results');
     }
 
-    return new Response(JSON.stringify({ id: batchId, results }), {
+    return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

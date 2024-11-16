@@ -116,16 +116,37 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     setIsScanning(true);
 
     try {
-      const result = await onSubmit({
-        prompts: allPrompts,
-        provider,
-        category,
-        label: label || undefined,
-        schedule: schedule !== "none" ? schedule : undefined,
-        isRecurring,
-        qps,
-        customEndpoint: provider === 'custom' ? customEndpoint : undefined
+      // Create a new scan record in the database
+      const { data: scanData, error: scanError } = await supabase
+        .from('llm_scans')
+        .insert({
+          name: label || `Scan ${new Date().toISOString()}`,
+          category,
+          label,
+          schedule,
+          is_recurring: isRecurring,
+          status: 'processing'
+        })
+        .select()
+        .single();
+
+      if (scanError) throw new Error(scanError.message);
+
+      // Call the scan-llm edge function to process the scan
+      const { data: result, error: functionError } = await supabase.functions.invoke('scan-llm', {
+        body: {
+          scanId: scanData.id,
+          prompts: allPrompts,
+          provider,
+          category,
+          schedule,
+          isRecurring,
+          qps,
+          customEndpoint: provider === 'custom' ? customEndpoint : undefined
+        }
       });
+
+      if (functionError) throw new Error(functionError.message);
 
       setResult(result);
       toast.success("Scan completed successfully");
