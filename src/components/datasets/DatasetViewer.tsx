@@ -46,16 +46,43 @@ export const DatasetViewer = ({ datasetId, onClose }: DatasetViewerProps) => {
 
         const text = await fileData.text()
         
-        // Try to parse as CSV
-        const rows = text.split('\n').map(row => 
-          row.split(',').map(cell => 
-            cell.startsWith('"') && cell.endsWith('"') 
-              ? cell.slice(1, -1).replace(/""/g, '"') 
-              : cell
-          )
+        // Parse CSV content
+        const lines = text.split('\n').filter(line => line.trim() !== '')
+        const headers = lines[0].split(',').map(header => 
+          header.trim().replace(/(^"|"$)/g, '')
         )
-        const headers = rows[0]
-        const data = rows.slice(1).filter(row => row.length === headers.length)
+        
+        const data = lines.slice(1).map(line => {
+          const values = []
+          let currentValue = ''
+          let insideQuotes = false
+          
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i]
+            
+            if (char === '"') {
+              if (insideQuotes && line[i + 1] === '"') {
+                // Handle escaped quotes
+                currentValue += '"'
+                i++
+              } else {
+                // Toggle quote state
+                insideQuotes = !insideQuotes
+              }
+            } else if (char === ',' && !insideQuotes) {
+              // End of field
+              values.push(currentValue.trim())
+              currentValue = ''
+            } else {
+              currentValue += char
+            }
+          }
+          
+          // Add the last value
+          values.push(currentValue.trim())
+          
+          return values
+        }).filter(row => row.length === headers.length)
         
         return { type: 'csv', headers, data, raw: text }
       } catch (error: any) {
