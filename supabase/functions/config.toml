@@ -1,15 +1,4 @@
 project_id = "irdlyshhtwzqjvymilww"
 
-[global.env]
-SUPABASE_URL = "string"
-SUPABASE_ANON_KEY = "string"
-SUPABASE_SERVICE_ROLE_KEY = "string"
-SUPABASE_DB_URL = "string"
-
-[[functions]]
-name = "scan-llm"
-verify_jwt = true
-
-[[functions]]
-name = "process-scheduled-scans"
+[garak-scan]
 verify_jwt = true
