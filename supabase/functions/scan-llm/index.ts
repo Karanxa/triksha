@@ -10,23 +10,29 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-interface ScanRequest {
-  scanId: string;
-  prompts: string[];
-  provider: string;
-  category: string;
-  label?: string;
-  schedule?: string;
-  isRecurring: boolean;
-  qps: number;
-  customEndpoint?: {
-    url: string;
-    apiKey: string;
-    headers: string;
-    placeholder: string;
-    curlCommand: string;
-    inputType: 'curl' | 'manual';
-  };
+async function analyzeVulnerability(prompt: string, response: string) {
+  try {
+    const analysisResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/analyze-vulnerability`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt, response }),
+    });
+
+    const data = await analysisResponse.json();
+    return {
+      analysis: data.analysis,
+      isVulnerable: data.isVulnerable,
+    };
+  } catch (error) {
+    console.error('Error analyzing vulnerability:', error);
+    return {
+      analysis: 'Error analyzing vulnerability',
+      isVulnerable: null,
+    };
+  }
 }
 
 async function processBatch(prompts: string[], provider: string, apiKeys: any, qps: number) {
@@ -63,10 +69,15 @@ async function processBatch(prompts: string[], provider: string, apiKeys: any, q
 
         const processedResponse = processResponse(rawResponse);
         
+        // Analyze vulnerability
+        const vulnerabilityAnalysis = await analyzeVulnerability(prompt, processedResponse);
+        
         return {
           prompt,
           model_response: processedResponse,
           raw_response: rawResponse,
+          vulnerability_analysis: vulnerabilityAnalysis.analysis,
+          is_vulnerable: vulnerabilityAnalysis.isVulnerable,
           timestamp: new Date().toISOString(),
         };
       } catch (error) {
@@ -82,7 +93,6 @@ async function processBatch(prompts: string[], provider: string, apiKeys: any, q
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults);
 
-    // Add delay between batches based on QPS
     if (i + batchSize < prompts.length) {
       await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay between batches
     }
@@ -119,7 +129,7 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch API keys');
     }
 
-    const { scanId, prompts, provider, category, label, schedule, isRecurring, qps = 5 } = await req.json() as ScanRequest;
+    const { scanId, prompts, provider, category, label, schedule, isRecurring, qps = 5 } = await req.json();
     const apiKeys = profile.api_keys;
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {

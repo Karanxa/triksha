@@ -85,41 +85,18 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
       return;
     }
 
-    const baseProvider = provider.split('-')[0];
-
-    if (baseProvider === 'ollama') {
-      const { data: profile, error: profileError } = await supabase.from('profiles').select('api_keys').single();
-      
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-        toast.error("Failed to fetch profile settings");
-        return;
-      }
-
-      const ollamaEndpoint = profile?.api_keys?.['ollama_endpoint'] as string | undefined;
-      
-      if (!ollamaEndpoint) {
-        toast.error("Please configure your Ollama endpoint URL in Settings");
-        return;
-      }
-      
-      try {
-        new URL(ollamaEndpoint);
-      } catch (error) {
-        console.error("Invalid Ollama endpoint URL:", error);
-        toast.error("Invalid Ollama endpoint URL. Please check your settings.");
-        return;
-      }
-    }
-
-    const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
     setIsScanning(true);
 
     try {
-      // Create a new scan record in the database
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Create a new scan record
       const { data: scanData, error: scanError } = await supabase
         .from('llm_scans')
         .insert({
+          user_id: user.id,
           name: label || `Scan ${new Date().toISOString()}`,
           category,
           label,
@@ -130,9 +107,10 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         .select()
         .single();
 
-      if (scanError) throw new Error(scanError.message);
+      if (scanError) throw scanError;
 
-      // Call the scan-llm edge function to process the scan
+      // Call the scan-llm edge function
+      const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
       const { data: result, error: functionError } = await supabase.functions.invoke('scan-llm', {
         body: {
           scanId: scanData.id,
@@ -146,7 +124,7 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         }
       });
 
-      if (functionError) throw new Error(functionError.message);
+      if (functionError) throw functionError;
 
       setResult(result);
       toast.success("Scan completed successfully");
