@@ -16,6 +16,7 @@ export type Database = {
           description: string | null
           file_path: string | null
           id: string
+          metadata: Json | null
           name: string
           updated_at: string
           user_id: string
@@ -26,6 +27,7 @@ export type Database = {
           description?: string | null
           file_path?: string | null
           id?: string
+          metadata?: Json | null
           name: string
           updated_at?: string
           user_id: string
@@ -36,6 +38,7 @@ export type Database = {
           description?: string | null
           file_path?: string | null
           id?: string
+          metadata?: Json | null
           name?: string
           updated_at?: string
           user_id?: string

@@ -67,7 +67,7 @@ export const ScanResults = ({ results, isLoading }: ScanResultsProps) => {
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium">{result.test}</h4>
                       {result.passed ? (
-                        <Badge variant="success" className="flex items-center gap-1">
+                        <Badge variant="outline" className="flex items-center gap-1">
                           <CheckCircle className="h-4 w-4" />
                           Passed
                         </Badge>
@@ -116,9 +116,9 @@ const calculatePassRate = (results: ScanResult[]): number => {
   return Math.round((passed / results.length) * 100);
 };
 
-const getPassRateVariant = (results: ScanResult[]): "default" | "success" | "warning" | "destructive" => {
+const getPassRateVariant = (results: ScanResult[]): "default" | "destructive" | "outline" | "secondary" => {
   const rate = calculatePassRate(results);
-  if (rate >= 80) return "success";
-  if (rate >= 50) return "warning";
+  if (rate >= 80) return "secondary";
+  if (rate >= 50) return "outline";
   return "destructive";
 };
