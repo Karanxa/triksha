@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface ScanResult {
-  prompt: string;
+  prompt?: string;
   model_response?: string;
   error?: string;
   is_vulnerable?: boolean;
@@ -43,6 +43,8 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
 };
 
 const SingleResult = ({ result }: { result: ScanResult }) => {
+  if (!result) return null;
+
   if (result.error) {
     return (
       <Alert variant="destructive" className="mt-8">

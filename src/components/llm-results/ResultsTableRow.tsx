@@ -26,7 +26,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const scanType = getScanType(results);
-  const isVulnerable = analyzeVulnerability(response, category);
+  const isVulnerable = scan.is_vulnerable ?? analyzeVulnerability(response, category);
 
   return (
     <TableRow key={scan.id}>
