@@ -5,17 +5,24 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@supabase/auth-helpers-react";
 
 export const PromptFuzzingForm = () => {
   const [name, setName] = useState("");
   const [basePrompt, setBasePrompt] = useState("");
   const [fuzzingType, setFuzzingType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const auth = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !basePrompt || !fuzzingType) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (!auth?.user?.id) {
+      toast.error("You must be logged in to create a scan");
       return;
     }
 
@@ -25,6 +32,7 @@ export const PromptFuzzingForm = () => {
         name,
         base_prompt: basePrompt,
         fuzzing_type: fuzzingType,
+        user_id: auth.user.id
       });
 
       if (error) throw error;

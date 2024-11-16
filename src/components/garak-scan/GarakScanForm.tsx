@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@supabase/auth-helpers-react";
 
 export const GarakScanForm = () => {
   const [name, setName] = useState("");
@@ -12,6 +13,7 @@ export const GarakScanForm = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedSuites, setSelectedSuites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const auth = useAuth();
 
   const testSuites = [
     { id: "encoding", label: "Encoding Tests" },
@@ -29,6 +31,11 @@ export const GarakScanForm = () => {
       return;
     }
 
+    if (!auth?.user?.id) {
+      toast.error("You must be logged in to create a scan");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error } = await supabase.from("garak_scans").insert({
@@ -36,6 +43,7 @@ export const GarakScanForm = () => {
         model,
         prompts: [prompt],
         test_suites: selectedSuites,
+        user_id: auth.user.id
       });
 
       if (error) throw error;
