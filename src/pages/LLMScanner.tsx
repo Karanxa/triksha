@@ -61,13 +61,19 @@ const LLMScanner = () => {
 
   const handleFuzzerScan = async (data: {
     prompt: string;
-    numMutations: number;
-    strategy: string;
-    model: string;
+    attackProvider: string;
+    attackModel: string;
+    targetProvider: string;
+    targetModel: string;
+    numAttempts: number;
+    numThreads: number;
+    attackTemperature: number;
+    customBenchmark: string[];
+    tests: string[];
   }) => {
     try {
       setIsFuzzing(true);
-      const response = await supabase.functions.invoke('prompt-fuzzer', {
+      const response = await supabase.functions.invoke('prompt-security-fuzzer', {
         body: data
       });
 
