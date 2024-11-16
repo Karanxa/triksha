@@ -1,202 +1,219 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { handleOllamaRequest } from "./providers/ollama.ts";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from '@supabase/supabase-js';
+import { corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const handleOpenAIRequest = async (prompt: string, model: string) => {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) {
-    throw new Error('OpenAI API key not configured');
-  }
+interface ScanRequest {
+  prompts: string[];
+  provider: string;
+  category: string;
+  label?: string;
+  schedule?: string;
+  isRecurring: boolean;
+  customEndpoint?: {
+    url: string;
+    apiKey: string;
+    headers: string;
+    placeholder: string;
+    curlCommand: string;
+    inputType: 'curl' | 'manual';
+  };
+}
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model === 'gpt4o' ? 'gpt-4o' : 'gpt-4o-mini',
-      messages: [
-        { role: 'user', content: prompt }
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('OpenAI API error:', error);
-    throw new Error(`OpenAI API error: ${error}`);
-  }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
-};
-
-const handleAnthropicRequest = async (prompt: string, model: string) => {
-  const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-  if (!anthropicApiKey) {
-    throw new Error('Anthropic API key not configured');
-  }
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': anthropicApiKey,
-      'anthropic-version': '2023-06-01',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model === 'claude3' ? 'claude-3-opus-20240229' : 'claude-2.1',
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1024,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('Anthropic API error:', error);
-    throw new Error(`Anthropic API error: ${error}`);
-  }
-
-  const data = await response.json();
-  return data.content[0].text;
-};
-
-const handleGoogleRequest = async (prompt: string, model: string) => {
-  const googleApiKey = Deno.env.get('GOOGLE_API_KEY');
-  if (!googleApiKey) {
-    throw new Error('Google API key not configured');
-  }
-
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${googleApiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('Google API error:', error);
-    throw new Error(`Google API error: ${error}`);
-  }
-
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
-};
-
-serve(async (req) => {
+Deno.serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { scanId, prompts, provider, customEndpoint } = await req.json();
-    console.log('Received scan request:', { scanId, provider, promptCount: prompts.length });
-
-    if (!scanId || !prompts || !provider) {
-      throw new Error('Missing required parameters');
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
     }
 
-    let response;
-    const [baseProvider, model] = provider.split('-');
+    // Get user from auth header
+    const { data: { user }, error: userError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (userError || !user) {
+      throw new Error('Invalid user token');
+    }
 
-    try {
-      const results = await Promise.all(prompts.map(async (prompt: string) => {
-        let modelResponse;
+    // Get user's API keys from profiles
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single();
 
-        if (baseProvider === 'custom' && customEndpoint) {
-          const results = await Promise.all(prompts.map(async (prompt) => {
-            let url: string;
-            let headers: Record<string, string> = {};
-            let body: any;
+    if (profileError || !profile) {
+      throw new Error('Failed to fetch API keys');
+    }
 
-            if (customEndpoint.inputType === 'curl') {
-              const parsed = parseCurlCommand(
-                customEndpoint.curlCommand,
-                customEndpoint.placeholder,
-                prompt
-              );
-              url = parsed.url;
-              headers = parsed.headers;
-              body = parsed.body;
-            } else {
-              url = customEndpoint.url;
-              headers = {
-                'Content-Type': 'application/json',
-                ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {}),
-              };
-              if (customEndpoint.apiKey) {
-                headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
-              }
-              body = { prompt: prompt };
-            }
+    const { prompts, provider, category } = await req.json() as ScanRequest;
+    const apiKeys = profile.api_keys;
 
-            console.log(`Making request to custom endpoint: ${url}`);
-            const response = await fetch(url, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify(body),
-            });
+    // Validate input
+    if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
+      throw new Error('Invalid prompts array');
+    }
 
-            if (!response.ok) {
-              throw new Error(`Custom endpoint error: ${response.statusText}`);
-            }
+    if (!provider) {
+      throw new Error('Provider is required');
+    }
 
-            return await response.json();
-          }));
+    // Initialize response array
+    const results = [];
+    const baseProvider = provider.split('-')[0];
 
-          return {
-            prompt,
-            model_response: modelResponse,
-            is_vulnerable: false // You can implement vulnerability detection logic here
-          };
-        } else {
-          switch (baseProvider) {
-            case 'openai':
-              modelResponse = await handleOpenAIRequest(prompt, model);
-              break;
-            case 'anthropic':
-              modelResponse = await handleAnthropicRequest(prompt, model);
-              break;
-            case 'google':
-              modelResponse = await handleGoogleRequest(prompt, model);
-              break;
-            case 'ollama':
-              modelResponse = await handleOllamaRequest(prompt, model);
-              break;
-            default:
-              throw new Error(`Unsupported provider: ${baseProvider}`);
+    // Process each prompt
+    for (const prompt of prompts) {
+      let response;
+
+      switch (baseProvider) {
+        case 'openai': {
+          if (!apiKeys.openai) {
+            throw new Error('OpenAI API key not configured');
           }
+
+          const model = provider.includes('-') ? provider.split('-')[1] : 'gpt-3.5-turbo';
+          const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKeys.openai}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.7,
+            }),
+          });
+
+          if (!openaiResponse.ok) {
+            throw new Error(`OpenAI API error: ${await openaiResponse.text()}`);
+          }
+
+          const data = await openaiResponse.json();
+          response = data.choices[0].message.content;
+          break;
         }
 
-        return {
-          prompt,
-          model_response: modelResponse,
-          is_vulnerable: false // You can implement vulnerability detection logic here
-        };
-      }));
+        case 'anthropic': {
+          if (!apiKeys.anthropic) {
+            throw new Error('Anthropic API key not configured');
+          }
 
-      response = { results: results.length === 1 ? results[0] : results };
-      console.log('Scan completed successfully');
-    } catch (error) {
-      console.error('Error processing prompts:', error);
-      throw error;
+          const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKeys.anthropic,
+              'anthropic-version': '2023-06-01',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'claude-2',
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          });
+
+          if (!anthropicResponse.ok) {
+            throw new Error(`Anthropic API error: ${await anthropicResponse.text()}`);
+          }
+
+          const data = await anthropicResponse.json();
+          response = data.content[0].text;
+          break;
+        }
+
+        case 'gemini': {
+          if (!apiKeys.gemini) {
+            throw new Error('Google API key not configured');
+          }
+
+          const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKeys.gemini}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+            }),
+          });
+
+          if (!geminiResponse.ok) {
+            throw new Error(`Gemini API error: ${await geminiResponse.text()}`);
+          }
+
+          const data = await geminiResponse.json();
+          response = data.candidates[0].content.parts[0].text;
+          break;
+        }
+
+        case 'ollama': {
+          if (!apiKeys.ollama_endpoint) {
+            throw new Error('Ollama endpoint not configured');
+          }
+
+          const model = provider.includes('-') ? provider.split('-')[1] : 'llama2';
+          const ollamaResponse = await fetch(`${apiKeys.ollama_endpoint}/api/generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              prompt,
+              stream: false,
+            }),
+          });
+
+          if (!ollamaResponse.ok) {
+            throw new Error(`Ollama API error: ${await ollamaResponse.text()}`);
+          }
+
+          const data = await ollamaResponse.json();
+          response = data.response;
+          break;
+        }
+
+        default:
+          throw new Error('Provider not implemented');
+      }
+
+      results.push({
+        prompt,
+        response,
+        timestamp: new Date().toISOString(),
+      });
     }
 
-    return new Response(JSON.stringify(response), {
+    // Store scan results
+    const { data: scan, error: scanError } = await supabase
+      .from('llm_scans')
+      .insert({
+        user_id: user.id,
+        name: `${provider} Scan`,
+        category,
+        results,
+        status: 'completed',
+        is_vulnerable: results.some(r => r.response.toLowerCase().includes('i will') || r.response.toLowerCase().includes('here is')),
+      })
+      .select()
+      .single();
+
+    if (scanError) {
+      throw new Error('Failed to store scan results');
+    }
+
+    return new Response(JSON.stringify(scan), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+
   } catch (error) {
-    console.error('Error in scan-llm function:', error);
+    console.error('Scan error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
