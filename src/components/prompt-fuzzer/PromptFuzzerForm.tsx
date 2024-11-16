@@ -17,26 +17,30 @@ import {
 interface PromptFuzzerFormProps {
   onSubmit: (data: {
     prompt: string;
-    numMutations: number;
-    strategy: string;
-    model: string;
-    maxTokens?: number;
-    temperature?: number;
-    stopSequences?: string[];
-    topP?: number;
+    attackProvider: string;
+    attackModel: string;
+    targetProvider: string;
+    targetModel: string;
+    numAttempts: number;
+    numThreads: number;
+    attackTemperature: number;
+    customBenchmark: string[];
+    tests: string[];
   }) => Promise<void>;
   isScanning: boolean;
 }
 
 export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps) => {
   const [prompt, setPrompt] = useState("");
-  const [numMutations, setNumMutations] = useState(10);
-  const [strategy, setStrategy] = useState("random");
-  const [model, setModel] = useState("gpt-3.5-turbo");
-  const [maxTokens, setMaxTokens] = useState(100);
-  const [temperature, setTemperature] = useState(0.7);
-  const [topP, setTopP] = useState(1);
-  const [stopSequences, setStopSequences] = useState<string[]>([]);
+  const [attackProvider, setAttackProvider] = useState("open_ai");
+  const [attackModel, setAttackModel] = useState("gpt-3.5-turbo");
+  const [targetProvider, setTargetProvider] = useState("open_ai");
+  const [targetModel, setTargetModel] = useState("gpt-3.5-turbo");
+  const [numAttempts, setNumAttempts] = useState(3);
+  const [numThreads, setNumThreads] = useState(4);
+  const [attackTemperature, setAttackTemperature] = useState(0.6);
+  const [customBenchmark] = useState<string[]>([]);
+  const [tests] = useState<string[]>([]);
 
   const handleSubmit = async () => {
     if (!prompt) {
@@ -47,13 +51,15 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
     try {
       await onSubmit({
         prompt,
-        numMutations,
-        strategy,
-        model,
-        maxTokens,
-        temperature,
-        topP,
-        stopSequences
+        attackProvider,
+        attackModel,
+        targetProvider,
+        targetModel,
+        numAttempts,
+        numThreads,
+        attackTemperature,
+        customBenchmark,
+        tests
       });
     } catch (error) {
       console.error('Security fuzzing failed:', error);
@@ -74,81 +80,84 @@ export const PromptFuzzerForm = ({ onSubmit, isScanning }: PromptFuzzerFormProps
       </div>
 
       <div className="space-y-2">
-        <Label>Number of Security Mutations ({numMutations})</Label>
-        <Slider
-          value={[numMutations]}
-          onValueChange={([value]) => setNumMutations(value)}
-          min={1}
-          max={50}
-          step={1}
-          className="w-full"
-        />
+        <Label>Attack Provider</Label>
+        <Select value={attackProvider} onValueChange={setAttackProvider}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select attack provider" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="open_ai">OpenAI</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
-        <Label>Security Testing Strategy</Label>
-        <Select value={strategy} onValueChange={setStrategy}>
+        <Label>Attack Model</Label>
+        <Select value={attackModel} onValueChange={setAttackModel}>
           <SelectTrigger>
-            <SelectValue placeholder="Select security testing strategy" />
+            <SelectValue placeholder="Select attack model" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="random">Random Mutations</SelectItem>
-            <SelectItem value="targeted">Targeted Attack Vectors</SelectItem>
-            <SelectItem value="semantic">Semantic Preservation</SelectItem>
-            <SelectItem value="adversarial">Adversarial Examples</SelectItem>
-            <SelectItem value="boundary">Boundary Testing</SelectItem>
-            <SelectItem value="injection">Injection Attacks</SelectItem>
+            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Target Provider</Label>
+        <Select value={targetProvider} onValueChange={setTargetProvider}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select target provider" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="open_ai">OpenAI</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
         <Label>Target Model</Label>
-        <Select value={model} onValueChange={setModel}>
+        <Select value={targetModel} onValueChange={setTargetModel}>
           <SelectTrigger>
             <SelectValue placeholder="Select target model" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-            <SelectItem value="gpt-4">GPT-4</SelectItem>
-            <SelectItem value="claude-2">Claude 2</SelectItem>
-            <SelectItem value="llama2">Llama 2</SelectItem>
-            <SelectItem value="mistral">Mistral</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label>Maximum Tokens ({maxTokens})</Label>
+        <Label>Number of Attempts ({numAttempts})</Label>
         <Slider
-          value={[maxTokens]}
-          onValueChange={([value]) => setMaxTokens(value)}
+          value={[numAttempts]}
+          onValueChange={([value]) => setNumAttempts(value)}
           min={1}
-          max={2000}
+          max={10}
           step={1}
           className="w-full"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Temperature ({temperature})</Label>
+        <Label>Number of Threads ({numThreads})</Label>
         <Slider
-          value={[temperature]}
-          onValueChange={([value]) => setTemperature(value)}
-          min={0}
-          max={2}
-          step={0.1}
+          value={[numThreads]}
+          onValueChange={([value]) => setNumThreads(value)}
+          min={1}
+          max={8}
+          step={1}
           className="w-full"
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Top P ({topP})</Label>
+        <Label>Attack Temperature ({attackTemperature})</Label>
         <Slider
-          value={[topP]}
-          onValueChange={([value]) => setTopP(value)}
+          value={[attackTemperature]}
+          onValueChange={([value]) => setAttackTemperature(value)}
           min={0}
-          max={1}
+          max={2}
           step={0.1}
           className="w-full"
         />
