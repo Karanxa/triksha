@@ -98,6 +98,56 @@ export type Database = {
           },
         ]
       }
+      garak_scans: {
+        Row: {
+          config: Json | null
+          created_at: string
+          id: string
+          model: string
+          name: string
+          prompts: Json
+          results: Json | null
+          status: string
+          test_suites: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model: string
+          name: string
+          prompts: Json
+          results?: Json | null
+          status?: string
+          test_suites: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model?: string
+          name?: string
+          prompts?: Json
+          results?: Json | null
+          status?: string
+          test_suites?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garak_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       llm_scans: {
         Row: {
           category: string | null
