@@ -83,8 +83,26 @@ export const DatasetViewer = ({ datasetId, onClose }: DatasetViewerProps) => {
           
           return values
         }).filter(row => row.length === headers.length)
+
+        // Clean up the raw text by removing "Enhanced Prompt:" prefix
+        const cleanedText = text.split('\n').map(line => {
+          if (line.startsWith('Enhanced Prompt:')) {
+            return line.replace('Enhanced Prompt:', '').trim()
+          }
+          return line
+        }).join('\n')
         
-        return { type: 'csv', headers, data, raw: text }
+        return { 
+          type: 'csv', 
+          headers, 
+          // Clean up the data by removing "Enhanced Prompt:" prefix
+          data: data.map(row => 
+            row.map(cell => 
+              cell.startsWith('Enhanced Prompt:') ? cell.replace('Enhanced Prompt:', '').trim() : cell
+            )
+          ),
+          raw: cleanedText 
+        }
       } catch (error: any) {
         toast({
           variant: "destructive",
