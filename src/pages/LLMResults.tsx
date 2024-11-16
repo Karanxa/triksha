@@ -1,8 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Table, TableBody } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, Filter } from "lucide-react";
+import { Table, TableBody } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,11 +8,10 @@ import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
 import { ResultsTableHeader } from "@/components/llm-results/ResultsTableHeader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database } from "@/integrations/supabase/types";
-import { ATTACK_CATEGORIES } from "@/components/datasets/AttackCategorySelect";
 import { getScanType } from "@/utils/scanUtils";
-import { Input } from "@/components/ui/input";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import { addDays } from "date-fns";
+import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
+import { Loader2 } from "lucide-react";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -59,7 +55,6 @@ const LLMResults = () => {
 
       let filteredData = data as LLMScan[];
 
-      // Client-side filtering for search and scan type
       if (searchQuery) {
         const lowercaseQuery = searchQuery.toLowerCase();
         filteredData = filteredData.filter(scan => 
@@ -123,63 +118,18 @@ const LLMResults = () => {
         <h1 className="text-3xl font-bold mb-2">LLM Security Analysis Results</h1>
         <p className="text-muted-foreground mb-8">Review and analyze the results of your LLM security scans</p>
 
-        <div className="space-y-4 mb-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="w-48">
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Results</SelectItem>
-                  <SelectItem value="manual">Manual Prompt</SelectItem>
-                  <SelectItem value="batch">Batch Scan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="w-48">
-              <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {ATTACK_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex-1">
-              <Input
-                placeholder="Search scans..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-xs"
-              />
-            </div>
-
-            <DatePickerWithRange
-              date={dateRange}
-              onDateChange={setDateRange}
-            />
-
-            <Button variant="secondary" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2" />
-              Export Results
-            </Button>
-          </div>
-
-          {scans && (
-            <p className="text-sm text-muted-foreground">
-              Showing {scans.length} results
-            </p>
-          )}
-        </div>
+        <ResultsFilters
+          filterType={filterType}
+          setFilterType={setFilterType}
+          filterCategory={filterCategory}
+          setFilterCategory={setFilterCategory}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          onExport={handleExport}
+          resultsCount={scans?.length}
+        />
 
         <div className="border rounded-lg">
           <Table>

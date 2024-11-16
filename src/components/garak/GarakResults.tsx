@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Json } from "@/integrations/supabase/types/common";
 
 interface GarakResult {
   prompt: string;
@@ -20,6 +21,9 @@ interface GarakScan {
   prompts: string[];
   results: GarakResult[] | null;
   created_at: string;
+  config: Json;
+  updated_at: string;
+  user_id: string;
 }
 
 export const GarakResults = () => {
@@ -33,7 +37,18 @@ export const GarakResults = () => {
         .limit(10);
 
       if (error) throw error;
-      return data as GarakScan[];
+      
+      // Transform the data to match GarakScan type
+      return (data as any[]).map(scan => ({
+        ...scan,
+        results: Array.isArray(scan.results) 
+          ? scan.results.map((r: any) => ({
+              prompt: r.prompt || '',
+              result: r.result,
+              error: r.error
+            }))
+          : null
+      })) as GarakScan[];
     },
     refetchInterval: 5000,
   });
