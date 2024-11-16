@@ -92,7 +92,7 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
                 <Badge variant="outline">{result.severity}</Badge>
               )}
               <Badge 
-                variant={result.is_vulnerable ? "destructive" : "success"}
+                variant={result.is_vulnerable ? "destructive" : "default"}
                 className="flex items-center gap-1"
               >
                 {result.is_vulnerable ? (

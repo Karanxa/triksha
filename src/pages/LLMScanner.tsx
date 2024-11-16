@@ -110,10 +110,12 @@ const LLMScanner = () => {
               />
             </Card>
 
-            <ScanResults 
-              result={scanResult} 
-              isLoading={isScanning}
-            />
+            {scanResult && (
+              <ScanResults 
+                result={scanResult} 
+                isLoading={isScanning}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="garak">
