@@ -62,4 +62,8 @@
   html {
     @apply scroll-smooth;
   }
+
+  [data-radix-popper-content-wrapper] {
+    @apply bg-popover border-border;
+  }
 }
