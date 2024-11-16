@@ -13,6 +13,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
   const deleteScan = useMutation({
     mutationFn: async (id: string) => {
+      // First delete all scan results associated with this scan
       const { error: resultsError } = await supabase
         .from('llm_scan_results')
         .delete()
@@ -20,6 +21,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
       if (resultsError) throw resultsError;
 
+      // Then delete the scan itself
       const { error: scanError } = await supabase
         .from('llm_scans')
         .delete()
