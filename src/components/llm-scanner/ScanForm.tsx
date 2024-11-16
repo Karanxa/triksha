@@ -10,6 +10,7 @@ import { ScanFormSubmit } from "./ScanFormSubmit";
 import { ScanFormCustomEndpoint } from "./ScanFormCustomEndpoint";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { Label } from "@/components/ui/label";
+import { useNavigate } from "react-router-dom";
 
 interface CustomEndpoint {
   url: string;
@@ -34,6 +35,7 @@ interface ScanFormProps {
 }
 
 export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
+  const navigate = useNavigate();
   const [provider, setProvider] = useState("");
   const [singlePrompt, setSinglePrompt] = useState("");
   const [prompts, setPrompts] = useState<string[]>([]);
@@ -131,6 +133,8 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       setIsRecurring(false);
       
       toast.success("Scan initiated successfully");
+      // Navigate to results page after successful scan
+      navigate("/llm-results");
     } catch (error) {
       console.error("Scan failed:", error);
       toast.error(`Scan failed: ${(error as Error).message}`);

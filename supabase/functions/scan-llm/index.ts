@@ -30,7 +30,7 @@ serve(async (req) => {
       .from('llm_scans')
       .update({ 
         status: 'processing',
-        results: null // Clear any previous results
+        results: null
       })
       .eq('id', scanId);
 

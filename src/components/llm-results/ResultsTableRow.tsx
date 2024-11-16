@@ -24,9 +24,9 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   if (results) {
     if (results.error) {
       response = `Error: ${results.error}`;
-    } else if (results.prompt && results.model_response) {
-      prompt = results.prompt;
-      response = results.model_response;
+    } else {
+      prompt = results.prompt || 'No prompt available';
+      response = results.model_response || 'No response available';
     }
   }
 
@@ -36,7 +36,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
 
   return (
     <TableRow key={scan.id}>
-      <TableCell>Manual Scan</TableCell>
+      <TableCell>{scan.name || 'Manual Scan'}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell
