@@ -13,7 +13,10 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   try {
@@ -25,7 +28,10 @@ serve(async (req) => {
     // Validate required parameters
     if (!scanId || !prompts || !provider) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
+        JSON.stringify({ 
+          error: 'Missing required parameters',
+          details: { scanId, prompts: !!prompts, provider }
+        }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -39,7 +45,10 @@ serve(async (req) => {
     } catch (error) {
       console.error('Error updating scan status:', error);
       return new Response(
-        JSON.stringify({ error: 'Failed to update scan status' }),
+        JSON.stringify({ 
+          error: 'Failed to update scan status',
+          details: error.message
+        }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -69,7 +78,7 @@ serve(async (req) => {
           model_response: modelResponse
         };
       } else {
-        throw new Error('Provider not implemented');
+        throw new Error(`Provider ${baseProvider} not implemented`);
       }
 
       // Add metadata to results
@@ -83,7 +92,10 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify(scanResults),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     } catch (error) {
       console.error(`Error processing scan ${scanId}:`, error);
@@ -96,7 +108,10 @@ serve(async (req) => {
       });
 
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ 
+          error: 'Scan processing failed',
+          details: error.message
+        }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -106,7 +121,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in scan-llm function:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
