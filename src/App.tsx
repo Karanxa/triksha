@@ -31,7 +31,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
   </AuthGuard>
 );
 
-const queryClient = new QueryClient();
+// Configure QueryClient with better error handling and retries
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    },
+    mutations: {
+      retry: 1,
+      onError: (error) => {
+        console.error('Mutation error:', error);
+      },
+    },
+  },
+});
 
 const App = () => {
   return (
@@ -41,6 +57,7 @@ const App = () => {
           <style>
             {`
               [data-radix-popper-content-wrapper] {
+                z-index: 100;
                 background-color: var(--background) !important;
               }
             `}
