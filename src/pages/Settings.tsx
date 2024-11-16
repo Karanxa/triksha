@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { ApiKeys } from "@/integrations/supabase/types/common";
+import { ApiKeys } from "@/integrations/supabase/types/common";
 
 const Settings = () => {
   const session = useSession();

@@ -5,3 +5,12 @@ export type Json =
   | null
   | { [key: string]: Json | undefined }
   | Json[]
+
+export interface ApiKeys {
+  openai?: string;
+  huggingface?: string;
+  anthropic?: string;
+  gemini?: string;
+  github?: string;
+  ollama_endpoint?: string;
+}
