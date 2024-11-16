@@ -30,7 +30,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const scanType = getScanType(results);
 
   useEffect(() => {
-    const subscription = supabase
+    const channel = supabase
       .channel('llm_scans_changes')
       .on('DELETE', (payload) => {
         if (payload.old.id === scan.id) {
@@ -40,7 +40,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [scan.id]);
 

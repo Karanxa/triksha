@@ -15,13 +15,16 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
   const deleteScan = useMutation({
     mutationFn: async (id: string) => {
-      setIsDeleting(true);
       const { error } = await supabase
         .from('llm_scans')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+      return id;
+    },
+    onMutate: () => {
+      setIsDeleting(true);
     },
     onError: (error) => {
       setIsDeleting(false);
@@ -29,11 +32,19 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
     },
   });
 
+  const handleDelete = async () => {
+    try {
+      await deleteScan.mutateAsync(scanId);
+    } catch (error) {
+      console.error('Delete failed:', error);
+    }
+  };
+
   return (
     <Button
       variant="destructive"
       size="sm"
-      onClick={() => deleteScan.mutate(scanId)}
+      onClick={handleDelete}
       className={cn(
         "transition-all duration-300",
         isDeleting && "animate-fade-out opacity-0 scale-95"
