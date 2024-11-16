@@ -5,14 +5,26 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@supabase/auth-helpers-react";
+import { useSession } from "@supabase/auth-helpers-react";
+
+const DEFAULT_CONFIG = {
+  attack_provider: "open_ai",
+  attack_model: "gpt-4o",  // Using the latest model as per instructions
+  target_provider: "open_ai",
+  target_model: "gpt-4o",
+  num_attempts: 3,
+  num_threads: 4,
+  attack_temperature: 0.6,
+  custom_benchmark: [],
+  tests: []
+};
 
 export const PromptFuzzingForm = () => {
   const [name, setName] = useState("");
   const [basePrompt, setBasePrompt] = useState("");
   const [fuzzingType, setFuzzingType] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const auth = useAuth();
+  const session = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +33,7 @@ export const PromptFuzzingForm = () => {
       return;
     }
 
-    if (!auth?.user?.id) {
+    if (!session?.user?.id) {
       toast.error("You must be logged in to create a scan");
       return;
     }
@@ -32,7 +44,8 @@ export const PromptFuzzingForm = () => {
         name,
         base_prompt: basePrompt,
         fuzzing_type: fuzzingType,
-        user_id: auth.user.id
+        user_id: session.user.id,
+        mutations: DEFAULT_CONFIG
       });
 
       if (error) throw error;
