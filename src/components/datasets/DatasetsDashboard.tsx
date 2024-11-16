@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
-import { Database, Download, FolderOpen, Search, Eye } from "lucide-react"
+import { FolderOpen, Search } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
 import { DatasetViewer } from "./DatasetViewer"
+import { DatasetList } from "./DatasetList"
 
 export const DatasetsDashboard = () => {
   const { toast } = useToast()
@@ -97,90 +95,12 @@ export const DatasetsDashboard = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredDatasets.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDatasets.map((dataset) => (
-            <Card key={dataset.id} className="flex flex-col">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  {dataset.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground mb-4">
-                  {dataset.description || "No description provided"}
-                </p>
-                {dataset.category && (
-                  <p className="text-sm">
-                    <span className="font-medium">Category:</span> {dataset.category}
-                  </p>
-                )}
-                <p className="text-sm">
-                  <span className="font-medium">Created:</span>{" "}
-                  {new Date(dataset.created_at).toLocaleDateString()}
-                </p>
-              </CardContent>
-              <CardFooter className="grid grid-cols-4 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setViewingDataset(dataset.id)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleDownload(dataset.id, 'csv')}
-                  disabled={!!downloading}
-                >
-                  {downloading === dataset.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      CSV
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleDownload(dataset.id, 'txt')}
-                  disabled={!!downloading}
-                >
-                  {downloading === dataset.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      TXT
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => handleDownload(dataset.id, 'zip')}
-                  disabled={!!downloading}
-                >
-                  {downloading === dataset.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      ZIP
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <DatasetList
+          datasets={filteredDatasets}
+          onView={setViewingDataset}
+          onDownload={handleDownload}
+          downloading={downloading}
+        />
       ) : (
         <div className="text-center py-12">
           <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -196,5 +116,5 @@ export const DatasetsDashboard = () => {
         onClose={() => setViewingDataset(null)}
       />
     </div>
-  )
-}
+  );
+};
