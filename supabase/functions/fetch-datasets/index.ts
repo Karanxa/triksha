@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { category, useCustomSearch, searchQuery } = await req.json()
+    const { category, useCustomSearch, searchQuery, page = 1, perPage = 12 } = await req.json()
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -66,7 +66,8 @@ serve(async (req) => {
       }
 
       params.append('sort', 'downloads')
-      params.append('limit', '10')
+      params.append('limit', perPage.toString())
+      params.append('offset', ((page - 1) * perPage).toString())
       
       const searchUrl = `${baseUrl}?${params.toString()}`
       
@@ -96,18 +97,16 @@ serve(async (req) => {
     if (githubToken) {
       let searchTerms = []
       
-      // Add custom search query or category
       if (useCustomSearch && searchQuery) {
         searchTerms.push(searchQuery)
       } else if (category) {
         searchTerms.push(category)
       }
       
-      // Always include dataset-related terms for better results
       searchTerms.push('dataset')
       
       const query = encodeURIComponent(`${searchTerms.join(' ')} in:name,description,readme language:python stars:>10`)
-      const githubUrl = `https://api.github.com/search/repositories?q=${query}&sort=stars&order=desc&per_page=10`
+      const githubUrl = `https://api.github.com/search/repositories?q=${query}&sort=stars&order=desc&per_page=${perPage}&page=${page}`
       
       const response = await fetch(githubUrl, {
         headers: {

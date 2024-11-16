@@ -4,10 +4,12 @@ import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/useDebounce"
-import { DatasetSearchControls } from "@/components/datasets/DatasetSearchControls"
-import { DatasetCard } from "@/components/datasets/DatasetCard"
+import { DatasetSearchControls } from "./DatasetSearchControls"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DatasetGrid } from "./DatasetGrid"
+
+const ITEMS_PER_PAGE = 12
 
 export const ExistingDatasets = () => {
   const { toast } = useToast()
@@ -16,11 +18,12 @@ export const ExistingDatasets = () => {
   const [selectedCategory, setSelectedCategory] = useState("")
   const [downloading, setDownloading] = useState<string | null>(null)
   const [localSearch, setLocalSearch] = useState("")
+  const [page, setPage] = useState(1)
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
   const { data: datasets, isLoading } = useQuery({
-    queryKey: ['datasets', selectedCategory, useCustomSearch, debouncedSearchQuery],
+    queryKey: ['datasets', selectedCategory, useCustomSearch, debouncedSearchQuery, page],
     queryFn: async () => {
       if (!selectedCategory && !debouncedSearchQuery) return { huggingface: [], github: [] }
       
@@ -28,7 +31,9 @@ export const ExistingDatasets = () => {
         body: { 
           category: selectedCategory,
           useCustomSearch,
-          searchQuery: useCustomSearch ? debouncedSearchQuery : undefined
+          searchQuery: useCustomSearch ? debouncedSearchQuery : undefined,
+          page,
+          perPage: ITEMS_PER_PAGE
         }
       })
 
@@ -51,8 +56,12 @@ export const ExistingDatasets = () => {
 
       return data
     },
-    enabled: !!selectedCategory || (useCustomSearch && !!debouncedSearchQuery)
+    keepPreviousData: true
   })
+
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1)
+  }
 
   const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
     try {
@@ -122,7 +131,7 @@ export const ExistingDatasets = () => {
         </div>
       )}
 
-      {isLoading ? (
+      {isLoading && page === 1 ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -146,40 +155,34 @@ export const ExistingDatasets = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="huggingface" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {huggingFaceDatasets.map((dataset) => (
-                  <DatasetCard
-                    key={dataset.id}
-                    dataset={dataset}
-                    onDownload={handleDownload}
-                    downloading={downloading}
-                  />
-                ))}
-                {huggingFaceDatasets.length === 0 && (
-                  <p className="text-center text-muted-foreground py-12 col-span-full">
-                    No Hugging Face datasets found
-                  </p>
-                )}
-              </div>
+            <TabsContent value="huggingface">
+              <DatasetGrid
+                datasets={huggingFaceDatasets}
+                onLoadMore={handleLoadMore}
+                hasMore={huggingFaceDatasets.length >= ITEMS_PER_PAGE}
+                downloading={downloading}
+                onDownload={handleDownload}
+              />
+              {huggingFaceDatasets.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">
+                  No Hugging Face datasets found
+                </p>
+              )}
             </TabsContent>
 
-            <TabsContent value="github" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {githubDatasets.map((dataset) => (
-                  <DatasetCard
-                    key={dataset.id}
-                    dataset={dataset}
-                    onDownload={handleDownload}
-                    downloading={downloading}
-                  />
-                ))}
-                {githubDatasets.length === 0 && (
-                  <p className="text-center text-muted-foreground py-12 col-span-full">
-                    No GitHub datasets found
-                  </p>
-                )}
-              </div>
+            <TabsContent value="github">
+              <DatasetGrid
+                datasets={githubDatasets}
+                onLoadMore={handleLoadMore}
+                hasMore={githubDatasets.length >= ITEMS_PER_PAGE}
+                downloading={downloading}
+                onDownload={handleDownload}
+              />
+              {githubDatasets.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">
+                  No GitHub datasets found
+                </p>
+              )}
             </TabsContent>
           </Tabs>
 
