@@ -25,15 +25,24 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
       toast.success("Scan deleted successfully");
     },
     onError: (error: Error) => {
+      console.error('Delete error:', error);
       toast.error("Failed to delete scan: " + error.message);
     },
   });
+
+  const handleDelete = async () => {
+    try {
+      await deleteScan.mutateAsync(scanId);
+    } catch (error) {
+      console.error('Delete handler error:', error);
+    }
+  };
 
   return (
     <Button
       variant="destructive"
       size="sm"
-      onClick={() => deleteScan.mutate(scanId)}
+      onClick={handleDelete}
       disabled={deleteScan.isPending}
     >
       <Trash2 className="h-4 w-4" />

@@ -11,28 +11,32 @@ export const formatScanResponse = (response: any) => {
   
   // Handle string responses
   if (typeof response === 'string') {
-    return {
-      model_response: response,
-      prompt: ''
-    };
+    try {
+      response = JSON.parse(response);
+    } catch {
+      return {
+        model_response: response,
+        prompt: ''
+      };
+    }
   }
   
   // Handle array responses (batch results)
   if (Array.isArray(response)) {
-    return {
-      model_response: response.map(r => r.model_response || r.response || '').join('\n'),
-      prompt: response.map(r => r.prompt || '').join('\n')
-    };
+    return response.map(r => ({
+      model_response: r.model_response || r.response || '',
+      prompt: r.prompt || ''
+    }));
   }
   
   // Handle object responses
   if (typeof response === 'object') {
     // Handle results array within object
     if (response.results && Array.isArray(response.results)) {
-      return {
-        model_response: response.results.map((r: any) => r.model_response || r.response || '').join('\n'),
-        prompt: response.results.map((r: any) => r.prompt || '').join('\n')
-      };
+      return response.results.map((r: any) => ({
+        model_response: r.model_response || r.response || '',
+        prompt: r.prompt || ''
+      }));
     }
     
     // Handle single result object

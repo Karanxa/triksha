@@ -9,6 +9,7 @@ import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CustomEndpoint {
   url: string;
@@ -40,6 +41,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
+  const [scanType, setScanType] = useState<"manual" | "batch">("manual");
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -69,8 +71,13 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       }
     }
 
-    if (!singlePrompt && prompts.length === 0) {
-      toast.error("Please enter a prompt or upload a CSV");
+    if (scanType === "manual" && !singlePrompt) {
+      toast.error("Please enter a prompt for manual scan");
+      return;
+    }
+
+    if (scanType === "batch" && prompts.length === 0) {
+      toast.error("Please upload a CSV file for batch scan");
       return;
     }
 
@@ -96,17 +103,9 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         toast.error("Please configure your Ollama endpoint URL in Settings");
         return;
       }
-      
-      try {
-        new URL(ollamaEndpoint);
-      } catch (error) {
-        console.error("Invalid Ollama endpoint URL:", error);
-        toast.error("Invalid Ollama endpoint URL. Please check your settings.");
-        return;
-      }
     }
 
-    const allPrompts = singlePrompt ? [singlePrompt] : prompts;
+    const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
     console.log("Submitting scan with prompts:", allPrompts);
 
     try {
@@ -114,15 +113,18 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         prompts: allPrompts,
         provider,
         category,
-        label: label || undefined,
+        label: label || `${scanType === "manual" ? "Manual" : "Batch"} Scan - ${new Date().toLocaleString()}`,
         schedule: schedule !== "none" ? schedule : undefined,
         isRecurring,
         customEndpoint: provider === 'custom' ? customEndpoint : undefined
       });
 
       // Reset form only on success
-      setSinglePrompt("");
-      setPrompts([]);
+      if (scanType === "manual") {
+        setSinglePrompt("");
+      } else {
+        setPrompts([]);
+      }
       setLabel("");
       setSchedule("none");
       setIsRecurring(false);
@@ -136,6 +138,19 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
 
   return (
     <div className="space-y-8">
+      <div className="space-y-4">
+        <Label>Scan Type</Label>
+        <Select value={scanType} onValueChange={(value: "manual" | "batch") => setScanType(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select scan type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="manual">Manual Scan</SelectItem>
+            <SelectItem value="batch">Batch Scan</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <ScanFormProvider 
         provider={provider}
         onProviderChange={setProvider}
@@ -159,6 +174,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
           setPrompts(extractedPrompts);
           setSinglePrompt("");
         }}
+        scanType={scanType}
       />
 
       <div className="space-y-4">

@@ -3,14 +3,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface ScanResult {
-  prompt?: string;
-  model_response?: string;
+  prompt: string;
+  model_response: string;
   error?: string;
   is_vulnerable?: boolean;
 }
 
 interface ScanResultsProps {
-  result: ScanResult | ScanResult[];
+  result: ScanResult | ScanResult[] | null;
   isLoading?: boolean;
 }
 
@@ -47,7 +47,7 @@ const SingleResult = ({ result }: { result: ScanResult }) => {
 
   if (result.error) {
     return (
-      <Alert variant="destructive" className="mt-8">
+      <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Scan Failed</AlertTitle>
         <AlertDescription>{result.error}</AlertDescription>
@@ -57,24 +57,33 @@ const SingleResult = ({ result }: { result: ScanResult }) => {
 
   return (
     <div className="space-y-4">
-      {result.prompt && (
-        <Alert>
-          <AlertTitle>Prompt Used:</AlertTitle>
-          <AlertDescription className="mt-2 whitespace-pre-wrap">
-            {result.prompt}
-          </AlertDescription>
-        </Alert>
-      )}
+      <Alert>
+        <AlertTitle>Prompt Used:</AlertTitle>
+        <AlertDescription className="mt-2 whitespace-pre-wrap">
+          {result.prompt}
+        </AlertDescription>
+      </Alert>
       
-      {result.model_response && (
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="font-medium mb-2">Model Response:</h3>
-            <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
-              {result.model_response}
-            </pre>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="font-medium mb-2">Model Response:</h3>
+          <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
+            {result.model_response}
+          </pre>
+        </CardContent>
+      </Card>
+
+      {result.is_vulnerable !== undefined && (
+        <Alert variant={result.is_vulnerable ? "destructive" : "default"}>
+          {result.is_vulnerable ? (
+            <AlertCircle className="h-4 w-4" />
+          ) : (
+            <CheckCircle className="h-4 w-4" />
+          )}
+          <AlertTitle>
+            {result.is_vulnerable ? "Vulnerability Detected" : "No Vulnerability Detected"}
+          </AlertTitle>
+        </Alert>
       )}
     </div>
   );
