@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { generateAdversarialPrompts } from './adversarialGenerator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,10 +13,12 @@ serve(async (req) => {
   }
 
   try {
-    const { name, description, basePrompt, numSamples, method, recipe, targetModel } = await req.json()
+    const { name, description, basePrompt, numSamples, method, recipe, targetModel, adversarialConfig } = await req.json()
 
     // Validate input
-    if (!name || (method === "manual" && !basePrompt) || (method === "recipe" && !recipe)) {
+    if (!name || (method === "manual" && !basePrompt) || 
+        (method === "recipe" && !recipe) ||
+        (method === "adversarial" && !adversarialConfig)) {
       throw new Error('Missing required fields')
     }
 
@@ -38,23 +41,36 @@ serve(async (req) => {
       throw userError || new Error('User not found')
     }
 
-    // TODO: Implement EasyJailbreak integration
-    // For now, create a dataset entry with metadata
+    let metadata = {}
+    
+    if (method === 'recipe') {
+      metadata = {
+        recipe,
+        targetModel,
+        numSamples
+      }
+    } else if (method === 'adversarial') {
+      const prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
+      metadata = {
+        ...adversarialConfig,
+        prompts,
+        numSamples
+      }
+    } else {
+      metadata = {
+        basePrompt,
+        numSamples
+      }
+    }
+
     const { data: dataset, error: datasetError } = await supabase
       .from('datasets')
       .insert({
         name,
         description,
         user_id: user.id,
-        category: method === 'recipe' ? 'easyjailbreak' : 'manual',
-        metadata: method === 'recipe' ? {
-          recipe,
-          targetModel,
-          numSamples
-        } : {
-          basePrompt,
-          numSamples
-        }
+        category: method === 'recipe' ? 'easyjailbreak' : method === 'adversarial' ? 'adversarial' : 'manual',
+        metadata
       })
       .select()
       .single()

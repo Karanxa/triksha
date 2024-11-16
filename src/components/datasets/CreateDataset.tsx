@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
+import { AdversarialConfig } from "./AdversarialConfig"
 
 export const CreateDataset = () => {
   const { toast } = useToast()
@@ -19,6 +20,13 @@ export const CreateDataset = () => {
   const [method, setMethod] = useState("manual")
   const [recipe, setRecipe] = useState("")
   const [targetModel, setTargetModel] = useState("")
+  const [adversarialConfig, setAdversarialConfig] = useState({
+    attackType: "evasion",
+    vulnerabilityCategory: "prompt-injection",
+    difficulty: "medium",
+    severity: "medium",
+    context: "chatbot"
+  })
 
   const recipes = [
     { id: "PAIR", name: "PAIR (Chao 2023)" },
@@ -34,7 +42,9 @@ export const CreateDataset = () => {
   ]
 
   const handleGenerate = async () => {
-    if (!name || (method === "manual" && !basePrompt) || (method === "recipe" && !recipe)) {
+    if (!name || (method === "manual" && !basePrompt) || 
+        (method === "recipe" && !recipe) || 
+        (method === "adversarial" && !adversarialConfig.attackType)) {
       toast({
         variant: "destructive",
         title: "Missing fields",
@@ -53,7 +63,8 @@ export const CreateDataset = () => {
           numSamples: parseInt(numSamples),
           method,
           recipe,
-          targetModel
+          targetModel,
+          adversarialConfig: method === "adversarial" ? adversarialConfig : undefined
         }
       })
 
@@ -87,7 +98,7 @@ export const CreateDataset = () => {
       <CardHeader>
         <CardTitle>Generate Dataset</CardTitle>
         <CardDescription>
-          Generate adversarial datasets using manual input or EasyJailbreak recipes
+          Generate adversarial datasets using manual input, EasyJailbreak recipes, or advanced adversarial techniques
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -120,6 +131,7 @@ export const CreateDataset = () => {
             <SelectContent>
               <SelectItem value="manual">Manual Input</SelectItem>
               <SelectItem value="recipe">EasyJailbreak Recipe</SelectItem>
+              <SelectItem value="adversarial">Advanced Adversarial</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -134,7 +146,7 @@ export const CreateDataset = () => {
               placeholder="Enter the base prompt for generating variations"
             />
           </div>
-        ) : (
+        ) : method === "recipe" ? (
           <>
             <div className="space-y-2">
               <Label>Recipe</Label>
@@ -168,6 +180,11 @@ export const CreateDataset = () => {
               </Select>
             </div>
           </>
+        ) : (
+          <AdversarialConfig 
+            config={adversarialConfig}
+            onChange={setAdversarialConfig}
+          />
         )}
 
         <div className="space-y-2">
@@ -192,5 +209,5 @@ export const CreateDataset = () => {
         </Button>
       </CardContent>
     </Card>
-  );
-};
+  )
+}
