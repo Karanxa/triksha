@@ -14,13 +14,11 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  const results = scan.results || {};
-  const prompts = Array.isArray(results.prompts) ? results.prompts : [];
-  const responses = Array.isArray(results.responses) ? results.responses : [];
-  
-  const prompt = prompts[0] || 'No prompt available';
-  const firstResponse = responses[0] || {};
-  const response = firstResponse.model_response || firstResponse.error || 'No response available';
+  const results = scan.results as any;
+  const prompt = results?.prompt || (results?.prompts && results.prompts[0]) || 'No prompt available';
+  const response = results?.model_response || 
+    (results?.responses && results.responses[0]?.model_response) || 
+    'No response available';
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';

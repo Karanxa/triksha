@@ -3,7 +3,6 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
 
 interface DeleteButtonProps {
   scanId: string;
@@ -14,20 +13,29 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
   const deleteScan = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error: resultsError } = await supabase
+        .from('llm_scan_results')
+        .delete()
+        .eq('batch_id', id);
+
+      if (resultsError) throw resultsError;
+
+      const { error: scanError } = await supabase
         .from('llm_scans')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (scanError) throw scanError;
+      
       return id;
     },
-    onSuccess: (id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
       toast.success("Scan deleted successfully");
     },
     onError: (error) => {
-      toast.error("Failed to delete scan: " + error.message);
+      console.error("Delete error:", error);
+      toast.error("Failed to delete scan");
     },
   });
 
