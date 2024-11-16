@@ -10,28 +10,8 @@ import { ScanFormSubmit } from "./ScanFormSubmit";
 import { ScanResults } from "./ScanResults";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { Label } from "@/components/ui/label";
-
-interface CustomEndpoint {
-  url: string;
-  apiKey: string;
-  headers: string;
-  placeholder: string;
-  curlCommand: string;
-  inputType: 'curl' | 'manual';
-}
-
-interface ScanFormProps {
-  onSubmit: (data: {
-    prompts: string[];
-    provider: string;
-    category: string;
-    label?: string;
-    schedule?: string;
-    isRecurring: boolean;
-    customEndpoint?: CustomEndpoint;
-  }) => Promise<void>;
-  isScanning: boolean;
-}
+import { useScanSubmission } from "./hooks/useScanSubmission";
+import { CustomEndpoint, ScanFormProps } from "./types";
 
 export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [provider, setProvider] = useState("");
@@ -42,7 +22,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
   const [scanType, setScanType] = useState<"manual" | "batch">("manual");
-  const [scanResult, setScanResult] = useState<any>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -51,6 +30,8 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     curlCommand: '',
     inputType: 'manual'
   });
+
+  const { scanResult, submitScan } = useScanSubmission();
 
   const handleSubmit = async () => {
     if (!provider && provider !== 'custom') {
@@ -87,63 +68,19 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
-    const baseProvider = provider.split('-')[0];
+    const result = await submitScan({
+      provider,
+      scanType,
+      singlePrompt,
+      prompts,
+      category,
+      label,
+      schedule,
+      isRecurring,
+      customEndpoint
+    });
 
-    if (baseProvider === 'ollama') {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('api_keys')
-        .single();
-      
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-        toast.error("Failed to fetch profile settings");
-        return;
-      }
-
-      const ollamaEndpoint = profile?.api_keys?.['ollama_endpoint'] as string | undefined;
-      
-      if (!ollamaEndpoint) {
-        toast.error("Please configure your Ollama endpoint URL in Settings");
-        return;
-      }
-    }
-
-    const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
-
-    try {
-      // Create the scan record first
-      const { data: scan, error: createError } = await supabase
-        .from('llm_scans')
-        .insert({
-          name: label || `${scanType === "manual" ? "Manual" : "Batch"} Scan - ${new Date().toLocaleString()}`,
-          status: 'pending',
-          category,
-          label,
-          schedule: schedule !== "none" ? schedule : undefined,
-          is_recurring: isRecurring,
-        })
-        .select()
-        .single();
-
-      if (createError) throw createError;
-
-      // Call the edge function to perform the scan
-      const { data: result, error: scanError } = await supabase.functions.invoke('scan-llm', {
-        body: { 
-          scanId: scan.id,
-          prompts: allPrompts,
-          provider,
-          category,
-          customEndpoint: provider === 'custom' ? customEndpoint : undefined
-        }
-      });
-
-      if (scanError) throw scanError;
-
-      // Set the result for immediate display
-      setScanResult(result);
-
+    if (result) {
       if (scanType === "manual") {
         setSinglePrompt("");
       } else {
@@ -154,9 +91,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       setIsRecurring(false);
       
       toast.success("Scan completed successfully");
-    } catch (error) {
-      console.error("Scan failed:", error);
-      toast.error(`Scan failed: ${(error as Error).message}`);
     }
   };
 
