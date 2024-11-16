@@ -32,6 +32,12 @@ const LLMResults = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
+      // Apply category filter at database level
+      if (filterCategory !== 'all') {
+        const dbCategory = filterCategory.toLowerCase().replace(/ /g, '-');
+        query = query.eq('category', dbCategory);
+      }
+
       const { data, error } = await query;
 
       if (error) {
@@ -52,28 +58,19 @@ const LLMResults = () => {
     });
   };
 
-  // Filter scans based on both type and category
+  // Filter scans based on type only (category is handled at DB level)
   const filteredScans = scans?.filter(scan => {
-    // Type filter
-    if (filterType !== 'all') {
-      const results = scan.results as { prompt: string; model_response: string } | null;
-      const scanType = getScanType(results);
-      
-      if (filterType === 'batch' && !scanType.toLowerCase().includes('batch')) {
-        return false;
-      }
-      if (filterType === 'manual' && !scanType.toLowerCase().includes('manual')) {
-        return false;
-      }
+    if (filterType === 'all') return true;
+    
+    const results = scan.results as { prompt: string; model_response: string } | null;
+    const scanType = getScanType(results);
+    
+    if (filterType === 'batch') {
+      return scanType.toLowerCase().includes('batch');
+    } else if (filterType === 'manual') {
+      return scanType.toLowerCase().includes('manual');
     }
-
-    // Category filter
-    if (filterCategory !== 'all') {
-      if (!scan.category || scan.category.toLowerCase() !== filterCategory.toLowerCase().replace(/ /g, '-')) {
-        return false;
-      }
-    }
-
+    
     return true;
   });
 
