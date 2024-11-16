@@ -2,7 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { getCategoryVariant, getSeverityVariant } from "@/utils/vulnerabilityUtils";
 import { Database } from "@/integrations/supabase/types";
 
@@ -20,21 +20,11 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   // Extract prompt and response based on scan type
   let prompt = 'No prompt available';
   let response = 'No response available';
-  let scanType = 'Manual Scan';
 
   if (results) {
     if (results.error) {
       response = `Error: ${results.error}`;
-    } else if (results.results && Array.isArray(results.results)) {
-      // Batch scan results
-      scanType = 'Batch Scan';
-      const firstResult = results.results[0];
-      if (firstResult) {
-        prompt = firstResult.prompt || prompt;
-        response = firstResult.model_response || response;
-      }
     } else if (results.prompt && results.model_response) {
-      // Single scan results
       prompt = results.prompt;
       response = results.model_response;
     }
@@ -46,7 +36,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
 
   return (
     <TableRow key={scan.id}>
-      <TableCell>{scanType}</TableCell>
+      <TableCell>Manual Scan</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell
@@ -77,7 +67,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
             </div>
           ) : scan.status === 'processing' ? (
             <div className="flex items-center text-muted-foreground">
-              <span className="loading loading-spinner loading-sm mr-1"></span>
+              <Loader2 className="w-5 h-5 mr-1 animate-spin" />
               Processing
             </div>
           ) : isVulnerable ? (

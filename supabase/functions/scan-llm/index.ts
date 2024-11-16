@@ -7,50 +7,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: string) => {
-  const urlMatch = curlCommand.match(/curl ['"]([^'"]+)['"]/);
-  const headersMatch = curlCommand.match(/-H ['"]([^'"]+)['"]/g);
-  const dataMatch = curlCommand.match(/-d ['"]([^'"]+)['"]/);
-  
-  if (!urlMatch) {
-    throw new Error('Invalid cURL command: URL not found');
-  }
-
-  const url = urlMatch[1];
-  const headers: Record<string, string> = {};
-  
-  headersMatch?.forEach(header => {
-    const [key, value] = header.match(/-H ['"]([^'"]+)['"]/)?.[1].split(': ') ?? [];
-    if (key && value) {
-      headers[key] = value;
-    }
-  });
-
-  let body = dataMatch?.[1] ?? '{}';
-  body = body.replace(placeholder, prompt);
-
-  try {
-    body = JSON.parse(body);
-  } catch {
-    throw new Error('Invalid JSON body in cURL command');
-  }
-
-  return { url, headers, body };
-};
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { scanId, prompts, provider, customEndpoint } = await req.json();
+    const { scanId, prompts, provider, category, customEndpoint } = await req.json();
+    console.log(`Starting scan ${scanId} with prompts:`, prompts);
 
     if (!scanId || !prompts || !provider) {
       throw new Error('Missing required parameters');
     }
-
-    console.log(`Starting scan ${scanId} with ${prompts.length} prompts for provider ${provider}`);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -60,7 +28,10 @@ serve(async (req) => {
     // Update scan status to processing
     await supabase
       .from('llm_scans')
-      .update({ status: 'processing' })
+      .update({ 
+        status: 'processing',
+        results: null // Clear any previous results
+      })
       .eq('id', scanId);
 
     let results;
@@ -94,6 +65,7 @@ serve(async (req) => {
             body = { prompt };
           }
 
+          console.log(`Making request to custom endpoint for prompt: ${prompt}`);
           const response = await fetch(url, {
             method: 'POST',
             headers,
@@ -111,17 +83,14 @@ serve(async (req) => {
           };
         }));
 
-        // Format results consistently for both single and batch scans
-        results = prompts.length > 1 
-          ? { results: processedResults }
-          : { 
-              prompt: processedResults[0].prompt,
-              model_response: processedResults[0].model_response
-            };
+        results = {
+          prompt: prompts[0],
+          model_response: processedResults[0].model_response,
+          category
+        };
 
       } catch (error) {
         console.error('Custom endpoint error:', error);
-        // Update scan status to failed
         await supabase
           .from('llm_scans')
           .update({ 
@@ -133,10 +102,12 @@ serve(async (req) => {
       }
     } else if (baseProvider === 'ollama') {
       try {
+        console.log('Processing Ollama request...');
         const result = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
         results = {
           prompt: prompts[0],
-          model_response: result
+          model_response: result,
+          category
         };
       } catch (error) {
         console.error('Ollama error:', error);
@@ -180,3 +151,34 @@ serve(async (req) => {
     });
   }
 });
+
+const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: string) => {
+  const urlMatch = curlCommand.match(/curl ['"]([^'"]+)['"]/);
+  const headersMatch = curlCommand.match(/-H ['"]([^'"]+)['"]/g);
+  const dataMatch = curlCommand.match(/-d ['"]([^'"]+)['"]/);
+  
+  if (!urlMatch) {
+    throw new Error('Invalid cURL command: URL not found');
+  }
+
+  const url = urlMatch[1];
+  const headers: Record<string, string> = {};
+  
+  headersMatch?.forEach(header => {
+    const [key, value] = header.match(/-H ['"]([^'"]+)['"]/)?.[1].split(': ') ?? [];
+    if (key && value) {
+      headers[key] = value;
+    }
+  });
+
+  let body = dataMatch?.[1] ?? '{}';
+  body = body.replace(placeholder, prompt);
+
+  try {
+    body = JSON.parse(body);
+  } catch {
+    throw new Error('Invalid JSON body in cURL command');
+  }
+
+  return { url, headers, body };
+};
