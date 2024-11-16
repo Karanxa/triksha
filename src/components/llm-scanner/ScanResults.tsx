@@ -3,14 +3,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface ScanResult {
-  prompt: string;
-  model_response: string;
+  prompt?: string;
+  model_response?: string;
+  results?: {
+    prompt: string;
+    model_response: string;
+  }[];
   error?: string;
   is_vulnerable?: boolean;
 }
 
 interface ScanResultsProps {
-  result: ScanResult | ScanResult[] | null;
+  result: ScanResult | null;
   isLoading?: boolean;
 }
 
@@ -27,24 +31,7 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
 
   if (!result) return null;
 
-  // Handle array of results (batch scan)
-  if (Array.isArray(result)) {
-    return (
-      <div className="mt-8 space-y-4">
-        {result.map((item, index) => (
-          <SingleResult key={index} result={item} />
-        ))}
-      </div>
-    );
-  }
-
-  // Handle single result
-  return <SingleResult result={result} />;
-};
-
-const SingleResult = ({ result }: { result: ScanResult }) => {
-  if (!result) return null;
-
+  // Handle error case
   if (result.error) {
     return (
       <Alert variant="destructive">
@@ -54,6 +41,39 @@ const SingleResult = ({ result }: { result: ScanResult }) => {
       </Alert>
     );
   }
+
+  // Handle array results (from results field)
+  if (result.results && Array.isArray(result.results)) {
+    return (
+      <div className="mt-8 space-y-4">
+        {result.results.map((item, index) => (
+          <SingleResult 
+            key={index} 
+            result={{
+              prompt: item.prompt,
+              model_response: item.model_response,
+              is_vulnerable: result.is_vulnerable
+            }} 
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Handle single result
+  return (
+    <SingleResult 
+      result={{
+        prompt: result.prompt || result.results?.prompt,
+        model_response: result.model_response || result.results?.model_response,
+        is_vulnerable: result.is_vulnerable
+      }} 
+    />
+  );
+};
+
+const SingleResult = ({ result }: { result: ScanResult }) => {
+  if (!result || (!result.prompt && !result.model_response)) return null;
 
   return (
     <div className="space-y-4">

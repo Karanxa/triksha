@@ -100,13 +100,23 @@ serve(async (req) => {
           };
         }));
 
-        response = { results };
+        // For multiple prompts, return results array
+        if (prompts.length > 1) {
+          response = { results };
+        } else {
+          // For single prompt, return direct result
+          response = results[0];
+        }
       } catch (error) {
         console.error('Custom endpoint error:', error);
         throw new Error(`Custom endpoint error: ${error.message}`);
       }
     } else if (baseProvider === 'ollama') {
-      response = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+      const result = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+      response = {
+        prompt: prompts[0],
+        model_response: result
+      };
     } else {
       throw new Error('Provider not implemented');
     }

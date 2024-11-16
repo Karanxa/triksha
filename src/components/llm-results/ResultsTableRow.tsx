@@ -16,12 +16,27 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results as {
-    prompt: string;
-    model_response: string;
+    prompt?: string;
+    model_response?: string;
+    results?: { prompt: string; model_response: string }[];
   } | null;
-  
-  const prompt = results?.prompt || 'No prompt available';
-  const response = results?.model_response || 'No response available';
+
+  // Extract prompt and response based on the results structure
+  let prompt = '';
+  let response = '';
+
+  if (results) {
+    if (results.results && Array.isArray(results.results)) {
+      // For batch results, take the first one
+      prompt = results.results[0]?.prompt || 'No prompt available';
+      response = results.results[0]?.model_response || 'No response available';
+    } else {
+      // For single results
+      prompt = results.prompt || 'No prompt available';
+      response = results.model_response || 'No response available';
+    }
+  }
+
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const isVulnerable = scan.is_vulnerable ?? false;
