@@ -57,15 +57,31 @@ const LLMResults = () => {
     });
   };
 
+  // Filter scans based on type (batch vs manual)
+  const filteredScans = scans?.filter(scan => {
+    if (filterType === 'all') return true;
+    
+    const results = scan.results as { prompt: string; model_response: string } | null;
+    const scanType = getScanType(results);
+    
+    if (filterType === 'batch') {
+      return scanType.toLowerCase().includes('batch');
+    } else if (filterType === 'manual') {
+      return scanType.toLowerCase().includes('manual');
+    }
+    
+    return true;
+  });
+
   const handleExport = () => {
-    if (!scans || scans.length === 0) {
+    if (!filteredScans || filteredScans.length === 0) {
       toast.error("No data to export");
       return;
     }
 
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Scan Type,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
-      scans.map(scan => {
+      filteredScans.map(scan => {
         const results = scan.results as { model_response: string; prompt: string } | null;
         const scanType = getScanType(results);
         return `"${scanType}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
@@ -138,8 +154,8 @@ const LLMResults = () => {
                     Loading results...
                   </TableCell>
                 </TableRow>
-              ) : scans && scans.length > 0 ? (
-                scans.map((scan) => (
+              ) : filteredScans && filteredScans.length > 0 ? (
+                filteredScans.map((scan) => (
                   <ResultsTableRow
                     key={scan.id}
                     scan={scan}
