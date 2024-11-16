@@ -38,6 +38,7 @@ serve(async (req) => {
     const baseProvider = provider.split('-')[0];
 
     if (baseProvider === 'custom' && customEndpoint) {
+      console.log('Processing custom endpoint request...');
       try {
         const processedResults = await Promise.all(prompts.map(async (prompt) => {
           let url: string;
@@ -83,11 +84,7 @@ serve(async (req) => {
           };
         }));
 
-        results = {
-          prompt: prompts[0],
-          model_response: processedResults[0].model_response,
-          category
-        };
+        results = processedResults[0];
 
       } catch (error) {
         console.error('Custom endpoint error:', error);
@@ -103,11 +100,10 @@ serve(async (req) => {
     } else if (baseProvider === 'ollama') {
       try {
         console.log('Processing Ollama request...');
-        const result = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+        const modelResponse = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
         results = {
           prompt: prompts[0],
-          model_response: result,
-          category
+          model_response: modelResponse
         };
       } catch (error) {
         console.error('Ollama error:', error);
@@ -123,6 +119,12 @@ serve(async (req) => {
     } else {
       throw new Error('Provider not implemented');
     }
+
+    // Add category to results
+    results = {
+      ...results,
+      category
+    };
 
     console.log(`Storing results for scan ${scanId}:`, results);
 
