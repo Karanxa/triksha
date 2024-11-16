@@ -12,10 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { name, description, basePrompt, numSamples } = await req.json()
+    const { name, description, basePrompt, numSamples, method, recipe, targetModel } = await req.json()
 
     // Validate input
-    if (!name || !basePrompt || !numSamples) {
+    if (!name || (method === "manual" && !basePrompt) || (method === "recipe" && !recipe)) {
       throw new Error('Missing required fields')
     }
 
@@ -39,14 +39,22 @@ serve(async (req) => {
     }
 
     // TODO: Implement EasyJailbreak integration
-    // For now, we'll just create a dataset entry
+    // For now, create a dataset entry with metadata
     const { data: dataset, error: datasetError } = await supabase
       .from('datasets')
       .insert({
         name,
         description,
         user_id: user.id,
-        category: 'jailbreaking'
+        category: method === 'recipe' ? 'easyjailbreak' : 'manual',
+        metadata: method === 'recipe' ? {
+          recipe,
+          targetModel,
+          numSamples
+        } : {
+          basePrompt,
+          numSamples
+        }
       })
       .select()
       .single()

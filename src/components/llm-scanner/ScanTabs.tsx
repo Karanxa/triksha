@@ -1,27 +1,28 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScanForm } from "./ScanForm";
-import { useScanSubmit } from "./hooks/useScanSubmit";
+import { GarakScanForm } from "../garak-scan/GarakScanForm";
+import { PromptFuzzingForm } from "../prompt-fuzzing/PromptFuzzingForm";
 
-export const ScanTabs = () => {
-  const { handleSubmit, isScanning } = useScanSubmit({
-    onSubmit: async (data) => {
-      // Implementation will be handled by ScanForm
-      console.log("Scan data:", data);
-    },
-    setResult: () => {} // This will be handled by ScanForm
-  });
+interface ScanTabsProps {
+  initialTab?: string;
+}
 
+export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
   return (
-    <Tabs defaultValue="manual" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="manual">Manual Scan</TabsTrigger>
-        <TabsTrigger value="batch">Batch Scan</TabsTrigger>
+    <Tabs defaultValue={initialTab} className="w-full">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="basic">Basic Scan</TabsTrigger>
+        <TabsTrigger value="garak">Garak Scan</TabsTrigger>
+        <TabsTrigger value="fuzzer">Security Fuzzer</TabsTrigger>
       </TabsList>
-      <TabsContent value="manual">
-        <ScanForm onSubmit={handleSubmit} />
+      <TabsContent value="basic">
+        <ScanForm />
       </TabsContent>
-      <TabsContent value="batch">
-        <ScanForm onSubmit={handleSubmit} />
+      <TabsContent value="garak">
+        <GarakScanForm />
+      </TabsContent>
+      <TabsContent value="fuzzer">
+        <PromptFuzzingForm />
       </TabsContent>
     </Tabs>
   );

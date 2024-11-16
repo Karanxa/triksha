@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
@@ -15,9 +16,25 @@ export const CreateDataset = () => {
   const [description, setDescription] = useState("")
   const [basePrompt, setBasePrompt] = useState("")
   const [numSamples, setNumSamples] = useState("100")
+  const [method, setMethod] = useState("manual")
+  const [recipe, setRecipe] = useState("")
+  const [targetModel, setTargetModel] = useState("")
+
+  const recipes = [
+    { id: "PAIR", name: "PAIR (Chao 2023)" },
+    { id: "AutoDAN", name: "AutoDAN" },
+    { id: "DeepInception", name: "Deep Inception" }
+  ]
+
+  const models = [
+    { id: "gpt-4", name: "GPT-4" },
+    { id: "claude-3", name: "Claude 3" },
+    { id: "llama-2", name: "Llama 2" },
+    { id: "vicuna", name: "Vicuna" }
+  ]
 
   const handleGenerate = async () => {
-    if (!name || !basePrompt || !numSamples) {
+    if (!name || (method === "manual" && !basePrompt) || (method === "recipe" && !recipe)) {
       toast({
         variant: "destructive",
         title: "Missing fields",
@@ -32,8 +49,11 @@ export const CreateDataset = () => {
         body: {
           name,
           description,
-          basePrompt,
-          numSamples: parseInt(numSamples)
+          basePrompt: method === "manual" ? basePrompt : undefined,
+          numSamples: parseInt(numSamples),
+          method,
+          recipe,
+          targetModel
         }
       })
 
@@ -49,6 +69,8 @@ export const CreateDataset = () => {
       setDescription("")
       setBasePrompt("")
       setNumSamples("100")
+      setRecipe("")
+      setTargetModel("")
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -63,9 +85,9 @@ export const CreateDataset = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Generate Jailbreak Dataset</CardTitle>
+        <CardTitle>Generate Dataset</CardTitle>
         <CardDescription>
-          Generate adversarial datasets using EasyJailbreak to test LLM security
+          Generate adversarial datasets using manual input or EasyJailbreak recipes
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -90,14 +112,63 @@ export const CreateDataset = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="base-prompt">Base Prompt</Label>
-          <Textarea
-            id="base-prompt"
-            value={basePrompt}
-            onChange={(e) => setBasePrompt(e.target.value)}
-            placeholder="Enter the base prompt for generating variations"
-          />
+          <Label>Generation Method</Label>
+          <Select value={method} onValueChange={setMethod}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select generation method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manual">Manual Input</SelectItem>
+              <SelectItem value="recipe">EasyJailbreak Recipe</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {method === "manual" ? (
+          <div className="space-y-2">
+            <Label htmlFor="base-prompt">Base Prompt</Label>
+            <Textarea
+              id="base-prompt"
+              value={basePrompt}
+              onChange={(e) => setBasePrompt(e.target.value)}
+              placeholder="Enter the base prompt for generating variations"
+            />
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label>Recipe</Label>
+              <Select value={recipe} onValueChange={setRecipe}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select EasyJailbreak recipe" />
+                </SelectTrigger>
+                <SelectContent>
+                  {recipes.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Model</Label>
+              <Select value={targetModel} onValueChange={setTargetModel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="num-samples">Number of Samples</Label>
@@ -121,5 +192,5 @@ export const CreateDataset = () => {
         </Button>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
