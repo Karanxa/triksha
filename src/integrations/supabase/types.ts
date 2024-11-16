@@ -390,6 +390,53 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_fuzzing_scans: {
+        Row: {
+          base_prompt: string
+          created_at: string
+          fuzzing_type: string
+          id: string
+          mutations: Json | null
+          name: string
+          results: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_prompt: string
+          created_at?: string
+          fuzzing_type: string
+          id?: string
+          mutations?: Json | null
+          name: string
+          results?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_prompt?: string
+          created_at?: string
+          fuzzing_type?: string
+          id?: string
+          mutations?: Json | null
+          name?: string
+          results?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_fuzzing_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompts: {
         Row: {
           augmented_text: string | null
@@ -509,6 +556,13 @@ export type Database = {
         | "llm-evasion"
         | "system-prompt-leaking"
         | "insecure-output"
+      garak_test_suite:
+        | "encoding"
+        | "injection"
+        | "xss"
+        | "prompt_leaking"
+        | "system_prompt"
+        | "data_extraction"
       scan_severity: "low" | "medium" | "high" | "critical"
       scan_status: "pending" | "processing" | "completed" | "failed"
     }
