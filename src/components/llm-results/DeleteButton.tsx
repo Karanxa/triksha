@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface DeleteButtonProps {
   scanId: string;
@@ -11,41 +11,31 @@ interface DeleteButtonProps {
 export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
   const queryClient = useQueryClient();
 
-  const deleteScan = useMutation({
-    mutationFn: async (id: string) => {
+  const handleDelete = async () => {
+    try {
       const { error } = await supabase
         .from('llm_scans')
         .delete()
-        .eq('id', id);
+        .eq('id', scanId);
 
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
-      toast.success("Scan deleted successfully");
-    },
-    onError: (error: Error) => {
-      console.error('Delete error:', error);
-      toast.error("Failed to delete scan: " + error.message);
-    },
-  });
 
-  const handleDelete = async () => {
-    try {
-      await deleteScan.mutateAsync(scanId);
+      await queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
+      toast.success('Scan deleted successfully');
     } catch (error) {
-      console.error('Delete handler error:', error);
+      console.error('Error deleting scan:', error);
+      toast.error('Failed to delete scan');
     }
   };
 
   return (
     <Button
-      variant="destructive"
-      size="sm"
+      variant="ghost"
+      size="icon"
       onClick={handleDelete}
-      disabled={deleteScan.isPending}
+      className="h-8 w-8 p-0"
     >
-      <Trash2 className="h-4 w-4" />
+      <Trash2 className="h-4 w-4 text-destructive" />
     </Button>
   );
 };
