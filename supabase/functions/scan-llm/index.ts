@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +8,6 @@ const corsHeaders = {
 };
 
 const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: string) => {
-  // Basic cURL command parser
   const urlMatch = curlCommand.match(/curl ['"]([^'"]+)['"]/);
   const headersMatch = curlCommand.match(/-H ['"]([^'"]+)['"]/g);
   const dataMatch = curlCommand.match(/-d ['"]([^'"]+)['"]/);
@@ -51,6 +51,11 @@ serve(async (req) => {
     if (!scanId || !prompts || !provider) {
       throw new Error('Missing required parameters');
     }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     let response;
     const baseProvider = provider.split('-')[0];
@@ -100,13 +105,20 @@ serve(async (req) => {
           };
         }));
 
-        // For multiple prompts, return results array
-        if (prompts.length > 1) {
-          response = { results };
-        } else {
-          // For single prompt, return direct result
-          response = results[0];
+        // Update scan with results
+        const { error: updateError } = await supabase
+          .from('llm_scans')
+          .update({
+            results: { results },
+            status: 'completed'
+          })
+          .eq('id', scanId);
+
+        if (updateError) {
+          throw updateError;
         }
+
+        response = prompts.length > 1 ? { results } : results[0];
       } catch (error) {
         console.error('Custom endpoint error:', error);
         throw new Error(`Custom endpoint error: ${error.message}`);
@@ -117,6 +129,19 @@ serve(async (req) => {
         prompt: prompts[0],
         model_response: result
       };
+
+      // Update scan with result
+      const { error: updateError } = await supabase
+        .from('llm_scans')
+        .update({
+          results: response,
+          status: 'completed'
+        })
+        .eq('id', scanId);
+
+      if (updateError) {
+        throw updateError;
+      }
     } else {
       throw new Error('Provider not implemented');
     }
