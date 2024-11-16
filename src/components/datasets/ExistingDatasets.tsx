@@ -56,7 +56,7 @@ export const ExistingDatasets = () => {
 
       return data
     },
-    keepPreviousData: true
+    staleTime: 1000 * 60 * 5 // 5 minutes
   })
 
   const handleLoadMore = () => {

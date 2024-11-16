@@ -5,7 +5,12 @@ interface Dataset {
   id: string
   title: string
   description: string
-  [key: string]: any
+  downloads: number
+  likes: number
+  source: 'github' | 'huggingface'
+  url?: string
+  language?: string
+  topics?: string[]
 }
 
 interface DatasetGridProps {
