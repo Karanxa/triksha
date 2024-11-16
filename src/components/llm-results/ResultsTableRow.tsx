@@ -27,7 +27,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
-  const scanType = getScanType(firstResponse);
+  const scanType = getScanType(results);
 
   useEffect(() => {
     const subscription = supabase
