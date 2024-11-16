@@ -16,18 +16,31 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results as {
-    prompt: string;
-    model_response: string;
-    raw_response: any;
-    error?: string;
+    prompts?: string[];
+    responses?: Array<{
+      prompt: string;
+      model_response?: string;
+      raw_response?: any;
+      error?: string;
+    }>;
   };
   
-  const prompt = results?.prompt || 'No prompt available';
-  const response = results?.model_response || results?.error || 'No response available';
-  const rawJson = JSON.stringify(results?.raw_response || scan.results, null, 2);
+  // Handle both single prompts and batch responses
+  const isBatch = Array.isArray(results?.responses) && results.responses.length > 0;
+  const firstResponse = isBatch ? results.responses[0] : null;
+  
+  const prompt = isBatch 
+    ? `Batch Scan (${results.prompts?.length || 0} prompts)` 
+    : results?.prompts?.[0] || 'No prompt available';
+    
+  const response = isBatch
+    ? `${results.responses?.length || 0} responses processed`
+    : firstResponse?.model_response || firstResponse?.error || 'No response available';
+    
+  const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
-  const scanType = getScanType(results);
+  const scanType = getScanType(firstResponse);
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
@@ -71,7 +84,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
     }
   };
 
-  const isVulnerable = analyzeVulnerability(response, category);
+  const isVulnerable = scan.is_vulnerable || analyzeVulnerability(response, category);
 
   return (
     <TableRow key={scan.id}>
@@ -128,7 +141,6 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   );
 };
 
-// Helper function to analyze vulnerability
 const analyzeVulnerability = (response: string, category: string): boolean => {
   const lowerResponse = response.toLowerCase();
   
