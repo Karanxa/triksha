@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { analyzeVulnerability } from "./utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,106 +35,53 @@ serve(async (req) => {
       })
       .eq('id', scanId);
 
-    let results;
+    let scanResults;
     const baseProvider = provider.split('-')[0];
 
     if (baseProvider === 'custom' && customEndpoint) {
       console.log('Processing custom endpoint request...');
       try {
-        const processedResults = await Promise.all(prompts.map(async (prompt) => {
-          let url: string;
-          let headers: Record<string, string> = {};
-          let body: any;
-
-          if (customEndpoint.inputType === 'curl') {
-            const parsed = parseCurlCommand(
-              customEndpoint.curlCommand,
-              customEndpoint.placeholder,
-              prompt
-            );
-            url = parsed.url;
-            headers = parsed.headers;
-            body = parsed.body;
-          } else {
-            url = customEndpoint.url;
-            headers = {
-              'Content-Type': 'application/json',
-              ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {}),
-            };
-            if (customEndpoint.apiKey) {
-              headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
-            }
-            body = { prompt };
-          }
-
-          console.log(`Making request to custom endpoint for prompt: ${prompt}`);
-          const response = await fetch(url, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(body),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Custom endpoint error: ${response.statusText}`);
-          }
-
-          const responseData = await response.json();
-          return {
-            prompt,
-            model_response: responseData.response || responseData.model_response || responseData.text || JSON.stringify(responseData)
-          };
-        }));
-
-        results = processedResults[0];
-
-      } catch (error) {
-        console.error('Custom endpoint error:', error);
-        await supabase
-          .from('llm_scans')
-          .update({ 
-            status: 'failed',
-            results: { error: error.message }
-          })
-          .eq('id', scanId);
-        throw error;
-      }
-    } else if (baseProvider === 'ollama') {
-      try {
-        console.log('Processing Ollama request...');
-        const modelResponse = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
-        results = {
+        const response = await processCustomEndpoint(
+          customEndpoint,
+          prompts[0]
+        );
+        scanResults = {
           prompt: prompts[0],
-          model_response: modelResponse
+          model_response: response
         };
       } catch (error) {
-        console.error('Ollama error:', error);
-        await supabase
-          .from('llm_scans')
-          .update({ 
-            status: 'failed',
-            results: { error: error.message }
-          })
-          .eq('id', scanId);
-        throw error;
+        throw new Error(`Custom endpoint error: ${error.message}`);
       }
+    } else if (baseProvider === 'ollama') {
+      console.log('Processing Ollama request...');
+      const modelResponse = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+      scanResults = {
+        prompt: prompts[0],
+        model_response: modelResponse
+      };
     } else {
       throw new Error('Provider not implemented');
     }
 
-    // Add category to results
-    results = {
-      ...results,
-      category
+    // Add metadata to results
+    scanResults = {
+      ...scanResults,
+      category,
+      timestamp: new Date().toISOString()
     };
 
-    console.log(`Storing results for scan ${scanId}:`, results);
+    // Analyze for vulnerabilities
+    const isVulnerable = analyzeVulnerability(category, scanResults.model_response);
+
+    console.log(`Storing results for scan ${scanId}:`, scanResults);
 
     // Update scan with results and mark as completed
     const { error: updateError } = await supabase
       .from('llm_scans')
       .update({
-        results,
-        status: 'completed'
+        results: scanResults,
+        status: 'completed',
+        is_vulnerable: isVulnerable
       })
       .eq('id', scanId);
 
@@ -142,7 +90,7 @@ serve(async (req) => {
       throw updateError;
     }
 
-    return new Response(JSON.stringify(results), {
+    return new Response(JSON.stringify(scanResults), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
@@ -154,7 +102,48 @@ serve(async (req) => {
   }
 });
 
-const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: string) => {
+async function processCustomEndpoint(customEndpoint: any, prompt: string) {
+  let url: string;
+  let headers: Record<string, string> = {};
+  let body: any;
+
+  if (customEndpoint.inputType === 'curl') {
+    const parsed = parseCurlCommand(
+      customEndpoint.curlCommand,
+      customEndpoint.placeholder,
+      prompt
+    );
+    url = parsed.url;
+    headers = parsed.headers;
+    body = parsed.body;
+  } else {
+    url = customEndpoint.url;
+    headers = {
+      'Content-Type': 'application/json',
+      ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {}),
+    };
+    if (customEndpoint.apiKey) {
+      headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
+    }
+    body = { prompt };
+  }
+
+  console.log(`Making request to custom endpoint for prompt: ${prompt}`);
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Custom endpoint error: ${response.statusText}`);
+  }
+
+  const responseData = await response.json();
+  return responseData.response || responseData.model_response || responseData.text || JSON.stringify(responseData);
+}
+
+function parseCurlCommand(curlCommand: string, placeholder: string, prompt: string) {
   const urlMatch = curlCommand.match(/curl ['"]([^'"]+)['"]/);
   const headersMatch = curlCommand.match(/-H ['"]([^'"]+)['"]/g);
   const dataMatch = curlCommand.match(/-d ['"]([^'"]+)['"]/);
@@ -183,4 +172,4 @@ const parseCurlCommand = (curlCommand: string, placeholder: string, prompt: stri
   }
 
   return { url, headers, body };
-};
+}

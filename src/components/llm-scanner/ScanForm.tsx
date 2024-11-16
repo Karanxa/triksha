@@ -7,10 +7,9 @@ import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { ScanFormLabel } from "./ScanFormLabel";
 import { ScanFormSubmit } from "./ScanFormSubmit";
-import { ScanFormCustomEndpoint } from "./ScanFormCustomEndpoint";
+import { ScanResults } from "./ScanResults";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
 
 interface CustomEndpoint {
   url: string;
@@ -35,7 +34,6 @@ interface ScanFormProps {
 }
 
 export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
-  const navigate = useNavigate();
   const [provider, setProvider] = useState("");
   const [singlePrompt, setSinglePrompt] = useState("");
   const [prompts, setPrompts] = useState<string[]>([]);
@@ -44,6 +42,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
   const [scanType, setScanType] = useState<"manual" | "batch">("manual");
+  const [scanResult, setScanResult] = useState<any>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -113,15 +112,37 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
 
     try {
-      await onSubmit({
-        prompts: allPrompts,
-        provider,
-        category,
-        label: label || `${scanType === "manual" ? "Manual" : "Batch"} Scan - ${new Date().toLocaleString()}`,
-        schedule: schedule !== "none" ? schedule : undefined,
-        isRecurring,
-        customEndpoint: provider === 'custom' ? customEndpoint : undefined
+      // Create the scan record first
+      const { data: scan, error: createError } = await supabase
+        .from('llm_scans')
+        .insert({
+          name: label || `${scanType === "manual" ? "Manual" : "Batch"} Scan - ${new Date().toLocaleString()}`,
+          status: 'pending',
+          category,
+          label,
+          schedule: schedule !== "none" ? schedule : undefined,
+          is_recurring: isRecurring,
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // Call the edge function to perform the scan
+      const { data: result, error: scanError } = await supabase.functions.invoke('scan-llm', {
+        body: { 
+          scanId: scan.id,
+          prompts: allPrompts,
+          provider,
+          category,
+          customEndpoint: provider === 'custom' ? customEndpoint : undefined
+        }
       });
+
+      if (scanError) throw scanError;
+
+      // Set the result for immediate display
+      setScanResult(result);
 
       if (scanType === "manual") {
         setSinglePrompt("");
@@ -132,9 +153,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       setSchedule("none");
       setIsRecurring(false);
       
-      toast.success("Scan initiated successfully");
-      // Navigate to results page after successful scan
-      navigate("/llm-results");
+      toast.success("Scan completed successfully");
     } catch (error) {
       console.error("Scan failed:", error);
       toast.error(`Scan failed: ${(error as Error).message}`);
@@ -189,6 +208,13 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       />
 
       <ScanFormSubmit onSubmit={handleSubmit} isScanning={isScanning} />
+
+      {scanResult && (
+        <ScanResults 
+          result={scanResult}
+          isLoading={isScanning}
+        />
+      )}
     </div>
   );
 };
