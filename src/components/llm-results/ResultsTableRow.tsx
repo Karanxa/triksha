@@ -25,18 +25,10 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
     }>;
   };
   
-  // Handle both single prompts and batch responses
-  const isBatch = Array.isArray(results?.responses) && results.responses.length > 0;
-  const firstResponse = isBatch ? results.responses[0] : null;
-  
-  const prompt = isBatch 
-    ? `Batch Scan (${results.prompts?.length || 0} prompts)` 
-    : results?.prompts?.[0] || 'No prompt available';
-    
-  const response = isBatch
-    ? `${results.responses?.length || 0} responses processed`
-    : firstResponse?.model_response || firstResponse?.error || 'No response available';
-    
+  // Get the first prompt and response
+  const prompt = results?.prompts?.[0] || 'No prompt available';
+  const firstResponse = results?.responses?.[0];
+  const response = firstResponse?.model_response || firstResponse?.error || 'No response available';
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
