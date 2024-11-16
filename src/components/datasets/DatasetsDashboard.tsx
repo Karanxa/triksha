@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { FolderOpen, Search } from "lucide-react"
+import { Database, Loader2, Search } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
@@ -103,7 +103,7 @@ export const DatasetsDashboard = () => {
         />
       ) : (
         <div className="text-center py-12">
-          <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
+          <Database className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-medium">No datasets found</h3>
           <p className="text-sm text-muted-foreground">
             {searchQuery ? "Try adjusting your search terms" : "Create your first dataset to get started"}
