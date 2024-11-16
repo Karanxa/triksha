@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 export const GarakResults = () => {
   const { data: scans, isLoading } = useQuery({
@@ -17,6 +18,7 @@ export const GarakResults = () => {
       if (error) throw error;
       return data;
     },
+    refetchInterval: 5000, // Refresh every 5 seconds for active scans
   });
 
   if (isLoading) {
@@ -47,6 +49,21 @@ export const GarakResults = () => {
                 {scan.status}
               </Badge>
             </div>
+            
+            {scan.status === 'pending' && scan.results && (
+              <div className="space-y-2">
+                <Progress 
+                  value={
+                    (scan.results.filter((r: any) => r.result || r.error).length / 
+                    scan.prompts.length) * 100
+                  } 
+                />
+                <p className="text-sm text-muted-foreground">
+                  {scan.results.filter((r: any) => r.result || r.error).length} / {scan.prompts.length} prompts processed
+                </p>
+              </div>
+            )}
+
             <p className="text-sm text-muted-foreground">
               Model: {scan.model}
             </p>
