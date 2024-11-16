@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { generateAdversarialPrompts } from './adversarialGenerator.ts'
+import { enhanceWithOpenAI } from './openaiEnhancer.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,6 +43,7 @@ serve(async (req) => {
     }
 
     let metadata = {}
+    let prompts = []
     
     if (method === 'recipe') {
       metadata = {
@@ -50,10 +52,15 @@ serve(async (req) => {
         numSamples
       }
     } else if (method === 'adversarial') {
-      const prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
+      // Generate base adversarial prompts
+      prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
+      
+      // Enhance prompts using OpenAI
+      const enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig)
+      
       metadata = {
         ...adversarialConfig,
-        prompts,
+        prompts: enhancedPrompts,
         numSamples
       }
     } else {
@@ -85,6 +92,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Error in generate-dataset function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }

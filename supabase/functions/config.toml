@@ -24,3 +24,7 @@ verify_jwt = true
 [[functions]]
 name = "process-scheduled-scans"
 verify_jwt = true
+
+[[functions]]
+name = "generate-dataset"
+verify_jwt = true
