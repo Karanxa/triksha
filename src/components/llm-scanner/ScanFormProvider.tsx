@@ -21,6 +21,93 @@ interface ScanFormProviderProps {
   onCustomEndpointChange: (endpoint: Partial<CustomEndpoint>) => void;
 }
 
+// Split into smaller components for better organization
+const CustomEndpointConfig = ({ customEndpoint, onCustomEndpointChange }: {
+  customEndpoint: CustomEndpoint;
+  onCustomEndpointChange: (endpoint: Partial<CustomEndpoint>) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Input Method</Label>
+        <RadioGroup
+          value={customEndpoint.inputType}
+          onValueChange={(value: 'curl' | 'manual') => onCustomEndpointChange({ inputType: value })}
+          className="flex flex-col space-y-2"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="curl" id="curl" />
+            <Label htmlFor="curl">cURL Command</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="manual" id="manual" />
+            <Label htmlFor="manual">Manual Configuration</Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {customEndpoint.inputType === 'curl' ? (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>cURL Command</Label>
+            <Textarea
+              placeholder="Enter your cURL command here"
+              value={customEndpoint.curlCommand}
+              onChange={(e) => onCustomEndpointChange({ curlCommand: e.target.value })}
+              className="font-mono text-sm min-h-[100px]"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Prompt Placeholder</Label>
+            <Input
+              placeholder="{PROMPT}"
+              value={customEndpoint.placeholder}
+              onChange={(e) => onCustomEndpointChange({ placeholder: e.target.value })}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Custom Endpoint URL</Label>
+            <Input
+              placeholder="https://your-custom-endpoint.com"
+              value={customEndpoint.url}
+              onChange={(e) => onCustomEndpointChange({ url: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Custom API Key</Label>
+            <Input
+              type="password"
+              placeholder="Enter your custom API key"
+              value={customEndpoint.apiKey}
+              onChange={(e) => onCustomEndpointChange({ apiKey: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Custom Headers (Optional JSON)</Label>
+            <Textarea
+              placeholder='{"Authorization": "Bearer your-token"}'
+              value={customEndpoint.headers}
+              onChange={(e) => onCustomEndpointChange({ headers: e.target.value })}
+              className="font-mono text-sm"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Prompt Placeholder</Label>
+            <Input
+              placeholder="{PROMPT}"
+              value={customEndpoint.placeholder}
+              onChange={(e) => onCustomEndpointChange({ placeholder: e.target.value })}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ScanFormProvider = ({ 
   provider, 
   onProviderChange,
@@ -36,24 +123,6 @@ export const ScanFormProvider = ({
 
   const handleModelChange = (model: string) => {
     onProviderChange(`${selectedProvider}-${model}`);
-  };
-
-  const handleCustomEndpointChange = (field: keyof CustomEndpoint, value: string) => {
-    onCustomEndpointChange({
-      [field]: value
-    });
-  };
-
-  const handleInputTypeChange = (value: 'curl' | 'manual') => {
-    onCustomEndpointChange({
-      inputType: value,
-      // Reset fields when switching input type
-      url: '',
-      apiKey: '',
-      headers: '',
-      curlCommand: '',
-      placeholder: '{PROMPT}'
-    });
   };
 
   const getModelsForProvider = () => {
@@ -79,6 +148,17 @@ export const ScanFormProvider = ({
           { value: "mistral", label: "Mistral" },
           { value: "codellama", label: "Code Llama" }
         ];
+      case "garak":
+        return [
+          { value: "basic", label: "Basic Scan" },
+          { value: "advanced", label: "Advanced Scan" },
+          { value: "custom", label: "Custom Test Suites" }
+        ];
+      case "prompt-fuzzer":
+        return [
+          { value: "basic", label: "Basic Fuzzing" },
+          { value: "advanced", label: "Advanced Fuzzing" }
+        ];
       default:
         return [];
     }
@@ -97,102 +177,19 @@ export const ScanFormProvider = ({
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
             <SelectItem value="ollama">Ollama</SelectItem>
+            <SelectItem value="garak">Garak Scanner</SelectItem>
+            <SelectItem value="prompt-fuzzer">Prompt Security Fuzzer</SelectItem>
             <SelectItem value="custom">Custom Endpoint</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {selectedProvider === 'custom' && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Input Method</Label>
-            <RadioGroup
-              value={customEndpoint.inputType}
-              onValueChange={(value: 'curl' | 'manual') => handleInputTypeChange(value)}
-              className="flex flex-col space-y-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="curl" id="curl" />
-                <Label htmlFor="curl">cURL Command</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="manual" id="manual" />
-                <Label htmlFor="manual">Manual Configuration</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          {customEndpoint.inputType === 'curl' ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>cURL Command</Label>
-                <Textarea
-                  placeholder="Enter your cURL command here"
-                  value={customEndpoint.curlCommand}
-                  onChange={(e) => handleCustomEndpointChange('curlCommand', e.target.value)}
-                  className="font-mono text-sm min-h-[100px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Prompt Placeholder</Label>
-                <Input
-                  placeholder="{PROMPT}"
-                  value={customEndpoint.placeholder}
-                  onChange={(e) => handleCustomEndpointChange('placeholder', e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Replace the text in your cURL command that should be replaced with the prompt
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Custom Endpoint URL</Label>
-                <Input
-                  placeholder="https://your-custom-endpoint.com"
-                  value={customEndpoint.url}
-                  onChange={(e) => handleCustomEndpointChange('url', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Custom API Key</Label>
-                <Input
-                  type="password"
-                  placeholder="Enter your custom API key"
-                  value={customEndpoint.apiKey}
-                  onChange={(e) => handleCustomEndpointChange('apiKey', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Custom Headers (Optional JSON)</Label>
-                <Textarea
-                  placeholder='{"Authorization": "Bearer your-token"}'
-                  value={customEndpoint.headers}
-                  onChange={(e) => handleCustomEndpointChange('headers', e.target.value)}
-                  className="font-mono text-sm"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Prompt Placeholder</Label>
-                <Input
-                  placeholder="{PROMPT}"
-                  value={customEndpoint.placeholder}
-                  onChange={(e) => handleCustomEndpointChange('placeholder', e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Specify where to insert the prompt in your request
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {selectedProvider && selectedProvider !== 'custom' && (
+      {selectedProvider === 'custom' ? (
+        <CustomEndpointConfig 
+          customEndpoint={customEndpoint}
+          onCustomEndpointChange={onCustomEndpointChange}
+        />
+      ) : selectedProvider && (
         <div className="space-y-2">
           <Label>Select Model</Label>
           <Select 
