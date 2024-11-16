@@ -148,6 +148,59 @@ export type Database = {
           },
         ]
       }
+      jailbreak_templates: {
+        Row: {
+          base_prompt: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          success_rate: number | null
+          target_models: string[] | null
+          updated_at: string
+          user_id: string
+          variables: Json | null
+        }
+        Insert: {
+          base_prompt: string
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          success_rate?: number | null
+          target_models?: string[] | null
+          updated_at?: string
+          user_id: string
+          variables?: Json | null
+        }
+        Update: {
+          base_prompt?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          success_rate?: number | null
+          target_models?: string[] | null
+          updated_at?: string
+          user_id?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jailbreak_templates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       llm_scans: {
         Row: {
           category: string | null

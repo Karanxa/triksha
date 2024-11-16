@@ -15,6 +15,7 @@ const Navigation = () => {
     { href: "/llm-scanner", label: "LLM Scanner" },
     { href: "/llm-results", label: "Results" },
     { href: "/datasets", label: "Datasets" },
+    { href: "/jailbreak-builder", label: "Jailbreak Builder" },
     { href: "/augment-prompt", label: "Augment Prompt" },
     { href: "/fine-tuning", label: "Fine Tuning" },
   ];
