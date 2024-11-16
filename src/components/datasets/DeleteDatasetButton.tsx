@@ -30,29 +30,41 @@ export const DeleteDatasetButton = ({ datasetId, filePath }: DeleteDatasetButton
       const { error: dbError } = await supabase
         .from('datasets')
         .delete()
-        .eq('id', datasetId);
+        .eq('id', datasetId)
+        .single();
 
       if (dbError) {
         console.error("Error deleting dataset:", dbError);
         throw dbError;
       }
+
+      return datasetId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-datasets'] });
       toast.success("Dataset deleted successfully");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Delete error:", error);
       toast.error("Failed to delete dataset");
     },
   });
 
+  const handleDelete = async () => {
+    try {
+      await deleteDataset.mutateAsync();
+    } catch (error) {
+      // Error is handled in onError callback
+    }
+  };
+
   return (
     <Button
       variant="destructive"
       size="sm"
-      onClick={() => deleteDataset.mutate()}
+      onClick={handleDelete}
       disabled={deleteDataset.isPending}
+      className="w-full"
     >
       <Trash2 className="h-4 w-4" />
     </Button>
