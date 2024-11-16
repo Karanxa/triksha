@@ -18,7 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Tables } from "@/integrations/supabase/types";
 
+// Define the schema to match the required database fields
 const templateSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
@@ -54,10 +56,20 @@ export const JailbreakTemplateForm = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("jailbreak_templates").insert({
-        ...values,
+      // Create the insert object with all required fields
+      const insertData: Tables<"jailbreak_templates">["Insert"] = {
         user_id: session.user.id,
-      });
+        name: values.name,
+        description: values.description,
+        category: values.category,
+        base_prompt: values.base_prompt,
+        is_public: values.is_public,
+        target_models: values.target_models,
+      };
+
+      const { error } = await supabase
+        .from("jailbreak_templates")
+        .insert(insertData);
 
       if (error) throw error;
 
