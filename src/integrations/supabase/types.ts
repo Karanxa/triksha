@@ -201,6 +201,68 @@ export type Database = {
           },
         ]
       }
+      llm_scan_results: {
+        Row: {
+          batch_id: string | null
+          category: Database["public"]["Enums"]["attack_category"]
+          created_at: string
+          error: string | null
+          id: string
+          is_vulnerable: boolean | null
+          metadata: Json | null
+          model: string
+          model_response: string | null
+          prompt: string
+          provider: string
+          raw_response: Json | null
+          severity: Database["public"]["Enums"]["scan_severity"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          category: Database["public"]["Enums"]["attack_category"]
+          created_at?: string
+          error?: string | null
+          id?: string
+          is_vulnerable?: boolean | null
+          metadata?: Json | null
+          model: string
+          model_response?: string | null
+          prompt: string
+          provider: string
+          raw_response?: Json | null
+          severity?: Database["public"]["Enums"]["scan_severity"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          category?: Database["public"]["Enums"]["attack_category"]
+          created_at?: string
+          error?: string | null
+          id?: string
+          is_vulnerable?: boolean | null
+          metadata?: Json | null
+          model?: string
+          model_response?: string | null
+          prompt?: string
+          provider?: string
+          raw_response?: Json | null
+          severity?: Database["public"]["Enums"]["scan_severity"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "llm_scan_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       llm_scans: {
         Row: {
           category: string | null
@@ -253,6 +315,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "llm_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_security_tests: {
+        Row: {
+          category: Database["public"]["Enums"]["attack_category"]
+          created_at: string
+          description: string | null
+          expected_results: Json | null
+          id: string
+          is_public: boolean | null
+          name: string
+          test_prompts: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["attack_category"]
+          created_at?: string
+          description?: string | null
+          expected_results?: Json | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          test_prompts: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["attack_category"]
+          created_at?: string
+          description?: string | null
+          expected_results?: Json | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          test_prompts?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_security_tests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -322,6 +431,65 @@ export type Database = {
           },
         ]
       }
+      scheduled_llm_scans: {
+        Row: {
+          created_at: string
+          custom_endpoint: Json | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_run: string | null
+          model: string
+          name: string
+          next_run: string | null
+          prompts: Json
+          provider: string
+          schedule: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_endpoint?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run?: string | null
+          model: string
+          name: string
+          next_run?: string | null
+          prompts: Json
+          provider: string
+          schedule: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_endpoint?: Json | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_run?: string | null
+          model?: string
+          name?: string
+          next_run?: string | null
+          prompts?: Json
+          provider?: string
+          schedule?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_llm_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -330,7 +498,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      attack_category:
+        | "jailbreaking"
+        | "prompt-injection"
+        | "encoding-based"
+        | "unsafe-prompts"
+        | "uncensored-prompts"
+        | "language-based-adversarial"
+        | "glitch-tokens"
+        | "llm-evasion"
+        | "system-prompt-leaking"
+        | "insecure-output"
+      scan_severity: "low" | "medium" | "high" | "critical"
+      scan_status: "pending" | "processing" | "completed" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
