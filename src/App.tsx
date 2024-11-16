@@ -17,7 +17,6 @@ import FineTuning from "./pages/FineTuning";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import GarakScanner from "./pages/GarakScanner";
 import AuthGuard from "./components/AuthGuard";
 import Navigation from "./components/Navigation";
 
@@ -57,7 +56,6 @@ const App = () => {
               <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
               <Route path="/augment-prompt" element={<ProtectedRoute><AugmentPrompt /></ProtectedRoute>} />
               <Route path="/fine-tuning" element={<ProtectedRoute><FineTuning /></ProtectedRoute>} />
-              <Route path="/garak-scanner" element={<ProtectedRoute><GarakScanner /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             </Routes>
           </BrowserRouter>
