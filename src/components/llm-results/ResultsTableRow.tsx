@@ -2,9 +2,9 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
-import { Database } from "@/integrations/supabase/types";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { getCategoryVariant, getSeverityVariant } from "@/utils/vulnerabilityUtils";
+import { Database } from "@/integrations/supabase/types";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -16,28 +16,28 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results as any;
-  const isBatchScan = results && Array.isArray(results.results);
 
   // Extract prompt and response based on scan type
   let prompt = '';
   let response = '';
 
   if (results) {
-    if (isBatchScan) {
-      // For batch results, take the first one
-      prompt = results.results[0]?.prompt || 'No prompt available';
-      response = results.results[0]?.model_response || 'No response available';
-    } else {
+    if (results.results && Array.isArray(results.results)) {
+      // For batch results
+      const firstResult = results.results[0];
+      prompt = firstResult?.prompt || 'No prompt available';
+      response = firstResult?.model_response || 'No response available';
+    } else if (results.prompt && results.model_response) {
       // For single results
-      prompt = results?.prompt || 'No prompt available';
-      response = results?.model_response || 'No response available';
+      prompt = results.prompt;
+      response = results.model_response;
     }
   }
 
+  const scanType = results?.results && Array.isArray(results.results) ? 'Batch Scan' : 'Manual Scan';
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const isVulnerable = scan.is_vulnerable ?? false;
-  const scanType = isBatchScan ? 'Batch Scan' : 'Manual Scan';
 
   return (
     <TableRow key={scan.id}>

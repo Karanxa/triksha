@@ -52,6 +52,8 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
+    console.log(`Processing scan ${scanId} with provider ${provider}`);
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -105,32 +107,40 @@ serve(async (req) => {
           };
         }));
 
-        // Update scan with results
+        // Store results in database
+        const resultsData = prompts.length > 1 ? { results } : results[0];
+        console.log(`Storing results for scan ${scanId}:`, resultsData);
+
         const { error: updateError } = await supabase
           .from('llm_scans')
           .update({
-            results: { results },
+            results: resultsData,
             status: 'completed'
           })
           .eq('id', scanId);
 
         if (updateError) {
+          console.error(`Error updating scan ${scanId}:`, updateError);
           throw updateError;
         }
 
-        response = prompts.length > 1 ? { results } : results[0];
+        response = resultsData;
       } catch (error) {
         console.error('Custom endpoint error:', error);
         throw new Error(`Custom endpoint error: ${error.message}`);
       }
     } else if (baseProvider === 'ollama') {
       const result = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+      
+      // Format response for single prompt
       response = {
         prompt: prompts[0],
         model_response: result
       };
 
-      // Update scan with result
+      console.log(`Storing Ollama result for scan ${scanId}:`, response);
+
+      // Store result in database
       const { error: updateError } = await supabase
         .from('llm_scans')
         .update({
@@ -140,6 +150,7 @@ serve(async (req) => {
         .eq('id', scanId);
 
       if (updateError) {
+        console.error(`Error updating scan ${scanId}:`, updateError);
         throw updateError;
       }
     } else {
