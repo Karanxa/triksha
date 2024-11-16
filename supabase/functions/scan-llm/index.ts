@@ -17,6 +17,7 @@ interface ScanRequest {
   label?: string;
   schedule?: string;
   isRecurring: boolean;
+  qps: number;
   customEndpoint?: {
     url: string;
     apiKey: string;
@@ -25,6 +26,69 @@ interface ScanRequest {
     curlCommand: string;
     inputType: 'curl' | 'manual';
   };
+}
+
+async function processBatch(prompts: string[], provider: string, apiKeys: any, qps: number) {
+  const batchSize = qps;
+  const results = [];
+  
+  for (let i = 0; i < prompts.length; i += batchSize) {
+    const batch = prompts.slice(i, i + batchSize);
+    const batchPromises = batch.map(async (prompt) => {
+      try {
+        const baseProvider = provider.split('-')[0];
+        let rawResponse;
+        let processedResponse;
+
+        switch (baseProvider) {
+          case 'openai':
+            if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
+            rawResponse = await handleOpenAIRequest(prompt, apiKeys.openai);
+            break;
+          case 'anthropic':
+            if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
+            rawResponse = await handleAnthropicRequest(prompt, apiKeys.anthropic);
+            break;
+          case 'gemini':
+            if (!apiKeys.gemini) throw new Error('Google API key not configured');
+            rawResponse = await handleGeminiRequest(prompt, apiKeys.gemini);
+            break;
+          case 'ollama':
+            if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
+            rawResponse = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint);
+            break;
+          default:
+            throw new Error('Provider not implemented');
+        }
+
+        processedResponse = processResponse(rawResponse);
+        
+        return {
+          prompt,
+          model_response: processedResponse,
+          raw_response: rawResponse,
+          timestamp: new Date().toISOString(),
+        };
+      } catch (error) {
+        console.error(`Error processing prompt "${prompt}":`, error);
+        return {
+          prompt,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        };
+      }
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+    results.push(...batchResults);
+
+    // Add delay between batches based on QPS
+    if (i + batchSize < prompts.length) {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay between batches
+    }
+  }
+
+  return results;
 }
 
 Deno.serve(async (req) => {
@@ -55,7 +119,7 @@ Deno.serve(async (req) => {
       throw new Error('Failed to fetch API keys');
     }
 
-    const { prompts, provider, category, label, schedule, isRecurring } = await req.json() as ScanRequest;
+    const { prompts, provider, category, label, schedule, isRecurring, qps = 5 } = await req.json() as ScanRequest;
     const apiKeys = profile.api_keys;
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
@@ -66,12 +130,10 @@ Deno.serve(async (req) => {
       throw new Error('Provider is required');
     }
 
-    const baseProvider = provider.split('-')[0];
     const batchId = crypto.randomUUID();
-    const results = [];
 
-    // Create a single batch record
-    const { data: batchScan, error: batchError } = await supabase
+    // Create initial batch record
+    const { error: batchError } = await supabase
       .from('llm_scans')
       .insert({
         id: batchId,
@@ -87,65 +149,14 @@ Deno.serve(async (req) => {
           timestamp: new Date().toISOString(),
         },
         status: 'processing',
-      })
-      .select()
-      .single();
+      });
 
     if (batchError) {
       throw new Error('Failed to create batch scan');
     }
 
-    // Process each prompt
-    for (const prompt of prompts) {
-      try {
-        let rawResponse;
-        let processedResponse;
-
-        switch (baseProvider) {
-          case 'openai':
-            if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
-            rawResponse = await handleOpenAIRequest(prompt, apiKeys.openai);
-            processedResponse = processResponse(rawResponse);
-            break;
-
-          case 'anthropic':
-            if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
-            rawResponse = await handleAnthropicRequest(prompt, apiKeys.anthropic);
-            processedResponse = processResponse(rawResponse);
-            break;
-
-          case 'gemini':
-            if (!apiKeys.gemini) throw new Error('Google API key not configured');
-            rawResponse = await handleGeminiRequest(prompt, apiKeys.gemini);
-            processedResponse = processResponse(rawResponse);
-            break;
-
-          case 'ollama':
-            if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
-            rawResponse = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint);
-            processedResponse = processResponse(rawResponse);
-            break;
-
-          default:
-            throw new Error('Provider not implemented');
-        }
-
-        results.push({
-          prompt,
-          model_response: processedResponse,
-          raw_response: rawResponse,
-          timestamp: new Date().toISOString(),
-        });
-
-      } catch (error) {
-        console.error(`Error processing prompt "${prompt}":`, error);
-        results.push({
-          prompt,
-          error: error.message,
-          timestamp: new Date().toISOString(),
-        });
-      }
-    }
+    // Process prompts with QPS control
+    const results = await processBatch(prompts, provider, apiKeys, qps);
 
     // Update batch scan with results
     const { error: updateError } = await supabase

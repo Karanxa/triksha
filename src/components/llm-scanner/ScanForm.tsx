@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
+import { QPSControl } from "./QPSControl";
 import { Loader2 } from "lucide-react";
 import { ScanResults } from "../llm-results/ScanResults";
 
@@ -28,6 +29,7 @@ interface ScanFormProps {
     label?: string;
     schedule?: string;
     isRecurring: boolean;
+    qps: number;
     customEndpoint?: CustomEndpoint;
   }) => Promise<any>;
   isScanning: boolean;
@@ -41,6 +43,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
+  const [qps, setQPS] = useState(5); // Default QPS value
   const [scanResult, setScanResult] = useState<any>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
@@ -119,6 +122,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         label: label || undefined,
         schedule: schedule !== "none" ? schedule : undefined,
         isRecurring,
+        qps,
         customEndpoint: provider === 'custom' ? customEndpoint : undefined
       });
 
@@ -170,6 +174,8 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
           onValueChange={setCategory}
         />
       </div>
+
+      <QPSControl qps={qps} onQPSChange={setQPS} />
 
       <div className="space-y-4">
         <Label>Scan Label (Optional)</Label>
