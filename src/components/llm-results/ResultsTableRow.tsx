@@ -15,35 +15,33 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  const results = scan.results as {
-    prompt?: string;
-    model_response?: string;
-    results?: { prompt: string; model_response: string }[];
-  } | null;
+  const results = scan.results as any;
+  const isBatchScan = results && Array.isArray(results.results);
 
-  // Extract prompt and response based on the results structure
+  // Extract prompt and response based on scan type
   let prompt = '';
   let response = '';
 
   if (results) {
-    if (results.results && Array.isArray(results.results)) {
+    if (isBatchScan) {
       // For batch results, take the first one
       prompt = results.results[0]?.prompt || 'No prompt available';
       response = results.results[0]?.model_response || 'No response available';
     } else {
       // For single results
-      prompt = results.prompt || 'No prompt available';
-      response = results.model_response || 'No response available';
+      prompt = results?.prompt || 'No prompt available';
+      response = results?.model_response || 'No response available';
     }
   }
 
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const isVulnerable = scan.is_vulnerable ?? false;
+  const scanType = isBatchScan ? 'Batch Scan' : 'Manual Scan';
 
   return (
     <TableRow key={scan.id}>
-      <TableCell>{scan.name}</TableCell>
+      <TableCell>{scanType}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell

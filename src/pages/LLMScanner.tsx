@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 
 const LLMScanner = () => {
   const navigate = useNavigate();
-  const [isBatchScan, setIsBatchScan] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const { createScan, isScanning } = useLLMScans();
   const { createScan: createGarakScan, isScanning: isGarakScanning } = useGarakScans();
@@ -30,7 +29,6 @@ const LLMScanner = () => {
     try {
       const result = await createScan(data);
       setScanResult(result);
-      setIsBatchScan(data.prompts.length > 1);
       
       if (data.prompts.length > 1) {
         toast.success("Batch scan completed. View results in the Results page.");
@@ -60,6 +58,8 @@ const LLMScanner = () => {
     }
   };
 
+  const isBatchScan = scanResult?.results && Array.isArray(scanResult.results);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12 max-w-2xl">
@@ -83,17 +83,24 @@ const LLMScanner = () => {
             </Card>
 
             {scanResult && !isBatchScan && (
-              <ScanResults result={scanResult} />
+              <div className="mt-6">
+                <ScanResults result={scanResult} />
+              </div>
             )}
 
             {isBatchScan && (
-              <Button
-                variant="outline"
-                className="w-full mt-4"
-                onClick={() => navigate("/llm-results")}
-              >
-                View Batch Scan Results <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="mt-6 space-y-4">
+                <p className="text-muted-foreground">
+                  Batch scan completed successfully with {scanResult.results.length} results.
+                </p>
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => navigate("/llm-results")}
+                >
+                  View Batch Results <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             )}
           </TabsContent>
 

@@ -8,10 +8,10 @@ import { ResultsTableRow } from "@/components/llm-results/ResultsTableRow";
 import { ResultsTableHeader } from "@/components/llm-results/ResultsTableHeader";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database } from "@/integrations/supabase/types";
-import { getScanType } from "@/utils/scanUtils";
 import { addDays } from "date-fns";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
 import { Loader2 } from "lucide-react";
+import { DateRange } from "react-day-picker";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -23,7 +23,7 @@ const LLMResults = () => {
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
@@ -37,7 +37,7 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (filterCategory !== 'all') {
-        query = query.eq('category', filterCategory.toLowerCase().replace(/ /g, '-'));
+        query = query.eq('category', filterCategory);
       }
 
       if (dateRange.from && dateRange.to) {
@@ -55,18 +55,26 @@ const LLMResults = () => {
 
       let filteredData = data as LLMScan[];
 
+      // Apply search filter
       if (searchQuery) {
         const lowercaseQuery = searchQuery.toLowerCase();
         filteredData = filteredData.filter(scan => 
-          scan.name.toLowerCase().includes(lowercaseQuery) ||
-          scan.category?.toLowerCase().includes(lowercaseQuery)
+          scan.name?.toLowerCase().includes(lowercaseQuery) ||
+          scan.category?.toLowerCase().includes(lowercaseQuery) ||
+          scan.label?.toLowerCase().includes(lowercaseQuery)
         );
       }
 
+      // Apply scan type filter
       if (filterType !== 'all') {
         filteredData = filteredData.filter(scan => {
-          const scanType = getScanType(scan.results);
-          return scanType.toLowerCase() === filterType.toLowerCase();
+          const results = scan.results as any;
+          if (!results) return false;
+          
+          // Check if it's a batch scan (has results array) or manual scan
+          const isBatchScan = Array.isArray(results.results);
+          return (filterType === 'batch' && isBatchScan) || 
+                 (filterType === 'manual' && !isBatchScan);
         });
       }
 
@@ -93,9 +101,13 @@ const LLMResults = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Scan Type,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
       scans.map(scan => {
-        const results = scan.results as { model_response: string; prompt: string } | null;
-        const scanType = getScanType(results);
-        return `"${scanType}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
+        const results = scan.results as any;
+        const isBatchScan = results && Array.isArray(results.results);
+        const scanType = isBatchScan ? "Batch Scan" : "Manual Scan";
+        const prompt = isBatchScan ? results.results[0]?.prompt : results?.prompt;
+        const response = isBatchScan ? results.results[0]?.model_response : results?.model_response;
+        
+        return `"${scanType}","${formatDate(scan.created_at)}","${prompt || ''}","${response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
       }).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -112,6 +124,12 @@ const LLMResults = () => {
     setSelectedContent({ title, content });
   };
 
+  const handleDateRangeChange = (range: DateRange | { from: Date; to: Date }) => {
+    if (range.from && range.to) {
+      setDateRange({ from: range.from, to: range.to });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12">
@@ -126,7 +144,7 @@ const LLMResults = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           dateRange={dateRange}
-          setDateRange={setDateRange}
+          setDateRange={handleDateRangeChange}
           onExport={handleExport}
           resultsCount={scans?.length}
         />
