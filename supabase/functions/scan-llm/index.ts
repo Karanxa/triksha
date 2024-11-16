@@ -17,15 +17,35 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompts, provider, category, customEndpoint } = await req.json() as ScanRequest;
+    const body = await req.json();
+    const { scanId, prompts, provider, category, customEndpoint } = body as ScanRequest;
+    
     console.log(`Starting scan ${scanId} with prompts:`, prompts);
 
+    // Validate required parameters
     if (!scanId || !prompts || !provider) {
-      throw new Error('Missing required parameters');
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Update scan status to processing
-    await updateScanStatus(scanId, 'processing');
+    try {
+      await updateScanStatus(scanId, 'processing');
+    } catch (error) {
+      console.error('Error updating scan status:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to update scan status' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     let scanResults: ScanResponse;
     const baseProvider = provider.split('-')[0];
@@ -75,12 +95,18 @@ serve(async (req) => {
         error: error.message 
       });
 
-      throw error;
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
   } catch (error) {
     console.error('Error in scan-llm function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
