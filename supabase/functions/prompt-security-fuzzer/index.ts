@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +26,36 @@ serve(async (req) => {
   }
 
   try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get the user's ID from the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (userError || !user) {
+      throw new Error('Invalid user token');
+    }
+
+    // Get the user's OpenAI API key from their profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile?.api_keys?.openai) {
+      throw new Error('OpenAI API key not found in profile');
+    }
+
     const {
       prompt,
       attackProvider,
@@ -49,6 +80,8 @@ serve(async (req) => {
     `);
 
     // Here we'll simulate the fuzzing process with the provided configuration
+    // In a real implementation, you would use the OpenAI API key from profile.api_keys.openai
+    // to make actual API calls to the selected providers
     const results = {
       configuration: {
         attack_provider: attackProvider,
