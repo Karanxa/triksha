@@ -112,6 +112,17 @@ const Settings = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="huggingface">Hugging Face API Key</Label>
+              <Input
+                id="huggingface"
+                type="password"
+                value={apiKeys.huggingface || ""}
+                onChange={(e) => setApiKeys(prev => ({ ...prev, huggingface: e.target.value }))}
+                placeholder="hf_..."
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="anthropic">Anthropic API Key</Label>
               <Input
                 id="anthropic"
