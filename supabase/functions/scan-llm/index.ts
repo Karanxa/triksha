@@ -35,7 +35,7 @@ async function analyzeVulnerability(prompt: string, response: string) {
   }
 }
 
-async function processBatch(prompts: string[], provider: string, userId: string, qps: number) {
+async function processBatch(prompts: string[], provider: string, userId: string, qps: number, customEndpoint?: any) {
   // First, fetch the API keys for this user
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
@@ -55,14 +55,50 @@ async function processBatch(prompts: string[], provider: string, userId: string,
     const batch = prompts.slice(i, i + batchSize);
     const batchPromises = batch.map(async (prompt) => {
       try {
-        const [baseProvider, model] = provider.split('-');
         let rawResponse;
 
-        switch (baseProvider) {
-          case 'openai':
-            if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
-            rawResponse = await handleOpenAIRequest(prompt, apiKeys.openai, model);
-            break;
+        if (provider === 'custom') {
+          if (customEndpoint.inputType === 'curl') {
+            // Handle cURL command
+            const curlCommand = customEndpoint.curlCommand.replace(
+              customEndpoint.placeholder,
+              encodeURIComponent(prompt)
+            );
+            // Convert cURL to fetch request and execute
+            // This is a simplified version - you might want to add more curl parameter handling
+            const url = curlCommand.match(/curl\s+'([^']+)'/)?.[1] || 
+                       curlCommand.match(/curl\s+"([^"]+)"/)?.[1] ||
+                       curlCommand.match(/curl\s+([^\s]+)/)?.[1];
+            
+            if (!url) throw new Error('Invalid cURL command');
+            
+            rawResponse = await fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ prompt }),
+            });
+          } else {
+            // Handle manual endpoint configuration
+            rawResponse = await fetch(customEndpoint.url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${customEndpoint.apiKey}`,
+                ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {}),
+              },
+              body: JSON.stringify({ prompt }),
+            });
+          }
+        } else {
+          // Handle regular providers
+          const [baseProvider, model] = provider.split('-');
+          switch (baseProvider) {
+            case 'openai':
+              if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
+              rawResponse = await handleOpenAIRequest(prompt, apiKeys.openai, model);
+              break;
           case 'anthropic':
             if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
             rawResponse = await handleAnthropicRequest(prompt, apiKeys.anthropic);
@@ -75,13 +111,10 @@ async function processBatch(prompts: string[], provider: string, userId: string,
             if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
             rawResponse = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
             break;
-          default:
-            throw new Error('Provider not implemented');
+          }
         }
 
         const processedResponse = processResponse(rawResponse);
-        
-        // Analyze vulnerability
         const vulnerabilityAnalysis = await analyzeVulnerability(prompt, processedResponse);
         
         return {
@@ -106,7 +139,7 @@ async function processBatch(prompts: string[], provider: string, userId: string,
     results.push(...batchResults);
 
     if (i + batchSize < prompts.length) {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay between batches
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
@@ -131,18 +164,19 @@ Deno.serve(async (req) => {
       throw new Error('Invalid user token');
     }
 
-    const { scanId, prompts, provider, category, label, schedule, isRecurring, qps = 5 } = await req.json();
+    const { scanId, prompts, provider, category, label, schedule, isRecurring, qps = 5, customEndpoint } = await req.json();
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
       throw new Error('Invalid prompts array');
     }
 
-    if (!provider) {
-      throw new Error('Provider is required');
+    // Modified validation to allow custom endpoints
+    if (!provider && !customEndpoint) {
+      throw new Error('Provider or custom endpoint configuration is required');
     }
 
     // Process prompts with QPS control, passing the user ID to get their API keys
-    const results = await processBatch(prompts, provider, user.id, qps);
+    const results = await processBatch(prompts, provider, user.id, qps, customEndpoint);
 
     // Update scan with results
     const { error: updateError } = await supabase

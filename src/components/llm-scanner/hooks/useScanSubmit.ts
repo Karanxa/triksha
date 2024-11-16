@@ -12,16 +12,7 @@ interface CustomEndpoint {
 }
 
 interface ScanSubmitProps {
-  onSubmit: (data: {
-    prompts: string[];
-    provider: string;
-    category: string;
-    label?: string;
-    schedule?: string;
-    isRecurring: boolean;
-    qps: number;
-    customEndpoint?: CustomEndpoint;
-  }) => Promise<any>;
+  onSubmit: (data: any) => Promise<any>;
   setResult: (result: any) => void;
 }
 
@@ -51,22 +42,21 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     isRecurring: boolean;
     qps: number;
   }) => {
-    if (!provider && provider !== 'custom') {
+    // Validate inputs based on whether it's a custom endpoint or not
+    if (!customEndpoint && !provider) {
       toast.error("Please select a provider and model");
       return;
     }
 
-    if (provider === 'custom') {
-      if (customEndpoint?.inputType === 'curl') {
-        if (!customEndpoint.curlCommand || !customEndpoint.placeholder) {
-          toast.error("Please provide both cURL command and placeholder");
-          return;
-        }
-      } else {
-        if (!customEndpoint?.url || !customEndpoint?.apiKey) {
-          toast.error("Please provide both custom endpoint URL and API key");
-          return;
-        }
+    if (customEndpoint && customEndpoint.inputType === 'curl') {
+      if (!customEndpoint.curlCommand || !customEndpoint.placeholder) {
+        toast.error("Please provide both cURL command and placeholder");
+        return;
+      }
+    } else if (customEndpoint && customEndpoint.inputType === 'manual') {
+      if (!customEndpoint.url || !customEndpoint.apiKey) {
+        toast.error("Please provide both endpoint URL and API key");
+        return;
       }
     }
 
@@ -88,43 +78,18 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     setIsScanning(true);
 
     try {
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const promptsToScan = scanType === "manual" ? [singlePrompt] : prompts;
 
-      // Create a new scan record
-      const { data: scanData, error: scanError } = await supabase
-        .from('llm_scans')
-        .insert({
-          user_id: user.id,
-          name: label || `Scan ${new Date().toISOString()}`,
-          category,
-          label,
-          schedule,
-          is_recurring: isRecurring,
-          status: 'processing'
-        })
-        .select()
-        .single();
-
-      if (scanError) throw scanError;
-
-      // Call the scan-llm edge function
-      const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
-      const { data: result, error: functionError } = await supabase.functions.invoke('scan-llm', {
-        body: {
-          scanId: scanData.id,
-          prompts: allPrompts,
-          provider,
-          category,
-          schedule,
-          isRecurring,
-          qps,
-          customEndpoint: provider === 'custom' ? customEndpoint : undefined
-        }
+      const result = await onSubmit({
+        prompts: promptsToScan,
+        provider: customEndpoint ? 'custom' : provider,
+        category,
+        label,
+        schedule,
+        isRecurring,
+        qps,
+        customEndpoint
       });
-
-      if (functionError) throw functionError;
 
       setResult(result);
       toast.success("Scan completed successfully");
