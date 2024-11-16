@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { Database, Download, FolderOpen, Search } from "lucide-react"
+import { Database, Download, FolderOpen, Search, Eye } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,11 +7,13 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
+import { DatasetViewer } from "./DatasetViewer"
 
 export const DatasetsDashboard = () => {
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [viewingDataset, setViewingDataset] = useState<string | null>(null)
 
   const { data: datasets, isLoading } = useQuery({
     queryKey: ['user-datasets'],
@@ -118,7 +120,15 @@ export const DatasetsDashboard = () => {
                   {new Date(dataset.created_at).toLocaleDateString()}
                 </p>
               </CardContent>
-              <CardFooter className="grid grid-cols-3 gap-2">
+              <CardFooter className="grid grid-cols-4 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setViewingDataset(dataset.id)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -180,6 +190,11 @@ export const DatasetsDashboard = () => {
           </p>
         </div>
       )}
+
+      <DatasetViewer
+        datasetId={viewingDataset}
+        onClose={() => setViewingDataset(null)}
+      />
     </div>
   )
 }
