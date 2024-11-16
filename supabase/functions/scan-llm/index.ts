@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { processCustomEndpoint } from "./providers/customEndpoint.ts";
+import { updateScanStatus } from "./db.ts";
 import { analyzeVulnerability } from "./utils.ts";
+import { ScanRequest, ScanResponse } from "./types.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,45 +17,17 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, prompts, provider, category, customEndpoint } = await req.json();
+    const { scanId, prompts, provider, category, customEndpoint } = await req.json() as ScanRequest;
     console.log(`Starting scan ${scanId} with prompts:`, prompts);
 
     if (!scanId || !prompts || !provider) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error('Missing required parameters');
     }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     // Update scan status to processing
-    const { error: updateError } = await supabase
-      .from('llm_scans')
-      .update({ 
-        status: 'processing',
-        results: null
-      })
-      .eq('id', scanId);
+    await updateScanStatus(scanId, 'processing');
 
-    if (updateError) {
-      console.error('Error updating scan status:', updateError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to update scan status' }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    let scanResults;
+    let scanResults: ScanResponse;
     const baseProvider = provider.split('-')[0];
 
     try {
@@ -79,56 +53,29 @@ serve(async (req) => {
       }
 
       // Add metadata to results
-      scanResults = {
-        ...scanResults,
-        category,
-        timestamp: new Date().toISOString()
-      };
-
-      // Analyze for vulnerabilities
-      const isVulnerable = analyzeVulnerability(category, scanResults.model_response);
+      scanResults.category = category;
+      scanResults.is_vulnerable = analyzeVulnerability(category, scanResults.model_response);
 
       console.log(`Storing results for scan ${scanId}:`, scanResults);
 
       // Update scan with results and mark as completed
-      const { error: finalUpdateError } = await supabase
-        .from('llm_scans')
-        .update({
-          results: scanResults,
-          status: 'completed',
-          is_vulnerable: isVulnerable
-        })
-        .eq('id', scanId);
-
-      if (finalUpdateError) {
-        throw finalUpdateError;
-      }
+      await updateScanStatus(scanId, 'completed', scanResults);
 
       return new Response(
         JSON.stringify(scanResults),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (error) {
       console.error(`Error processing scan ${scanId}:`, error);
       
       // Update scan status to failed
-      await supabase
-        .from('llm_scans')
-        .update({ 
-          status: 'failed',
-          results: { error: error.message }
-        })
-        .eq('id', scanId);
+      await updateScanStatus(scanId, 'failed', { 
+        prompt: prompts[0],
+        model_response: '',
+        error: error.message 
+      });
 
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw error;
     }
   } catch (error) {
     console.error('Error in scan-llm function:', error);
@@ -141,75 +88,3 @@ serve(async (req) => {
     );
   }
 });
-
-async function processCustomEndpoint(customEndpoint: any, prompt: string) {
-  let url: string;
-  let headers: Record<string, string> = {};
-  let body: any;
-
-  if (customEndpoint.inputType === 'curl') {
-    const parsed = parseCurlCommand(
-      customEndpoint.curlCommand,
-      customEndpoint.placeholder,
-      prompt
-    );
-    url = parsed.url;
-    headers = parsed.headers;
-    body = parsed.body;
-  } else {
-    url = customEndpoint.url;
-    headers = {
-      'Content-Type': 'application/json',
-      ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {}),
-    };
-    if (customEndpoint.apiKey) {
-      headers['Authorization'] = `Bearer ${customEndpoint.apiKey}`;
-    }
-    body = { prompt };
-  }
-
-  console.log(`Making request to custom endpoint for prompt: ${prompt}`);
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Custom endpoint error: ${response.statusText}`);
-  }
-
-  const responseData = await response.json();
-  return responseData.response || responseData.model_response || responseData.text || JSON.stringify(responseData);
-}
-
-function parseCurlCommand(curlCommand: string, placeholder: string, prompt: string) {
-  const urlMatch = curlCommand.match(/curl ['"]([^'"]+)['"]/);
-  const headersMatch = curlCommand.match(/-H ['"]([^'"]+)['"]/g);
-  const dataMatch = curlCommand.match(/-d ['"]([^'"]+)['"]/);
-  
-  if (!urlMatch) {
-    throw new Error('Invalid cURL command: URL not found');
-  }
-
-  const url = urlMatch[1];
-  const headers: Record<string, string> = {};
-  
-  headersMatch?.forEach(header => {
-    const [key, value] = header.match(/-H ['"]([^'"]+)['"]/)?.[1].split(': ') ?? [];
-    if (key && value) {
-      headers[key] = value;
-    }
-  });
-
-  let body = dataMatch?.[1] ?? '{}';
-  body = body.replace(placeholder, prompt);
-
-  try {
-    body = JSON.parse(body);
-  } catch {
-    throw new Error('Invalid JSON body in cURL command');
-  }
-
-  return { url, headers, body };
-}
