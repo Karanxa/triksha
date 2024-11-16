@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Database } from "@/integrations/supabase/types";
+import { formatScanResponse } from "@/utils/scanUtils";
 
 type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
 
@@ -12,6 +13,7 @@ interface CreateScanParams {
   label?: string;
   schedule?: string;
   isRecurring?: boolean;
+  customEndpoint?: any;
 }
 
 export const useLLMScans = () => {
@@ -25,8 +27,16 @@ export const useLLMScans = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as LLMScan[];
+      if (error) {
+        toast.error("Failed to fetch scan results");
+        throw error;
+      }
+
+      // Format the scan results consistently
+      return (data as LLMScan[]).map(scan => ({
+        ...scan,
+        results: formatScanResponse(scan.results)
+      }));
     },
   });
 
@@ -45,7 +55,6 @@ export const useLLMScans = () => {
           label: params.label,
           schedule: params.schedule,
           is_recurring: params.isRecurring,
-          is_vulnerable: null // Initialize as null until scan completes
         })
         .select()
         .single();
@@ -59,15 +68,28 @@ export const useLLMScans = () => {
           prompts: params.prompts,
           provider: params.provider,
           category: params.category,
-          schedule: params.schedule,
-          isRecurring: params.isRecurring
+          customEndpoint: params.customEndpoint
         }
       });
 
       if (response.error) throw response.error;
       
-      // Return the scan results for immediate display
-      return response.data;
+      // Format the response consistently
+      const formattedResults = formatScanResponse(response.data);
+      
+      // Update the scan with the results
+      const { error: updateError } = await supabase
+        .from('llm_scans')
+        .update({
+          results: formattedResults,
+          status: 'completed',
+          is_vulnerable: formattedResults ? true : false // This will be refined by the vulnerability analysis
+        })
+        .eq('id', data.id);
+
+      if (updateError) throw updateError;
+      
+      return formattedResults;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
