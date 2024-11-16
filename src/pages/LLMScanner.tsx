@@ -5,17 +5,20 @@ import { useLLMScans } from "@/hooks/useLLMScans";
 import { useGarakScans } from "@/hooks/useGarakScans";
 import { ScanForm } from "@/components/llm-scanner/ScanForm";
 import { GarakScanForm } from "@/components/llm-scanner/GarakScanForm";
+import { PromptFuzzerForm } from "@/components/prompt-fuzzer/PromptFuzzerForm";
 import { ScanResults } from "@/components/llm-scanner/ScanResults";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const LLMScanner = () => {
   const navigate = useNavigate();
   const [scanResult, setScanResult] = useState<any>(null);
   const { createScan, isScanning } = useLLMScans();
   const { createScan: createGarakScan, isScanning: isGarakScanning } = useGarakScans();
+  const [isFuzzing, setIsFuzzing] = useState(false);
 
   const handleCustomScan = async (data: {
     prompts: string[];
@@ -58,6 +61,34 @@ const LLMScanner = () => {
     }
   };
 
+  const handleFuzzerScan = async (data: {
+    prompt: string;
+    numMutations: number;
+    strategy: string;
+    model: string;
+  }) => {
+    try {
+      setIsFuzzing(true);
+      const response = await supabase.functions.invoke('prompt-fuzzer', {
+        body: data
+      });
+
+      if (response.error) throw response.error;
+
+      setScanResult({
+        prompt: data.prompt,
+        model_response: JSON.stringify(response.data, null, 2)
+      });
+      
+      toast.success("Prompt fuzzing completed successfully");
+    } catch (error) {
+      console.error('Fuzzing failed:', error);
+      toast.error('Failed to run prompt fuzzer: ' + (error as Error).message);
+    } finally {
+      setIsFuzzing(false);
+    }
+  };
+
   const isBatchScan = scanResult?.results && Array.isArray(scanResult.results);
 
   return (
@@ -69,9 +100,10 @@ const LLMScanner = () => {
         </p>
 
         <Tabs defaultValue="custom" className="space-y-6">
-          <TabsList className="grid grid-cols-2 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="custom">Custom Scan</TabsTrigger>
             <TabsTrigger value="garak">Garak Scan</TabsTrigger>
+            <TabsTrigger value="fuzzer">Prompt Fuzzer</TabsTrigger>
           </TabsList>
 
           <TabsContent value="custom">
@@ -111,6 +143,21 @@ const LLMScanner = () => {
                 isScanning={isGarakScanning}
               />
             </Card>
+          </TabsContent>
+
+          <TabsContent value="fuzzer">
+            <Card className="p-6">
+              <PromptFuzzerForm
+                onSubmit={handleFuzzerScan}
+                isScanning={isFuzzing}
+              />
+            </Card>
+
+            {scanResult && !isBatchScan && (
+              <div className="mt-6">
+                <ScanResults result={scanResult} />
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
