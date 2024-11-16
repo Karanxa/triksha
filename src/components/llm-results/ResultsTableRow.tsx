@@ -6,6 +6,9 @@ import { CheckCircle2, XCircle } from "lucide-react";
 import { getScanType } from "@/utils/scanUtils";
 import { LLMScan, ScanResults } from "./types";
 import { analyzeVulnerability } from "./utils/vulnerabilityAnalysis";
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ResultsTableRowProps {
   scan: LLMScan;
@@ -14,6 +17,7 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
+  const [isRemoving, setIsRemoving] = useState(false);
   const results = scan.results as ScanResults;
   
   // Get the first prompt and response
@@ -24,6 +28,21 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const scanType = getScanType(firstResponse);
+
+  useEffect(() => {
+    const subscription = supabase
+      .channel('llm_scans_changes')
+      .on('DELETE', (payload) => {
+        if (payload.old.id === scan.id) {
+          setIsRemoving(true);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [scan.id]);
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
@@ -69,8 +88,18 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
 
   const isVulnerable = scan.is_vulnerable || analyzeVulnerability(response, category);
 
+  if (isRemoving) {
+    return null;
+  }
+
   return (
-    <TableRow key={scan.id}>
+    <TableRow 
+      key={scan.id}
+      className={cn(
+        "transition-all duration-300",
+        isRemoving && "animate-fade-out opacity-0 scale-95 -translate-x-full"
+      )}
+    >
       <TableCell>{scanType}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
