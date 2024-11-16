@@ -28,8 +28,8 @@ export const useLLMScans = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        toast.error("Failed to fetch scan results");
-        throw error;
+        console.error('Error fetching scans:', error);
+        throw new Error('Failed to fetch scan results');
       }
 
       return (data as LLMScan[]).map(scan => ({
@@ -41,67 +41,58 @@ export const useLLMScans = () => {
 
   const createScan = useMutation({
     mutationFn: async (params: CreateScanParams) => {
-      try {
-        // Get the current user's ID
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData.user) throw new Error("Not authenticated");
-
-        // Create the scan record first
-        const { data: scan, error: createError } = await supabase
-          .from('llm_scans')
-          .insert({
-            user_id: userData.user.id,
-            name: params.label || `${new Date().toISOString()}`,
-            status: 'pending',
-            category: params.category,
-            label: params.label,
-            schedule: params.schedule,
-            is_recurring: params.isRecurring,
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-
-        // Call the edge function with proper error handling
-        const { data: response, error: functionError } = await supabase.functions.invoke('scan-llm', {
-          body: { 
-            scanId: scan.id,
-            prompts: params.prompts,
-            provider: params.provider,
-            category: params.category,
-            customEndpoint: params.customEndpoint
-          }
-        });
-
-        if (functionError) {
-          // Update scan status to failed if edge function fails
-          await supabase
-            .from('llm_scans')
-            .update({ 
-              status: 'failed',
-              results: { error: functionError.message }
-            })
-            .eq('id', scan.id);
-          
-          throw functionError;
-        }
-
-        // Format the response consistently
-        const formattedResults = formatScanResponse(response);
-        
-        return formattedResults;
-      } catch (error: any) {
-        console.error('Scan creation failed:', error);
-        toast.error(error.message || 'Failed to create scan');
-        throw error;
+      // Get the current user's ID
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        throw new Error("Authentication required");
       }
+
+      // Create the scan record
+      const { data: scan, error: createError } = await supabase
+        .from('llm_scans')
+        .insert({
+          user_id: userData.user.id,
+          name: params.label || `Scan ${new Date().toLocaleString()}`,
+          status: 'pending',
+          category: params.category,
+          label: params.label,
+          schedule: params.schedule,
+          is_recurring: params.isRecurring,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating scan:', createError);
+        throw new Error('Failed to create scan record');
+      }
+
+      // Call the edge function
+      const { data: response, error: functionError } = await supabase.functions.invoke('scan-llm', {
+        body: { 
+          scanId: scan.id,
+          prompts: params.prompts,
+          provider: params.provider,
+          category: params.category,
+          customEndpoint: params.customEndpoint
+        }
+      });
+
+      if (functionError || (response && 'error' in response)) {
+        const errorMessage = functionError?.message || (response as any)?.error || 'Scan failed';
+        console.error('Scan function error:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
+      toast.success('Scan completed successfully');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create scan: ${error.message}`);
+      console.error('Mutation error:', error);
+      toast.error(`Scan failed: ${error.message}`);
     },
   });
 
