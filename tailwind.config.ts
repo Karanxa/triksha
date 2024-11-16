@@ -33,11 +33,11 @@ export default {
           light: "#000000",
         },
         primary: {
-          DEFAULT: "#9b87f5",
+          DEFAULT: "#ef4444",
           foreground: "var(--foreground)",
         },
         secondary: {
-          DEFAULT: "#7E69AB",
+          DEFAULT: "#dc2626",
           foreground: "var(--foreground)",
         },
         card: {
