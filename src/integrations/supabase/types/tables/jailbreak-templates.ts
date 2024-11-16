@@ -1,3 +1,5 @@
+import { Json } from '../common';
+
 export interface JailbreakTemplatesTable {
   Row: {
     id: string;
@@ -6,7 +8,7 @@ export interface JailbreakTemplatesTable {
     description: string | null;
     category: string;
     base_prompt: string;
-    variables: Record<string, any> | null;
+    variables: Json | null;
     created_at: string;
     updated_at: string;
     is_public: boolean | null;
@@ -20,7 +22,7 @@ export interface JailbreakTemplatesTable {
     description?: string | null;
     category: string;
     base_prompt: string;
-    variables?: Record<string, any> | null;
+    variables?: Json | null;
     created_at?: string;
     updated_at?: string;
     is_public?: boolean | null;
@@ -34,7 +36,7 @@ export interface JailbreakTemplatesTable {
     description?: string | null;
     category?: string;
     base_prompt?: string;
-    variables?: Record<string, any> | null;
+    variables?: Json | null;
     created_at?: string;
     updated_at?: string;
     is_public?: boolean | null;

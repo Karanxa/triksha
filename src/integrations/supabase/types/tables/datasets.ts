@@ -1,5 +1,3 @@
-import { Json } from '../common';
-
 export interface DatasetsTable {
   Row: {
     id: string;
