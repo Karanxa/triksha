@@ -35,7 +35,19 @@ async function analyzeVulnerability(prompt: string, response: string) {
   }
 }
 
-async function processBatch(prompts: string[], provider: string, apiKeys: any, qps: number) {
+async function processBatch(prompts: string[], provider: string, userId: string, qps: number) {
+  // First, fetch the API keys for this user
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('api_keys')
+    .eq('id', userId)
+    .single();
+
+  if (profileError || !profile?.api_keys) {
+    throw new Error('Failed to fetch API keys');
+  }
+
+  const apiKeys = profile.api_keys;
   const batchSize = qps;
   const results = [];
   
@@ -119,18 +131,7 @@ Deno.serve(async (req) => {
       throw new Error('Invalid user token');
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      throw new Error('Failed to fetch API keys');
-    }
-
     const { scanId, prompts, provider, category, label, schedule, isRecurring, qps = 5 } = await req.json();
-    const apiKeys = profile.api_keys;
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
       throw new Error('Invalid prompts array');
@@ -140,8 +141,8 @@ Deno.serve(async (req) => {
       throw new Error('Provider is required');
     }
 
-    // Process prompts with QPS control
-    const results = await processBatch(prompts, provider, apiKeys, qps);
+    // Process prompts with QPS control, passing the user ID to get their API keys
+    const results = await processBatch(prompts, provider, user.id, qps);
 
     // Update scan with results
     const { error: updateError } = await supabase
@@ -153,10 +154,7 @@ Deno.serve(async (req) => {
           timestamp: new Date().toISOString(),
         },
         status: 'completed',
-        is_vulnerable: results.some(r => 
-          r.model_response?.toLowerCase().includes('i will') || 
-          r.model_response?.toLowerCase().includes('here is')
-        ),
+        is_vulnerable: results.some(r => r.is_vulnerable === true),
       })
       .eq('id', scanId);
 
