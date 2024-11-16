@@ -31,18 +31,18 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
     switch (selectedProvider) {
       case "openai":
         return [
-          { value: "gpt4o", label: "GPT-4 Optimized" },
-          { value: "gpt4o-mini", label: "GPT-4 Mini" }
+          { value: "gpt-4", label: "GPT-4" },
+          { value: "gpt-4-turbo-preview", label: "GPT-4 Turbo" }
         ];
       case "anthropic":
         return [
-          { value: "claude3", label: "Claude 3" },
-          { value: "claude2", label: "Claude 2" }
+          { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+          { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" }
         ];
       case "google":
         return [
-          { value: "gemini-pro", label: "Gemini Pro" },
-          { value: "gemini-ultra", label: "Gemini Ultra" }
+          { value: "gemini-1.0-pro", label: "Gemini Pro" },
+          { value: "gemini-1.0-ultra", label: "Gemini Ultra" }
         ];
       case "ollama":
         return [
