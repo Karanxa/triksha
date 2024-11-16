@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
+import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ScanFormHeader } from "./ScanFormHeader";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
-import { Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScanFormLabel } from "./ScanFormLabel";
+import { ScanFormSubmit } from "./ScanFormSubmit";
+import { ScanFormCustomEndpoint } from "./ScanFormCustomEndpoint";
+import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
+import { Label } from "@/components/ui/label";
 
 interface CustomEndpoint {
   url: string;
@@ -89,7 +89,10 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     const baseProvider = provider.split('-')[0];
 
     if (baseProvider === 'ollama') {
-      const { data: profile, error: profileError } = await supabase.from('profiles').select('api_keys').single();
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .single();
       
       if (profileError) {
         console.error("Error fetching profile:", profileError);
@@ -106,7 +109,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     }
 
     const allPrompts = scanType === "manual" ? [singlePrompt] : prompts;
-    console.log("Submitting scan with prompts:", allPrompts);
 
     try {
       await onSubmit({
@@ -119,7 +121,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         customEndpoint: provider === 'custom' ? customEndpoint : undefined
       });
 
-      // Reset form only on success
       if (scanType === "manual") {
         setSinglePrompt("");
       } else {
@@ -138,18 +139,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-4">
-        <Label>Scan Type</Label>
-        <Select value={scanType} onValueChange={(value: "manual" | "batch") => setScanType(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select scan type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="manual">Manual Scan</SelectItem>
-            <SelectItem value="batch">Batch Scan</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <ScanFormHeader scanType={scanType} onScanTypeChange={setScanType} />
 
       <ScanFormProvider 
         provider={provider}
@@ -185,14 +175,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         />
       </div>
 
-      <div className="space-y-4">
-        <Label>Scan Label (Optional)</Label>
-        <Input 
-          placeholder="Enter a label for this scan"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-        />
-      </div>
+      <ScanFormLabel label={label} onLabelChange={setLabel} />
 
       <ScanFormSchedule
         schedule={schedule}
@@ -201,21 +184,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         onRecurringChange={setIsRecurring}
       />
 
-      <Button 
-        className="w-full" 
-        size="lg"
-        onClick={handleSubmit}
-        disabled={isScanning}
-      >
-        {isScanning ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing Scan...
-          </>
-        ) : (
-          "Start LLM Scan"
-        )}
-      </Button>
+      <ScanFormSubmit onSubmit={handleSubmit} isScanning={isScanning} />
     </div>
   );
 };

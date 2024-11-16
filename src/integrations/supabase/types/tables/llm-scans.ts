@@ -1,5 +1,3 @@
-import { Json } from '../common';
-
 export interface LLMScansTable {
   Row: {
     id: string;
@@ -8,7 +6,7 @@ export interface LLMScansTable {
     status: string;
     created_at: string;
     updated_at: string;
-    results: Json | null;
+    results: any | null;
     category: string | null;
     label: string | null;
     schedule: string | null;
@@ -24,7 +22,7 @@ export interface LLMScansTable {
     status?: string;
     created_at?: string;
     updated_at?: string;
-    results?: Json | null;
+    results?: any | null;
     category?: string | null;
     label?: string | null;
     schedule?: string | null;
@@ -40,7 +38,7 @@ export interface LLMScansTable {
     status?: string;
     created_at?: string;
     updated_at?: string;
-    results?: Json | null;
+    results?: any | null;
     category?: string | null;
     label?: string | null;
     schedule?: string | null;
