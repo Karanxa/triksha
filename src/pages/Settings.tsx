@@ -49,11 +49,20 @@ const Settings = () => {
   const handleSaveKeys = async () => {
     if (!session?.user?.id) return;
 
+    const keysToSave = {
+      openai: apiKeys.openai || '',
+      huggingface: apiKeys.huggingface || '',
+      anthropic: apiKeys.anthropic || '',
+      gemini: apiKeys.gemini || '',
+      github: apiKeys.github || '',
+      ollama_endpoint: apiKeys.ollama_endpoint || ''
+    };
+
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          api_keys: apiKeys
+          api_keys: keysToSave
         })
         .eq('id', session.user.id);
 
