@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -18,7 +19,13 @@ serve(async (req) => {
     console.log(`Starting scan ${scanId} with prompts:`, prompts);
 
     if (!scanId || !prompts || !provider) {
-      throw new Error('Missing required parameters');
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameters' }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     const supabase = createClient(
@@ -27,7 +34,7 @@ serve(async (req) => {
     );
 
     // Update scan status to processing
-    await supabase
+    const { error: updateError } = await supabase
       .from('llm_scans')
       .update({ 
         status: 'processing',
@@ -35,12 +42,23 @@ serve(async (req) => {
       })
       .eq('id', scanId);
 
+    if (updateError) {
+      console.error('Error updating scan status:', updateError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to update scan status' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     let scanResults;
     const baseProvider = provider.split('-')[0];
 
-    if (baseProvider === 'custom' && customEndpoint) {
-      console.log('Processing custom endpoint request...');
-      try {
+    try {
+      if (baseProvider === 'custom' && customEndpoint) {
+        console.log('Processing custom endpoint request...');
         const response = await processCustomEndpoint(
           customEndpoint,
           prompts[0]
@@ -49,56 +67,78 @@ serve(async (req) => {
           prompt: prompts[0],
           model_response: response
         };
-      } catch (error) {
-        throw new Error(`Custom endpoint error: ${error.message}`);
+      } else if (baseProvider === 'ollama') {
+        console.log('Processing Ollama request...');
+        const modelResponse = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+        scanResults = {
+          prompt: prompts[0],
+          model_response: modelResponse
+        };
+      } else {
+        throw new Error('Provider not implemented');
       }
-    } else if (baseProvider === 'ollama') {
-      console.log('Processing Ollama request...');
-      const modelResponse = await handleOllamaRequest(prompts[0], provider.split('-')[1]);
+
+      // Add metadata to results
       scanResults = {
-        prompt: prompts[0],
-        model_response: modelResponse
+        ...scanResults,
+        category,
+        timestamp: new Date().toISOString()
       };
-    } else {
-      throw new Error('Provider not implemented');
+
+      // Analyze for vulnerabilities
+      const isVulnerable = analyzeVulnerability(category, scanResults.model_response);
+
+      console.log(`Storing results for scan ${scanId}:`, scanResults);
+
+      // Update scan with results and mark as completed
+      const { error: finalUpdateError } = await supabase
+        .from('llm_scans')
+        .update({
+          results: scanResults,
+          status: 'completed',
+          is_vulnerable: isVulnerable
+        })
+        .eq('id', scanId);
+
+      if (finalUpdateError) {
+        throw finalUpdateError;
+      }
+
+      return new Response(
+        JSON.stringify(scanResults),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    } catch (error) {
+      console.error(`Error processing scan ${scanId}:`, error);
+      
+      // Update scan status to failed
+      await supabase
+        .from('llm_scans')
+        .update({ 
+          status: 'failed',
+          results: { error: error.message }
+        })
+        .eq('id', scanId);
+
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
-
-    // Add metadata to results
-    scanResults = {
-      ...scanResults,
-      category,
-      timestamp: new Date().toISOString()
-    };
-
-    // Analyze for vulnerabilities
-    const isVulnerable = analyzeVulnerability(category, scanResults.model_response);
-
-    console.log(`Storing results for scan ${scanId}:`, scanResults);
-
-    // Update scan with results and mark as completed
-    const { error: updateError } = await supabase
-      .from('llm_scans')
-      .update({
-        results: scanResults,
-        status: 'completed',
-        is_vulnerable: isVulnerable
-      })
-      .eq('id', scanId);
-
-    if (updateError) {
-      console.error(`Error updating scan ${scanId}:`, updateError);
-      throw updateError;
-    }
-
-    return new Response(JSON.stringify(scanResults), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error in scan-llm function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
   }
 });
 
