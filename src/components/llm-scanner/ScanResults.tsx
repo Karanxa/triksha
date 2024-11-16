@@ -1,6 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle, AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 interface ScanResult {
   prompt?: string;
@@ -11,6 +14,8 @@ interface ScanResult {
   }>;
   error?: string;
   is_vulnerable?: boolean;
+  category?: string;
+  severity?: string;
 }
 
 interface ScanResultsProps {
@@ -19,6 +24,8 @@ interface ScanResultsProps {
 }
 
 export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
+  const navigate = useNavigate();
+
   if (isLoading) {
     return (
       <Card className="mt-8">
@@ -42,41 +49,30 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
     );
   }
 
-  // Handle array results (from results field)
+  // Handle batch scan results (redirect to results page)
   if (result.results && Array.isArray(result.results)) {
     return (
-      <div className="mt-8 space-y-4">
-        {result.results.map((item, index) => (
-          <SingleResult 
-            key={index} 
-            result={{
-              prompt: item.prompt,
-              model_response: item.model_response,
-              is_vulnerable: result.is_vulnerable
-            }} 
-          />
-        ))}
+      <div className="mt-6 space-y-4">
+        <Alert>
+          <AlertTitle>Batch Scan Completed</AlertTitle>
+          <AlertDescription>
+            Successfully processed {result.results.length} prompts.
+          </AlertDescription>
+        </Alert>
+        <Button
+          variant="default"
+          className="w-full"
+          onClick={() => navigate("/llm-results")}
+        >
+          View Batch Results <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
       </div>
     );
   }
 
   // Handle single result
   return (
-    <SingleResult 
-      result={{
-        prompt: result.prompt,
-        model_response: result.model_response,
-        is_vulnerable: result.is_vulnerable
-      }} 
-    />
-  );
-};
-
-const SingleResult = ({ result }: { result: ScanResult }) => {
-  if (!result || (!result.prompt && !result.model_response)) return null;
-
-  return (
-    <div className="space-y-4">
+    <div className="mt-6 space-y-4">
       <Alert>
         <AlertTitle>Prompt Used:</AlertTitle>
         <AlertDescription className="mt-2 whitespace-pre-wrap">
@@ -86,25 +82,38 @@ const SingleResult = ({ result }: { result: ScanResult }) => {
       
       <Card>
         <CardContent className="pt-6">
-          <h3 className="font-medium mb-2">Model Response:</h3>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="font-medium">Model Response:</h3>
+            <div className="flex gap-2">
+              {result.category && (
+                <Badge variant="secondary">{result.category}</Badge>
+              )}
+              {result.severity && (
+                <Badge variant="outline">{result.severity}</Badge>
+              )}
+              <Badge 
+                variant={result.is_vulnerable ? "destructive" : "success"}
+                className="flex items-center gap-1"
+              >
+                {result.is_vulnerable ? (
+                  <>
+                    <AlertCircle className="h-3 w-3" />
+                    Vulnerable
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-3 w-3" />
+                    Secure
+                  </>
+                )}
+              </Badge>
+            </div>
+          </div>
           <pre className="whitespace-pre-wrap text-foreground p-4 rounded-md border bg-card">
             {result.model_response}
           </pre>
         </CardContent>
       </Card>
-
-      {result.is_vulnerable !== undefined && (
-        <Alert variant={result.is_vulnerable ? "destructive" : "default"}>
-          {result.is_vulnerable ? (
-            <AlertCircle className="h-4 w-4" />
-          ) : (
-            <CheckCircle className="h-4 w-4" />
-          )}
-          <AlertTitle>
-            {result.is_vulnerable ? "Vulnerability Detected" : "No Vulnerability Detected"}
-          </AlertTitle>
-        </Alert>
-      )}
     </div>
   );
 };

@@ -9,8 +9,6 @@ import { PromptFuzzerForm } from "@/components/prompt-fuzzer/PromptFuzzerForm";
 import { ScanResults } from "@/components/llm-scanner/ScanResults";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
 const LLMScanner = () => {
@@ -89,8 +87,6 @@ const LLMScanner = () => {
     }
   };
 
-  const isBatchScan = scanResult?.results && Array.isArray(scanResult.results);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12 max-w-2xl">
@@ -114,26 +110,10 @@ const LLMScanner = () => {
               />
             </Card>
 
-            {scanResult && !isBatchScan && (
-              <div className="mt-6">
-                <ScanResults result={scanResult} />
-              </div>
-            )}
-
-            {isBatchScan && (
-              <div className="mt-6 space-y-4">
-                <p className="text-muted-foreground">
-                  Batch scan completed successfully with {scanResult.results.length} results.
-                </p>
-                <Button
-                  variant="default"
-                  className="w-full"
-                  onClick={() => navigate("/llm-results")}
-                >
-                  View Batch Results <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            )}
+            <ScanResults 
+              result={scanResult} 
+              isLoading={isScanning}
+            />
           </TabsContent>
 
           <TabsContent value="garak">
@@ -153,11 +133,10 @@ const LLMScanner = () => {
               />
             </Card>
 
-            {scanResult && !isBatchScan && (
-              <div className="mt-6">
-                <ScanResults result={scanResult} />
-              </div>
-            )}
+            <ScanResults 
+              result={scanResult} 
+              isLoading={isFuzzing}
+            />
           </TabsContent>
         </Tabs>
       </div>
