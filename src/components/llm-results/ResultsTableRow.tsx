@@ -4,11 +4,8 @@ import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { getScanType } from "@/utils/scanUtils";
-import { LLMScan, ScanResults } from "./types";
+import { LLMScan } from "./types";
 import { analyzeVulnerability } from "./utils/vulnerabilityAnalysis";
-import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ResultsTableRowProps {
   scan: LLMScan;
@@ -17,32 +14,17 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  const [isRemoving, setIsRemoving] = useState(false);
-  const results = scan.results as ScanResults;
+  const results = scan.results || {};
+  const prompts = Array.isArray(results.prompts) ? results.prompts : [];
+  const responses = Array.isArray(results.responses) ? results.responses : [];
   
-  // Get the first prompt and response
-  const prompt = results?.prompts?.[0] || 'No prompt available';
-  const firstResponse = results?.responses?.[0];
-  const response = firstResponse?.model_response || firstResponse?.error || 'No response available';
+  const prompt = prompts[0] || 'No prompt available';
+  const firstResponse = responses[0] || {};
+  const response = firstResponse.model_response || firstResponse.error || 'No response available';
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
   const scanType = getScanType(results);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('llm_scans_changes')
-      .on('DELETE', (payload) => {
-        if (payload.old.id === scan.id) {
-          setIsRemoving(true);
-        }
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [scan.id]);
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
@@ -88,18 +70,8 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
 
   const isVulnerable = scan.is_vulnerable || analyzeVulnerability(response, category);
 
-  if (isRemoving) {
-    return null;
-  }
-
   return (
-    <TableRow 
-      key={scan.id}
-      className={cn(
-        "transition-all duration-300",
-        isRemoving && "animate-fade-out opacity-0 scale-95 -translate-x-full"
-      )}
-    >
+    <TableRow key={scan.id}>
       <TableCell>{scanType}</TableCell>
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
