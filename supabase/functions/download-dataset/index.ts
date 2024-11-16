@@ -14,7 +14,15 @@ serve(async (req) => {
   try {
     const { datasetId, format } = await req.json()
     
-    // Get user's Hugging Face API key
+    if (!datasetId) {
+      throw new Error('Dataset ID is required')
+    }
+
+    if (!format || !['csv', 'txt', 'zip'].includes(format)) {
+      throw new Error('Invalid format specified')
+    }
+
+    // Get user's API keys
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -29,6 +37,38 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
+    // First check if this is a local dataset
+    const { data: dataset, error: datasetError } = await supabase
+      .from('datasets')
+      .select('*')
+      .eq('id', datasetId)
+      .single()
+
+    if (dataset) {
+      // This is a local dataset
+      if (!dataset.file_path) {
+        throw new Error('Dataset file not found')
+      }
+
+      const { data: fileData, error: storageError } = await supabase
+        .storage
+        .from('datasets')
+        .download(dataset.file_path)
+
+      if (storageError) {
+        throw new Error('Failed to download dataset file')
+      }
+
+      return new Response(fileData, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': getContentType(format),
+          'Content-Disposition': `attachment; filename="${dataset.name}.${format}"`,
+        },
+      })
+    }
+
+    // If not a local dataset, try Hugging Face
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('api_keys')
@@ -39,7 +79,8 @@ serve(async (req) => {
       throw new Error('Hugging Face API key not found')
     }
 
-    // Fetch dataset content from Hugging Face
+    console.log('Fetching from Hugging Face:', datasetId)
+    
     const response = await fetch(`https://huggingface.co/api/datasets/${datasetId}/download`, {
       headers: {
         'Authorization': `Bearer ${profile.api_keys.huggingface}`,
@@ -47,41 +88,22 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      throw new Error('Failed to fetch dataset')
+      console.error('Hugging Face API error:', response.status, await response.text())
+      throw new Error(`Failed to fetch dataset from Hugging Face: ${response.statusText}`)
     }
 
     const content = await response.blob()
     
-    // Convert content based on requested format
-    let formattedContent: Blob
-    let filename: string
-    
-    switch (format) {
-      case 'csv':
-        formattedContent = new Blob([content], { type: 'text/csv' })
-        filename = `dataset.csv`
-        break
-      case 'txt':
-        formattedContent = new Blob([content], { type: 'text/plain' })
-        filename = `dataset.txt`
-        break
-      case 'zip':
-        formattedContent = new Blob([content], { type: 'application/zip' })
-        filename = `dataset.zip`
-        break
-      default:
-        throw new Error('Unsupported format')
-    }
-
-    return new Response(formattedContent, {
+    return new Response(content, {
       headers: {
         ...corsHeaders,
-        'Content-Type': formattedContent.type,
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Type': getContentType(format),
+        'Content-Disposition': `attachment; filename="${datasetId.split('/').pop()}.${format}"`,
       },
     })
 
   } catch (error) {
+    console.error('Download dataset error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -91,3 +113,16 @@ serve(async (req) => {
     )
   }
 })
+
+function getContentType(format: string): string {
+  switch (format) {
+    case 'csv':
+      return 'text/csv'
+    case 'txt':
+      return 'text/plain'
+    case 'zip':
+      return 'application/zip'
+    default:
+      return 'application/octet-stream'
+  }
+}
