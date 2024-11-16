@@ -6,23 +6,46 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const TEST_SUITES = [
+  { id: "encoding", label: "Encoding Tests", description: "Tests for various encoding and decoding attacks" },
+  { id: "injection", label: "Injection Tests", description: "Tests for prompt injection vulnerabilities" },
+  { id: "xss", label: "XSS Tests", description: "Tests for cross-site scripting style attacks" },
+  { id: "prompt_leaking", label: "Prompt Leaking Tests", description: "Tests for extracting system prompts" },
+  { id: "system_prompt", label: "System Prompt Tests", description: "Tests targeting system prompt manipulation" },
+  { id: "data_extraction", label: "Data Extraction Tests", description: "Tests for unauthorized data extraction" },
+  { id: "ban_completion", label: "Ban Completion Tests", description: "Tests for completing banned words/phrases" },
+  { id: "code_execution", label: "Code Execution Tests", description: "Tests for arbitrary code execution attempts" },
+  { id: "dos", label: "DoS Tests", description: "Tests for denial of service attempts" },
+  { id: "info_disclosure", label: "Information Disclosure", description: "Tests for sensitive information leaks" },
+  { id: "auth_bypass", label: "Authentication Bypass", description: "Tests for bypassing authentication" },
+  { id: "string_match", label: "String Matching", description: "Basic string pattern matching tests" },
+  { id: "regex_match", label: "Regex Matching", description: "Regular expression pattern matching" },
+  { id: "yaml_match", label: "YAML Matching", description: "YAML-based pattern matching tests" },
+  { id: "json_match", label: "JSON Matching", description: "JSON structure validation tests" }
+];
+
+const MODEL_TYPES = [
+  { value: "openai", label: "OpenAI Models" },
+  { value: "anthropic", label: "Anthropic Models" },
+  { value: "google", label: "Google Models" },
+  { value: "ollama", label: "Ollama Models" },
+  { value: "custom", label: "Custom Model" }
+];
 
 export const GarakScanForm = () => {
   const [name, setName] = useState("");
+  const [modelType, setModelType] = useState("");
   const [model, setModel] = useState("");
   const [prompt, setPrompt] = useState("");
   const [selectedSuites, setSelectedSuites] = useState<string[]>([]);
+  const [customEndpoint, setCustomEndpoint] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const session = useSession();
-
-  const testSuites = [
-    { id: "encoding", label: "Encoding Tests" },
-    { id: "injection", label: "Injection Tests" },
-    { id: "xss", label: "XSS Tests" },
-    { id: "prompt_leaking", label: "Prompt Leaking Tests" },
-    { id: "system_prompt", label: "System Prompt Tests" },
-    { id: "data_extraction", label: "Data Extraction Tests" },
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +66,8 @@ export const GarakScanForm = () => {
         model,
         prompts: [prompt],
         test_suites: selectedSuites,
-        user_id: session.user.id
+        user_id: session.user.id,
+        config: modelType === 'custom' ? { endpoint: customEndpoint } : null
       });
 
       if (error) throw error;
@@ -52,6 +76,7 @@ export const GarakScanForm = () => {
       setModel("");
       setPrompt("");
       setSelectedSuites([]);
+      setCustomEndpoint("");
     } catch (error) {
       console.error("Error creating garak scan:", error);
       toast.error("Failed to create garak scan");
@@ -68,53 +93,96 @@ export const GarakScanForm = () => {
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Enter scan name"
+          placeholder="Enter a name for this scan"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="model">Model</Label>
+        <Label>Model Type</Label>
+        <Select value={modelType} onValueChange={setModelType}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select model type" />
+          </SelectTrigger>
+          <SelectContent>
+            {MODEL_TYPES.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="model">Model Name</Label>
         <Input
           id="model"
           value={model}
           onChange={(e) => setModel(e.target.value)}
-          placeholder="Enter model name"
+          placeholder="Enter the specific model name (e.g., gpt-4)"
           required
         />
       </div>
 
+      {modelType === 'custom' && (
+        <div className="space-y-2">
+          <Label htmlFor="endpoint">Custom Endpoint</Label>
+          <Input
+            id="endpoint"
+            value={customEndpoint}
+            onChange={(e) => setCustomEndpoint(e.target.value)}
+            placeholder="Enter custom model endpoint URL"
+            required
+          />
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="prompt">Test Prompt</Label>
-        <Input
+        <Textarea
           id="prompt"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter test prompt"
+          placeholder="Enter the prompt to test"
+          className="min-h-[100px]"
           required
         />
       </div>
 
       <div className="space-y-4">
         <Label>Test Suites</Label>
-        <div className="grid grid-cols-2 gap-4">
-          {testSuites.map((suite) => (
-            <div key={suite.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={suite.id}
-                checked={selectedSuites.includes(suite.id)}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    setSelectedSuites([...selectedSuites, suite.id]);
-                  } else {
-                    setSelectedSuites(selectedSuites.filter((id) => id !== suite.id));
-                  }
-                }}
-              />
-              <Label htmlFor={suite.id}>{suite.label}</Label>
-            </div>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <ScrollArea className="h-[300px] pr-4">
+              <div className="space-y-4">
+                {TEST_SUITES.map((suite) => (
+                  <div key={suite.id} className="flex items-start space-x-3">
+                    <Checkbox
+                      id={suite.id}
+                      checked={selectedSuites.includes(suite.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedSuites([...selectedSuites, suite.id]);
+                        } else {
+                          setSelectedSuites(selectedSuites.filter((id) => id !== suite.id));
+                        }
+                      }}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor={suite.id} className="font-medium">
+                        {suite.label}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {suite.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
