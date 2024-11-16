@@ -8,6 +8,7 @@ export const ResultsTableHeader = () => {
         <TableHead>Date</TableHead>
         <TableHead>Prompt</TableHead>
         <TableHead>Response</TableHead>
+        <TableHead>Raw JSON</TableHead>
         <TableHead>Category & Risk</TableHead>
         <TableHead>Vulnerability Status</TableHead>
         <TableHead>Actions</TableHead>
