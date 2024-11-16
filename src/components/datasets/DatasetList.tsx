@@ -1,8 +1,8 @@
-import { Database } from "lucide-react";
-import { Download, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { DeleteDatasetButton } from "./DeleteDatasetButton";
+import { Database } from "lucide-react"
+import { Download, Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { DeleteDatasetButton } from "./DeleteDatasetButton"
 
 interface Dataset {
   id: string;
@@ -16,7 +16,7 @@ interface Dataset {
 interface DatasetListProps {
   datasets: Dataset[];
   onView: (id: string) => void;
-  onDownload: (datasetId: string, format: 'csv' | 'txt' | 'zip') => void;
+  onDownload: (datasetId: string, format: 'csv' | 'zip') => void;
   downloading: string | null;
 }
 
@@ -45,7 +45,7 @@ export const DatasetList = ({ datasets, onView, onDownload, downloading }: Datas
               {new Date(dataset.created_at).toLocaleDateString()}
             </p>
           </CardContent>
-          <CardFooter className="grid grid-cols-5 gap-2">
+          <CardFooter className="grid grid-cols-4 gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -68,16 +68,6 @@ export const DatasetList = ({ datasets, onView, onDownload, downloading }: Datas
               variant="outline"
               size="sm"
               className="w-full"
-              onClick={() => onDownload(dataset.id, 'txt')}
-              disabled={!!downloading}
-            >
-              <Download className="h-4 w-4" />
-              TXT
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
               onClick={() => onDownload(dataset.id, 'zip')}
               disabled={!!downloading}
             >
@@ -92,5 +82,5 @@ export const DatasetList = ({ datasets, onView, onDownload, downloading }: Datas
         </Card>
       ))}
     </div>
-  );
-};
+  )
+}

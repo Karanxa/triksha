@@ -3,7 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, Copy, Check } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
@@ -16,6 +17,7 @@ interface DatasetViewerProps {
 export const DatasetViewer = ({ datasetId, onClose }: DatasetViewerProps) => {
   const { toast } = useToast()
   const [viewType, setViewType] = useState<'table' | 'raw'>('table')
+  const [copied, setCopied] = useState(false)
 
   const { data: content, isLoading } = useQuery({
     queryKey: ['dataset-content', datasetId],
@@ -115,11 +117,50 @@ export const DatasetViewer = ({ datasetId, onClose }: DatasetViewerProps) => {
     enabled: !!datasetId
   })
 
+  const handleCopy = async () => {
+    if (!content) return
+
+    try {
+      const textToCopy = viewType === 'raw' 
+        ? content.raw
+        : content.data.map(row => row.join(',')).join('\n')
+      
+      await navigator.clipboard.writeText(textToCopy)
+      setCopied(true)
+      toast({
+        title: "Copied to clipboard",
+        description: "The content has been copied to your clipboard"
+      })
+      
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Failed to copy",
+        description: "Please try again"
+      })
+    }
+  }
+
   return (
     <Dialog open={!!datasetId} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-[90vw] max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Dataset Viewer</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Dataset Viewer</span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCopy}
+              disabled={!content}
+            >
+              {copied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </DialogTitle>
         </DialogHeader>
 
         {isLoading ? (
