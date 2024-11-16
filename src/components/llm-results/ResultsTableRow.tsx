@@ -15,18 +15,26 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
+  // Extract results from the scan
   const results = scan.results as {
     prompt: string;
     model_response: string;
     raw_response: any;
+  }[] | {
+    prompt: string;
+    model_response: string;
+    raw_response: any;
   } | null;
+
+  // Handle both single and batch results
+  const firstResult = Array.isArray(results) ? results[0] : results;
   
-  const prompt = results?.prompt || 'No prompt';
-  const response = results?.model_response || 'No response';
-  const rawJson = JSON.stringify(results?.raw_response || scan.results, null, 2);
+  const prompt = firstResult?.prompt || 'No prompt available';
+  const response = firstResult?.model_response || 'No response available';
+  const rawJson = JSON.stringify(firstResult?.raw_response || scan.results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
-  const scanType = getScanType(results);
+  const scanType = getScanType(firstResult);
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {
