@@ -9,6 +9,7 @@ import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { Loader2 } from "lucide-react";
+import { ScanResults } from "../llm-results/ScanResults";
 
 interface CustomEndpoint {
   url: string;
@@ -28,7 +29,7 @@ interface ScanFormProps {
     schedule?: string;
     isRecurring: boolean;
     customEndpoint?: CustomEndpoint;
-  }) => Promise<void>;
+  }) => Promise<any>;
   isScanning: boolean;
 }
 
@@ -40,6 +41,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
+  const [scanResult, setScanResult] = useState<any>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -107,10 +109,10 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     }
 
     const allPrompts = singlePrompt ? [singlePrompt] : prompts;
-    console.log("Submitting scan with prompts:", allPrompts);
+    setScanResult(null);
 
     try {
-      await onSubmit({
+      const result = await onSubmit({
         prompts: allPrompts,
         provider,
         category,
@@ -120,14 +122,14 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         customEndpoint: provider === 'custom' ? customEndpoint : undefined
       });
 
+      setScanResult(result);
+      
       // Reset form only on success
       setSinglePrompt("");
       setPrompts([]);
       setLabel("");
       setSchedule("none");
       setIsRecurring(false);
-      
-      toast.success("Scan initiated successfully");
     } catch (error) {
       console.error("Scan failed:", error);
       toast.error(`Scan failed: ${(error as Error).message}`);
@@ -200,6 +202,12 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
           "Start LLM Scan"
         )}
       </Button>
+
+      {scanResult && (
+        <div className="mt-8">
+          <ScanResults result={scanResult} />
+        </div>
+      )}
     </div>
   );
 };
