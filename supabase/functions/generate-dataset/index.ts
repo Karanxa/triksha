@@ -54,7 +54,7 @@ serve(async (req) => {
     }
 
     let metadata = {}
-    let prompts = []
+    let prompts: string[] = []
     let fileContent = ''
     
     if (method === 'recipe') {
@@ -81,14 +81,18 @@ serve(async (req) => {
         basePrompt,
         numSamples
       }
-      // Generate variations of base prompt
-      prompts = [basePrompt] // Placeholder for manual variations
+      // For manual method, use the base prompt directly
+      prompts = [basePrompt]
     }
 
-    // Create CSV content
+    // Create CSV content with proper escaping
     fileContent = 'prompt,category,method\n'
     prompts.forEach((prompt) => {
-      fileContent += `"${prompt.replace(/"/g, '""')}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
+      if (prompt) {
+        // Escape quotes and wrap the prompt in quotes
+        const escapedPrompt = prompt.replace(/"/g, '""')
+        fileContent += `"${escapedPrompt}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
+      }
     })
 
     // Generate unique filename
