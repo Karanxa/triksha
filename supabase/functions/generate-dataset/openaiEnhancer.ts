@@ -1,5 +1,3 @@
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
-
 interface AdversarialConfig {
   attackType: string
   vulnerabilityCategory: string
@@ -23,7 +21,11 @@ For each prompt:
 
 Return only the enhanced prompt without explanations.`
 
-export async function enhanceWithOpenAI(prompts: string[], config: AdversarialConfig): Promise<string[]> {
+export async function enhanceWithOpenAI(prompts: string[], config: AdversarialConfig, apiKey: string): Promise<string[]> {
+  if (!apiKey) {
+    throw new Error('OpenAI API key not found. Please add it in the Settings page.')
+  }
+
   const enhancedPrompts = []
 
   for (const prompt of prompts) {
@@ -31,7 +33,7 @@ export async function enhanceWithOpenAI(prompts: string[], config: AdversarialCo
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

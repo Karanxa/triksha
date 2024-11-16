@@ -42,6 +42,17 @@ serve(async (req) => {
       throw userError || new Error('User not found')
     }
 
+    // Fetch user's API keys
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile?.api_keys?.openai) {
+      throw new Error('OpenAI API key not found. Please add it in the Settings page.')
+    }
+
     let metadata = {}
     let prompts = []
     
@@ -55,8 +66,8 @@ serve(async (req) => {
       // Generate base adversarial prompts
       prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
       
-      // Enhance prompts using OpenAI
-      const enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig)
+      // Enhance prompts using OpenAI with user's API key
+      const enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
       
       metadata = {
         ...adversarialConfig,
