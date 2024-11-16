@@ -19,7 +19,10 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
         .delete()
         .eq('batch_id', id);
 
-      if (resultsError) throw resultsError;
+      if (resultsError) {
+        console.error("Error deleting scan results:", resultsError);
+        throw resultsError;
+      }
 
       // Then delete the scan itself
       const { error: scanError } = await supabase
@@ -27,7 +30,10 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
         .delete()
         .eq('id', id);
 
-      if (scanError) throw scanError;
+      if (scanError) {
+        console.error("Error deleting scan:", scanError);
+        throw scanError;
+      }
       
       return id;
     },
@@ -41,11 +47,20 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
     },
   });
 
+  const handleDelete = () => {
+    try {
+      deleteScan.mutate(scanId);
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete scan");
+    }
+  };
+
   return (
     <Button
       variant="destructive"
       size="sm"
-      onClick={() => deleteScan.mutate(scanId)}
+      onClick={handleDelete}
       disabled={deleteScan.isPending}
     >
       <Trash2 className="h-4 w-4" />

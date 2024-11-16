@@ -30,14 +30,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
   </AuthGuard>
 );
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Set dark mode before rendering
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.add("dark");
+}
 
 const App = () => {
-  useEffect(() => {
-    // Set dark mode as default
-    document.documentElement.classList.add("dark");
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabase}>
