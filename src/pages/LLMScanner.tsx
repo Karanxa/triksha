@@ -13,6 +13,25 @@ const LLMScanner = () => {
   const [scanResult, setScanResult] = useState<any>(null);
   const { createScan, isScanning } = useLLMScans();
 
+  const handleSubmit = async (data: {
+    prompts: string[];
+    provider: string;
+    category: string;
+    label?: string;
+    schedule?: string;
+    isRecurring: boolean;
+    customEndpoint?: any;
+  }) => {
+    try {
+      const result = await createScan(data);
+      setScanResult(result);
+      setIsBatchScan(data.prompts.length > 1);
+    } catch (error) {
+      console.error('Scan creation failed:', error);
+      toast.error('Failed to create scan');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12 max-w-2xl">
