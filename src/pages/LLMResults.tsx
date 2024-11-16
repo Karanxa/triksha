@@ -43,16 +43,6 @@ const LLMResults = () => {
         toast.error("Failed to fetch scan results");
         throw error;
       }
-
-      // Apply scan type filter in memory since it's derived from the results
-      if (filterType !== 'all') {
-        return (data as LLMScan[]).filter(scan => {
-          const results = scan.results as { prompt: string; model_response: string; is_batch?: boolean } | null;
-          const scanType = getScanType(results, results?.is_batch);
-          return scanType.toLowerCase() === filterType.toLowerCase();
-        });
-      }
-
       return data as LLMScan[];
     },
   });
@@ -76,8 +66,8 @@ const LLMResults = () => {
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Scan Type,Date,Prompt,Response,Category,Severity,Vulnerability Status\n" +
       scans.map(scan => {
-        const results = scan.results as { model_response: string; prompt: string; is_batch?: boolean } | null;
-        const scanType = getScanType(results, results?.is_batch);
+        const results = scan.results as { model_response: string; prompt: string } | null;
+        const scanType = getScanType(results);
         return `"${scanType}","${formatDate(scan.created_at)}","${results?.prompt || ''}","${results?.model_response || ''}","${scan.category || 'N/A'}","${scan.severity || 'unknown'}","${scan.is_vulnerable === true ? 'Vulnerable' : scan.is_vulnerable === false ? 'Secure' : 'Unknown'}"`;
       }).join("\n");
 
@@ -110,8 +100,8 @@ const LLMResults = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Results</SelectItem>
-                <SelectItem value="manual scan">Manual Scan</SelectItem>
-                <SelectItem value="batch scan">Batch Scan</SelectItem>
+                <SelectItem value="manual">Manual Prompt</SelectItem>
+                <SelectItem value="batch">Batch Scan</SelectItem>
               </SelectContent>
             </Select>
           </div>

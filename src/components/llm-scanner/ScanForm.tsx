@@ -10,7 +10,6 @@ import { ScanFormPrompt } from "./ScanFormPrompt";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { Loader2 } from "lucide-react";
 
-// Move interfaces to a separate types file
 interface CustomEndpoint {
   url: string;
   apiKey: string;
@@ -29,7 +28,6 @@ interface ScanFormProps {
     schedule?: string;
     isRecurring: boolean;
     customEndpoint?: CustomEndpoint;
-    testSuites?: string[];
   }) => Promise<void>;
   isScanning: boolean;
 }
@@ -42,7 +40,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   const [label, setLabel] = useState("");
   const [schedule, setSchedule] = useState("none");
   const [isRecurring, setIsRecurring] = useState(false);
-  const [testSuites, setTestSuites] = useState<string[]>([]);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -53,7 +50,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
   });
 
   const handleSubmit = async () => {
-    if (!provider) {
+    if (!provider && provider !== 'custom') {
       toast.error("Please select a provider and model");
       return;
     }
@@ -77,7 +74,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       return;
     }
 
-    if (!category && !['garak', 'prompt-fuzzer'].includes(provider.split('-')[0])) {
+    if (!category) {
       toast.error("Please select an attack category");
       return;
     }
@@ -85,10 +82,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
     const baseProvider = provider.split('-')[0];
 
     if (baseProvider === 'ollama') {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('api_keys')
-        .single();
+      const { data: profile, error: profileError } = await supabase.from('profiles').select('api_keys').single();
       
       if (profileError) {
         console.error("Error fetching profile:", profileError);
@@ -123,8 +117,7 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         label: label || undefined,
         schedule: schedule !== "none" ? schedule : undefined,
         isRecurring,
-        customEndpoint: provider === 'custom' ? customEndpoint : undefined,
-        testSuites: ['garak', 'prompt-fuzzer'].includes(baseProvider) ? testSuites : undefined
+        customEndpoint: provider === 'custom' ? customEndpoint : undefined
       });
 
       // Reset form only on success
@@ -133,7 +126,6 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
       setLabel("");
       setSchedule("none");
       setIsRecurring(false);
-      setTestSuites([]);
       
       toast.success("Scan initiated successfully");
     } catch (error) {
@@ -169,15 +161,13 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         }}
       />
 
-      {!['garak', 'prompt-fuzzer'].includes(provider.split('-')[0]) && (
-        <div className="space-y-4">
-          <Label>Attack Category</Label>
-          <AttackCategorySelect
-            value={category}
-            onValueChange={setCategory}
-          />
-        </div>
-      )}
+      <div className="space-y-4">
+        <Label>Attack Category</Label>
+        <AttackCategorySelect
+          value={category}
+          onValueChange={setCategory}
+        />
+      </div>
 
       <div className="space-y-4">
         <Label>Scan Label (Optional)</Label>
@@ -188,14 +178,12 @@ export const ScanForm = ({ onSubmit, isScanning }: ScanFormProps) => {
         />
       </div>
 
-      {!['garak', 'prompt-fuzzer'].includes(provider.split('-')[0]) && (
-        <ScanFormSchedule
-          schedule={schedule}
-          onScheduleChange={setSchedule}
-          isRecurring={isRecurring}
-          onRecurringChange={setIsRecurring}
-        />
-      )}
+      <ScanFormSchedule
+        schedule={schedule}
+        onScheduleChange={setSchedule}
+        isRecurring={isRecurring}
+        onRecurringChange={setIsRecurring}
+      />
 
       <Button 
         className="w-full" 

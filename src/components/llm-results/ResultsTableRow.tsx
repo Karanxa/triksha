@@ -18,14 +18,13 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const results = scan.results as {
     prompt: string;
     model_response: string;
-    is_batch?: boolean;
   } | null;
   
   const prompt = results?.prompt || 'No prompt';
   const response = results?.model_response || 'No response';
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
-  const scanType = getScanType(results, results?.is_batch);
+  const scanType = getScanType(results);
 
   const getCategoryVariant = (category: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (category.toLowerCase()) {

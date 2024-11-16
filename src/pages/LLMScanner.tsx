@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ScanForm } from "@/components/llm-scanner/ScanForm";
 import { ScanResults } from "@/components/llm-scanner/ScanResults";
-import { supabase } from "@/integrations/supabase/client";
 
 const LLMScanner = () => {
   const navigate = useNavigate();
@@ -21,40 +20,17 @@ const LLMScanner = () => {
     label?: string;
     schedule?: string;
     isRecurring: boolean;
-    testSuites?: string[];
   }) => {
     try {
-      const baseProvider = data.provider.split('-')[0];
+      const result = await createScan(data);
       
-      if (['garak', 'prompt-fuzzer'].includes(baseProvider)) {
-        // Handle security scanning tools
-        const response = await supabase.functions.invoke('run-security-scan', {
-          body: {
-            prompts: data.prompts,
-            provider: baseProvider,
-            model: data.provider.split('-')[1],
-            testSuites: data.testSuites
-          }
-        });
-
-        if (response.error) {
-          throw new Error(response.error.message);
-        }
-
-        setScanResult(response.data);
-        toast.success(`${baseProvider} scan completed successfully`);
+      if (data.prompts.length === 1) {
+        setScanResult(result);
+        toast.success("Scan completed successfully");
       } else {
-        // Handle regular LLM scans
-        const result = await createScan(data);
-        
-        if (data.prompts.length === 1) {
-          setScanResult(result);
-          toast.success("Scan completed successfully");
-        } else {
-          setIsBatchScan(true);
-          toast.success("Batch scan initiated successfully");
-          navigate("/llm-results");
-        }
+        setIsBatchScan(true);
+        toast.success("Batch scan initiated successfully");
+        navigate("/llm-results");
       }
     } catch (error) {
       toast.error("Failed to create scan: " + (error as Error).message);

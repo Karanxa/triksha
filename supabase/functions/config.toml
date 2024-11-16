@@ -13,7 +13,3 @@ verify_jwt = true
 [[functions]]
 name = "process-scheduled-scans"
 verify_jwt = true
-
-[[functions]]
-name = "run-security-scan"
-verify_jwt = true
