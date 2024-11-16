@@ -98,6 +98,109 @@ export type Database = {
           },
         ]
       }
+      garak_scans: {
+        Row: {
+          config: Json | null
+          created_at: string
+          id: string
+          model: string
+          name: string
+          prompts: Json
+          results: Json | null
+          status: string
+          test_suites: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model: string
+          name: string
+          prompts: Json
+          results?: Json | null
+          status?: string
+          test_suites: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model?: string
+          name?: string
+          prompts?: Json
+          results?: Json | null
+          status?: string
+          test_suites?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garak_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jailbreak_templates: {
+        Row: {
+          base_prompt: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          success_rate: number | null
+          target_models: string[] | null
+          updated_at: string
+          user_id: string
+          variables: Json | null
+        }
+        Insert: {
+          base_prompt: string
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          success_rate?: number | null
+          target_models?: string[] | null
+          updated_at?: string
+          user_id: string
+          variables?: Json | null
+        }
+        Update: {
+          base_prompt?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          success_rate?: number | null
+          target_models?: string[] | null
+          updated_at?: string
+          user_id?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jailbreak_templates_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       llm_scans: {
         Row: {
           category: string | null
