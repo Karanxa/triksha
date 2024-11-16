@@ -7,6 +7,7 @@ import { ScanForm } from "@/components/llm-scanner/ScanForm";
 import { GarakScanForm } from "@/components/llm-scanner/GarakScanForm";
 import { PromptFuzzerForm } from "@/components/prompt-fuzzer/PromptFuzzerForm";
 import { ScanResults } from "@/components/llm-scanner/ScanResults";
+import { ModuleInfo } from "@/components/llm-scanner/ModuleInfo";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,9 +104,18 @@ const LLMScanner = () => {
 
         <Tabs defaultValue="custom" className="space-y-6">
           <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="custom">Custom Scan</TabsTrigger>
-            <TabsTrigger value="garak">Garak Scan</TabsTrigger>
-            <TabsTrigger value="fuzzer">Prompt Fuzzer</TabsTrigger>
+            <TabsTrigger value="custom" className="flex items-center gap-1">
+              Custom Scan
+              <ModuleInfo type="custom" />
+            </TabsTrigger>
+            <TabsTrigger value="garak" className="flex items-center gap-1">
+              Garak Scan
+              <ModuleInfo type="garak" />
+            </TabsTrigger>
+            <TabsTrigger value="fuzzer" className="flex items-center gap-1">
+              Prompt Fuzzer
+              <ModuleInfo type="fuzzer" />
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="custom">
