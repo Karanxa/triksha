@@ -11,6 +11,10 @@ import { ScanResults } from "./ScanResults";
 import { ScanTypeSelect } from "./ScanTypeSelect";
 import { ScanPromptInput } from "./ScanPromptInput";
 import { useScanSubmit } from "./hooks/useScanSubmit";
+import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CustomEndpoint {
   url: string;
@@ -45,6 +49,8 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   const [isRecurring, setIsRecurring] = useState(false);
   const [qps, setQPS] = useState(5);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -56,14 +62,52 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
 
   const { handleSubmit, isScanning } = useScanSubmit({
     onSubmit,
-    setResult: setScanResult
+    setResult: setScanResult,
+    setScanId: setCurrentScanId
   });
+
+  // Subscribe to scan progress updates
+  useEffect(() => {
+    if (!currentScanId) return;
+
+    const subscription = supabase
+      .channel(`scan_${currentScanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'llm_scans',
+          filter: `id=eq.${currentScanId}`,
+        },
+        (payload) => {
+          if (payload.new.status === 'processing') {
+            const progress = payload.new.results?.progress || 0;
+            setScanProgress(progress);
+          } else if (payload.new.status === 'completed') {
+            setScanProgress(100);
+            toast.success('Scan completed successfully');
+          } else if (payload.new.status === 'failed') {
+            toast.error('Scan failed: ' + (payload.new.results?.error || 'Unknown error'));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentScanId]);
 
   const onFormSubmit = async () => {
     // Validate input size
     if (scanType === "batch" && prompts.length > 100000) {
       toast.error("Maximum batch size is 100,000 prompts");
       return;
+    }
+
+    if (scanType === "batch" && prompts.length > 1000) {
+      toast.info(`Processing ${prompts.length} prompts. This may take a while.`);
     }
 
     const result = await handleSubmit({
@@ -138,6 +182,15 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
         isRecurring={isRecurring}
         onRecurringChange={setIsRecurring}
       />
+
+      {isScanning && scanProgress > 0 && (
+        <div className="space-y-2">
+          <Progress value={scanProgress} />
+          <p className="text-sm text-muted-foreground text-center">
+            Processing scan... {scanProgress}% complete
+          </p>
+        </div>
+      )}
 
       <Button 
         className="w-full" 

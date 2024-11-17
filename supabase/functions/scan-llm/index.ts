@@ -19,7 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const CHUNK_SIZE = 1000; // Process results in chunks of 1000
 
-async function processBatch(prompts: string[], provider: string, userId: string, qps: number, customEndpoint?: any) {
+async function processBatch(prompts: string[], provider: string, userId: string, qps: number, customEndpoint?: any, scanId?: string) {
   console.log('Processing batch:', { promptCount: prompts.length, provider, qps });
   
   const { data: profile, error: profileError } = await supabase
@@ -99,44 +99,10 @@ async function processBatch(prompts: string[], provider: string, userId: string,
     }
   };
 
-  return await processBatchWithProgress(prompts, batchSize, processPrompt);
-}
-
-async function updateScanResults(scanId: string, results: any[], status: string) {
-  // Update in chunks to avoid memory issues
-  for (let i = 0; i < results.length; i += CHUNK_SIZE) {
-    const chunk = results.slice(i, i + CHUNK_SIZE);
-    const { error } = await supabase
-      .from('llm_scan_results')
-      .insert(
-        chunk.map(result => ({
-          scan_id: scanId,
-          prompt: result.prompt,
-          model_response: result.model_response,
-          raw_response: result.raw_response,
-          provider: result.provider,
-          model: result.model,
-          error: result.error,
-          created_at: result.timestamp
-        }))
-      );
-
-    if (error) {
-      console.error('Error updating results chunk:', error);
-      throw error;
-    }
-  }
-
-  // Update scan status
-  const { error: updateError } = await supabase
-    .from('llm_scans')
-    .update({ status })
-    .eq('id', scanId);
-
-  if (updateError) {
-    console.error('Error updating scan status:', updateError);
-    throw updateError;
-  }
+  return await processBatchWithProgress(prompts, batchSize, processPrompt, {
+    scanId: scanId!,
+    supabase
+  });
 }
 
 serve(async (req) => {
@@ -172,15 +138,24 @@ serve(async (req) => {
     // Update scan status to processing
     await supabase
       .from('llm_scans')
-      .update({ status: 'processing' })
+      .update({ 
+        status: 'processing',
+        results: { progress: 0 }
+      })
       .eq('id', scanId);
 
     // Process prompts and store results
-    const results = await processBatch(prompts, provider, user.id, qps, customEndpoint);
-    console.log('Processing completed, updating results...');
+    const results = await processBatch(prompts, provider, user.id, qps, customEndpoint, scanId);
+    console.log('Processing completed, updating final status...');
 
-    // Update results in chunks
-    await updateScanResults(scanId, results, 'completed');
+    // Update final status
+    await supabase
+      .from('llm_scans')
+      .update({ 
+        status: 'completed',
+        results: { progress: 100, data: results }
+      })
+      .eq('id', scanId);
 
     console.log('Scan completed successfully');
     return new Response(JSON.stringify({ results }), {
@@ -189,6 +164,23 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Scan error:', error);
+
+    // Update scan status to failed
+    if (error instanceof Error) {
+      try {
+        const { scanId } = await req.json();
+        await supabase
+          .from('llm_scans')
+          .update({ 
+            status: 'failed',
+            results: { error: error.message }
+          })
+          .eq('id', scanId);
+      } catch (updateError) {
+        console.error('Error updating scan status:', updateError);
+      }
+    }
+
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'Unknown error occurred',
       results: null 
