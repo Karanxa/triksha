@@ -36,20 +36,20 @@ const LLMResults = () => {
         query = query.eq('is_vulnerable', false);
       }
 
-      // Text search will be performed on the client side since we need to search in JSONB
       const { data, error } = await query;
 
       if (error) throw error;
 
       // Filter results based on search query if provided
       if (debouncedSearch && data) {
-        return data.filter(scan => {
+        return data.filter((scan: LLMScan) => {
           const results = scan.results || {};
-          const prompt = results.prompt || '';
-          const response = results.model_response || '';
+          const promptText = (results.prompt || '').toString();
+          const responseText = (results.model_response || '').toString();
           const searchLower = debouncedSearch.toLowerCase();
-          return prompt.toLowerCase().includes(searchLower) || 
-                 response.toLowerCase().includes(searchLower);
+          
+          return promptText.toLowerCase().includes(searchLower) || 
+                 responseText.toLowerCase().includes(searchLower);
         });
       }
 
