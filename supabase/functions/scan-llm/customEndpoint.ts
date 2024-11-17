@@ -21,17 +21,18 @@ export async function handleCustomEndpoint(
       url = 'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt';
     }
 
-    // Skip health check for internal endpoints
-    if (!url.includes('localhost') && 
-        !url.includes('127.0.0.1') && 
-        !url.includes('10.83.33.100') &&
-        !url.includes('supabase.co')) {
+    // Skip health check for trusted endpoints
+    const isTrustedEndpoint = url.includes('localhost') || 
+                             url.includes('127.0.0.1') || 
+                             url.includes('10.83.33.100') ||
+                             url.includes('supabase.co') ||
+                             url.includes('fkcloud.in');
+
+    if (!isTrustedEndpoint) {
       const isHealthy = await checkEndpointHealth(url);
       if (!isHealthy) {
-        console.error('Endpoint health check failed for URL:', url);
-        return {
-          error: 'External endpoint is not accessible. Please check the URL and try again.'
-        };
+        console.error('External endpoint health check failed for URL:', url);
+        throw new Error('External endpoint is not accessible');
       }
     }
 

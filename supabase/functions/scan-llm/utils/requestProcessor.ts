@@ -9,21 +9,29 @@ export async function processCustomEndpointRequest(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    let result;
     switch (config.inputType) {
       case 'curl':
-        return await processCurlRequest(prompt, config, controller.signal);
+        result = await processCurlRequest(prompt, config, controller.signal);
+        break;
       case 'http':
-        return await processHttpRequest(prompt, config, controller.signal);
+        result = await processHttpRequest(prompt, config, controller.signal);
+        break;
       case 'manual':
-        return await processManualRequest(prompt, config, controller.signal);
+        result = await processManualRequest(prompt, config, controller.signal);
+        break;
       default:
         throw new Error(`Unsupported input type: ${config.inputType}`);
     }
+
+    if (!result) {
+      throw new Error('No response received from endpoint');
+    }
+
+    return result;
   } catch (error) {
     if (error.name === 'AbortError') {
-      return {
-        error: `Request timed out after ${timeoutMs/1000} seconds`
-      };
+      throw new Error(`Request timed out after ${timeoutMs/1000} seconds`);
     }
     throw error;
   } finally {
@@ -71,22 +79,27 @@ async function processCurlRequest(
     llm_endpoint: "http://saq-v7-fk-gpt-char-fix-modelhost.mlp-h100-modelhost-prod.fkcloud.in/predict"
   };
 
-  const response = await fetch('http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody),
-    signal
-  });
+  try {
+    const response = await fetch('http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+      signal
+    });
 
-  if (!response.ok) {
-    throw new Error(`Custom endpoint returned status ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Custom endpoint returned status ${response.status}`);
+    }
+
+    const result = await response.json();
+    return {
+      model_response: JSON.stringify(result),
+      raw_response: result
+    };
+  } catch (error) {
+    console.error('Error in curl request:', error);
+    throw error;
   }
-
-  const result = await response.json();
-  return {
-    model_response: JSON.stringify(result),
-    raw_response: result
-  };
 }
 
 async function processHttpRequest(
