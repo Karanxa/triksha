@@ -3,6 +3,17 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface DeleteButtonProps {
   scanId: string;
@@ -13,51 +24,68 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
   const deleteScan = useMutation({
     mutationFn: async () => {
-      console.log('Attempting to delete scan:', scanId);
-      
-      const { error, data } = await supabase
-        .from('llm_scans')
+      // First delete all related scan results
+      const { error: resultsError } = await supabase
+        .from('llm_scan_results')
         .delete()
-        .eq('id', scanId)
-        .select();
+        .eq('batch_id', scanId);
 
-      if (error) {
-        console.error("Error deleting scan:", error);
-        throw error;
+      if (resultsError) {
+        console.error("Error deleting scan results:", resultsError);
+        throw resultsError;
       }
 
-      console.log('Successfully deleted scan:', data);
-      return data;
+      // Then delete the main scan record
+      const { error: scanError } = await supabase
+        .from('llm_scans')
+        .delete()
+        .eq('id', scanId);
+
+      if (scanError) {
+        console.error("Error deleting scan:", scanError);
+        throw scanError;
+      }
+
+      return scanId;
     },
     onSuccess: () => {
-      // Immediately invalidate and refetch
-      queryClient.invalidateQueries({ 
-        queryKey: ['llm-scans']
-      });
+      queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
       toast.success("Scan deleted successfully");
     },
     onError: (error: any) => {
       console.error("Delete error:", error);
-      toast.error(`Failed to delete scan: ${error.message}`);
+      toast.error("Failed to delete scan");
     },
   });
 
-  const handleDelete = async () => {
-    try {
-      await deleteScan.mutateAsync();
-    } catch (error) {
-      console.error('Delete operation failed:', error);
-    }
-  };
-
   return (
-    <Button
-      variant="destructive"
-      size="sm"
-      onClick={handleDelete}
-      disabled={deleteScan.isPending}
-    >
-      <Trash2 className="h-4 w-4" />
-    </Button>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={deleteScan.isPending}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete the scan and all its associated results.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => deleteScan.mutate()}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
