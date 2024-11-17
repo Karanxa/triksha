@@ -61,8 +61,10 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
   
-  // Get model information
-  const modelName = responses?.model || 'Unknown Model';
+  // Get exact model name from responses
+  const modelName = Array.isArray(results.responses) && results.responses[0]?.model 
+    ? results.responses[0].model 
+    : 'Unknown Model';
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
