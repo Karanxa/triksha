@@ -45,33 +45,6 @@ const formatScanType = (scanType: string | null) => {
   ).join(' ');
 };
 
-const formatRawResponse = (rawResponse: any, provider?: string) => {
-  if (!rawResponse) return 'No raw response available';
-  
-  // Keep the original response structure based on the provider
-  switch (provider?.split('-')[0]) {
-    case 'openai':
-      // OpenAI format - keep original structure
-      return JSON.stringify(rawResponse, null, 2);
-      
-    case 'anthropic':
-      // Anthropic format - keep original structure
-      return JSON.stringify(rawResponse, null, 2);
-      
-    case 'gemini':
-      // Gemini format - keep original structure
-      return JSON.stringify(rawResponse, null, 2);
-      
-    case 'ollama':
-      // Ollama format - keep original structure
-      return JSON.stringify(rawResponse, null, 2);
-      
-    default:
-      // For custom endpoints or unknown providers, show the raw response
-      return JSON.stringify(rawResponse, null, 2);
-  }
-};
-
 interface ResultsTableRowProps {
   scan: LLMScan;
   formatDate: (date: string) => string;
@@ -119,8 +92,8 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       </TableCell>
       <TableCell className="py-2">
         <TruncatedCell
-          content={formatRawResponse(rawResponse, provider)}
-          onContentClick={() => onContentClick("Raw Response", formatRawResponse(rawResponse, provider))}
+          content={JSON.stringify(rawResponse, null, 2)}
+          onContentClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
         />
       </TableCell>
       <TableCell className="py-2">
