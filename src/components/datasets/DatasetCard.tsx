@@ -98,16 +98,34 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
       </CardContent>
       <CardFooter className="flex gap-2">
         {isGitHub ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={handleCloneRepo}
-            disabled={!dataset.url}
-          >
-            <GitFork className="mr-2 h-4 w-4" />
-            Clone Repository
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={handleCloneRepo}
+              disabled={!dataset.url}
+            >
+              <GitFork className="mr-2 h-4 w-4" />
+              Clone Repository
+            </Button>
+            {dataset.url && (
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+              >
+                <a 
+                  href={dataset.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+            )}
+          </>
         ) : (
           <>
             <Button
