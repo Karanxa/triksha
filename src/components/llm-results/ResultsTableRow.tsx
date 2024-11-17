@@ -2,7 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Code } from "lucide-react";
 import { LLMScan } from "./types";
 import {
   Tooltip,
@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 const CategoryBadge = ({ category }: { category: string }) => {
   return (
@@ -61,7 +62,6 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
   
-  // Get exact model name from responses
   const modelName = Array.isArray(results.responses) && results.responses[0]?.model 
     ? results.responses[0].model 
     : 'Unknown Model';
@@ -94,16 +94,21 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         />
       </TableCell>
       <TableCell className="py-2">
-        <TruncatedCell
-          content={response}
-          onContentClick={() => onContentClick("Response", response)}
-        />
-      </TableCell>
-      <TableCell className="py-2">
-        <TruncatedCell
-          content={JSON.stringify(rawResponse, null, 2)}
-          onContentClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
-        />
+        <div className="space-y-2">
+          <TruncatedCell
+            content={response}
+            onContentClick={() => onContentClick("Response", response)}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-1 text-xs"
+            onClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
+          >
+            <Code className="h-3 w-3" />
+            View Raw Response
+          </Button>
+        </div>
       </TableCell>
       <TableCell className="py-2">
         <CategoryBadge category={category} />
