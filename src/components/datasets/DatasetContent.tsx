@@ -14,28 +14,39 @@ interface DatasetContentProps {
 export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
   if (!content) return null
 
-  return viewType === 'table' ? (
-    <ScrollArea className="h-[60vh]">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {content.headers.map((header, i) => (
-              <TableHead key={i}>{header}</TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {content.data.map((row, i) => (
-            <TableRow key={i}>
-              {row.map((cell, j) => (
-                <TableCell key={j}>{cell}</TableCell>
+  if (viewType === 'table' && content.type === 'csv') {
+    return (
+      <ScrollArea className="h-[60vh]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {content.headers.map((header, i) => (
+                <TableHead key={i} className="whitespace-nowrap">
+                  {header}
+                </TableHead>
               ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </ScrollArea>
-  ) : (
+          </TableHeader>
+          <TableBody>
+            {content.data.map((row, i) => (
+              <TableRow key={i}>
+                {row.map((cell, j) => (
+                  <TableCell 
+                    key={j} 
+                    className="max-w-xl break-words"
+                  >
+                    {cell}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+    )
+  }
+
+  return (
     <ScrollArea className="h-[60vh]">
       <pre className="whitespace-pre-wrap p-4 bg-muted rounded-lg">
         {content.raw}
