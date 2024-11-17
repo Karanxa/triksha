@@ -12,16 +12,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('No authorization header');
@@ -76,7 +77,11 @@ serve(async (req) => {
           let response;
           
           if (customEndpoint) {
+            console.log('Processing custom endpoint request for prompt:', prompt);
             response = await handleCustomEndpoint(prompt, customEndpoint);
+            if (response.error) {
+              throw new Error(response.error);
+            }
           } else {
             switch (baseProvider) {
               case 'openai':
@@ -167,6 +172,7 @@ serve(async (req) => {
       });
 
     } catch (processingError) {
+      console.error('Processing error:', processingError);
       // Update scan status to failed with error details
       await supabase
         .from('llm_scans')

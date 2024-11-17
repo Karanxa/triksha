@@ -9,27 +9,37 @@ export async function handleCustomEndpoint(
   config: CustomEndpointConfig
 ): Promise<any> {
   try {
-    console.log('Processing custom endpoint request:', { inputType: config.inputType });
+    console.log('Processing custom endpoint request:', { 
+      inputType: config.inputType,
+      method: config.method,
+      url: config.url 
+    });
     
     // Extract base URL for health check
-    const url = config.inputType === 'curl' ? 
-      'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt' : 
-      config.url;
+    let url = config.url;
+    if (config.inputType === 'curl') {
+      url = 'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt';
+    }
 
     // Check endpoint health first
     const isHealthy = await checkEndpointHealth(url);
     if (!isHealthy) {
+      console.error('Endpoint health check failed for URL:', url);
       return {
-        error: 'Endpoint is not accessible or not responding'
+        error: 'Endpoint is not accessible or not responding. Please check the URL and try again.'
       };
     }
 
     // Process the request with timeout
-    return await processCustomEndpointRequest(prompt, config, TIMEOUT_MS);
+    const result = await processCustomEndpointRequest(prompt, config, TIMEOUT_MS);
+    console.log('Custom endpoint request completed successfully');
+    return result;
   } catch (error) {
     console.error('Custom endpoint error:', error);
     return {
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+      error: error instanceof Error ? 
+        `Custom endpoint error: ${error.message}` : 
+        'Unknown error occurred while processing the request'
     };
   }
 }
