@@ -11,19 +11,13 @@ const LLMResults = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSeverity, setSelectedSeverity] = useState("all");
   const [vulnerabilityStatus, setVulnerabilityStatus] = useState("all");
+  const [selectedProvider, setSelectedProvider] = useState("all");
   
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const { data: scans, isLoading } = useQuery({
-    queryKey: ['llm-scans', debouncedSearch, selectedCategory, selectedSeverity, vulnerabilityStatus],
+    queryKey: ['llm-scans', debouncedSearch, selectedCategory, selectedSeverity, vulnerabilityStatus, selectedProvider],
     queryFn: async () => {
-      console.log('Fetching scans with filters:', {
-        search: debouncedSearch,
-        category: selectedCategory,
-        severity: selectedSeverity,
-        vulnerability: vulnerabilityStatus
-      });
-
       let query = supabase
         .from('llm_scans')
         .select('*')
@@ -50,10 +44,10 @@ const LLMResults = () => {
         throw error;
       }
 
-      console.log('Fetched scans:', data);
+      let filteredData = data as LLMScan[];
 
       if (debouncedSearch) {
-        return data.filter((scan: LLMScan) => {
+        filteredData = filteredData.filter((scan: LLMScan) => {
           const results = scan.results || {};
           const promptText = String(results.prompt || '');
           const responseText = String(results.model_response || '');
@@ -64,7 +58,14 @@ const LLMResults = () => {
         });
       }
 
-      return data as LLMScan[];
+      if (selectedProvider !== 'all') {
+        filteredData = filteredData.filter((scan: LLMScan) => {
+          const provider = scan.results?.responses?.[0]?.provider || '';
+          return provider.toLowerCase() === selectedProvider.toLowerCase();
+        });
+      }
+
+      return filteredData;
     },
     refetchOnWindowFocus: true,
     staleTime: 0,
@@ -95,6 +96,8 @@ const LLMResults = () => {
         setSelectedSeverity={setSelectedSeverity}
         vulnerabilityStatus={vulnerabilityStatus}
         setVulnerabilityStatus={setVulnerabilityStatus}
+        selectedProvider={selectedProvider}
+        setSelectedProvider={setSelectedProvider}
       />
       
       <ResultsTable scans={scans || []} />

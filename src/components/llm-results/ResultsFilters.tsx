@@ -12,6 +12,8 @@ interface ResultsFiltersProps {
   setSelectedSeverity: (value: string) => void;
   vulnerabilityStatus: string;
   setVulnerabilityStatus: (value: string) => void;
+  selectedProvider: string;
+  setSelectedProvider: (value: string) => void;
 }
 
 export const ResultsFilters = ({
@@ -22,11 +24,13 @@ export const ResultsFilters = ({
   selectedSeverity,
   setSelectedSeverity,
   vulnerabilityStatus,
-  setVulnerabilityStatus
+  setVulnerabilityStatus,
+  selectedProvider,
+  setSelectedProvider
 }: ResultsFiltersProps) => {
   return (
     <div className="space-y-6 bg-card p-6 rounded-lg border mb-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="space-y-2">
           <Label>Search</Label>
           <Input
@@ -79,6 +83,22 @@ export const ResultsFilters = ({
               <SelectItem value="all">All</SelectItem>
               <SelectItem value="vulnerable">Vulnerable</SelectItem>
               <SelectItem value="secure">Secure</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Provider</Label>
+          <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select provider" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Providers</SelectItem>
+              <SelectItem value="openai">OpenAI</SelectItem>
+              <SelectItem value="anthropic">Anthropic</SelectItem>
+              <SelectItem value="google">Google AI</SelectItem>
+              <SelectItem value="ollama">Ollama</SelectItem>
             </SelectContent>
           </Select>
         </div>
