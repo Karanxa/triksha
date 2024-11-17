@@ -94,7 +94,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         />
       </TableCell>
       <TableCell className="py-2">
-        <div className="space-y-2">
+        <div className="flex items-center gap-2">
           <TruncatedCell
             content={response}
             onContentClick={() => onContentClick("Response", response)}
@@ -102,7 +102,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="text-xs text-muted-foreground hover:text-foreground h-auto py-0 px-1"
             onClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
           >
             raw
