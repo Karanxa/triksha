@@ -49,7 +49,9 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const results = scan.results || {};
   const prompt = results.prompt || 'No prompt available';
   const response = results.model_response || 'No response available';
-  const rawResponse = results.raw_response || results;
+  
+  // Get the raw response from the responses array if it exists, otherwise use the entire results object
+  const rawResponse = results.responses?.[0]?.raw_response || results;
   
   const category = scan.category || 'Uncategorized';
   const scanType = getScanType(results);
