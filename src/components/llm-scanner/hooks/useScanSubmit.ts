@@ -16,6 +16,13 @@ interface ScanSubmitProps {
   setResult: (result: any) => void;
 }
 
+interface EdgeFunctionResponse {
+  data?: {
+    results: any;
+  };
+  error?: string;
+}
+
 export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
   const [isScanning, setIsScanning] = useState(false);
 
@@ -108,13 +115,8 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         throw new Error(`Failed to create scan: ${scanError.message}`);
       }
 
-      // Set a timeout for the entire scan process
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Scan timed out after 60 seconds')), 60000);
-      });
-
-      // Call the edge function with a race against the timeout
-      const scanPromise = supabase.functions.invoke('scan-llm', {
+      // Call the edge function
+      const response = await supabase.functions.invoke('scan-llm', {
         body: {
           scanId: scanData.id,
           prompts: promptsToScan,
@@ -126,9 +128,8 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
           qps,
           customEndpoint
         }
-      });
+      }) as EdgeFunctionResponse;
 
-      const response = await Promise.race([scanPromise, timeoutPromise]);
       const scanDuration = Date.now() - scanStartTime;
       console.log(`Scan completed in ${scanDuration}ms`);
 
