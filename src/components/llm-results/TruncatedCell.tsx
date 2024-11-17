@@ -7,9 +7,9 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TruncatedCellProps {
-  content?: string;
+  content: string;
   title: string;
-  onContentClick: (title: string, content: string) => void;
+  onContentClick: () => void;
 }
 
 export const TruncatedCell = ({ content = "N/A", title, onContentClick }: TruncatedCellProps) => (
@@ -18,7 +18,7 @@ export const TruncatedCell = ({ content = "N/A", title, onContentClick }: Trunca
       <TooltipTrigger asChild>
         <div
           className="max-w-[200px] truncate cursor-pointer hover:text-primary transition-colors"
-          onClick={() => onContentClick(title, content)}
+          onClick={onContentClick}
         >
           {content}
         </div>
