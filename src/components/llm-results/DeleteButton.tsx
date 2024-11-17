@@ -24,17 +24,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
   const deleteScan = useMutation({
     mutationFn: async () => {
-      // First delete all related scan results
-      const { error: resultsError } = await supabase
-        .from('llm_scan_results')
-        .delete()
-        .eq('batch_id', scanId);
-
-      if (resultsError) {
-        throw new Error(`Failed to delete scan results: ${resultsError.message}`);
-      }
-
-      // Then delete the main scan record
+      // Delete the main scan record first
       const { error: scanError } = await supabase
         .from('llm_scans')
         .delete()
