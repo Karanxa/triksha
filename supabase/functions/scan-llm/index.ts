@@ -12,6 +12,8 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function processBatch(prompts: string[], provider: string, userId: string, qps: number, customEndpoint?: any) {
+  console.log('Processing batch:', { prompts, provider, customEndpoint });
+  
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('api_keys')
@@ -19,6 +21,7 @@ async function processBatch(prompts: string[], provider: string, userId: string,
     .single();
 
   if (profileError || !profile?.api_keys) {
+    console.error('Failed to fetch API keys:', profileError);
     throw new Error('Failed to fetch API keys');
   }
 
@@ -31,12 +34,16 @@ async function processBatch(prompts: string[], provider: string, userId: string,
     const batchPromises = batch.map(async (prompt) => {
       try {
         let rawResponse;
+        console.log('Processing prompt:', prompt);
 
         if (customEndpoint) {
+          console.log('Using custom endpoint:', customEndpoint);
           rawResponse = await handleCustomEndpoint(prompt, customEndpoint);
+          const processedResponse = processCustomEndpointResponse(rawResponse);
+          console.log('Processed response:', processedResponse);
           return {
             prompt,
-            model_response: processCustomEndpointResponse(rawResponse),
+            model_response: processedResponse,
             raw_response: rawResponse,
             timestamp: new Date().toISOString(),
           };
@@ -65,9 +72,12 @@ async function processBatch(prompts: string[], provider: string, userId: string,
             throw new Error(`Unsupported provider: ${baseProvider}`);
         }
 
+        const processedResponse = processCustomEndpointResponse(rawResponse);
+        console.log('Processed response:', processedResponse);
+        
         return {
           prompt,
-          model_response: processCustomEndpointResponse(rawResponse),
+          model_response: processedResponse,
           raw_response: rawResponse,
           timestamp: new Date().toISOString(),
         };
@@ -112,6 +122,7 @@ Deno.serve(async (req) => {
     }
 
     const { scanId, prompts, provider, category, customEndpoint, qps = 5 } = await req.json();
+    console.log('Received scan request:', { scanId, prompts, provider, category, customEndpoint });
 
     if (!prompts || !Array.isArray(prompts) || prompts.length === 0) {
       throw new Error('Invalid prompts array');
@@ -123,6 +134,7 @@ Deno.serve(async (req) => {
 
     // Process prompts and store results
     const results = await processBatch(prompts, provider, user.id, qps, customEndpoint);
+    console.log('Processed results:', results);
 
     // Update scan with results
     const { error: updateError } = await supabase
@@ -138,9 +150,11 @@ Deno.serve(async (req) => {
       .eq('id', scanId);
 
     if (updateError) {
+      console.error('Failed to update scan results:', updateError);
       throw new Error('Failed to update scan results');
     }
 
+    console.log('Scan completed successfully');
     return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

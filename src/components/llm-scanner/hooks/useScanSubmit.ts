@@ -42,7 +42,7 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     isRecurring: boolean;
     qps: number;
   }) => {
-    // Validate inputs based on whether it's a custom endpoint or not
+    // Validate inputs based on whether it's a custom endpoint or regular provider
     if (!customEndpoint && !provider) {
       toast.error("Please select a provider and model");
       return;
@@ -82,7 +82,27 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     try {
       const promptsToScan = scanType === "manual" ? [singlePrompt] : prompts;
 
+      // Create a new scan record first
+      const { data: scanData, error: scanError } = await supabase
+        .from('llm_scans')
+        .insert({
+          name: label || `Scan ${new Date().toISOString()}`,
+          category,
+          label,
+          schedule,
+          is_recurring: isRecurring,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (scanError) {
+        throw new Error(`Failed to create scan: ${scanError.message}`);
+      }
+
+      // Now submit the scan with the created ID
       const result = await onSubmit({
+        scanId: scanData.id,
         prompts: promptsToScan,
         provider: customEndpoint ? undefined : provider,
         category,
