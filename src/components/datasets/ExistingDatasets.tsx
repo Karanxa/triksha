@@ -1,13 +1,11 @@
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
-import { useToast } from "@/hooks/use-toast"
 import { useDebounce } from "@/hooks/useDebounce"
+import { useToast } from "@/hooks/use-toast"
 import { DatasetSearchControls } from "./DatasetSearchControls"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DatasetGrid } from "./DatasetGrid"
+import { DatasetSearchResults } from "./DatasetSearchResults"
+import { useDatasetQuery } from "@/hooks/useDatasetQuery"
 
 const ITEMS_PER_PAGE = 12
 
@@ -22,42 +20,12 @@ export const ExistingDatasets = () => {
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
-  const { data: datasets, isLoading, isFetching } = useQuery({
-    queryKey: ['datasets', selectedCategory, useCustomSearch, debouncedSearchQuery, page],
-    queryFn: async () => {
-      if (!selectedCategory && !debouncedSearchQuery) return { huggingface: [], github: [] }
-      
-      const { data, error } = await supabase.functions.invoke('fetch-datasets', {
-        body: { 
-          category: selectedCategory,
-          useCustomSearch,
-          searchQuery: useCustomSearch ? debouncedSearchQuery : undefined,
-          page,
-          perPage: ITEMS_PER_PAGE
-        }
-      })
-
-      if (error) {
-        if (error.message.includes("API key not found")) {
-          toast({
-            variant: "destructive",
-            title: "API Key Missing",
-            description: "Please add your API keys in the Settings page.",
-          })
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error fetching datasets",
-            description: error.message,
-          })
-        }
-        return { huggingface: [], github: [] }
-      }
-
-      return data
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    keepPreviousData: true
+  const { data: datasets, isLoading, isFetching } = useDatasetQuery({
+    selectedCategory,
+    useCustomSearch,
+    searchQuery: debouncedSearchQuery,
+    page,
+    perPage: ITEMS_PER_PAGE
   })
 
   const handleLoadMore = () => {
@@ -109,7 +77,6 @@ export const ExistingDatasets = () => {
     )
   }
 
-  // Accumulate datasets across pages
   const accumulatedDatasets = {
     huggingface: filterDatasets(datasets?.huggingface || []),
     github: filterDatasets(datasets?.github || [])
@@ -149,52 +116,14 @@ export const ExistingDatasets = () => {
             </h2>
           )}
           
-          <Tabs defaultValue="huggingface" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="huggingface" className="flex items-center gap-2">
-                Hugging Face
-                <span className="text-xs text-muted-foreground">
-                  ({accumulatedDatasets.huggingface.length})
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="github" className="flex items-center gap-2">
-                GitHub
-                <span className="text-xs text-muted-foreground">
-                  ({accumulatedDatasets.github.length})
-                </span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="huggingface">
-              <DatasetGrid
-                datasets={accumulatedDatasets.huggingface}
-                onLoadMore={handleLoadMore}
-                hasMore={accumulatedDatasets.huggingface.length >= page * ITEMS_PER_PAGE}
-                downloading={downloading}
-                onDownload={handleDownload}
-              />
-              {accumulatedDatasets.huggingface.length === 0 && (
-                <p className="text-center text-muted-foreground py-12">
-                  No Hugging Face datasets found
-                </p>
-              )}
-            </TabsContent>
-
-            <TabsContent value="github">
-              <DatasetGrid
-                datasets={accumulatedDatasets.github}
-                onLoadMore={handleLoadMore}
-                hasMore={accumulatedDatasets.github.length >= page * ITEMS_PER_PAGE}
-                downloading={downloading}
-                onDownload={handleDownload}
-              />
-              {accumulatedDatasets.github.length === 0 && (
-                <p className="text-center text-muted-foreground py-12">
-                  No GitHub datasets found
-                </p>
-              )}
-            </TabsContent>
-          </Tabs>
+          <DatasetSearchResults
+            accumulatedDatasets={accumulatedDatasets}
+            onLoadMore={handleLoadMore}
+            page={page}
+            itemsPerPage={ITEMS_PER_PAGE}
+            downloading={downloading}
+            onDownload={handleDownload}
+          />
 
           {datasets && Object.keys(datasets).length > 0 && 
            accumulatedDatasets.huggingface.length === 0 && 
