@@ -56,6 +56,7 @@ serve(async (req) => {
 
     let metadata = {}
     let prompts: string[] = []
+    let enhancedPrompts: string[] = []
     let fileContent = ''
     
     if (method === 'recipe') {
@@ -75,8 +76,8 @@ serve(async (req) => {
         .single()
 
       if (profile?.api_keys?.openai) {
-        // Enhance the prompts but don't store the enhanced versions
-        await enhanceRecipePrompts(prompts, { recipe, targetModel, numSamples }, profile.api_keys.openai)
+        // Enhance the prompts and store both versions
+        enhancedPrompts = await enhanceRecipePrompts(prompts, { recipe, targetModel, numSamples }, profile.api_keys.openai)
       }
     } else if (method === 'adversarial') {
       prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
@@ -88,8 +89,8 @@ serve(async (req) => {
         .single()
 
       if (profile?.api_keys?.openai) {
-        // Enhance the prompts but don't store the enhanced versions
-        await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
+        // Enhance the prompts and store both versions
+        enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
       }
       
       metadata = {
@@ -104,12 +105,13 @@ serve(async (req) => {
       prompts = [basePrompt]
     }
 
-    // Create CSV content with original prompts only
-    fileContent = 'prompt,category,method\n'
-    prompts.forEach((prompt) => {
+    // Create CSV content with both original and enhanced prompts
+    fileContent = 'prompt,enhanced_prompt,category,method\n'
+    prompts.forEach((prompt, index) => {
       if (prompt) {
         const escapedPrompt = prompt.replace(/"/g, '""')
-        fileContent += `"${escapedPrompt}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
+        const enhancedPrompt = enhancedPrompts[index] ? enhancedPrompts[index].replace(/"/g, '""') : ''
+        fileContent += `"${escapedPrompt}","${enhancedPrompt}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
       }
     })
 
