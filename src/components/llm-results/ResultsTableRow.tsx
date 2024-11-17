@@ -46,27 +46,28 @@ const formatScanType = (scanType: string | null) => {
   ).join(' ');
 };
 
-const getFullModelName = (provider: string, model: string): string => {
-  switch (provider?.toLowerCase()) {
-    case 'openai':
-      return model === 'gpt-4o' ? 'GPT-4 Opus' :
-             model === 'gpt-4o-mini' ? 'GPT-4 Opus Mini' :
-             model;
-    case 'anthropic':
-      return model === 'claude-3-opus-20240229' ? 'Claude 3 Opus' :
-             model === 'claude-3-sonnet-20240229' ? 'Claude 3 Sonnet' :
-             model;
-    case 'google':
-      return model === 'gemini-1.0-pro' ? 'Gemini Pro' :
-             model === 'gemini-1.0-ultra' ? 'Gemini Ultra' :
-             model;
-    case 'ollama':
-      return model === 'llama2' ? 'Llama 2' :
-             model === 'mistral' ? 'Mistral' :
-             model === 'codellama' ? 'Code Llama' :
-             model;
+const getFullModelName = (model: string): string => {
+  switch (model) {
+    case 'gpt-4o':
+      return 'GPT-4 Opus';
+    case 'gpt-4o-mini':
+      return 'GPT-4 Opus Mini';
+    case 'claude-3-opus-20240229':
+      return 'Claude 3 Opus';
+    case 'claude-3-sonnet-20240229':
+      return 'Claude 3 Sonnet';
+    case 'gemini-1.0-pro':
+      return 'Gemini Pro';
+    case 'gemini-1.0-ultra':
+      return 'Gemini Ultra';
+    case 'llama2':
+      return 'Llama 2';
+    case 'mistral':
+      return 'Mistral';
+    case 'codellama':
+      return 'Code Llama';
     default:
-      return model || 'Unknown Model';
+      return model;
   }
 };
 
@@ -89,9 +90,8 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
   
-  const provider = firstResponse?.provider || results.provider || 'Unknown Provider';
   const modelName = firstResponse?.model || results.model || 'Unknown Model';
-  const fullModelName = getFullModelName(provider, modelName);
+  const fullModelName = getFullModelName(modelName);
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
@@ -120,7 +120,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{provider}</p>
+              <p>{modelName}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

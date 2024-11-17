@@ -12,8 +12,8 @@ interface ResultsFiltersProps {
   setSelectedSeverity: (value: string) => void;
   vulnerabilityStatus: string;
   setVulnerabilityStatus: (value: string) => void;
-  selectedProvider: string;
-  setSelectedProvider: (value: string) => void;
+  selectedModel: string;
+  setSelectedModel: (value: string) => void;
 }
 
 export const ResultsFilters = ({
@@ -25,8 +25,8 @@ export const ResultsFilters = ({
   setSelectedSeverity,
   vulnerabilityStatus,
   setVulnerabilityStatus,
-  selectedProvider,
-  setSelectedProvider
+  selectedModel,
+  setSelectedModel
 }: ResultsFiltersProps) => {
   return (
     <div className="space-y-6 bg-card p-6 rounded-lg border mb-6">
@@ -88,17 +88,22 @@ export const ResultsFilters = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Provider</Label>
-          <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+          <Label>Model</Label>
+          <Select value={selectedModel} onValueChange={setSelectedModel}>
             <SelectTrigger>
-              <SelectValue placeholder="Select provider" />
+              <SelectValue placeholder="Select model" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Providers</SelectItem>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
-              <SelectItem value="google">Google AI</SelectItem>
-              <SelectItem value="ollama">Ollama</SelectItem>
+              <SelectItem value="all">All Models</SelectItem>
+              <SelectItem value="gpt-4o">GPT-4 Opus</SelectItem>
+              <SelectItem value="gpt-4o-mini">GPT-4 Opus Mini</SelectItem>
+              <SelectItem value="claude-3-opus-20240229">Claude 3 Opus</SelectItem>
+              <SelectItem value="claude-3-sonnet-20240229">Claude 3 Sonnet</SelectItem>
+              <SelectItem value="gemini-1.0-pro">Gemini Pro</SelectItem>
+              <SelectItem value="gemini-1.0-ultra">Gemini Ultra</SelectItem>
+              <SelectItem value="llama2">Llama 2</SelectItem>
+              <SelectItem value="mistral">Mistral</SelectItem>
+              <SelectItem value="codellama">Code Llama</SelectItem>
             </SelectContent>
           </Select>
         </div>
