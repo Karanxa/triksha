@@ -45,6 +45,26 @@ const formatScanType = (scanType: string | null) => {
   ).join(' ');
 };
 
+const formatRawResponse = (rawResponse: any) => {
+  if (!rawResponse) return 'No raw response available';
+  
+  const formattedResponse = {
+    id: rawResponse.id || '',
+    model: rawResponse.model || '',
+    usage: {
+      total_tokens: rawResponse.usage?.total_tokens || 0,
+      prompt_tokens: rawResponse.usage?.prompt_tokens || 0,
+      completion_tokens: rawResponse.usage?.completion_tokens || 0,
+      prompt_tokens_details: rawResponse.usage?.prompt_tokens_details || {},
+      completion_tokens_details: rawResponse.usage?.completion_tokens_details || {}
+    },
+    object: rawResponse.object || '',
+    choices: rawResponse.choices || []
+  };
+
+  return JSON.stringify(formattedResponse, null, 2);
+};
+
 interface ResultsTableRowProps {
   scan: LLMScan;
   formatDate: (date: string) => string;
@@ -91,8 +111,8 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       </TableCell>
       <TableCell className="py-2">
         <TruncatedCell
-          content={JSON.stringify(rawResponse, null, 2)}
-          onContentClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
+          content={formatRawResponse(rawResponse)}
+          onContentClick={() => onContentClick("Raw Response", formatRawResponse(rawResponse))}
         />
       </TableCell>
       <TableCell className="py-2">

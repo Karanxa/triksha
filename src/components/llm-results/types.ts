@@ -2,6 +2,7 @@ import { Database } from "@/integrations/supabase/types";
 
 export type LLMScan = Database['public']['Tables']['llm_scans']['Row'] & {
   results?: ScanResults | null;
+  scan_type?: string;
 };
 
 export interface ScanResults {
