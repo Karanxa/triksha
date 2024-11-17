@@ -9,7 +9,7 @@ import { LLMScan } from "./types";
 // Separate component for Category and Risk badges
 const CategoryRiskBadges = ({ category, severity }: { category: string; severity: string }) => {
   const getCategoryVariant = (cat: string): "default" | "destructive" | "secondary" | "outline" => {
-    const lowercaseCategory = cat.toLowerCase();
+    const lowercaseCategory = cat?.toLowerCase() || '';
     if (["jailbreaking", "prompt injection", "social engineering", "system prompt extraction", "unauthorized actions", "sensitive information disclosure"].includes(lowercaseCategory)) {
       return "destructive";
     }
@@ -23,7 +23,7 @@ const CategoryRiskBadges = ({ category, severity }: { category: string; severity
   };
 
   const getSeverityVariant = (sev: string): "default" | "destructive" | "secondary" | "outline" => {
-    const lowercaseSeverity = sev.toLowerCase();
+    const lowercaseSeverity = sev?.toLowerCase() || '';
     if (["critical", "high"].includes(lowercaseSeverity)) {
       return "destructive";
     }
@@ -69,10 +69,14 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results as any;
-  const prompt = results?.prompt || (results?.prompts && results.prompts[0]) || 'No prompt available';
-  const response = results?.model_response || 
-    (results?.responses && results.responses[0]?.model_response) || 
-    'No response available';
+  const prompt = typeof results?.prompts?.[0] === 'string' ? results.prompts[0] : 
+                typeof results?.prompt === 'string' ? results.prompt : 
+                'No prompt available';
+                
+  const response = typeof results?.responses?.[0]?.model_response === 'string' ? results.responses[0].model_response :
+                  typeof results?.model_response === 'string' ? results.model_response :
+                  'No response available';
+                  
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
