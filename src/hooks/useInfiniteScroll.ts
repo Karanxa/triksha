@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 
 export const useInfiniteScroll = (callback: () => void) => {
   const [isFetching, setIsFetching] = useState(false)
   const observer = useRef<IntersectionObserver | null>(null)
 
-  const lastElementRef = (node: HTMLElement | null) => {
+  const lastElementRef = useCallback((node: HTMLElement | null) => {
+    if (isFetching) return
+    
     if (observer.current) observer.current.disconnect()
     
     observer.current = new IntersectionObserver(entries => {
@@ -15,17 +17,11 @@ export const useInfiniteScroll = (callback: () => void) => {
     })
 
     if (node) observer.current.observe(node)
+  }, [callback, isFetching])
+
+  const resetFetching = () => {
+    setIsFetching(false)
   }
 
-  useEffect(() => {
-    if (!isFetching) return
-    
-    const timer = setTimeout(() => {
-      setIsFetching(false)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [isFetching])
-
-  return { lastElementRef, isFetching }
+  return { lastElementRef, isFetching, resetFetching }
 }

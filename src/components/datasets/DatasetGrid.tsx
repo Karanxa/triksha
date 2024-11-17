@@ -31,9 +31,11 @@ export const DatasetGrid = ({
   onDownload,
   isLoading
 }: DatasetGridProps) => {
-  const { lastElementRef, isFetching } = useInfiniteScroll(() => {
-    if (hasMore && !isLoading && !isFetching) {
+  const { lastElementRef, isFetching, resetFetching } = useInfiniteScroll(() => {
+    if (hasMore && !isLoading) {
       onLoadMore()
+      // Reset fetching state after the load more callback
+      setTimeout(resetFetching, 500)
     }
   })
 
@@ -43,7 +45,7 @@ export const DatasetGrid = ({
         {datasets.map((dataset, index) => (
           <div 
             key={dataset.id} 
-            ref={index === datasets.length - 1 ? lastElementRef : null}
+            ref={hasMore && index === datasets.length - 1 ? lastElementRef : null}
           >
             <DatasetCard
               dataset={dataset}
