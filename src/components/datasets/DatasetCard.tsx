@@ -29,7 +29,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
 
   const handleCloneRepo = async () => {
     const repoUrl = isGitHub 
-      ? dataset.url 
+      ? `${dataset.url}.git`
       : `https://huggingface.co/datasets/${dataset.id}`
 
     if (!repoUrl) {
@@ -38,7 +38,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
     }
     
     try {
-      const cloneCommand = `git clone ${repoUrl}.git`
+      const cloneCommand = `git clone ${repoUrl}`
       await navigator.clipboard.writeText(cloneCommand)
       toast.success("Git clone command copied to clipboard!")
     } catch (err) {
