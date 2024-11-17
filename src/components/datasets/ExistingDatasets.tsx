@@ -21,7 +21,7 @@ export const ExistingDatasets = () => {
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
-  const { data: datasets, isLoading, isFetching } = useDatasetQuery({
+  const { data: datasets = { huggingface: [], github: [] }, isLoading, isFetching } = useDatasetQuery({
     selectedCategory,
     useCustomSearch,
     searchQuery: debouncedSearchQuery,
