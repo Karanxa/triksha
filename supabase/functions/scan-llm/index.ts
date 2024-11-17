@@ -33,18 +33,27 @@ async function processBatch(prompts: string[], provider: string, userId: string,
     const batch = prompts.slice(i, i + batchSize);
     const batchPromises = batch.map(async (prompt) => {
       try {
-        let rawResponse;
+        let response;
         console.log('Processing prompt:', prompt);
 
         if (customEndpoint) {
           console.log('Using custom endpoint:', customEndpoint);
-          rawResponse = await handleCustomEndpoint(prompt, customEndpoint);
-          const processedResponse = processCustomEndpointResponse(rawResponse);
-          console.log('Processed response:', processedResponse);
+          response = await handleCustomEndpoint(prompt, customEndpoint);
+          console.log('Custom endpoint response:', response);
+          
+          // Ensure we have a valid response structure
+          if (response.error) {
+            return {
+              prompt,
+              error: response.error,
+              timestamp: new Date().toISOString(),
+            };
+          }
+          
           return {
             prompt,
-            model_response: processedResponse,
-            raw_response: rawResponse,
+            model_response: response.model_response,
+            raw_response: response.raw_response,
             timestamp: new Date().toISOString(),
           };
         }
@@ -54,38 +63,36 @@ async function processBatch(prompts: string[], provider: string, userId: string,
         switch (baseProvider) {
           case 'openai':
             if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
-            rawResponse = await handleOpenAIRequest(prompt, apiKeys.openai, model);
+            response = await handleOpenAIRequest(prompt, apiKeys.openai, model);
             break;
           case 'anthropic':
             if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
-            rawResponse = await handleAnthropicRequest(prompt, apiKeys.anthropic);
+            response = await handleAnthropicRequest(prompt, apiKeys.anthropic);
             break;
           case 'gemini':
             if (!apiKeys.gemini) throw new Error('Google API key not configured');
-            rawResponse = await handleGeminiRequest(prompt, apiKeys.gemini);
+            response = await handleGeminiRequest(prompt, apiKeys.gemini);
             break;
           case 'ollama':
             if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
-            rawResponse = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
+            response = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
             break;
           default:
             throw new Error(`Unsupported provider: ${baseProvider}`);
         }
 
-        const processedResponse = processCustomEndpointResponse(rawResponse);
-        console.log('Processed response:', processedResponse);
-        
+        const processedResponse = processCustomEndpointResponse(response);
         return {
           prompt,
           model_response: processedResponse,
-          raw_response: rawResponse,
+          raw_response: response,
           timestamp: new Date().toISOString(),
         };
       } catch (error) {
         console.error(`Error processing prompt "${prompt}":`, error);
         return {
           prompt,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
           timestamp: new Date().toISOString(),
         };
       }
@@ -161,7 +168,10 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Scan error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      results: null 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

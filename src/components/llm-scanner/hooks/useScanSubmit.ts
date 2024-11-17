@@ -121,31 +121,36 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
       console.log('Created scan record:', scanData);
 
       // Now submit the scan with the created ID
-      const result = await onSubmit({
-        scanId: scanData.id,
-        prompts: promptsToScan,
-        provider: customEndpoint ? undefined : provider,
-        category,
-        label,
-        schedule,
-        isRecurring,
-        qps,
-        customEndpoint
+      const response = await supabase.functions.invoke('scan-llm', {
+        body: {
+          scanId: scanData.id,
+          prompts: promptsToScan,
+          provider: customEndpoint ? undefined : provider,
+          category,
+          label,
+          schedule,
+          isRecurring,
+          qps,
+          customEndpoint
+        }
       });
 
-      console.log('Received scan result:', result);
+      console.log('Edge function response:', response);
 
-      if (!result) {
-        throw new Error('No result received from scan');
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      if (result.error) {
-        throw new Error(result.error);
+      if (!response.data) {
+        throw new Error('No response data received from scan');
       }
 
-      setResult(result);
+      const { results } = response.data;
+      console.log('Scan results:', results);
+
+      setResult(results);
       toast.success("Scan completed successfully");
-      return result;
+      return results;
     } catch (error) {
       console.error("Scan failed:", error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
