@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,10 +13,45 @@ serve(async (req) => {
   }
 
   try {
-    const { model, taskType, basicParams, advancedParams } = await req.json()
+    const { 
+      model,
+      taskType,
+      datasetType,
+      basicParams,
+      advancedParams,
+      userId
+    } = await req.json()
 
     // Generate Python script based on parameters
-    const script = generatePythonScript(model, taskType, basicParams, advancedParams)
+    const script = generatePythonScript(
+      model,
+      taskType,
+      datasetType,
+      basicParams,
+      advancedParams
+    )
+
+    // Store job in database
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    const { error: jobError } = await supabase
+      .from('fine_tuning_jobs')
+      .insert({
+        user_id: userId,
+        model,
+        status: 'pending',
+        parameters: {
+          taskType,
+          datasetType,
+          basicParams,
+          advancedParams
+        }
+      })
+
+    if (jobError) throw jobError
 
     return new Response(
       JSON.stringify({ script }),
@@ -28,10 +64,11 @@ serve(async (req) => {
     )
 
   } catch (error) {
+    console.error('Error in generate-finetuning-script:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
-        status: 400,
+        status: 500,
         headers: { 
           ...corsHeaders,
           'Content-Type': 'application/json'
@@ -44,6 +81,7 @@ serve(async (req) => {
 function generatePythonScript(
   model: string,
   taskType: string,
+  datasetType: string,
   basicParams: any,
   advancedParams: any
 ) {
@@ -67,14 +105,9 @@ training_args = TrainingArguments(
     weight_decay=${basicParams.weightDecay},
     optimizer="${basicParams.optimizer}",
     lr_scheduler_type="${basicParams.scheduler}",
-    evaluation_strategy="${basicParams.evaluationStrategy}",
-    save_strategy="${basicParams.saveStrategy}",
-    seed=${basicParams.randomSeed},
-    fp16=${advancedParams.precision === 'fp16'},
-    gradient_accumulation_steps=${advancedParams.gradientAccumulation},
-    max_grad_norm=${advancedParams.maxGradNorm},
-    ${advancedParams.memoryOptimization ? 'gradient_checkpointing=True,' : ''}
-    ${advancedParams.hardwareAcceleration ? 'use_cuda=True,' : ''}
+    gradient_accumulation_steps=${advancedParams.sft.gradientAccumulation},
+    fp16=${advancedParams.sft.mixedPrecision},
+    gradient_checkpointing=${advancedParams.sft.gradientCheckpointing},
 )
 
 # Load tokenizer and model

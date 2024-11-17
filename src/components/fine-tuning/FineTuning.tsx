@@ -1,11 +1,32 @@
+import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GenerateScript } from "./GenerateScript"
 import { JobHistory } from "./JobHistory"
+import { useSession } from "@supabase/auth-helpers-react"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { GoogleLogin } from "./GoogleLogin"
 
 export const FineTuning = () => {
+  const session = useSession()
+  const { toast } = useToast()
+  const [isGoogleAuthed, setIsGoogleAuthed] = useState(false)
+
   return (
     <div className="container py-8 space-y-6">
-      <h1 className="text-3xl font-bold">Fine-Tuning</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Fine-Tuning</h1>
+        <GoogleLogin 
+          onSuccess={() => setIsGoogleAuthed(true)}
+          onError={() => {
+            toast({
+              variant: "destructive",
+              title: "Google authentication failed",
+              description: "Please try again"
+            })
+          }}
+        />
+      </div>
       
       <Tabs defaultValue="generate" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
@@ -14,7 +35,7 @@ export const FineTuning = () => {
         </TabsList>
 
         <TabsContent value="generate">
-          <GenerateScript />
+          <GenerateScript isGoogleAuthed={isGoogleAuthed} />
         </TabsContent>
 
         <TabsContent value="history">

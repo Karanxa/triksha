@@ -1,54 +1,37 @@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 
 interface BasicParametersProps {
-  learningRate: string
-  setLearningRate: (value: string) => void
-  batchSize: string
-  setBatchSize: (value: string) => void
-  epochs: string
-  setEpochs: (value: string) => void
-  warmupSteps: string
-  setWarmupSteps: (value: string) => void
-  weightDecay: string
-  setWeightDecay: (value: string) => void
-  optimizer: string
-  setOptimizer: (value: string) => void
-  scheduler: string
-  setScheduler: (value: string) => void
-  evaluationStrategy: string
-  setEvaluationStrategy: (value: string) => void
-  saveStrategy: string
-  setSaveStrategy: (value: string) => void
-  randomSeed: string
-  setRandomSeed: (value: string) => void
+  params: {
+    learningRate: string
+    batchSize: string
+    epochs: string
+    warmupSteps: string
+    weightDecay: string
+    optimizer: string
+    scheduler: string
+    gradientClipping: string
+    earlyStoppingEnabled: boolean
+    validationSplit: string
+    dropoutRate: string
+    randomSeed: string
+    maxSteps: string
+    evaluationStrategy: string
+    loggingSteps: string
+    saveStrategy: string
+  }
+  onChange: (params: any) => void
 }
 
-export const BasicParameters = ({
-  learningRate,
-  setLearningRate,
-  batchSize,
-  setBatchSize,
-  epochs,
-  setEpochs,
-  warmupSteps,
-  setWarmupSteps,
-  weightDecay,
-  setWeightDecay,
-  optimizer,
-  setOptimizer,
-  scheduler,
-  setScheduler,
-  evaluationStrategy,
-  setEvaluationStrategy,
-  saveStrategy,
-  setSaveStrategy,
-  randomSeed,
-  setRandomSeed
-}: BasicParametersProps) => {
+export const BasicParameters = ({ params, onChange }: BasicParametersProps) => {
+  const handleChange = (key: string, value: string | boolean) => {
+    onChange({ ...params, [key]: value })
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h3 className="text-lg font-semibold">Basic Parameters</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -56,10 +39,10 @@ export const BasicParameters = ({
           <Label>Learning Rate</Label>
           <Input
             type="number"
-            value={learningRate}
-            onChange={(e) => setLearningRate(e.target.value)}
-            placeholder="0.0001"
+            value={params.learningRate}
+            onChange={(e) => handleChange("learningRate", e.target.value)}
             step="0.0001"
+            min="0"
           />
         </div>
 
@@ -67,9 +50,9 @@ export const BasicParameters = ({
           <Label>Batch Size</Label>
           <Input
             type="number"
-            value={batchSize}
-            onChange={(e) => setBatchSize(e.target.value)}
-            placeholder="32"
+            value={params.batchSize}
+            onChange={(e) => handleChange("batchSize", e.target.value)}
+            min="1"
           />
         </div>
 
@@ -77,9 +60,9 @@ export const BasicParameters = ({
           <Label>Epochs</Label>
           <Input
             type="number"
-            value={epochs}
-            onChange={(e) => setEpochs(e.target.value)}
-            placeholder="10"
+            value={params.epochs}
+            onChange={(e) => handleChange("epochs", e.target.value)}
+            min="1"
           />
         </div>
 
@@ -87,9 +70,9 @@ export const BasicParameters = ({
           <Label>Warmup Steps</Label>
           <Input
             type="number"
-            value={warmupSteps}
-            onChange={(e) => setWarmupSteps(e.target.value)}
-            placeholder="500"
+            value={params.warmupSteps}
+            onChange={(e) => handleChange("warmupSteps", e.target.value)}
+            min="0"
           />
         </div>
 
@@ -97,16 +80,19 @@ export const BasicParameters = ({
           <Label>Weight Decay</Label>
           <Input
             type="number"
-            value={weightDecay}
-            onChange={(e) => setWeightDecay(e.target.value)}
-            placeholder="0.01"
+            value={params.weightDecay}
+            onChange={(e) => handleChange("weightDecay", e.target.value)}
             step="0.01"
+            min="0"
           />
         </div>
 
         <div className="space-y-2">
           <Label>Optimizer</Label>
-          <Select value={optimizer} onValueChange={setOptimizer}>
+          <Select 
+            value={params.optimizer}
+            onValueChange={(value) => handleChange("optimizer", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select optimizer" />
             </SelectTrigger>
@@ -120,7 +106,10 @@ export const BasicParameters = ({
 
         <div className="space-y-2">
           <Label>Scheduler</Label>
-          <Select value={scheduler} onValueChange={setScheduler}>
+          <Select 
+            value={params.scheduler}
+            onValueChange={(value) => handleChange("scheduler", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select scheduler" />
             </SelectTrigger>
@@ -133,38 +122,45 @@ export const BasicParameters = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Evaluation Strategy</Label>
-          <Select value={evaluationStrategy} onValueChange={setEvaluationStrategy}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select evaluation strategy" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="steps">Steps</SelectItem>
-              <SelectItem value="epoch">Epoch</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label>Early Stopping</Label>
+          <Switch
+            checked={params.earlyStoppingEnabled}
+            onCheckedChange={(checked) => handleChange("earlyStoppingEnabled", checked)}
+          />
+        </div>
+
+        {/* Add remaining basic parameters */}
+        <div className="space-y-2">
+          <Label>Validation Split</Label>
+          <Input
+            type="number"
+            value={params.validationSplit}
+            onChange={(e) => handleChange("validationSplit", e.target.value)}
+            step="0.1"
+            min="0"
+            max="1"
+          />
         </div>
 
         <div className="space-y-2">
-          <Label>Save Strategy</Label>
-          <Select value={saveStrategy} onValueChange={setSaveStrategy}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select save strategy" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="steps">Steps</SelectItem>
-              <SelectItem value="epoch">Epoch</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label>Dropout Rate</Label>
+          <Input
+            type="number"
+            value={params.dropoutRate}
+            onChange={(e) => handleChange("dropoutRate", e.target.value)}
+            step="0.1"
+            min="0"
+            max="1"
+          />
         </div>
 
         <div className="space-y-2">
           <Label>Random Seed</Label>
           <Input
             type="number"
-            value={randomSeed}
-            onChange={(e) => setRandomSeed(e.target.value)}
-            placeholder="42"
+            value={params.randomSeed}
+            onChange={(e) => handleChange("randomSeed", e.target.value)}
+            min="0"
           />
         </div>
       </div>
