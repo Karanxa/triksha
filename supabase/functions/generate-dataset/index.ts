@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { generateAdversarialPrompts } from './adversarialGenerator.ts'
 import { enhanceWithOpenAI } from './openaiEnhancer.ts'
+import { generateRecipePrompts } from './recipeGenerator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +19,7 @@ serve(async (req) => {
 
     // Validate input
     if (!name || (method === "manual" && !basePrompt) || 
-        (method === "recipe" && !recipe) ||
+        (method === "recipe" && (!recipe || !targetModel)) ||
         (method === "adversarial" && !adversarialConfig)) {
       throw new Error('Missing required fields')
     }
@@ -42,17 +43,6 @@ serve(async (req) => {
       throw userError || new Error('User not found')
     }
 
-    // Fetch user's API keys
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || !profile?.api_keys?.openai) {
-      throw new Error('OpenAI API key not found. Please add it in the Settings page.')
-    }
-
     let metadata = {}
     let prompts: string[] = []
     let fileContent = ''
@@ -63,14 +53,23 @@ serve(async (req) => {
         targetModel,
         numSamples
       }
-      // Generate recipe-based prompts here
-      prompts = [`Recipe: ${recipe}, Target: ${targetModel}`] // Placeholder
+      // Generate recipe-based prompts
+      prompts = await generateRecipePrompts({ recipe, targetModel, numSamples })
+      console.log('Generated recipe prompts:', prompts)
     } else if (method === 'adversarial') {
       // Generate base adversarial prompts
       prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
       
-      // Enhance prompts using OpenAI with user's API key
-      prompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
+      // Enhance prompts using OpenAI
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.api_keys?.openai) {
+        prompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
+      }
       
       metadata = {
         ...adversarialConfig,
@@ -81,7 +80,6 @@ serve(async (req) => {
         basePrompt,
         numSamples
       }
-      // For manual method, use the base prompt directly
       prompts = [basePrompt]
     }
 
@@ -89,7 +87,6 @@ serve(async (req) => {
     fileContent = 'prompt,category,method\n'
     prompts.forEach((prompt) => {
       if (prompt) {
-        // Escape quotes and wrap the prompt in quotes
         const escapedPrompt = prompt.replace(/"/g, '""')
         fileContent += `"${escapedPrompt}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
       }
