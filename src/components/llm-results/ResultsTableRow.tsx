@@ -5,8 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { getScanType } from "@/utils/scanUtils";
 import { LLMScan } from "./types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-// Separate component for Category and Risk badges
 const CategoryRiskBadges = ({ category, severity }: { category: string; severity: string }) => {
   const getCategoryVariant = (cat: string): "default" | "destructive" | "secondary" | "outline" => {
     const lowercaseCategory = cat?.toLowerCase() || '';
@@ -77,10 +82,24 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const scanType = getScanType(results);
   const isVulnerable = scan.is_vulnerable;
 
+  const dateOnly = new Date(scan.created_at).toLocaleDateString();
+  const fullDateTime = new Date(scan.created_at).toLocaleString();
+
   return (
     <TableRow>
       <TableCell>{scanType}</TableCell>
-      <TableCell>{formatDate(scan.created_at)}</TableCell>
+      <TableCell>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger className="cursor-default">
+              {dateOnly}
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{fullDateTime}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </TableCell>
       <TableCell>
         <TruncatedCell
           content={prompt}
