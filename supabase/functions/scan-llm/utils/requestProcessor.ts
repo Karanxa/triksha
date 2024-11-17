@@ -1,4 +1,4 @@
-import { CustomEndpointConfig } from '../types';
+import { CustomEndpointConfig } from '../types.ts';
 
 export async function processCustomEndpointRequest(
   prompt: string,
@@ -73,29 +73,15 @@ async function processCurlRequest(
     signal
   });
 
-  const responseText = await response.text();
-  console.log('Raw response:', responseText);
-
   if (!response.ok) {
-    console.error('Custom endpoint error:', response.status, responseText);
-    return {
-      error: `Custom endpoint returned status ${response.status}: ${responseText}`
-    };
+    throw new Error(`Custom endpoint returned status ${response.status}`);
   }
 
-  try {
-    const result = JSON.parse(responseText);
-    console.log('Parsed response:', result);
-    return {
-      model_response: JSON.stringify(result),
-      raw_response: result
-    };
-  } catch (parseError) {
-    console.error('Error parsing response:', parseError);
-    return {
-      error: `Failed to parse response: ${responseText}`
-    };
-  }
+  const result = await response.json();
+  return {
+    model_response: JSON.stringify(result),
+    raw_response: result
+  };
 }
 
 async function processManualRequest(
@@ -117,15 +103,10 @@ async function processManualRequest(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Custom endpoint error:', response.status, errorText);
-    return {
-      error: `Custom endpoint returned status ${response.status}: ${errorText}`
-    };
+    throw new Error(`Custom endpoint returned status ${response.status}`);
   }
 
   const result = await response.json();
-  console.log('Custom endpoint response:', result);
   return {
     model_response: JSON.stringify(result),
     raw_response: result

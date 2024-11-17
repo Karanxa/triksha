@@ -1,6 +1,6 @@
-import { checkEndpointHealth } from './utils/healthCheck';
-import { processCustomEndpointRequest } from './utils/requestProcessor';
-import { CustomEndpointConfig } from './types';
+import { checkEndpointHealth } from './utils/healthCheck.ts';
+import { processCustomEndpointRequest } from './utils/requestProcessor.ts';
+import { CustomEndpointConfig } from './types.ts';
 
 const TIMEOUT_MS = 30000; // 30 second timeout for individual requests
 

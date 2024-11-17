@@ -1,11 +1,16 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/cors.ts';
-import { handleOpenAIRequest } from './providers/openai.ts';
-import { handleAnthropicRequest } from './providers/anthropic.ts';
-import { handleGeminiRequest } from './providers/gemini.ts';
-import { handleOllamaRequest } from './providers/ollama.ts';
-import { handleCustomEndpoint } from './customEndpoint.ts';
-import { processCustomEndpointResponse } from './responseProcessor.ts';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { handleCustomEndpoint } from "./customEndpoint.ts";
+import { handleOpenAIRequest } from "./providers/openai.ts";
+import { handleAnthropicRequest } from "./providers/anthropic.ts";
+import { handleGeminiRequest } from "./providers/gemini.ts";
+import { handleOllamaRequest } from "./providers/ollama.ts";
+import { processCustomEndpointResponse } from "./responseProcessor.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
