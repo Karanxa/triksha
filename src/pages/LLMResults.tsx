@@ -22,14 +22,17 @@ const LLMResults = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (selectedCategory && selectedCategory !== 'all') {
-        query = query.eq('category', selectedCategory);
+      // Only apply category filter if not "all"
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory.toLowerCase());
       }
 
-      if (selectedSeverity && selectedSeverity !== 'all') {
-        query = query.eq('severity', selectedSeverity);
+      // Only apply severity filter if not "all"
+      if (selectedSeverity !== 'all') {
+        query = query.eq('severity', selectedSeverity.toLowerCase());
       }
 
+      // Apply vulnerability status filter
       if (vulnerabilityStatus === 'vulnerable') {
         query = query.eq('is_vulnerable', true);
       } else if (vulnerabilityStatus === 'secure') {

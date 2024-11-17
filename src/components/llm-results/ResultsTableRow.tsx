@@ -69,8 +69,8 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results || {};
-  const prompt = typeof results.prompt === 'string' ? results.prompt : 'No prompt available';
-  const response = typeof results.model_response === 'string' ? results.model_response : 'No response available';
+  const prompt = results.prompt || 'No prompt available';
+  const response = results.model_response || 'No response available';
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
