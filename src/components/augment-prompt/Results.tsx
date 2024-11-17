@@ -1,3 +1,5 @@
+import { Progress } from "@/components/ui/progress";
+
 interface Result {
   original: string;
   augmented?: string;
@@ -6,14 +8,29 @@ interface Result {
 
 interface ResultsProps {
   results: Result[];
+  totalPrompts?: number;
+  processedPrompts?: number;
 }
 
-const Results = ({ results }: ResultsProps) => {
-  if (results.length === 0) return null;
+const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
+  if (!results.length && !totalPrompts) return null;
+
+  const progress = totalPrompts ? Math.round((processedPrompts || 0) / totalPrompts * 100) : 0;
 
   return (
     <div className="mt-8 space-y-6">
       <h2 className="text-xl font-semibold">Results</h2>
+      
+      {totalPrompts && processedPrompts !== undefined && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Processing prompts...</span>
+            <span>{processedPrompts.toLocaleString()} / {totalPrompts.toLocaleString()}</span>
+          </div>
+          <Progress value={progress} className="w-full" />
+        </div>
+      )}
+
       {results.map((result, index) => (
         <div key={index} className="p-4 rounded-lg border">
           <div className="mb-2">

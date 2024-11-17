@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FileUploadProps {
   onFileUpload: (prompts: string) => void;
@@ -50,8 +51,13 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
         return;
       }
 
+      // Add warning for large files
+      if (prompts.length > 10000) {
+        toast.warning(`Processing ${prompts.length.toLocaleString()} prompts may take some time. The system will provide real-time progress updates.`);
+      }
+
       onFileUpload(prompts.join("\n"));
-      toast.success(`${prompts.length} prompts loaded successfully`);
+      toast.success(`${prompts.length.toLocaleString()} prompts loaded successfully`);
       
       // Reset input
       event.target.value = '';
@@ -82,6 +88,11 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
         className="hidden"
         onChange={handleFileUpload}
       />
+      <Alert className="mt-2">
+        <AlertDescription>
+          You can upload CSV files containing up to 100,000 prompts. For large files, progress will be shown in real-time.
+        </AlertDescription>
+      </Alert>
       <p className="text-sm text-muted-foreground mb-4">
         Upload a CSV file with a 'prompts' column
       </p>
