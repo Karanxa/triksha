@@ -6,7 +6,7 @@ export const ResultsTableHeader = () => {
       <TableRow>
         <TableHead>Scan Type</TableHead>
         <TableHead>Date</TableHead>
-        <TableHead>Provider</TableHead>
+        <TableHead>Model</TableHead>
         <TableHead>Prompt</TableHead>
         <TableHead>Response</TableHead>
         <TableHead>Raw JSON</TableHead>

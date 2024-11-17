@@ -3,7 +3,7 @@ import { Database } from "@/integrations/supabase/types";
 export type LLMScan = Database['public']['Tables']['llm_scans']['Row'] & {
   results?: ScanResults | null;
   scan_type?: string;
-  provider?: string;
+  model?: string;
 };
 
 export interface ScanResults {
@@ -22,7 +22,7 @@ export interface ScanResponse {
   raw_response?: any;
   error?: string;
   timestamp?: string;
-  provider?: string;
+  model?: string;
 }
 
 export interface TruncatedCellProps {
