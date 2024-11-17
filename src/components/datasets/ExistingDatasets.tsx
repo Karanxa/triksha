@@ -43,7 +43,8 @@ export const ExistingDatasets = () => {
 
       if (error) throw error
 
-      const blob = new Blob([data.content], { type: data.contentType })
+      // Create blob and trigger download
+      const blob = new Blob([data], { type: 'text/csv' })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -58,6 +59,7 @@ export const ExistingDatasets = () => {
         description: "Dataset downloaded successfully"
       })
     } catch (error: any) {
+      console.error('Download error:', error)
       toast({
         variant: "destructive",
         title: "Download failed",
@@ -111,7 +113,7 @@ export const ExistingDatasets = () => {
         <>
           {selectedCategory && !useCustomSearch && (
             <h2 className="text-2xl font-semibold mb-6">
-              Adversarial Datasets - {selectedCategory}
+              Public Datasets - {selectedCategory}
             </h2>
           )}
           

@@ -45,7 +45,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <h3 className="text-base font-medium leading-none">{dataset.title}</h3>
-          {isGitHub && dataset.url && (
+          {dataset.url && (
             <a 
               href={dataset.url} 
               target="_blank" 
@@ -80,7 +80,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
             <span>{dataset.likes} stars</span>
           </div>
 
-          {isGitHub && (
+          {isGitHub && dataset.topics?.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {dataset.language && (
                 <Badge variant="secondary" className="text-xs">
@@ -109,28 +109,24 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
             Clone Repository
           </Button>
         ) : (
-          <div className="grid grid-cols-2 gap-2 w-full">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => onDownload(dataset.id, 'csv')}
-              disabled={isDownloading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => onDownload(dataset.id, 'zip')}
-              disabled={isDownloading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              ZIP
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => onDownload(dataset.id, 'csv')}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <span className="flex items-center">
+                Downloading...
+              </span>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Download CSV
+              </>
+            )}
+          </Button>
         )}
       </CardFooter>
     </Card>
