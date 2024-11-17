@@ -75,7 +75,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
     if (Array.isArray(results.prompts) && results.prompts.length > 0) {
       return results.prompts[0];
     }
-    if (typeof results.prompt === 'string') {
+    if (results.prompt) {
       return results.prompt;
     }
     if (Array.isArray(results.responses) && results.responses[0]?.prompt) {
@@ -88,17 +88,17 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const response = (() => {
     if (Array.isArray(results.responses)) {
       const firstResponse = results.responses[0];
-      if (typeof firstResponse?.model_response === 'string') {
+      if (firstResponse?.model_response) {
         return firstResponse.model_response;
       }
-      if (typeof firstResponse?.response === 'string') {
+      if (firstResponse?.response) {
         return firstResponse.response;
       }
     }
-    if (typeof results.model_response === 'string') {
+    if (results.model_response) {
       return results.model_response;
     }
-    if (typeof results.response === 'string') {
+    if (results.response) {
       return results.response;
     }
     return 'No response available';
@@ -118,21 +118,21 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         <TruncatedCell
           content={prompt}
           title="Prompt"
-          onContentClick={onContentClick}
+          onContentClick={() => onContentClick("Prompt", prompt)}
         />
       </TableCell>
       <TableCell>
         <TruncatedCell
           content={response}
           title="Response"
-          onContentClick={onContentClick}
+          onContentClick={() => onContentClick("Response", response)}
         />
       </TableCell>
       <TableCell>
         <TruncatedCell
           content={rawJson}
           title="Raw JSON"
-          onContentClick={onContentClick}
+          onContentClick={() => onContentClick("Raw JSON", rawJson)}
         />
       </TableCell>
       <TableCell>
