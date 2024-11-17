@@ -78,18 +78,8 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     }
 
     setIsScanning(true);
-    console.log('Starting scan with params:', {
-      provider,
-      customEndpoint,
-      scanType,
-      prompts: scanType === "manual" ? [singlePrompt] : prompts,
-      category,
-      label,
-      schedule,
-      isRecurring,
-      qps
-    });
-
+    const scanStartTime = Date.now();
+    
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
@@ -118,10 +108,13 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         throw new Error(`Failed to create scan: ${scanError.message}`);
       }
 
-      console.log('Created scan record:', scanData);
+      // Set a timeout for the entire scan process
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Scan timed out after 60 seconds')), 60000);
+      });
 
-      // Now submit the scan with the created ID
-      const response = await supabase.functions.invoke('scan-llm', {
+      // Call the edge function with a race against the timeout
+      const scanPromise = supabase.functions.invoke('scan-llm', {
         body: {
           scanId: scanData.id,
           prompts: promptsToScan,
@@ -135,7 +128,9 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         }
       });
 
-      console.log('Edge function response:', response);
+      const response = await Promise.race([scanPromise, timeoutPromise]);
+      const scanDuration = Date.now() - scanStartTime;
+      console.log(`Scan completed in ${scanDuration}ms`);
 
       if (response.error) {
         throw new Error(response.error);
@@ -146,8 +141,6 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
       }
 
       const { results } = response.data;
-      console.log('Scan results:', results);
-
       setResult(results);
       toast.success("Scan completed successfully");
       return results;
