@@ -2,6 +2,16 @@ export function processCustomEndpointResponse(response: any): string {
   // Try to extract the response content from common API response formats
   if (typeof response === 'string') return response;
   
+  // Check for aegis response format
+  if (response.aegis_response?.evaluation_result) {
+    return JSON.stringify(response.aegis_response.evaluation_result);
+  }
+  
+  // Check for LLM response
+  if (response.llm_response?.response) {
+    return response.llm_response.response;
+  }
+  
   // Check for common response patterns
   if (response.response) return response.response;
   if (response.text) return response.text;

@@ -15,44 +15,40 @@ export async function handleCustomEndpoint(
     console.log('Processing custom endpoint request:', { inputType: config.inputType });
     
     if (config.inputType === 'curl') {
-      // Parse and execute curl command
-      const curlCommand = config.curlCommand.replace(
-        config.placeholder,
-        encodeURIComponent(prompt)
-      );
+      console.log('Processing cURL command with prompt:', prompt);
       
-      console.log('Parsed cURL command:', curlCommand);
-      
-      // Extract URL and method from curl command
-      const urlMatch = curlCommand.match(/curl\s+(?:-X\s+POST\s+)?['"]([^'"]+)['"]/);
-      if (!urlMatch) {
-        console.error('Invalid cURL command - URL not found');
-        throw new Error('Invalid cURL command - URL not found');
+      // Parse the curl command body
+      const bodyMatch = config.curlCommand.match(/--data\s+'(.+?)'/s);
+      if (!bodyMatch) {
+        throw new Error('Could not parse request body from cURL command');
       }
       
+      // Get the request body and parse it
+      let body = bodyMatch[1];
+      
+      // Replace the placeholder with the actual prompt
+      body = body.replace(new RegExp(config.placeholder, 'g'), prompt);
+      
+      // Parse URL from curl command
+      const urlMatch = config.curlCommand.match(/curl\s+.*?'(http[^']+)'/);
+      if (!urlMatch) {
+        throw new Error('Could not parse URL from cURL command');
+      }
       const url = urlMatch[1];
-      console.log('Extracted URL:', url);
       
       // Extract headers from curl command
       const headers: Record<string, string> = {
         'Content-Type': 'application/json'
       };
       
-      const headerMatches = curlCommand.matchAll(/-H\s+['"]([^:]+):\s*([^'"]+)['"]/g);
-      for (const match of headerMatches) {
+      const headerMatches = config.curlCommand.matchAll(/--header\s+'([^:]+):\s*([^']+)'/g);
+      for (const match of Array.from(headerMatches)) {
         headers[match[1].trim()] = match[2].trim();
       }
       
-      console.log('Extracted headers:', headers);
-      
-      // Extract body from curl command
-      const bodyMatch = curlCommand.match(/-d\s+['"](.+?)['"]/);
-      let body = bodyMatch ? bodyMatch[1] : JSON.stringify({ prompt });
-      
-      // Replace the placeholder in the body
-      body = body.replace(config.placeholder, prompt);
-      
-      console.log('Request body:', body);
+      console.log('Making request to:', url);
+      console.log('With headers:', headers);
+      console.log('With body:', body);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -61,13 +57,15 @@ export async function handleCustomEndpoint(
       });
       
       if (!response.ok) {
-        console.error('Custom endpoint error:', response.status, await response.text());
-        throw new Error(`Custom endpoint returned status ${response.status}`);
+        const errorText = await response.text();
+        console.error('Custom endpoint error:', response.status, errorText);
+        throw new Error(`Custom endpoint returned status ${response.status}: ${errorText}`);
       }
       
       const result = await response.json();
       console.log('Custom endpoint response:', result);
       return result;
+      
     } else {
       // Handle manual endpoint configuration
       const headers = {
@@ -83,8 +81,9 @@ export async function handleCustomEndpoint(
       });
       
       if (!response.ok) {
-        console.error('Custom endpoint error:', response.status, await response.text());
-        throw new Error(`Custom endpoint returned status ${response.status}`);
+        const errorText = await response.text();
+        console.error('Custom endpoint error:', response.status, errorText);
+        throw new Error(`Custom endpoint returned status ${response.status}: ${errorText}`);
       }
       
       const result = await response.json();
