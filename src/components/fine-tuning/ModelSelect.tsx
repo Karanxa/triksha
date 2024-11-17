@@ -15,9 +15,9 @@ export const ModelSelect = ({ model, setModel }: ModelSelectProps) => {
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="gpt-4o">GPT-4O</SelectItem>
-          <SelectItem value="gpt-4o-mini">GPT-4O Mini</SelectItem>
-          <SelectItem value="llama-2">Llama 2</SelectItem>
+          <SelectItem value="gpt-4o">GPT-4 Opus</SelectItem>
+          <SelectItem value="gpt-4o-mini">GPT-4 Opus Mini</SelectItem>
+          <SelectItem value="llama2">Llama 2</SelectItem>
         </SelectContent>
       </Select>
     </div>
