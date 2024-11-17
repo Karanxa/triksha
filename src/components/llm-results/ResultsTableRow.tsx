@@ -70,21 +70,24 @@ interface ResultsTableRowProps {
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results || {};
   
-  // Extract prompt from various possible locations in the results
-  const prompt = (() => {
+  // Extract all prompts from various possible locations
+  const prompts = (() => {
     if (Array.isArray(results.prompts) && results.prompts.length > 0) {
-      return results.prompts[0];
+      return results.prompts;
     }
     if (results.prompt) {
-      return results.prompt;
+      return [results.prompt];
     }
-    if (Array.isArray(results.responses) && results.responses[0]?.prompt) {
-      return results.responses[0].prompt;
+    if (Array.isArray(results.responses) && results.responses.some(r => r.prompt)) {
+      return results.responses.map(r => r.prompt || 'No prompt available');
     }
-    return 'No prompt available';
+    return ['No prompt available'];
   })();
 
-  // Extract response from various possible locations in the results
+  // Join all prompts with a separator for display
+  const promptsDisplay = prompts.join('\n---\n');
+
+  // Extract response from various possible locations
   const response = (() => {
     if (Array.isArray(results.responses)) {
       const firstResponse = results.responses[0];
@@ -116,9 +119,9 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell
-          content={prompt}
-          title="Prompt"
-          onContentClick={() => onContentClick("Prompt", prompt)}
+          content={promptsDisplay}
+          title="Prompts"
+          onContentClick={() => onContentClick("Prompts", promptsDisplay)}
         />
       </TableCell>
       <TableCell>

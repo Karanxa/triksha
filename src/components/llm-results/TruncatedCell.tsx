@@ -24,7 +24,7 @@ export const TruncatedCell = ({ content = "N/A", title, onContentClick }: Trunca
         </div>
       </TooltipTrigger>
       <TooltipContent side="bottom" align="start" className="max-w-[400px]">
-        <ScrollArea className="h-[100px]">
+        <ScrollArea className="h-[200px]">
           <p className="whitespace-pre-wrap">{content}</p>
         </ScrollArea>
       </TooltipContent>
