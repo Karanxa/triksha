@@ -6,6 +6,11 @@ export function processCustomEndpointResponse(response: any): string {
     return JSON.stringify({ error: response.error });
   }
   
+  // If we have a model_response, return it
+  if (response?.model_response) {
+    return response.model_response;
+  }
+  
   // Try to extract the response content from common API response formats
   if (typeof response === 'string') {
     try {

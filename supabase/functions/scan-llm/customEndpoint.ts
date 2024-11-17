@@ -64,7 +64,6 @@ export async function handleCustomEndpoint(
         llm_endpoint: "http://saq-v7-fk-gpt-char-fix-modelhost.mlp-h100-modelhost-prod.fkcloud.in/predict"
       };
       
-      // Extract URL from curl command - use the actual URL from config
       const url = 'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt';
       
       console.log('Making request to:', url);
@@ -92,7 +91,10 @@ export async function handleCustomEndpoint(
         try {
           const result = JSON.parse(responseText);
           console.log('Parsed response:', result);
-          return result;
+          return {
+            model_response: JSON.stringify(result),
+            raw_response: result
+          };
         } catch (parseError) {
           console.error('Error parsing response:', parseError);
           return {
@@ -130,12 +132,15 @@ export async function handleCustomEndpoint(
       
       const result = await response.json();
       console.log('Custom endpoint response:', result);
-      return result;
+      return {
+        model_response: JSON.stringify(result),
+        raw_response: result
+      };
     }
   } catch (error) {
     console.error('Custom endpoint error:', error);
     return {
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
     };
   }
 }

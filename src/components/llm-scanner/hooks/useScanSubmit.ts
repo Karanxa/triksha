@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types/common";
 
 interface CustomEndpoint {
   url: string;
@@ -79,6 +78,17 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     }
 
     setIsScanning(true);
+    console.log('Starting scan with params:', {
+      provider,
+      customEndpoint,
+      scanType,
+      prompts: scanType === "manual" ? [singlePrompt] : prompts,
+      category,
+      label,
+      schedule,
+      isRecurring,
+      qps
+    });
 
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -108,6 +118,8 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         throw new Error(`Failed to create scan: ${scanError.message}`);
       }
 
+      console.log('Created scan record:', scanData);
+
       // Now submit the scan with the created ID
       const result = await onSubmit({
         scanId: scanData.id,
@@ -121,6 +133,12 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         customEndpoint
       });
 
+      console.log('Received scan result:', result);
+
+      if (!result) {
+        throw new Error('No result received from scan');
+      }
+
       if (result.error) {
         throw new Error(result.error);
       }
@@ -130,7 +148,9 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
       return result;
     } catch (error) {
       console.error("Scan failed:", error);
-      toast.error(`Scan failed: ${(error as Error).message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Scan failed: ${errorMessage}`);
+      setResult({ error: errorMessage });
       return null;
     } finally {
       setIsScanning(false);
