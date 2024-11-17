@@ -8,11 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TruncatedCellProps {
   content: string;
-  title: string;
   onContentClick: () => void;
 }
 
-export const TruncatedCell = ({ content = "N/A", title, onContentClick }: TruncatedCellProps) => (
+export const TruncatedCell = ({ content = "N/A", onContentClick }: TruncatedCellProps) => (
   <TooltipProvider>
     <Tooltip>
       <TooltipTrigger asChild>
@@ -24,7 +23,7 @@ export const TruncatedCell = ({ content = "N/A", title, onContentClick }: Trunca
         </div>
       </TooltipTrigger>
       <TooltipContent side="bottom" align="start" className="max-w-[400px]">
-        <ScrollArea className="h-[200px]">
+        <ScrollArea className="h-[300px]">
           <p className="whitespace-pre-wrap">{content}</p>
         </ScrollArea>
       </TooltipContent>

@@ -70,42 +70,31 @@ interface ResultsTableRowProps {
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results || {};
   
-  // Extract all prompts from various possible locations
-  const prompts = (() => {
-    if (Array.isArray(results.prompts) && results.prompts.length > 0) {
-      return results.prompts;
+  // Extract all prompt-response pairs
+  const promptResponsePairs = (() => {
+    if (Array.isArray(results.responses)) {
+      return results.responses.map(response => ({
+        prompt: response.prompt || 'No prompt available',
+        response: response.model_response || response.response || 'No response available'
+      }));
     }
     if (results.prompt) {
-      return [results.prompt];
+      return [{
+        prompt: results.prompt,
+        response: results.model_response || results.response || 'No response available'
+      }];
     }
-    if (Array.isArray(results.responses) && results.responses.some(r => r.prompt)) {
-      return results.responses.map(r => r.prompt || 'No prompt available');
-    }
-    return ['No prompt available'];
+    return [{ prompt: 'No prompt available', response: 'No response available' }];
   })();
 
-  // Join all prompts with a separator for display
-  const promptsDisplay = prompts.join('\n---\n');
+  // Format prompts and responses for display
+  const promptsDisplay = promptResponsePairs
+    .map(pair => pair.prompt)
+    .join('\n---\n');
 
-  // Extract response from various possible locations
-  const response = (() => {
-    if (Array.isArray(results.responses)) {
-      const firstResponse = results.responses[0];
-      if (firstResponse?.model_response) {
-        return firstResponse.model_response;
-      }
-      if (firstResponse?.response) {
-        return firstResponse.response;
-      }
-    }
-    if (results.model_response) {
-      return results.model_response;
-    }
-    if (results.response) {
-      return results.response;
-    }
-    return 'No response available';
-  })();
+  const responsesDisplay = promptResponsePairs
+    .map(pair => `Prompt: ${pair.prompt}\nResponse: ${pair.response}`)
+    .join('\n\n---\n\n');
 
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
@@ -120,21 +109,18 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       <TableCell>
         <TruncatedCell
           content={promptsDisplay}
-          title="Prompts"
           onContentClick={() => onContentClick("Prompts", promptsDisplay)}
         />
       </TableCell>
       <TableCell>
         <TruncatedCell
-          content={response}
-          title="Response"
-          onContentClick={() => onContentClick("Response", response)}
+          content={responsesDisplay}
+          onContentClick={() => onContentClick("Responses", responsesDisplay)}
         />
       </TableCell>
       <TableCell>
         <TruncatedCell
           content={rawJson}
-          title="Raw JSON"
           onContentClick={() => onContentClick("Raw JSON", rawJson)}
         />
       </TableCell>
