@@ -43,7 +43,7 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
   // Check if all required inputs are filled
-  const areRequiredInputsFilled = model !== "" && datasetType !== "" && taskType !== "" && file !== null
+  const areRequiredInputsFilled = Boolean(model) && Boolean(datasetType) && Boolean(taskType) && Boolean(file)
 
   const handleGenerateScript = async () => {
     if (!isGoogleAuthed) {
