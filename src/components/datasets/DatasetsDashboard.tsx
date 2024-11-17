@@ -44,17 +44,47 @@ export const DatasetsDashboard = () => {
     try {
       setDownloading(datasetId)
       
-      const { data, error } = await supabase.functions.invoke('download-dataset', {
-        body: { datasetId, format }
-      })
+      const { data: dataset } = await supabase
+        .from('datasets')
+        .select('*')
+        .eq('id', datasetId)
+        .single()
 
-      if (error) throw error
+      if (!dataset?.file_path) {
+        throw new Error('Dataset file not found')
+      }
 
-      const blob = new Blob([data.content], { type: data.contentType })
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('datasets')
+        .download(dataset.file_path)
+
+      if (downloadError) throw downloadError
+
+      const content = await fileData.text()
+      let downloadContent = content
+      let contentType = 'text/plain'
+      let filename = dataset.name
+
+      if (format === 'csv') {
+        contentType = 'text/csv'
+        filename = `${filename}.csv`
+      } else if (format === 'zip') {
+        // Create a zip file containing the CSV
+        const zip = new JSZip()
+        zip.file(`${dataset.name}.csv`, content)
+        downloadContent = await zip.generateAsync({ type: 'blob' })
+        contentType = 'application/zip'
+        filename = `${filename}.zip`
+      } else {
+        filename = `${filename}.txt`
+      }
+
+      // Create blob and trigger download
+      const blob = new Blob([downloadContent], { type: contentType })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${datasetId.split('/').pop()}.${format}`
+      a.download = filename
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -116,5 +146,5 @@ export const DatasetsDashboard = () => {
         onClose={() => setViewingDataset(null)}
       />
     </div>
-  );
-};
+  )
+}
