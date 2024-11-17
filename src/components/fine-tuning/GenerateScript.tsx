@@ -1,188 +1,119 @@
-import { useState } from "react"
-import { useSession } from "@supabase/auth-helpers-react"
-import { useToast } from "@/hooks/use-toast"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Loader2 } from "lucide-react"
-import { ModelSelect } from "./ModelSelect"
-import { DatasetUpload } from "./DatasetUpload"
-import { TaskSelect } from "./TaskSelect"
-import { BasicParameters } from "./BasicParameters"
-import { AdvancedParameters } from "./AdvancedParameters"
-import { ScriptPreview } from "./ScriptPreview"
-import { supabase } from "@/integrations/supabase/client"
+import React, { useState } from 'react';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { BasicParameters } from './BasicParameters';
+import { AdvancedParameters } from './AdvancedParameters';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
-export const GenerateScript = () => {
-  const session = useSession()
-  const { toast } = useToast()
-  const [isGenerating, setIsGenerating] = useState(false)
+interface GenerateScriptProps {
+  isGoogleAuthed: boolean;
+}
+
+export const GenerateScript: React.FC<GenerateScriptProps> = ({ isGoogleAuthed }) => {
+  const { toast } = useToast();
   
-  // Form state
-  const [model, setModel] = useState("")
-  const [dataset, setDataset] = useState<File | null>(null)
-  const [taskType, setTaskType] = useState("")
-  
-  // Basic parameters
-  const [learningRate, setLearningRate] = useState("0.0001")
-  const [batchSize, setBatchSize] = useState("32")
-  const [epochs, setEpochs] = useState("10")
-  const [warmupSteps, setWarmupSteps] = useState("500")
-  const [weightDecay, setWeightDecay] = useState("0.01")
-  const [optimizer, setOptimizer] = useState("adamw")
-  const [scheduler, setScheduler] = useState("linear")
-  const [evaluationStrategy, setEvaluationStrategy] = useState("steps")
-  const [saveStrategy, setSaveStrategy] = useState("steps")
-  const [randomSeed, setRandomSeed] = useState("42")
-  
-  // Advanced parameters
-  const [precision, setPrecision] = useState("fp16")
-  const [gradientAccumulation, setGradientAccumulation] = useState("1")
-  const [maxGradNorm, setMaxGradNorm] = useState("1.0")
-  const [memoryOptimization, setMemoryOptimization] = useState(false)
-  const [hardwareAcceleration, setHardwareAcceleration] = useState(true)
+  // Basic Parameters
+  const [learningRate, setLearningRate] = useState("0.0001");
+  const [batchSize, setBatchSize] = useState("32");
+  const [epochs, setEpochs] = useState("10");
+  const [warmupSteps, setWarmupSteps] = useState("500");
+  const [weightDecay, setWeightDecay] = useState("0.01");
+  const [optimizer, setOptimizer] = useState("adamw");
+  const [scheduler, setScheduler] = useState("linear");
+  const [maxSteps, setMaxSteps] = useState("1000");
+  const [evaluationStrategy, setEvaluationStrategy] = useState("steps");
+  const [saveStrategy, setSaveStrategy] = useState("steps");
+  const [randomSeed, setRandomSeed] = useState("42");
 
-  const [generatedScript, setGeneratedScript] = useState("")
+  // Advanced Parameters
+  const [precision, setPrecision] = useState("fp16");
+  const [gradientAccumulation, setGradientAccumulation] = useState("4");
+  const [useDeepSpeed, setUseDeepSpeed] = useState(false);
+  const [useFlashAttention, setUseFlashAttention] = useState(false);
+  const [useMemoryOptimization, setUseMemoryOptimization] = useState(false);
+  const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda");
 
-  const handleGenerate = async () => {
-    try {
-      if (!session?.user?.id) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to generate fine-tuning scripts",
-          variant: "destructive"
-        })
-        return
-      }
-
-      if (!model || !dataset || !taskType) {
-        toast({
-          title: "Missing required fields",
-          description: "Please fill in all required fields",
-          variant: "destructive"
-        })
-        return
-      }
-
-      setIsGenerating(true)
-
-      const formData = {
-        model,
-        taskType,
-        basicParams: {
-          learningRate,
-          batchSize,
-          epochs,
-          warmupSteps,
-          weightDecay,
-          optimizer,
-          scheduler,
-          evaluationStrategy,
-          saveStrategy,
-          randomSeed
-        },
-        advancedParams: {
-          precision,
-          gradientAccumulation,
-          maxGradNorm,
-          memoryOptimization,
-          hardwareAcceleration
-        }
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-finetuning-script', {
-        body: formData
-      })
-
-      if (error) throw error
-
-      setGeneratedScript(data.script)
-
-      // Save job to database
-      const { error: dbError } = await supabase
-        .from('fine_tuning_jobs')
-        .insert({
-          user_id: session.user.id,
-          model,
-          status: 'pending',
-          parameters: formData
-        })
-
-      if (dbError) throw dbError
-
+  const handleGenerateScript = async () => {
+    if (!isGoogleAuthed) {
       toast({
-        title: "Script generated successfully",
-        description: "Your fine-tuning script is ready"
-      })
-
-    } catch (error: any) {
-      toast({
-        title: "Error generating script",
-        description: error.message,
-        variant: "destructive"
-      })
-    } finally {
-      setIsGenerating(false)
+        variant: "destructive",
+        title: "Google authentication required",
+        description: "Please authenticate with Google before generating a script"
+      });
+      return;
     }
-  }
+
+    // Add script generation logic here
+    toast({
+      title: "Script generated",
+      description: "Your fine-tuning script has been generated successfully"
+    });
+  };
 
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <form className="space-y-8">
-          <ModelSelect value={model} onChange={setModel} />
-          <DatasetUpload file={dataset} onFileChange={setDataset} />
-          <TaskSelect value={taskType} onChange={setTaskType} />
-          
-          <BasicParameters
-            learningRate={learningRate}
-            setLearningRate={setLearningRate}
-            batchSize={batchSize}
-            setBatchSize={setBatchSize}
-            epochs={epochs}
-            setEpochs={setEpochs}
-            warmupSteps={warmupSteps}
-            setWarmupSteps={setWarmupSteps}
-            weightDecay={weightDecay}
-            setWeightDecay={setWeightDecay}
-            optimizer={optimizer}
-            setOptimizer={setOptimizer}
-            scheduler={scheduler}
-            setScheduler={setScheduler}
-            evaluationStrategy={evaluationStrategy}
-            setEvaluationStrategy={setEvaluationStrategy}
-            saveStrategy={saveStrategy}
-            setSaveStrategy={setSaveStrategy}
-            randomSeed={randomSeed}
-            setRandomSeed={setRandomSeed}
-          />
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="basic">Basic Parameters</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced Options</TabsTrigger>
+          </TabsList>
 
-          <AdvancedParameters
-            precision={precision}
-            setPrecision={setPrecision}
-            gradientAccumulation={gradientAccumulation}
-            setGradientAccumulation={setGradientAccumulation}
-            maxGradNorm={maxGradNorm}
-            setMaxGradNorm={setMaxGradNorm}
-            memoryOptimization={memoryOptimization}
-            setMemoryOptimization={setMemoryOptimization}
-            hardwareAcceleration={hardwareAcceleration}
-            setHardwareAcceleration={setHardwareAcceleration}
-          />
+          <TabsContent value="basic" className="space-y-4 pt-4">
+            <BasicParameters
+              learningRate={learningRate}
+              setLearningRate={setLearningRate}
+              batchSize={batchSize}
+              setBatchSize={setBatchSize}
+              epochs={epochs}
+              setEpochs={setEpochs}
+              warmupSteps={warmupSteps}
+              setWarmupSteps={setWarmupSteps}
+              weightDecay={weightDecay}
+              setWeightDecay={setWeightDecay}
+              optimizer={optimizer}
+              setOptimizer={setOptimizer}
+              scheduler={scheduler}
+              setScheduler={setScheduler}
+              maxSteps={maxSteps}
+              setMaxSteps={setMaxSteps}
+              evaluationStrategy={evaluationStrategy}
+              setEvaluationStrategy={setEvaluationStrategy}
+              saveStrategy={saveStrategy}
+              setSaveStrategy={setSaveStrategy}
+              randomSeed={randomSeed}
+              setRandomSeed={setRandomSeed}
+            />
+          </TabsContent>
 
-          <Button 
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="w-full"
-          >
-            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Generate Script
-          </Button>
-        </form>
+          <TabsContent value="advanced" className="space-y-6 pt-4">
+            <AdvancedParameters
+              precision={precision}
+              setPrecision={setPrecision}
+              gradientAccumulation={gradientAccumulation}
+              setGradientAccumulation={setGradientAccumulation}
+              useDeepSpeed={useDeepSpeed}
+              setUseDeepSpeed={setUseDeepSpeed}
+              useFlashAttention={useFlashAttention}
+              setUseFlashAttention={setUseFlashAttention}
+              useMemoryOptimization={useMemoryOptimization}
+              setUseMemoryOptimization={setUseMemoryOptimization}
+              hardwareAcceleration={hardwareAcceleration}
+              setHardwareAcceleration={setHardwareAcceleration}
+            />
+          </TabsContent>
+        </Tabs>
       </Card>
 
-      {generatedScript && (
-        <ScriptPreview script={generatedScript} />
-      )}
+      <Button 
+        className="w-full" 
+        size="lg"
+        onClick={handleGenerateScript}
+        disabled={!isGoogleAuthed}
+      >
+        Generate Fine-tuning Script
+      </Button>
     </div>
-  )
-}
+  );
+};

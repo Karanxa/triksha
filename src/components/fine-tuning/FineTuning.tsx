@@ -4,7 +4,6 @@ import { GenerateScript } from "./GenerateScript"
 import { JobHistory } from "./JobHistory"
 import { useSession } from "@supabase/auth-helpers-react"
 import { useToast } from "@/hooks/use-toast"
-import { Button } from "@/components/ui/button"
 import { GoogleLogin } from "./GoogleLogin"
 
 export const FineTuning = () => {
