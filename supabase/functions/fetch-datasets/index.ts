@@ -87,7 +87,8 @@ serve(async (req) => {
             description: dataset.description || 'No description available',
             downloads: dataset.downloads || 0,
             likes: dataset.likes || 0,
-            source: 'huggingface'
+            source: 'huggingface',
+            url: `https://huggingface.co/datasets/${dataset.id}`
           }))
         }
       }
