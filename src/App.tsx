@@ -48,7 +48,7 @@ if (typeof window !== 'undefined') {
 
 const App = () => {
   return (
-    <GoogleOAuthProvider clientId={process.env.VITE_GOOGLE_CLIENT_ID || ''}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
       <QueryClientProvider client={queryClient}>
         <SessionContextProvider supabaseClient={supabase}>
           <TooltipProvider>
