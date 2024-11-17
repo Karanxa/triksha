@@ -21,13 +21,18 @@ export async function handleCustomEndpoint(
       url = 'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt';
     }
 
-    // Check endpoint health first
-    const isHealthy = await checkEndpointHealth(url);
-    if (!isHealthy) {
-      console.error('Endpoint health check failed for URL:', url);
-      return {
-        error: 'Endpoint is not accessible or not responding. Please check the URL and try again.'
-      };
+    // Skip health check for internal endpoints
+    if (!url.includes('localhost') && 
+        !url.includes('127.0.0.1') && 
+        !url.includes('10.83.33.100') &&
+        !url.includes('supabase.co')) {
+      const isHealthy = await checkEndpointHealth(url);
+      if (!isHealthy) {
+        console.error('Endpoint health check failed for URL:', url);
+        return {
+          error: 'External endpoint is not accessible. Please check the URL and try again.'
+        };
+      }
     }
 
     // Process the request with timeout
