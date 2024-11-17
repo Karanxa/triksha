@@ -34,6 +34,9 @@ async function processBatch(prompts: string[], provider: string, userId: string,
   const batchSize = qps;
   const results = [];
   
+  // Extract provider and model from the combined string (e.g., "openai-gpt4")
+  const [baseProvider, model] = provider ? provider.split('-') : [null, null];
+  
   for (let i = 0; i < prompts.length; i += batchSize) {
     const batch = prompts.slice(i, i + batchSize);
     const batchPromises = batch.map(async (prompt) => {
@@ -46,25 +49,17 @@ async function processBatch(prompts: string[], provider: string, userId: string,
           response = await handleCustomEndpoint(prompt, customEndpoint);
           console.log('Custom endpoint response:', response);
           
-          // Ensure we have a valid response structure
-          if (response.error) {
-            return {
-              prompt,
-              error: response.error,
-              timestamp: new Date().toISOString(),
-            };
-          }
-          
           return {
             prompt,
             model_response: response.model_response,
             raw_response: response.raw_response,
+            provider: 'custom',
+            model: 'custom-endpoint',
             timestamp: new Date().toISOString(),
           };
         }
 
         // Handle regular providers
-        const [baseProvider, model] = provider.split('-');
         switch (baseProvider) {
           case 'openai':
             if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
@@ -72,11 +67,11 @@ async function processBatch(prompts: string[], provider: string, userId: string,
             break;
           case 'anthropic':
             if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
-            response = await handleAnthropicRequest(prompt, apiKeys.anthropic);
+            response = await handleAnthropicRequest(prompt, apiKeys.anthropic, model);
             break;
           case 'gemini':
             if (!apiKeys.gemini) throw new Error('Google API key not configured');
-            response = await handleGeminiRequest(prompt, apiKeys.gemini);
+            response = await handleGeminiRequest(prompt, apiKeys.gemini, model);
             break;
           case 'ollama':
             if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
@@ -91,6 +86,8 @@ async function processBatch(prompts: string[], provider: string, userId: string,
           prompt,
           model_response: processedResponse,
           raw_response: response,
+          provider: baseProvider,
+          model: model,
           timestamp: new Date().toISOString(),
         };
       } catch (error) {
@@ -98,6 +95,8 @@ async function processBatch(prompts: string[], provider: string, userId: string,
         return {
           prompt,
           error: error instanceof Error ? error.message : 'Unknown error occurred',
+          provider: baseProvider,
+          model: model,
           timestamp: new Date().toISOString(),
         };
       }
@@ -114,7 +113,7 @@ async function processBatch(prompts: string[], provider: string, userId: string,
   return results;
 }
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
