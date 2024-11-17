@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types/common";
 
 interface CustomEndpoint {
   url: string;
@@ -80,12 +81,19 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     setIsScanning(true);
 
     try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error('Authentication required');
+      }
+
       const promptsToScan = scanType === "manual" ? [singlePrompt] : prompts;
 
-      // Create a new scan record first
+      // Create a new scan record first with the user_id
       const { data: scanData, error: scanError } = await supabase
         .from('llm_scans')
         .insert({
+          user_id: user.id,
           name: label || `Scan ${new Date().toISOString()}`,
           category,
           label,
