@@ -7,17 +7,16 @@ export const useInfiniteScroll = (callback: () => void) => {
   const lastElementRef = (node: HTMLElement | null) => {
     if (observer.current) observer.current.disconnect()
     
-    if (isFetching) return
-    
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
+      if (entries[0].isIntersecting && !isFetching) {
         setIsFetching(true)
         callback()
+        setIsFetching(false)
       }
     })
 
     if (node) observer.current.observe(node)
   }
 
-  return { lastElementRef, isFetching, setIsFetching }
+  return { lastElementRef }
 }

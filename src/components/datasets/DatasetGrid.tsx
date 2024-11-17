@@ -40,27 +40,18 @@ export const DatasetGrid = ({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {datasets.map((dataset, index) => {
-          if (datasets.length === index + 1) {
-            return (
-              <div key={dataset.id} ref={lastElementRef}>
-                <DatasetCard
-                  dataset={dataset}
-                  onDownload={onDownload}
-                  downloading={downloading}
-                />
-              </div>
-            )
-          }
-          return (
+        {datasets.map((dataset, index) => (
+          <div 
+            key={dataset.id} 
+            ref={index === datasets.length - 1 && hasMore ? lastElementRef : null}
+          >
             <DatasetCard
-              key={dataset.id}
               dataset={dataset}
               onDownload={onDownload}
               downloading={downloading}
             />
-          )
-        })}
+          </div>
+        ))}
       </div>
       
       {isLoading && (
