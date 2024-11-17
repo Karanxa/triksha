@@ -11,6 +11,7 @@ interface ResultsTableProps {
 
 export function ResultsTable({ scans }: ResultsTableProps) {
   const [selectedContent, setSelectedContent] = useState<{ title: string; content: string } | null>(null);
+  const [hiddenScans, setHiddenScans] = useState<Set<string>>(new Set());
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
@@ -20,17 +21,24 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     setSelectedContent({ title, content });
   };
 
+  const handleHideScan = (scanId: string) => {
+    setHiddenScans(prev => new Set([...prev, scanId]));
+  };
+
+  const visibleScans = scans.filter(scan => !hiddenScans.has(scan.id));
+
   return (
     <>
       <Table>
         <ResultsTableHeader />
         <TableBody>
-          {scans.map((scan) => (
+          {visibleScans.map((scan) => (
             <ResultsTableRow
               key={scan.id}
               scan={scan}
               formatDate={formatDate}
               onContentClick={handleContentClick}
+              onHide={handleHideScan}
             />
           ))}
         </TableBody>

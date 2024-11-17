@@ -1,6 +1,5 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
-import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, FileJson } from "lucide-react";
 import { LLMScan } from "./types";
@@ -11,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { HideButton } from "./HideButton";
 
 const CategoryBadge = ({ category }: { category: string }) => {
   return (
@@ -74,9 +74,10 @@ interface ResultsTableRowProps {
   scan: LLMScan;
   formatDate: (date: string) => string;
   onContentClick: (title: string, content: string) => void;
+  onHide: (scanId: string) => void;
 }
 
-export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
+export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
   const results = scan.results || {};
   const firstResponse = Array.isArray(results.responses) && results.responses.length > 0 
     ? results.responses[0] 
@@ -154,7 +155,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       </TableCell>
       <TableCell className="py-2">
         <div className="flex gap-2">
-          <DeleteButton scanId={scan.id} />
+          <HideButton scanId={scan.id} onHide={onHide} />
         </div>
       </TableCell>
     </TableRow>
