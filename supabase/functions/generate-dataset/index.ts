@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { generateAdversarialPrompts } from './adversarialGenerator.ts'
-import { enhanceWithOpenAI } from './openaiEnhancer.ts'
 import { generateRecipePrompts } from './recipeGenerator.ts'
 import { enhanceRecipePrompts } from './recipeEnhancer.ts'
 
@@ -69,18 +68,8 @@ serve(async (req) => {
         prompts = await enhanceRecipePrompts(prompts, { recipe, targetModel, numSamples }, profile.api_keys.openai)
       }
     } else if (method === 'adversarial') {
+      // Only generate adversarial prompts without enhancement
       prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('api_keys')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.api_keys?.openai) {
-        prompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
-      }
-      
       metadata = {
         ...adversarialConfig,
         numSamples

@@ -41,7 +41,7 @@ export const DatasetsDashboard = () => {
     dataset.category?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
 
-  const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
+  const handleDownload = async (datasetId: string, format: 'csv' | 'zip') => {
     try {
       setDownloading(datasetId)
       
@@ -77,10 +77,6 @@ export const DatasetsDashboard = () => {
         downloadContent = await zip.generateAsync({ type: 'blob' })
         contentType = 'application/zip'
         filename = `${filename}.zip`
-      } else {
-        contentType = 'text/plain'
-        filename = `${filename}.txt`
-        downloadContent = new Blob([content], { type: contentType })
       }
 
       const url = window.URL.createObjectURL(downloadContent)
