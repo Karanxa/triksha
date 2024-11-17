@@ -19,8 +19,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
         .from('llm_scans')
         .delete()
         .eq('id', scanId)
-        .select()
-        .single();
+        .select();
 
       if (error) {
         console.error("Error deleting scan:", error);
