@@ -109,7 +109,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
             Clone Repository
           </Button>
         ) : (
-          <div className="grid grid-cols-3 gap-2 w-full">
+          <div className="grid grid-cols-2 gap-2 w-full">
             <Button
               variant="outline"
               size="sm"
@@ -119,16 +119,6 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
             >
               <Download className="mr-2 h-4 w-4" />
               CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => onDownload(dataset.id, 'txt')}
-              disabled={isDownloading}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              TXT
             </Button>
             <Button
               variant="outline"

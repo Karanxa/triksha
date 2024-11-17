@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -19,7 +18,7 @@ serve(async (req) => {
       throw new Error('Dataset ID is required')
     }
 
-    // Initialize Supabase client with service role key
+    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -39,67 +38,93 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    console.log('Fetching dataset:', datasetId, 'for user:', user.id)
-
-    // Fetch dataset details
-    const { data: dataset, error: datasetError } = await supabase
-      .from('datasets')
-      .select('*')
-      .eq('id', datasetId)
-      .eq('user_id', user.id)
+    // Get user's API keys
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
       .single()
 
-    if (datasetError || !dataset) {
-      console.error('Dataset fetch error:', datasetError)
-      throw new Error('Failed to fetch dataset')
+    if (!profile?.api_keys?.huggingface) {
+      throw new Error('Hugging Face API key not found')
     }
 
-    if (!dataset.file_path) {
-      throw new Error('Dataset file not found')
-    }
+    // For Hugging Face datasets, fetch directly from their API
+    if (datasetId.includes('/')) {
+      console.log('Fetching Hugging Face dataset:', datasetId)
+      
+      const response = await fetch(`https://huggingface.co/api/datasets/${datasetId}/parquet`, {
+        headers: {
+          'Authorization': `Bearer ${profile.api_keys.huggingface}`,
+          'Accept': 'application/octet-stream'
+        }
+      })
 
-    console.log('Downloading file:', dataset.file_path)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch dataset from Hugging Face: ${response.statusText}`)
+      }
 
-    // Download file from storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from('datasets')
-      .download(dataset.file_path)
-
-    if (downloadError) {
-      console.error('File download error:', downloadError)
-      throw new Error('Failed to download file')
-    }
-
-    const content = await fileData.text()
-    let contentType: string
-    let filename = dataset.name
-
-    switch (format) {
-      case 'csv':
-        contentType = 'text/csv'
-        filename = `${filename}.csv`
-        break
-      case 'txt':
-        contentType = 'text/plain'
-        filename = `${filename}.txt`
-        break
-      case 'zip':
+      const content = await response.text()
+      
+      // Convert to requested format
+      let formattedContent = content
+      let contentType = 'text/csv'
+      
+      if (format === 'zip') {
+        // If zip format requested, we'll need to create a zip file
+        const encoder = new TextEncoder()
+        const zipData = encoder.encode(content)
         contentType = 'application/zip'
-        filename = `${filename}.zip`
-        break
-      default:
-        contentType = 'text/plain'
-        filename = `${filename}.txt`
+        formattedContent = String.fromCharCode.apply(null, Array.from(zipData))
+      }
+
+      return new Response(formattedContent, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${datasetId.split('/').pop()}.${format}"`,
+        },
+      })
+    } else {
+      // For locally stored datasets, fetch from Supabase storage
+      console.log('Fetching local dataset:', datasetId)
+
+      const { data: dataset, error: datasetError } = await supabase
+        .from('datasets')
+        .select('*')
+        .eq('id', datasetId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (datasetError || !dataset) {
+        console.error('Dataset fetch error:', datasetError)
+        throw new Error('Failed to fetch dataset')
+      }
+
+      if (!dataset.file_path) {
+        throw new Error('Dataset file not found')
+      }
+
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('datasets')
+        .download(dataset.file_path)
+
+      if (downloadError) {
+        console.error('File download error:', downloadError)
+        throw new Error('Failed to download file')
+      }
+
+      const content = await fileData.text()
+      let contentType = format === 'csv' ? 'text/csv' : 'application/zip'
+
+      return new Response(content, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${dataset.name}.${format}"`,
+        },
+      })
     }
-
-    return new Response(content, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-    })
-
   } catch (error) {
     console.error('Download dataset error:', error)
     return new Response(
