@@ -141,7 +141,27 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error(`Error processing prompt "${prompt}":`, error);
-          throw error;
+          // Store error result
+          const { data: errorResult } = await supabase
+            .from('llm_scan_results')
+            .insert({
+              scan_id: scanId,
+              user_id: user.id,
+              prompt,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+              provider: baseProvider || 'custom',
+              model: model || 'custom-endpoint',
+              category,
+            })
+            .select()
+            .single();
+          
+          if (errorResult) {
+            results.push(errorResult);
+          }
+          
+          // Continue with next prompt instead of failing entire batch
+          continue;
         }
       }
 
@@ -158,10 +178,13 @@ serve(async (req) => {
         })
         .eq('id', scanId);
 
-      console.log('Scan completed successfully');
-      return new Response(JSON.stringify({ results }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ results }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
 
     } catch (processingError) {
       console.error('Processing error:', processingError);
@@ -185,12 +208,14 @@ serve(async (req) => {
     console.error('Scan error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
-    return new Response(JSON.stringify({ 
-      error: errorMessage,
-      results: null 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: errorMessage,
+        results: null 
+      }), {
+        status: 200, // Return 200 even for errors to avoid Edge Function errors
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
