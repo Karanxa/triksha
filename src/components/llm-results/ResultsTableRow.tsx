@@ -13,22 +13,13 @@ import {
 } from "@/components/ui/tooltip";
 
 const CategoryBadge = ({ category }: { category: string }) => {
-  const getCategoryVariant = (cat: string): "default" | "destructive" | "secondary" | "outline" => {
-    const lowercaseCategory = cat?.toLowerCase() || '';
-    if (["jailbreaking", "prompt injection", "social engineering", "system prompt extraction", "unauthorized actions", "sensitive information disclosure"].includes(lowercaseCategory)) {
-      return "destructive";
-    }
-    if (["data extraction", "prompt leaking", "model behavior manipulation"].includes(lowercaseCategory)) {
-      return "secondary";
-    }
-    if (["resource exhaustion"].includes(lowercaseCategory)) {
-      return "outline";
-    }
-    return "default";
-  };
-
   return (
-    <Badge variant={getCategoryVariant(category)}>{category || 'Uncategorized'}</Badge>
+    <Badge 
+      variant="default" 
+      className="bg-background-dark hover:bg-background-dark text-foreground-dark border border-border"
+    >
+      {category || 'Uncategorized'}
+    </Badge>
   );
 };
 
