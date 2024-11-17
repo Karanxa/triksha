@@ -1,6 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ScanResult {
   prompt: string;
@@ -12,14 +15,55 @@ interface ScanResult {
 interface ScanResultsProps {
   result: ScanResult | ScanResult[];
   isLoading?: boolean;
+  scanId?: string;
 }
 
-export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
-  if (isLoading) {
+export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => {
+  const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState<string>('pending');
+
+  useEffect(() => {
+    if (!scanId) return;
+
+    const subscription = supabase
+      .channel(`scan_${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'llm_scans',
+          filter: `id=eq.${scanId}`,
+        },
+        (payload) => {
+          if (payload.new.status === 'processing') {
+            setStatus('processing');
+          } else if (payload.new.status === 'completed') {
+            setStatus('completed');
+            setProgress(100);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [scanId]);
+
+  if (isLoading || status === 'processing') {
     return (
       <Card className="mt-8">
-        <CardContent className="pt-6 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+            <Progress value={progress} className="w-full" />
+            <p className="text-center text-sm text-muted-foreground">
+              Processing scan... {progress}% complete
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -45,7 +89,7 @@ export const ScanResults = ({ result, isLoading }: ScanResultsProps) => {
 const SingleResult = ({ result }: { result: ScanResult }) => {
   if (result.error) {
     return (
-      <Alert variant="destructive" className="mt-8">
+      <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Scan Failed</AlertTitle>
         <AlertDescription>{result.error}</AlertDescription>
@@ -85,5 +129,3 @@ const SingleResult = ({ result }: { result: ScanResult }) => {
     </div>
   );
 };
-
-export default ScanResults;

@@ -60,6 +60,12 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   });
 
   const onFormSubmit = async () => {
+    // Validate input size
+    if (scanType === "batch" && prompts.length > 100000) {
+      toast.error("Maximum batch size is 100,000 prompts");
+      return;
+    }
+
     const result = await handleSubmit({
       provider,
       customEndpoint,
@@ -70,7 +76,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       label,
       schedule,
       isRecurring,
-      qps
+      qps: Math.min(qps, 50) // Ensure QPS doesn't exceed 50
     });
 
     if (result) {
