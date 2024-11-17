@@ -33,7 +33,7 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
                 {row.map((cell, j) => (
                   <TableCell 
                     key={j} 
-                    className="max-w-xl break-words"
+                    className="max-w-xl break-words whitespace-pre-wrap"
                   >
                     {cell}
                   </TableCell>

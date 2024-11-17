@@ -47,11 +47,7 @@ export const DatasetViewer = ({ datasetId, onClose }: DatasetViewerProps) => {
       return { 
         type: 'csv' as const, 
         headers, 
-        data: data.map(row => 
-          row.map(cell => 
-            cell.startsWith('Enhanced Prompt:') ? cell.replace('Enhanced Prompt:', '').trim() : cell
-          )
-        ),
+        data,
         raw: cleanedText 
       }
     },
@@ -116,18 +112,12 @@ export const DatasetViewer = ({ datasetId, onClose }: DatasetViewerProps) => {
         ) : content ? (
           <Tabs value={viewType} onValueChange={(v) => setViewType(v as 'table' | 'raw')}>
             <TabsList>
-              <TabsTrigger value="table" disabled={content.type !== 'csv'}>Table View</TabsTrigger>
+              <TabsTrigger value="table">Table View</TabsTrigger>
               <TabsTrigger value="raw">Raw Text</TabsTrigger>
             </TabsList>
 
             <TabsContent value="table" className="mt-4">
-              {content.type === 'csv' ? (
-                <DatasetContent viewType={viewType} content={content} />
-              ) : (
-                <p className="text-center text-muted-foreground py-4">
-                  Table view is only available for CSV files
-                </p>
-              )}
+              <DatasetContent viewType={viewType} content={content} />
             </TabsContent>
 
             <TabsContent value="raw" className="mt-4">
