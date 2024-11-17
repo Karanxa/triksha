@@ -34,10 +34,25 @@ const formatPromptText = (text: string): string => {
   return text.trim()
 }
 
+const filterEasyJailbreakData = (data: string[][], headers: string[]): string[][] => {
+  const methodIndex = headers.findIndex(h => h.toLowerCase() === 'method')
+  const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category')
+  
+  if (methodIndex === -1 && categoryIndex === -1) return data
+
+  return data.filter(row => {
+    const method = methodIndex !== -1 ? row[methodIndex]?.toLowerCase() : ''
+    const category = categoryIndex !== -1 ? row[categoryIndex]?.toLowerCase() : ''
+    return method === 'recipe' || category === 'easyjailbreak' || category === 'recipe'
+  })
+}
+
 export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
   if (!content) return null
 
   if (viewType === 'table' && content.type === 'csv') {
+    const filteredData = filterEasyJailbreakData(content.data, content.headers)
+
     return (
       <ScrollArea className="h-[60vh]">
         <Table>
@@ -51,7 +66,7 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {content.data.map((row, i) => (
+            {filteredData.map((row, i) => (
               <TableRow key={i}>
                 {row.map((cell, j) => {
                   // Format the prompt column if it exists
