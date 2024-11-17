@@ -56,7 +56,8 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           label,
           schedule,
           is_recurring: isRecurring,
-          status: 'pending'
+          status: 'pending',
+          results: { prompts: promptsToScan } // Store prompts in results
         })
         .select()
         .single();

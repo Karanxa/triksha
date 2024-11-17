@@ -14,6 +14,8 @@ export interface ScanResults {
   timestamp?: string;
   provider?: string;
   model?: string;
+  progress?: number;
+  error?: string;
 }
 
 export interface ScanResponse {

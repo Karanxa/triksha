@@ -67,7 +67,7 @@ const getFullModelName = (model: string): string => {
     case 'codellama':
       return 'Code Llama';
     default:
-      return model;
+      return model || 'Unknown Model';
   }
 };
 
@@ -84,7 +84,8 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
     ? results.responses[0] 
     : null;
   
-  const prompt = firstResponse?.prompt || results.prompt || 'No prompt available';
+  // Get prompt from either the first response, results.prompt, or stored prompts array
+  const prompt = firstResponse?.prompt || results.prompt || (results.prompts && results.prompts[0]) || 'No prompt available';
   const response = firstResponse?.model_response || results.model_response || 'No response available';
   const rawResponse = firstResponse || results;
   const category = scan.category || 'Uncategorized';
