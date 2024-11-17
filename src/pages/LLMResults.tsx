@@ -8,9 +8,9 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedSeverity, setSelectedSeverity] = useState("");
-  const [vulnerabilityStatus, setVulnerabilityStatus] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSeverity, setSelectedSeverity] = useState("all");
+  const [vulnerabilityStatus, setVulnerabilityStatus] = useState("all");
   
   const debouncedSearch = useDebounce(searchQuery, 300);
 
@@ -22,11 +22,11 @@ const LLMResults = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (selectedCategory) {
+      if (selectedCategory && selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory);
       }
 
-      if (selectedSeverity) {
+      if (selectedSeverity && selectedSeverity !== 'all') {
         query = query.eq('severity', selectedSeverity);
       }
 
@@ -36,13 +36,23 @@ const LLMResults = () => {
         query = query.eq('is_vulnerable', false);
       }
 
-      if (debouncedSearch) {
-        query = query.or(`prompt.ilike.%${debouncedSearch}%,model_response.ilike.%${debouncedSearch}%`);
-      }
-
+      // Text search will be performed on the client side since we need to search in JSONB
       const { data, error } = await query;
 
       if (error) throw error;
+
+      // Filter results based on search query if provided
+      if (debouncedSearch && data) {
+        return data.filter(scan => {
+          const results = scan.results || {};
+          const prompt = results.prompt || '';
+          const response = results.model_response || '';
+          const searchLower = debouncedSearch.toLowerCase();
+          return prompt.toLowerCase().includes(searchLower) || 
+                 response.toLowerCase().includes(searchLower);
+        });
+      }
+
       return data as LLMScan[];
     },
   });

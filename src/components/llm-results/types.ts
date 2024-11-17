@@ -19,7 +19,7 @@ export type LLMScan = Database['public']['Tables']['llm_scans']['Row'] & {
 };
 
 export interface ScanResponse {
-  prompt?: string;
+  prompt: string;
   model_response?: string;
   response?: string;
   raw_response?: any;
@@ -34,4 +34,9 @@ export interface ScanResults {
   model_response?: string;
   response?: string;
   timestamp?: string;
+}
+
+export interface TruncatedCellProps {
+  content: string;
+  onContentClick: () => void;
 }
