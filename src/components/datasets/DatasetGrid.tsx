@@ -31,8 +31,8 @@ export const DatasetGrid = ({
   onDownload,
   isLoading
 }: DatasetGridProps) => {
-  const { lastElementRef } = useInfiniteScroll(() => {
-    if (hasMore && !isLoading) {
+  const { lastElementRef, isFetching } = useInfiniteScroll(() => {
+    if (hasMore && !isLoading && !isFetching) {
       onLoadMore()
     }
   })
@@ -43,7 +43,7 @@ export const DatasetGrid = ({
         {datasets.map((dataset, index) => (
           <div 
             key={dataset.id} 
-            ref={index === datasets.length - 1 && hasMore ? lastElementRef : null}
+            ref={index === datasets.length - 1 ? lastElementRef : null}
           >
             <DatasetCard
               dataset={dataset}
@@ -54,7 +54,7 @@ export const DatasetGrid = ({
         ))}
       </div>
       
-      {isLoading && (
+      {(isLoading || isFetching) && (
         <div className="flex justify-center py-4">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>

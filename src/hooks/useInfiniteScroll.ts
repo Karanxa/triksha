@@ -11,12 +11,21 @@ export const useInfiniteScroll = (callback: () => void) => {
       if (entries[0].isIntersecting && !isFetching) {
         setIsFetching(true)
         callback()
-        setIsFetching(false)
       }
     })
 
     if (node) observer.current.observe(node)
   }
 
-  return { lastElementRef }
+  useEffect(() => {
+    if (!isFetching) return
+    
+    const timer = setTimeout(() => {
+      setIsFetching(false)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [isFetching])
+
+  return { lastElementRef, isFetching }
 }

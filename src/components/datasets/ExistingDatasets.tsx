@@ -30,9 +30,7 @@ export const ExistingDatasets = () => {
   })
 
   const handleLoadMore = () => {
-    if (!isFetching) {
-      setPage(prev => prev + 1)
-    }
+    setPage(prev => prev + 1)
   }
 
   const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
