@@ -9,10 +9,15 @@ export async function processCustomEndpointRequest(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    if (config.inputType === 'curl') {
-      return await processCurlRequest(prompt, config, controller.signal);
-    } else {
-      return await processManualRequest(prompt, config, controller.signal);
+    switch (config.inputType) {
+      case 'curl':
+        return await processCurlRequest(prompt, config, controller.signal);
+      case 'http':
+        return await processHttpRequest(prompt, config, controller.signal);
+      case 'manual':
+        return await processManualRequest(prompt, config, controller.signal);
+      default:
+        throw new Error(`Unsupported input type: ${config.inputType}`);
     }
   } catch (error) {
     if (error.name === 'AbortError') {
@@ -70,6 +75,46 @@ async function processCurlRequest(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
+    signal
+  });
+
+  if (!response.ok) {
+    throw new Error(`Custom endpoint returned status ${response.status}`);
+  }
+
+  const result = await response.json();
+  return {
+    model_response: JSON.stringify(result),
+    raw_response: result
+  };
+}
+
+async function processHttpRequest(
+  prompt: string,
+  config: CustomEndpointConfig,
+  signal: AbortSignal
+): Promise<any> {
+  const headers = config.headers ? JSON.parse(config.headers) : {};
+  let body = config.httpRequest;
+
+  // Replace prompt placeholder in URL and body
+  const url = config.url.replace(config.placeholder, encodeURIComponent(prompt));
+  if (body) {
+    body = body.replace(config.placeholder, prompt);
+    try {
+      body = JSON.parse(body);
+    } catch {
+      // If body is not JSON, use as-is
+    }
+  }
+
+  const response = await fetch(url, {
+    method: config.method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers
+    },
+    body: ['GET', 'HEAD'].includes(config.method) ? undefined : JSON.stringify(body),
     signal
   });
 

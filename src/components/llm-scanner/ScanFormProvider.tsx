@@ -10,7 +10,9 @@ interface CustomEndpoint {
   headers: string;
   placeholder: string;
   curlCommand: string;
-  inputType: 'curl' | 'manual';
+  httpRequest: string;
+  inputType: 'curl' | 'manual' | 'http';
+  method: string;
 }
 
 interface ScanFormProviderProps {
@@ -31,10 +33,6 @@ export const ScanFormProvider = ({
   const handleProviderChange = (value: string) => {
     setSelectedProvider(value);
     onProviderChange("");
-  };
-
-  const handleModelChange = (model: string) => {
-    onProviderChange(`${selectedProvider}-${model}`);
   };
 
   return (
@@ -64,7 +62,7 @@ export const ScanFormProvider = ({
         <ModelSelect 
           provider={provider}
           selectedProvider={selectedProvider}
-          onModelChange={handleModelChange}
+          onModelChange={(model) => onProviderChange(`${selectedProvider}-${model}`)}
         />
       )}
     </div>
