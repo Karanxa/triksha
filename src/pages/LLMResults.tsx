@@ -17,6 +17,7 @@ const LLMResults = () => {
   const { data: scans, isLoading } = useQuery({
     queryKey: ['llm-scans', debouncedSearch, selectedCategory, selectedSeverity, vulnerabilityStatus],
     queryFn: async () => {
+      console.log('Fetching scans...');
       let query = supabase
         .from('llm_scans')
         .select('*')
@@ -41,7 +42,12 @@ const LLMResults = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching scans:', error);
+        throw error;
+      }
+
+      console.log('Fetched scans:', data);
 
       // Filter results based on search query if provided
       if (debouncedSearch && data) {
@@ -58,6 +64,8 @@ const LLMResults = () => {
 
       return data as LLMScan[];
     },
+    refetchOnWindowFocus: true,
+    staleTime: 0, // Consider all data stale immediately
   });
 
   if (isLoading) {

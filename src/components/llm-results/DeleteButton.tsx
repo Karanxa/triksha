@@ -13,26 +13,29 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
   const deleteScan = useMutation({
     mutationFn: async () => {
-      // First delete the scan record
-      const { error: scanError } = await supabase
+      const { error } = await supabase
         .from('llm_scans')
         .delete()
         .eq('id', scanId);
 
-      if (scanError) {
-        console.error("Error deleting scan:", scanError);
-        throw scanError;
+      if (error) {
+        console.error("Error deleting scan:", error);
+        throw error;
       }
 
       return scanId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ 
+        queryKey: ['llm-scans'],
+        refetchType: 'all'
+      });
       toast.success("Scan deleted successfully");
     },
     onError: (error: any) => {
       console.error("Delete error:", error);
-      toast.error("Failed to delete scan");
+      toast.error(`Failed to delete scan: ${error.message}`);
     },
   });
 
@@ -40,7 +43,10 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
     <Button
       variant="destructive"
       size="sm"
-      onClick={() => deleteScan.mutate()}
+      onClick={() => {
+        console.log('Deleting scan:', scanId);
+        deleteScan.mutate();
+      }}
       disabled={deleteScan.isPending}
     >
       <Trash2 className="h-4 w-4" />
