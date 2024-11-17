@@ -45,7 +45,7 @@ export const ResultsFilters = ({
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {ATTACK_CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category.toLowerCase()}>
+                <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>
               ))}
@@ -70,7 +70,7 @@ export const ResultsFilters = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Vulnerability Status</Label>
+          <Label>Status</Label>
           <Select value={vulnerabilityStatus} onValueChange={setVulnerabilityStatus}>
             <SelectTrigger>
               <SelectValue placeholder="Select status" />

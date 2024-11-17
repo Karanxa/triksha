@@ -24,12 +24,12 @@ const LLMResults = () => {
 
       // Only apply category filter if not "all"
       if (selectedCategory !== 'all') {
-        query = query.eq('category', selectedCategory.toLowerCase());
+        query = query.ilike('category', selectedCategory);
       }
 
       // Only apply severity filter if not "all"
       if (selectedSeverity !== 'all') {
-        query = query.eq('severity', selectedSeverity.toLowerCase());
+        query = query.ilike('severity', selectedSeverity.toLowerCase());
       }
 
       // Apply vulnerability status filter
@@ -47,8 +47,8 @@ const LLMResults = () => {
       if (debouncedSearch && data) {
         return data.filter((scan: LLMScan) => {
           const results = scan.results || {};
-          const promptText = (results.prompt || '').toString();
-          const responseText = (results.model_response || '').toString();
+          const promptText = String(results.prompt || '');
+          const responseText = String(results.model_response || '');
           const searchLower = debouncedSearch.toLowerCase();
           
           return promptText.toLowerCase().includes(searchLower) || 
