@@ -1,4 +1,4 @@
-export async function handleOpenAIRequest(prompt: string, apiKey: string, model = 'gpt-3.5-turbo') {
+export async function handleOpenAIRequest(prompt: string, apiKey: string, model = 'gpt-4o-mini') {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {

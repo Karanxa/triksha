@@ -31,8 +31,8 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
     switch (selectedProvider) {
       case "openai":
         return [
-          { value: "gpt-4", label: "GPT-4" },
-          { value: "gpt-4-turbo-preview", label: "GPT-4 Turbo" }
+          { value: "gpt-4o", label: "GPT-4 Opus" },
+          { value: "gpt-4o-mini", label: "GPT-4 Opus Mini" }
         ];
       case "anthropic":
         return [
@@ -69,7 +69,8 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
             <SelectItem value="openai">OpenAI</SelectItem>
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
-            <SelectItem value="ollama">Ollama</SelectItem>
+            <SelectItem value="ollama">Ollama (Custom Endpoint)</SelectItem>
+            <SelectItem value="custom">Custom Provider</SelectItem>
           </SelectContent>
         </Select>
 

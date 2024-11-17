@@ -1,6 +1,6 @@
-export async function handleGeminiRequest(prompt: string, apiKey: string) {
+export async function handleGeminiRequest(prompt: string, apiKey: string, model = 'gemini-1.0-pro') {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: {
