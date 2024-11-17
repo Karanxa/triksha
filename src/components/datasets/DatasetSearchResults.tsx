@@ -11,6 +11,7 @@ interface DatasetSearchResultsProps {
   itemsPerPage: number
   downloading: string | null
   onDownload: (datasetId: string, format: 'csv' | 'txt' | 'zip') => void
+  isLoading: boolean
 }
 
 export const DatasetSearchResults = ({
@@ -19,7 +20,8 @@ export const DatasetSearchResults = ({
   page,
   itemsPerPage,
   downloading,
-  onDownload
+  onDownload,
+  isLoading
 }: DatasetSearchResultsProps) => {
   return (
     <Tabs defaultValue="huggingface" className="w-full">
@@ -45,8 +47,9 @@ export const DatasetSearchResults = ({
           hasMore={accumulatedDatasets.huggingface.length >= page * itemsPerPage}
           downloading={downloading}
           onDownload={onDownload}
+          isLoading={isLoading}
         />
-        {accumulatedDatasets.huggingface.length === 0 && (
+        {accumulatedDatasets.huggingface.length === 0 && !isLoading && (
           <p className="text-center text-muted-foreground py-12">
             No Hugging Face datasets found
           </p>
@@ -60,8 +63,9 @@ export const DatasetSearchResults = ({
           hasMore={accumulatedDatasets.github.length >= page * itemsPerPage}
           downloading={downloading}
           onDownload={onDownload}
+          isLoading={isLoading}
         />
-        {accumulatedDatasets.github.length === 0 && (
+        {accumulatedDatasets.github.length === 0 && !isLoading && (
           <p className="text-center text-muted-foreground py-12">
             No GitHub datasets found
           </p>

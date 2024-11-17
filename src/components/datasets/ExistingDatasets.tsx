@@ -6,6 +6,7 @@ import { DatasetSearchControls } from "./DatasetSearchControls"
 import { Input } from "@/components/ui/input"
 import { DatasetSearchResults } from "./DatasetSearchResults"
 import { useDatasetQuery } from "@/hooks/useDatasetQuery"
+import { supabase } from "@/integrations/supabase/client"
 
 const ITEMS_PER_PAGE = 12
 
@@ -72,8 +73,8 @@ export const ExistingDatasets = () => {
   const filterDatasets = (datasets: any[]) => {
     if (!localSearch) return datasets
     return datasets.filter(dataset => 
-      dataset.title.toLowerCase().includes(localSearch.toLowerCase()) ||
-      dataset.description.toLowerCase().includes(localSearch.toLowerCase())
+      dataset.title?.toLowerCase().includes(localSearch.toLowerCase()) ||
+      dataset.description?.toLowerCase().includes(localSearch.toLowerCase())
     )
   }
 
@@ -123,6 +124,7 @@ export const ExistingDatasets = () => {
             itemsPerPage={ITEMS_PER_PAGE}
             downloading={downloading}
             onDownload={handleDownload}
+            isLoading={isFetching}
           />
 
           {datasets && Object.keys(datasets).length > 0 && 

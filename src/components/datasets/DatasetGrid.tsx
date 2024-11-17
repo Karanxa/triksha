@@ -1,5 +1,6 @@
 import { DatasetCard } from "./DatasetCard"
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
+import { Loader2 } from "lucide-react"
 
 interface Dataset {
   id: string
@@ -19,6 +20,7 @@ interface DatasetGridProps {
   hasMore: boolean
   downloading: string | null
   onDownload: (datasetId: string, format: 'csv' | 'txt' | 'zip') => void
+  isLoading: boolean
 }
 
 export const DatasetGrid = ({ 
@@ -26,41 +28,44 @@ export const DatasetGrid = ({
   onLoadMore, 
   hasMore,
   downloading,
-  onDownload 
+  onDownload,
+  isLoading
 }: DatasetGridProps) => {
-  const { lastElementRef, isFetching, setIsFetching } = useInfiniteScroll(() => {
-    if (hasMore) {
+  const { lastElementRef } = useInfiniteScroll(() => {
+    if (hasMore && !isLoading) {
       onLoadMore()
-      setIsFetching(false)
     }
   })
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {datasets.map((dataset, index) => {
-        if (datasets.length === index + 1) {
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {datasets.map((dataset, index) => {
+          if (datasets.length === index + 1) {
+            return (
+              <div key={dataset.id} ref={lastElementRef}>
+                <DatasetCard
+                  dataset={dataset}
+                  onDownload={onDownload}
+                  downloading={downloading}
+                />
+              </div>
+            )
+          }
           return (
-            <div key={dataset.id} ref={lastElementRef}>
-              <DatasetCard
-                dataset={dataset}
-                onDownload={onDownload}
-                downloading={downloading}
-              />
-            </div>
+            <DatasetCard
+              key={dataset.id}
+              dataset={dataset}
+              onDownload={onDownload}
+              downloading={downloading}
+            />
           )
-        }
-        return (
-          <DatasetCard
-            key={dataset.id}
-            dataset={dataset}
-            onDownload={onDownload}
-            downloading={downloading}
-          />
-        )
-      })}
-      {isFetching && (
-        <div className="col-span-full text-center py-4">
-          Loading more datasets...
+        })}
+      </div>
+      
+      {isLoading && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
     </div>
