@@ -22,7 +22,7 @@ export const ExistingDatasets = () => {
   
   const debouncedSearchQuery = useDebounce(searchQuery, 500)
 
-  const { data: datasets, isLoading } = useQuery({
+  const { data: datasets, isLoading, isFetching } = useQuery({
     queryKey: ['datasets', selectedCategory, useCustomSearch, debouncedSearchQuery, page],
     queryFn: async () => {
       if (!selectedCategory && !debouncedSearchQuery) return { huggingface: [], github: [] }
@@ -56,11 +56,14 @@ export const ExistingDatasets = () => {
 
       return data
     },
-    staleTime: 1000 * 60 * 5 // 5 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    keepPreviousData: true
   })
 
   const handleLoadMore = () => {
-    setPage(prev => prev + 1)
+    if (!isFetching) {
+      setPage(prev => prev + 1)
+    }
   }
 
   const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
@@ -106,8 +109,11 @@ export const ExistingDatasets = () => {
     )
   }
 
-  const huggingFaceDatasets = filterDatasets(datasets?.huggingface || [])
-  const githubDatasets = filterDatasets(datasets?.github || [])
+  // Accumulate datasets across pages
+  const accumulatedDatasets = {
+    huggingface: filterDatasets(datasets?.huggingface || []),
+    github: filterDatasets(datasets?.github || [])
+  }
 
   return (
     <div className="space-y-6">
@@ -147,23 +153,27 @@ export const ExistingDatasets = () => {
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="huggingface" className="flex items-center gap-2">
                 Hugging Face
-                <span className="text-xs text-muted-foreground">({huggingFaceDatasets.length})</span>
+                <span className="text-xs text-muted-foreground">
+                  ({accumulatedDatasets.huggingface.length})
+                </span>
               </TabsTrigger>
               <TabsTrigger value="github" className="flex items-center gap-2">
                 GitHub
-                <span className="text-xs text-muted-foreground">({githubDatasets.length})</span>
+                <span className="text-xs text-muted-foreground">
+                  ({accumulatedDatasets.github.length})
+                </span>
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="huggingface">
               <DatasetGrid
-                datasets={huggingFaceDatasets}
+                datasets={accumulatedDatasets.huggingface}
                 onLoadMore={handleLoadMore}
-                hasMore={huggingFaceDatasets.length >= ITEMS_PER_PAGE}
+                hasMore={accumulatedDatasets.huggingface.length >= page * ITEMS_PER_PAGE}
                 downloading={downloading}
                 onDownload={handleDownload}
               />
-              {huggingFaceDatasets.length === 0 && (
+              {accumulatedDatasets.huggingface.length === 0 && (
                 <p className="text-center text-muted-foreground py-12">
                   No Hugging Face datasets found
                 </p>
@@ -172,13 +182,13 @@ export const ExistingDatasets = () => {
 
             <TabsContent value="github">
               <DatasetGrid
-                datasets={githubDatasets}
+                datasets={accumulatedDatasets.github}
                 onLoadMore={handleLoadMore}
-                hasMore={githubDatasets.length >= ITEMS_PER_PAGE}
+                hasMore={accumulatedDatasets.github.length >= page * ITEMS_PER_PAGE}
                 downloading={downloading}
                 onDownload={handleDownload}
               />
-              {githubDatasets.length === 0 && (
+              {accumulatedDatasets.github.length === 0 && (
                 <p className="text-center text-muted-foreground py-12">
                   No GitHub datasets found
                 </p>
@@ -187,7 +197,8 @@ export const ExistingDatasets = () => {
           </Tabs>
 
           {datasets && Object.keys(datasets).length > 0 && 
-           huggingFaceDatasets.length === 0 && githubDatasets.length === 0 && (
+           accumulatedDatasets.huggingface.length === 0 && 
+           accumulatedDatasets.github.length === 0 && (
             <p className="text-center text-muted-foreground py-12">
               No datasets found for your search criteria
             </p>
