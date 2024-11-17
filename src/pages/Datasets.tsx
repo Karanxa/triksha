@@ -11,7 +11,7 @@ const Datasets = () => {
       <Tabs defaultValue="dashboard" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
           <TabsTrigger value="dashboard">My Datasets</TabsTrigger>
-          <TabsTrigger value="existing">Browse Datasets</TabsTrigger>
+          <TabsTrigger value="existing">Public Datasets</TabsTrigger>
           <TabsTrigger value="create">Create Dataset</TabsTrigger>
         </TabsList>
 
