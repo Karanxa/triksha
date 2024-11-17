@@ -12,6 +12,8 @@ export interface ScanResults {
   model_response?: string;
   response?: string;
   timestamp?: string;
+  provider?: string;
+  model?: string;
 }
 
 export interface ScanResponse {
@@ -22,6 +24,7 @@ export interface ScanResponse {
   error?: string;
   timestamp?: string;
   model: string;
+  provider: string;
 }
 
 export interface TruncatedCellProps {

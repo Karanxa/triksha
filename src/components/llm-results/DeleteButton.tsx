@@ -56,8 +56,10 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
       if (verifyError?.code === 'PGRST116') {
         // PGRST116 means no rows returned, which is what we want
         return scanId;
-      } else if (verifyData) {
-        // If we still find the scan, deletion failed
+      }
+
+      // If we still find the scan, deletion failed
+      if (verifyData) {
         throw new Error('Deletion verification failed - scan still exists');
       }
 
