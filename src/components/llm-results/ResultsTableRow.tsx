@@ -49,8 +49,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const results = scan.results || {};
   const prompt = results.prompt || 'No prompt available';
   const response = results.model_response || 'No response available';
-  const rawResponse = results.response || results;
-  const rawJson = JSON.stringify(rawResponse, null, 2);
+  const rawResponse = results.raw_response || results;
   
   const category = scan.category || 'Uncategorized';
   const scanType = getScanType(results);
@@ -88,8 +87,8 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       </TableCell>
       <TableCell className="py-2">
         <TruncatedCell
-          content={rawJson}
-          onContentClick={() => onContentClick("Raw Response", rawJson)}
+          content={JSON.stringify(rawResponse, null, 2)}
+          onContentClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
         />
       </TableCell>
       <TableCell className="py-2">
