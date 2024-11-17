@@ -21,6 +21,7 @@ interface ScanResultsProps {
 export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<string>('pending');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!scanId) return;
@@ -38,9 +39,13 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
         (payload) => {
           if (payload.new.status === 'processing') {
             setStatus('processing');
+            setProgress(payload.new.results?.progress || 0);
           } else if (payload.new.status === 'completed') {
             setStatus('completed');
             setProgress(100);
+          } else if (payload.new.status === 'failed') {
+            setStatus('failed');
+            setError(payload.new.results?.error || 'Unknown error occurred');
           }
         }
       )
@@ -66,6 +71,17 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
           </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (error || (result && 'error' in result)) {
+    const errorMessage = error || (result && 'error' in result ? result.error : 'Unknown error occurred');
+    return (
+      <Alert variant="destructive" className="mt-8">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Scan Failed</AlertTitle>
+        <AlertDescription>{errorMessage}</AlertDescription>
+      </Alert>
     );
   }
 
