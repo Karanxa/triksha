@@ -1,8 +1,9 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Users, Star, GitFork, ExternalLink } from "lucide-react"
+import { Download, Users, Star, GitFork, ExternalLink, FileDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { useState } from "react"
 
 interface Dataset {
   id: string
@@ -23,7 +24,7 @@ interface DatasetCardProps {
 }
 
 export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardProps) => {
-  const isDownloading = downloading === dataset.id
+  const [isDownloading, setIsDownloading] = useState(false)
   const isGitHub = dataset.source === 'github'
 
   const handleCloneRepo = async () => {
@@ -37,6 +38,50 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
       toast.success("Git clone command copied to clipboard!")
     } catch (err) {
       toast.error("Failed to copy to clipboard")
+    }
+  }
+
+  const handleHuggingFaceDownload = async () => {
+    try {
+      setIsDownloading(true)
+      
+      // Get the raw file content from Hugging Face
+      const files = ['prompts.csv', 'data.csv', 'dataset.csv']
+      let content = null
+      
+      for (const file of files) {
+        try {
+          const response = await fetch(`https://huggingface.co/datasets/${dataset.id}/raw/main/${file}`)
+          if (response.ok) {
+            content = await response.text()
+            break
+          }
+        } catch (err) {
+          console.error(`Failed to fetch ${file}:`, err)
+        }
+      }
+
+      if (!content) {
+        throw new Error('No dataset file found')
+      }
+
+      // Create and trigger download
+      const blob = new Blob([content], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${dataset.title}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast.success("Dataset downloaded successfully!")
+    } catch (err) {
+      console.error('Download error:', err)
+      toast.error("Failed to download dataset. Please try using the external link.")
+    } finally {
+      setIsDownloading(false)
     }
   }
 
@@ -113,7 +158,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => onDownload(dataset.id, 'csv')}
+            onClick={handleHuggingFaceDownload}
             disabled={isDownloading}
           >
             {isDownloading ? (
@@ -122,8 +167,8 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
               </span>
             ) : (
               <>
-                <Download className="mr-2 h-4 w-4" />
-                Download CSV
+                <FileDown className="mr-2 h-4 w-4" />
+                Download Dataset
               </>
             )}
           </Button>
