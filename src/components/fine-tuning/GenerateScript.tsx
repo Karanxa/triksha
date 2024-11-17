@@ -46,15 +46,6 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
   const areRequiredInputsFilled = model.length > 0 && datasetType.length > 0 && taskType.length > 0 && file !== null
 
   const handleGenerateScript = async () => {
-    if (!isGoogleAuthed) {
-      toast({
-        variant: "destructive",
-        title: "Google authentication required",
-        description: "Please authenticate with Google before generating a script"
-      })
-      return
-    }
-
     if (!areRequiredInputsFilled) {
       toast({
         variant: "destructive",
@@ -127,7 +118,7 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
         className="w-full" 
         size="lg"
         onClick={handleGenerateScript}
-        disabled={!isGoogleAuthed || !areRequiredInputsFilled}
+        disabled={!areRequiredInputsFilled}
       >
         Generate Fine-tuning Script
       </Button>
