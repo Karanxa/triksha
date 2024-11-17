@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { DatasetViewer } from "./DatasetViewer"
 import { DatasetList } from "./DatasetList"
+import JSZip from "jszip"
 
 export const DatasetsDashboard = () => {
   const { toast } = useToast()
