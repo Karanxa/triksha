@@ -23,7 +23,7 @@ export async function handleCustomEndpoint(
           input: [
             {
               role: "user",
-              content: prompt // Replace placeholder with actual prompt
+              content: prompt
             }
           ],
           guardrail_conf: [
@@ -74,23 +74,32 @@ export async function handleCustomEndpoint(
       console.log('Making request to:', url);
       console.log('Request body:', JSON.stringify(requestBody, null, 2));
       
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestBody)
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Custom endpoint error:', response.status, errorText);
-        throw new Error(`Custom endpoint returned status ${response.status}: ${errorText}`);
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Custom endpoint error:', response.status, errorText);
+          return {
+            error: `Custom endpoint returned status ${response.status}: ${errorText}`
+          };
+        }
+        
+        const result = await response.json();
+        console.log('Custom endpoint response:', result);
+        return result;
+      } catch (error) {
+        console.error('Network error:', error);
+        return {
+          error: `Network error: ${error.message}`
+        };
       }
-      
-      const result = await response.json();
-      console.log('Custom endpoint response:', result);
-      return result;
       
     } else {
       // Handle manual endpoint configuration
@@ -109,7 +118,9 @@ export async function handleCustomEndpoint(
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Custom endpoint error:', response.status, errorText);
-        throw new Error(`Custom endpoint returned status ${response.status}: ${errorText}`);
+        return {
+          error: `Custom endpoint returned status ${response.status}: ${errorText}`
+        };
       }
       
       const result = await response.json();
@@ -118,6 +129,8 @@ export async function handleCustomEndpoint(
     }
   } catch (error) {
     console.error('Custom endpoint error:', error);
-    throw error;
+    return {
+      error: error.message
+    };
   }
 }
