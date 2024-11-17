@@ -46,6 +46,21 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
         throw scanError;
       }
 
+      // Verify deletion by attempting to fetch the deleted scan
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('llm_scans')
+        .select()
+        .eq('id', scanId)
+        .single();
+
+      if (verifyError?.code === 'PGRST116') {
+        // PGRST116 means no rows returned, which is what we want
+        return scanId;
+      } else if (verifyData) {
+        // If we still find the scan, deletion failed
+        throw new Error('Deletion verification failed - scan still exists');
+      }
+
       return scanId;
     },
     onSuccess: () => {
@@ -54,7 +69,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
     },
     onError: (error: any) => {
       console.error("Delete error:", error);
-      toast.error("Failed to delete scan");
+      toast.error("Failed to delete scan - please try again");
     },
   });
 
