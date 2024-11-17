@@ -13,6 +13,7 @@ serve(async (req) => {
 
   try {
     const { datasetId, format } = await req.json()
+    console.log('Download request:', { datasetId, format })
     
     if (!datasetId) {
       throw new Error('Dataset ID is required')
@@ -39,54 +40,58 @@ serve(async (req) => {
     }
 
     // Get user's API keys
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('api_keys')
       .eq('id', user.id)
       .single()
 
-    if (!profile?.api_keys?.huggingface) {
-      throw new Error('Hugging Face API key not found')
+    if (profileError || !profile?.api_keys) {
+      throw new Error('Failed to fetch user profile')
     }
 
-    // For Hugging Face datasets, fetch directly from their API
+    let content: string
+    let contentType: string
+    let filename: string
+
+    // For Hugging Face datasets
     if (datasetId.includes('/')) {
       console.log('Fetching Hugging Face dataset:', datasetId)
       
-      const response = await fetch(`https://huggingface.co/api/datasets/${datasetId}/parquet`, {
+      if (!profile.api_keys.huggingface) {
+        throw new Error('Hugging Face API key not configured')
+      }
+
+      // Fetch dataset info first
+      const infoResponse = await fetch(`https://huggingface.co/api/datasets/${datasetId}`, {
         headers: {
-          'Authorization': `Bearer ${profile.api_keys.huggingface}`,
-          'Accept': 'application/octet-stream'
+          'Authorization': `Bearer ${profile.api_keys.huggingface}`
+        }
+      })
+
+      if (!infoResponse.ok) {
+        console.error('Failed to fetch dataset info:', await infoResponse.text())
+        throw new Error('Failed to fetch dataset info from Hugging Face')
+      }
+
+      // Fetch the actual dataset content
+      const response = await fetch(`https://huggingface.co/datasets/${datasetId}/raw/main/data.csv`, {
+        headers: {
+          'Authorization': `Bearer ${profile.api_keys.huggingface}`
         }
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch dataset from Hugging Face: ${response.statusText}`)
+        console.error('Failed to fetch dataset content:', await response.text())
+        throw new Error('Failed to fetch dataset content from Hugging Face')
       }
 
-      const content = await response.text()
-      
-      // Convert to requested format
-      let formattedContent = content
-      let contentType = 'text/csv'
-      
-      if (format === 'zip') {
-        // If zip format requested, we'll need to create a zip file
-        const encoder = new TextEncoder()
-        const zipData = encoder.encode(content)
-        contentType = 'application/zip'
-        formattedContent = String.fromCharCode.apply(null, Array.from(zipData))
-      }
+      content = await response.text()
+      contentType = format === 'csv' ? 'text/csv' : 'application/zip'
+      filename = `${datasetId.split('/').pop()}.${format}`
 
-      return new Response(formattedContent, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': contentType,
-          'Content-Disposition': `attachment; filename="${datasetId.split('/').pop()}.${format}"`,
-        },
-      })
     } else {
-      // For locally stored datasets, fetch from Supabase storage
+      // For locally stored datasets
       console.log('Fetching local dataset:', datasetId)
 
       const { data: dataset, error: datasetError } = await supabase
@@ -114,17 +119,26 @@ serve(async (req) => {
         throw new Error('Failed to download file')
       }
 
-      const content = await fileData.text()
-      let contentType = format === 'csv' ? 'text/csv' : 'application/zip'
-
-      return new Response(content, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': contentType,
-          'Content-Disposition': `attachment; filename="${dataset.name}.${format}"`,
-        },
-      })
+      content = await fileData.text()
+      contentType = format === 'csv' ? 'text/csv' : 'application/zip'
+      filename = `${dataset.name}.${format}`
     }
+
+    // If ZIP format is requested, create a ZIP file
+    if (format === 'zip') {
+      const encoder = new TextEncoder()
+      const zipData = encoder.encode(content)
+      content = String.fromCharCode.apply(null, Array.from(zipData))
+    }
+
+    return new Response(content, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    })
+
   } catch (error) {
     console.error('Download dataset error:', error)
     return new Response(

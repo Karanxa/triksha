@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { DatasetViewer } from "./DatasetViewer"
 import { DatasetList } from "./DatasetList"
-import JSZip from "jszip"
 
 export const DatasetsDashboard = () => {
   const { toast } = useToast()
@@ -59,10 +58,15 @@ export const DatasetsDashboard = () => {
         body: { datasetId, format }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Download error:', error)
+        throw error
+      }
 
-      // Create blob from the response
-      const blob = new Blob([data], { type: format === 'csv' ? 'text/csv' : 'application/zip' })
+      // Create blob and trigger download
+      const blob = new Blob([data], { 
+        type: format === 'csv' ? 'text/csv' : 'application/zip' 
+      })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
