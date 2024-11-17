@@ -45,24 +45,31 @@ const formatScanType = (scanType: string | null) => {
   ).join(' ');
 };
 
-const formatRawResponse = (rawResponse: any) => {
+const formatRawResponse = (rawResponse: any, provider?: string) => {
   if (!rawResponse) return 'No raw response available';
   
-  const formattedResponse = {
-    id: rawResponse.id || '',
-    model: rawResponse.model || '',
-    usage: {
-      total_tokens: rawResponse.usage?.total_tokens || 0,
-      prompt_tokens: rawResponse.usage?.prompt_tokens || 0,
-      completion_tokens: rawResponse.usage?.completion_tokens || 0,
-      prompt_tokens_details: rawResponse.usage?.prompt_tokens_details || {},
-      completion_tokens_details: rawResponse.usage?.completion_tokens_details || {}
-    },
-    object: rawResponse.object || '',
-    choices: rawResponse.choices || []
-  };
-
-  return JSON.stringify(formattedResponse, null, 2);
+  // Keep the original response structure based on the provider
+  switch (provider?.split('-')[0]) {
+    case 'openai':
+      // OpenAI format - keep original structure
+      return JSON.stringify(rawResponse, null, 2);
+      
+    case 'anthropic':
+      // Anthropic format - keep original structure
+      return JSON.stringify(rawResponse, null, 2);
+      
+    case 'gemini':
+      // Gemini format - keep original structure
+      return JSON.stringify(rawResponse, null, 2);
+      
+    case 'ollama':
+      // Ollama format - keep original structure
+      return JSON.stringify(rawResponse, null, 2);
+      
+    default:
+      // For custom endpoints or unknown providers, show the raw response
+      return JSON.stringify(rawResponse, null, 2);
+  }
 };
 
 interface ResultsTableRowProps {
@@ -78,6 +85,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const rawResponse = results.responses?.[0]?.raw_response || results;
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
+  const provider = scan.results?.responses?.[0]?.provider || scan.provider;
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
@@ -111,8 +119,8 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       </TableCell>
       <TableCell className="py-2">
         <TruncatedCell
-          content={formatRawResponse(rawResponse)}
-          onContentClick={() => onContentClick("Raw Response", formatRawResponse(rawResponse))}
+          content={formatRawResponse(rawResponse, provider)}
+          onContentClick={() => onContentClick("Raw Response", formatRawResponse(rawResponse, provider))}
         />
       </TableCell>
       <TableCell className="py-2">
