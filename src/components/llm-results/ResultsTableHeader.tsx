@@ -9,7 +9,7 @@ export const ResultsTableHeader = () => {
         <TableHead>Prompt</TableHead>
         <TableHead>Response</TableHead>
         <TableHead>Raw JSON</TableHead>
-        <TableHead>Category & Risk</TableHead>
+        <TableHead>Category</TableHead>
         <TableHead>Status</TableHead>
         <TableHead>Actions</TableHead>
       </TableRow>

@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const CategoryRiskBadges = ({ category, severity }: { category: string; severity: string }) => {
+const CategoryBadge = ({ category }: { category: string }) => {
   const getCategoryVariant = (cat: string): "default" | "destructive" | "secondary" | "outline" => {
     const lowercaseCategory = cat?.toLowerCase() || '';
     if (["jailbreaking", "prompt injection", "social engineering", "system prompt extraction", "unauthorized actions", "sensitive information disclosure"].includes(lowercaseCategory)) {
@@ -27,25 +27,8 @@ const CategoryRiskBadges = ({ category, severity }: { category: string; severity
     return "default";
   };
 
-  const getSeverityVariant = (sev: string): "default" | "destructive" | "secondary" | "outline" => {
-    const lowercaseSeverity = sev?.toLowerCase() || '';
-    if (["critical", "high"].includes(lowercaseSeverity)) {
-      return "destructive";
-    }
-    if (lowercaseSeverity === "medium") {
-      return "secondary";
-    }
-    if (lowercaseSeverity === "low") {
-      return "outline";
-    }
-    return "default";
-  };
-
   return (
-    <div className="flex flex-col gap-2">
-      <Badge variant={getCategoryVariant(category)}>{category || 'Uncategorized'}</Badge>
-      <Badge variant={getSeverityVariant(severity)}>{severity || 'Unknown'}</Badge>
-    </div>
+    <Badge variant={getCategoryVariant(category)}>{category || 'Uncategorized'}</Badge>
   );
 };
 
@@ -82,7 +65,6 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const rawJson = JSON.stringify(rawResponse, null, 2);
   
   const category = scan.category || 'Uncategorized';
-  const severity = scan.severity || 'Unknown';
   const scanType = getScanType(results);
   const isVulnerable = scan.is_vulnerable;
 
@@ -123,7 +105,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         />
       </TableCell>
       <TableCell>
-        <CategoryRiskBadges category={category} severity={severity} />
+        <CategoryBadge category={category} />
       </TableCell>
       <TableCell>
         <VulnerabilityStatus isVulnerable={isVulnerable} />
