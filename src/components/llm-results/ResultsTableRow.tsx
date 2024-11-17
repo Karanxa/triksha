@@ -68,15 +68,42 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
-  const results = scan.results as any;
-  const prompt = typeof results?.prompts?.[0] === 'string' ? results.prompts[0] : 
-                typeof results?.prompt === 'string' ? results.prompt : 
-                'No prompt available';
-                
-  const response = typeof results?.responses?.[0]?.model_response === 'string' ? results.responses[0].model_response :
-                  typeof results?.model_response === 'string' ? results.model_response :
-                  'No response available';
-                  
+  const results = scan.results || {};
+  
+  // Extract prompt from various possible locations in the results
+  const prompt = (() => {
+    if (Array.isArray(results.prompts) && results.prompts.length > 0) {
+      return results.prompts[0];
+    }
+    if (typeof results.prompt === 'string') {
+      return results.prompt;
+    }
+    if (Array.isArray(results.responses) && results.responses[0]?.prompt) {
+      return results.responses[0].prompt;
+    }
+    return 'No prompt available';
+  })();
+
+  // Extract response from various possible locations in the results
+  const response = (() => {
+    if (Array.isArray(results.responses)) {
+      const firstResponse = results.responses[0];
+      if (typeof firstResponse?.model_response === 'string') {
+        return firstResponse.model_response;
+      }
+      if (typeof firstResponse?.response === 'string') {
+        return firstResponse.response;
+      }
+    }
+    if (typeof results.model_response === 'string') {
+      return results.model_response;
+    }
+    if (typeof results.response === 'string') {
+      return results.response;
+    }
+    return 'No response available';
+  })();
+
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
