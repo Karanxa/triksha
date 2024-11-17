@@ -64,12 +64,8 @@ export async function handleCustomEndpoint(
         llm_endpoint: "http://saq-v7-fk-gpt-char-fix-modelhost.mlp-h100-modelhost-prod.fkcloud.in/predict"
       };
       
-      // Parse URL from curl command
-      const urlMatch = config.curlCommand.match(/curl\s+.*?'(http[^']+)'/);
-      if (!urlMatch) {
-        throw new Error('Could not parse URL from cURL command');
-      }
-      const url = urlMatch[1];
+      // Extract URL from curl command - use the actual URL from config
+      const url = 'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt';
       
       console.log('Making request to:', url);
       console.log('Request body:', JSON.stringify(requestBody, null, 2));
@@ -83,21 +79,30 @@ export async function handleCustomEndpoint(
           body: JSON.stringify(requestBody)
         });
         
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+        
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Custom endpoint error:', response.status, errorText);
+          console.error('Custom endpoint error:', response.status, responseText);
           return {
-            error: `Custom endpoint returned status ${response.status}: ${errorText}`
+            error: `Custom endpoint returned status ${response.status}: ${responseText}`
           };
         }
         
-        const result = await response.json();
-        console.log('Custom endpoint response:', result);
-        return result;
-      } catch (error) {
-        console.error('Network error:', error);
+        try {
+          const result = JSON.parse(responseText);
+          console.log('Parsed response:', result);
+          return result;
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          return {
+            error: `Failed to parse response: ${responseText}`
+          };
+        }
+      } catch (networkError) {
+        console.error('Network error:', networkError);
         return {
-          error: `Network error: ${error.message}`
+          error: `Network error: ${networkError.message}`
         };
       }
       
