@@ -69,33 +69,8 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results || {};
-  
-  // Extract all prompt-response pairs
-  const promptResponsePairs = (() => {
-    if (Array.isArray(results.responses)) {
-      return results.responses.map(response => ({
-        prompt: response.prompt || 'No prompt available',
-        response: response.model_response || response.response || 'No response available'
-      }));
-    }
-    if (results.prompt) {
-      return [{
-        prompt: results.prompt,
-        response: results.model_response || results.response || 'No response available'
-      }];
-    }
-    return [{ prompt: 'No prompt available', response: 'No response available' }];
-  })();
-
-  // Format prompts and responses for display
-  const promptsDisplay = promptResponsePairs
-    .map(pair => pair.prompt)
-    .join('\n---\n');
-
-  const responsesDisplay = promptResponsePairs
-    .map(pair => `Prompt: ${pair.prompt}\nResponse: ${pair.response}`)
-    .join('\n\n---\n\n');
-
+  const prompt = results.prompt || 'No prompt available';
+  const response = results.model_response || 'No response available';
   const rawJson = JSON.stringify(results, null, 2);
   const category = scan.category || 'Uncategorized';
   const severity = scan.severity || 'Unknown';
@@ -108,14 +83,14 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       <TableCell>{formatDate(scan.created_at)}</TableCell>
       <TableCell>
         <TruncatedCell
-          content={promptsDisplay}
-          onContentClick={() => onContentClick("Prompts", promptsDisplay)}
+          content={prompt}
+          onContentClick={() => onContentClick("Prompt", prompt)}
         />
       </TableCell>
       <TableCell>
         <TruncatedCell
-          content={responsesDisplay}
-          onContentClick={() => onContentClick("Responses", responsesDisplay)}
+          content={response}
+          onContentClick={() => onContentClick("Response", response)}
         />
       </TableCell>
       <TableCell>

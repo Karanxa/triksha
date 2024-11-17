@@ -20,14 +20,42 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     setSelectedContent({ title, content });
   };
 
+  // Flatten scans to show individual prompt-response pairs
+  const flattenedScans = scans.flatMap(scan => {
+    const results = scan.results || {};
+    
+    if (Array.isArray(results.responses)) {
+      // For batch scans with multiple responses
+      return results.responses.map((response, index) => ({
+        ...scan,
+        results: {
+          prompt: response.prompt,
+          model_response: response.model_response || response.response,
+          timestamp: response.timestamp
+        },
+        name: `${scan.name} (${index + 1}/${results.responses.length})`
+      }));
+    }
+    
+    // For single scans
+    return [{
+      ...scan,
+      results: {
+        prompt: results.prompt,
+        model_response: results.model_response || results.response,
+        timestamp: results.timestamp
+      }
+    }];
+  });
+
   return (
     <>
       <Table>
         <ResultsTableHeader />
         <TableBody>
-          {scans.map((scan) => (
+          {flattenedScans.map((scan, index) => (
             <ResultsTableRow
-              key={scan.id}
+              key={`${scan.id}-${index}`}
               scan={scan}
               formatDate={formatDate}
               onContentClick={handleContentClick}
