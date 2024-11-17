@@ -1,25 +1,23 @@
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 interface ModelSelectProps {
-  value: string
-  onChange: (value: string) => void
+  model: string
+  setModel: (value: string) => void
 }
 
-export const ModelSelect = ({ value, onChange }: ModelSelectProps) => {
+export const ModelSelect = ({ model, setModel }: ModelSelectProps) => {
   return (
     <div className="space-y-2">
-      <Label>Model</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
+      <Label htmlFor="model">Base Model</Label>
+      <Select value={model} onValueChange={setModel}>
+        <SelectTrigger id="model">
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-          <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-          <SelectItem value="llama2-7b">LLaMA 2 7B</SelectItem>
-          <SelectItem value="llama2-13b">LLaMA 2 13B</SelectItem>
-          <SelectItem value="mistral-7b">Mistral 7B</SelectItem>
+          <SelectItem value="gpt-4o">GPT-4O</SelectItem>
+          <SelectItem value="gpt-4o-mini">GPT-4O Mini</SelectItem>
+          <SelectItem value="llama-2">Llama 2</SelectItem>
         </SelectContent>
       </Select>
     </div>

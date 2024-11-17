@@ -1,22 +1,22 @@
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 interface TaskSelectProps {
-  value: string
-  onChange: (value: string) => void
+  taskType: string
+  setTaskType: (value: string) => void
 }
 
-export const TaskSelect = ({ value, onChange }: TaskSelectProps) => {
+export const TaskSelect = ({ taskType, setTaskType }: TaskSelectProps) => {
   return (
     <div className="space-y-2">
-      <Label>Task Type</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="Select a task type" />
+      <Label htmlFor="task-type">Task Type</Label>
+      <Select value={taskType} onValueChange={setTaskType}>
+        <SelectTrigger id="task-type">
+          <SelectValue placeholder="Select task type" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="classification">Classification</SelectItem>
-          <SelectItem value="generation">Generation</SelectItem>
+          <SelectItem value="generation">Text Generation</SelectItem>
           <SelectItem value="completion">Completion</SelectItem>
         </SelectContent>
       </Select>
