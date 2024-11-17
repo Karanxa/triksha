@@ -24,7 +24,22 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
   const deleteScan = useMutation({
     mutationFn: async () => {
-      // First delete all related scan results
+      // First check if the scan exists
+      const { data: scanExists, error: checkError } = await supabase
+        .from('llm_scans')
+        .select('id')
+        .eq('id', scanId);
+
+      if (checkError) {
+        console.error("Error checking scan:", checkError);
+        throw new Error('Failed to verify scan existence');
+      }
+
+      if (!scanExists || scanExists.length === 0) {
+        throw new Error('Scan not found');
+      }
+
+      // Delete all related scan results first
       const { error: resultsError } = await supabase
         .from('llm_scan_results')
         .delete()
@@ -32,7 +47,7 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
       if (resultsError) {
         console.error("Error deleting scan results:", resultsError);
-        throw resultsError;
+        throw new Error('Failed to delete scan results');
       }
 
       // Then delete the main scan record
@@ -43,23 +58,22 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
 
       if (scanError) {
         console.error("Error deleting scan:", scanError);
-        throw scanError;
+        throw new Error('Failed to delete scan');
       }
 
-      // Verify deletion by attempting to fetch the deleted scan
+      // Verify deletion by checking if the scan still exists
       const { data: verifyData, error: verifyError } = await supabase
         .from('llm_scans')
-        .select()
-        .eq('id', scanId)
-        .single();
+        .select('id')
+        .eq('id', scanId);
 
-      if (verifyError?.code === 'PGRST116') {
-        // PGRST116 means no rows returned, which is what we want
-        return scanId;
+      if (verifyError) {
+        console.error("Error verifying deletion:", verifyError);
+        throw new Error('Failed to verify deletion');
       }
 
-      // If we still find the scan, deletion failed
-      if (verifyData) {
+      // If we find any data, the deletion failed
+      if (verifyData && verifyData.length > 0) {
         throw new Error('Deletion verification failed - scan still exists');
       }
 
@@ -69,9 +83,9 @@ export const DeleteButton = ({ scanId }: DeleteButtonProps) => {
       queryClient.invalidateQueries({ queryKey: ['llm-scans'] });
       toast.success("Scan deleted successfully");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error("Delete error:", error);
-      toast.error("Failed to delete scan - please try again");
+      toast.error(`Failed to delete scan: ${error.message}`);
     },
   });
 
