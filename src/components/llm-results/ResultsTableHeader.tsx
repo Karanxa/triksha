@@ -7,8 +7,7 @@ export const ResultsTableHeader = () => {
         <TableHead>Scan Type</TableHead>
         <TableHead>Date</TableHead>
         <TableHead>Model</TableHead>
-        <TableHead>Prompt</TableHead>
-        <TableHead>Response</TableHead>
+        <TableHead className="border-l">Prompt & Response</TableHead>
         <TableHead>Category</TableHead>
         <TableHead>Status</TableHead>
         <TableHead>Actions</TableHead>

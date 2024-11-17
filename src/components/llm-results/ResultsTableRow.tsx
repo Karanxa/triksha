@@ -87,33 +87,29 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
       <TableCell className="py-2">
         <Badge variant="outline">{modelName}</Badge>
       </TableCell>
-      <TableCell className="py-2">
-        <div className="flex items-center gap-2">
-          <TruncatedCell
-            content={prompt}
-            onContentClick={() => onContentClick("Prompt", prompt)}
-          />
+      <TableCell className="py-2 border-l">
+        <div className="flex items-center gap-4">
+          <div className="flex-1 space-y-2">
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Prompt</div>
+              <TruncatedCell
+                content={prompt}
+                onContentClick={() => onContentClick("Prompt", prompt)}
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground">Response</div>
+              <TruncatedCell
+                content={response}
+                onContentClick={() => onContentClick("Response", response)}
+              />
+            </div>
+          </div>
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground h-auto py-0 px-1"
-            onClick={() => onContentClick("Raw Prompt", JSON.stringify({ prompt }, null, 2))}
-          >
-            raw
-          </Button>
-        </div>
-      </TableCell>
-      <TableCell className="py-2">
-        <div className="flex items-center gap-2">
-          <TruncatedCell
-            content={response}
-            onContentClick={() => onContentClick("Response", response)}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground h-auto py-0 px-1"
-            onClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
+            className="text-xs text-muted-foreground hover:text-foreground self-center"
+            onClick={() => onContentClick("Raw Data", JSON.stringify(rawResponse, null, 2))}
           >
             raw
           </Button>
