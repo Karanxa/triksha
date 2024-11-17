@@ -245,7 +245,6 @@ export type Database = {
           prompt: string
           provider: string
           raw_response: Json | null
-          scan_id: string | null
           severity: Database["public"]["Enums"]["scan_severity"] | null
           updated_at: string
           user_id: string
@@ -263,7 +262,6 @@ export type Database = {
           prompt: string
           provider: string
           raw_response?: Json | null
-          scan_id?: string | null
           severity?: Database["public"]["Enums"]["scan_severity"] | null
           updated_at?: string
           user_id: string
@@ -281,19 +279,11 @@ export type Database = {
           prompt?: string
           provider?: string
           raw_response?: Json | null
-          scan_id?: string | null
           severity?: Database["public"]["Enums"]["scan_severity"] | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "llm_scan_results_scan_id_fkey"
-            columns: ["scan_id"]
-            isOneToOne: false
-            referencedRelation: "llm_scans"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "llm_scan_results_user_id_fkey"
             columns: ["user_id"]
