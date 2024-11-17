@@ -1,6 +1,12 @@
 import { Database } from "@/integrations/supabase/types";
 
-export type LLMScan = Database['public']['Tables']['llm_scans']['Row'];
+export type LLMScan = Database['public']['Tables']['llm_scans']['Row'] & {
+  results?: {
+    prompts: string[];
+    responses: ScanResponse[];
+    timestamp: string;
+  } | null;
+};
 
 export interface ScanResponse {
   prompt: string;

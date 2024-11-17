@@ -1,28 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
-
-interface ScanResult {
-  prompt: string;
-  model_response: string;
-  raw_response?: any;
-  error?: string;
-  timestamp?: string;
-}
-
-interface LLMScan {
-  id: string;
-  name: string;
-  status: string;
-  category?: string;
-  label?: string;
-  results?: {
-    prompts: string[];
-    responses: ScanResult[];
-    timestamp: string;
-  };
-  created_at: string;
-}
+import { LLMScan } from "@/components/llm-results/types";
 
 const LLMResults = () => {
   const { data: scans, isLoading } = useQuery({
@@ -34,7 +13,6 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
       return data as LLMScan[];
     },
   });
