@@ -2,7 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, Code } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { LLMScan } from "./types";
 import {
   Tooltip,
@@ -100,13 +100,12 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
             onContentClick={() => onContentClick("Response", response)}
           />
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="flex items-center gap-1 text-xs"
+            className="text-xs text-muted-foreground hover:text-foreground"
             onClick={() => onContentClick("Raw Response", JSON.stringify(rawResponse, null, 2))}
           >
-            <Code className="h-3 w-3" />
-            View Raw Response
+            raw
           </Button>
         </div>
       </TableCell>
