@@ -49,24 +49,17 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
     isRecurring: boolean;
     qps: number;
   }) => {
-    // Validate inputs based on whether it's a custom endpoint or regular provider
-    if (!customEndpoint && !provider) {
+    // Only validate provider selection for non-Ollama providers
+    const isOllama = provider?.startsWith('ollama');
+    if (!isOllama && !provider) {
       toast.error("Please select a provider and model");
       return;
     }
 
-    if (customEndpoint) {
-      if (customEndpoint.inputType === 'curl') {
-        if (!customEndpoint.curlCommand || !customEndpoint.placeholder) {
-          toast.error("Please provide both cURL command and placeholder");
-          return;
-        }
-      } else if (customEndpoint.inputType === 'manual') {
-        if (!customEndpoint.url || !customEndpoint.apiKey) {
-          toast.error("Please provide both endpoint URL and API key");
-          return;
-        }
-      }
+    // Only validate custom endpoint for Ollama
+    if (isOllama && (!customEndpoint?.url)) {
+      toast.error("Please provide the Ollama endpoint URL");
+      return;
     }
 
     if (scanType === "manual" && !singlePrompt) {
@@ -120,13 +113,13 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         body: {
           scanId: scanData.id,
           prompts: promptsToScan,
-          provider: customEndpoint ? undefined : provider,
+          provider: isOllama ? undefined : provider,
           category,
           label,
           schedule,
           isRecurring,
           qps,
-          customEndpoint
+          customEndpoint: isOllama ? customEndpoint : undefined
         }
       }) as EdgeFunctionResponse;
 

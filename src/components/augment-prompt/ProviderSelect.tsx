@@ -70,7 +70,6 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
             <SelectItem value="ollama">Ollama (Custom Endpoint)</SelectItem>
-            <SelectItem value="custom">Custom Provider</SelectItem>
           </SelectContent>
         </Select>
 
