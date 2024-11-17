@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -18,6 +19,7 @@ serve(async (req) => {
       throw new Error('Dataset ID is required')
     }
 
+    // Initialize Supabase client with service role key
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -37,6 +39,8 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
+    console.log('Fetching dataset:', datasetId, 'for user:', user.id)
+
     // Fetch dataset details
     const { data: dataset, error: datasetError } = await supabase
       .from('datasets')
@@ -53,6 +57,8 @@ serve(async (req) => {
     if (!dataset.file_path) {
       throw new Error('Dataset file not found')
     }
+
+    console.log('Downloading file:', dataset.file_path)
 
     // Download file from storage
     const { data: fileData, error: downloadError } = await supabase.storage

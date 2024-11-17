@@ -41,7 +41,7 @@ export const DatasetsDashboard = () => {
     dataset.category?.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
 
-  const handleDownload = async (datasetId: string, format: 'csv' | 'txt' | 'zip') => {
+  const handleDownload = async (datasetId: string, format: 'csv' | 'zip') => {
     try {
       setDownloading(datasetId)
       
@@ -55,38 +55,18 @@ export const DatasetsDashboard = () => {
         throw new Error('Dataset file not found')
       }
 
-      const { data: fileData, error: downloadError } = await supabase.storage
-        .from('datasets')
-        .download(dataset.file_path)
+      const { data, error } = await supabase.functions.invoke('download-dataset', {
+        body: { datasetId, format }
+      })
 
-      if (downloadError) throw downloadError
+      if (error) throw error
 
-      let downloadContent: Blob
-      let contentType: string
-      let filename: string = dataset.name
-
-      const content = await fileData.text()
-
-      if (format === 'csv') {
-        contentType = 'text/csv'
-        filename = `${filename}.csv`
-        downloadContent = new Blob([content], { type: contentType })
-      } else if (format === 'zip') {
-        const zip = new JSZip()
-        zip.file(`${dataset.name}.csv`, content)
-        downloadContent = await zip.generateAsync({ type: 'blob' })
-        contentType = 'application/zip'
-        filename = `${filename}.zip`
-      } else {
-        contentType = 'text/plain'
-        filename = `${filename}.txt`
-        downloadContent = new Blob([content], { type: contentType })
-      }
-
-      const url = window.URL.createObjectURL(downloadContent)
+      // Create blob from the response
+      const blob = new Blob([data], { type: format === 'csv' ? 'text/csv' : 'application/zip' })
+      const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = filename
+      a.download = `${dataset.name}.${format}`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
@@ -97,6 +77,7 @@ export const DatasetsDashboard = () => {
         description: "Dataset downloaded successfully"
       })
     } catch (error: any) {
+      console.error('Download error:', error)
       toast({
         variant: "destructive",
         title: "Download failed",
