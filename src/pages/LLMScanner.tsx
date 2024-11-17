@@ -10,27 +10,27 @@ const LLMScanner = () => {
   const tools = [
     {
       id: "basic",
-      title: "Basic LLM Scanner",
+      title: "Custom Scan",
       description: "Test LLMs with custom prompts and analyze their responses",
       icon: Shield
     },
     {
       id: "garak",
-      title: "Garak Scanner",
-      description: "Advanced scanning using the Garak testing framework",
+      title: "Garak",
+      description: "Advanced scanning using the Garak testing framework. Learn more at https://github.com/leondz/garak",
       icon: Zap
     },
     {
       id: "fuzzer",
       title: "Prompt Security Fuzzer",
-      description: "Automatically generate variations of prompts to test security boundaries",
+      description: "Automatically generate variations of prompts to test security boundaries. Based on research at https://arxiv.org/abs/2402.09155",
       icon: Bug
     }
   ];
 
   return (
     <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">LLM Scanner</h1>
+      <h1 className="text-3xl font-bold mb-8">Red Teaming</h1>
       
       {!selectedTool ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

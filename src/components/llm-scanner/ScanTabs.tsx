@@ -16,8 +16,8 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
   return (
     <Tabs defaultValue={initialTab} className="w-full">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="basic">Basic Scan</TabsTrigger>
-        <TabsTrigger value="garak">Garak Scan</TabsTrigger>
+        <TabsTrigger value="basic">Custom Scan</TabsTrigger>
+        <TabsTrigger value="garak">Garak</TabsTrigger>
         <TabsTrigger value="fuzzer">Security Fuzzer</TabsTrigger>
       </TabsList>
       <TabsContent value="basic">

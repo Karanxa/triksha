@@ -6,7 +6,7 @@ const Index = () => {
   const navigate = useNavigate();
   
   const tools = [
-    { icon: Brain, title: "LLM Scanner", path: "/llm-scanner" },
+    { icon: Brain, title: "Red Teaming", path: "/llm-scanner" },
     { icon: List, title: "LLM Results", path: "/llm-results" },
     { icon: Database, title: "Datasets", path: "/datasets" },
     { icon: FileText, title: "Prompt Augmentation", path: "/augment-prompt" },
