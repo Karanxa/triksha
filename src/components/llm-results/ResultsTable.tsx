@@ -22,30 +22,21 @@ export function ResultsTable({ scans }: ResultsTableProps) {
 
   // Flatten scans to show individual prompt-response pairs
   const flattenedScans = scans.flatMap(scan => {
-    const results = scan.results || {};
-    
-    if (Array.isArray(results.responses)) {
-      // For batch scans with multiple responses
-      return results.responses.map((response, index) => ({
-        ...scan,
-        results: {
-          prompt: response.prompt,
-          model_response: response.model_response || response.response,
-          timestamp: response.timestamp
-        },
-        name: `${scan.name} (${index + 1}/${results.responses.length})`
-      }));
+    if (!scan.results?.responses) {
+      // For single scans without responses array
+      return [scan];
     }
     
-    // For single scans
-    return [{
+    // For batch scans with multiple responses
+    return scan.results.responses.map((response, index) => ({
       ...scan,
       results: {
-        prompt: results.prompt,
-        model_response: results.model_response || results.response,
-        timestamp: results.timestamp
-      }
-    }];
+        prompt: response.prompt,
+        model_response: response.model_response,
+        responses: [response], // Keep the original response object for raw display
+      },
+      name: `${scan.name} (${index + 1}/${scan.results.responses.length})`
+    }));
   });
 
   return (
