@@ -4,7 +4,10 @@ export function processCustomEndpointResponse(response: any): string {
   
   // Check for aegis response format
   if (response.aegis_response?.evaluation_result) {
-    return JSON.stringify(response.aegis_response.evaluation_result);
+    return JSON.stringify({
+      evaluation: response.aegis_response.evaluation_result,
+      llm_response: response.llm_response?.response || 'No LLM response available'
+    });
   }
   
   // Check for LLM response

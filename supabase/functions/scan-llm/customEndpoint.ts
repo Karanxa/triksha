@@ -17,17 +17,52 @@ export async function handleCustomEndpoint(
     if (config.inputType === 'curl') {
       console.log('Processing cURL command with prompt:', prompt);
       
-      // Parse the curl command body
-      const bodyMatch = config.curlCommand.match(/--data\s+'(.+?)'/s);
-      if (!bodyMatch) {
-        throw new Error('Could not parse request body from cURL command');
-      }
-      
-      // Get the request body and parse it
-      let body = bodyMatch[1];
-      
-      // Replace the placeholder with the actual prompt
-      body = body.replace(new RegExp(config.placeholder, 'g'), prompt);
+      // For Aegis API, construct the request body following their format
+      const requestBody = {
+        aegis_payload: {
+          input: [
+            {
+              role: "user",
+              content: prompt // Replace placeholder with actual prompt
+            }
+          ],
+          guardrail_conf: [
+            {
+              name: "list_checker",
+              required: true,
+              mandatory_accept: false,
+              parameters: "{\"fuzzy\": \"true\"}",
+              is_llm: false
+            },
+            {
+              name: "llm_guard",
+              required: true,
+              mandatory_accept: false,
+              parameters: "{}",
+              is_llm: true
+            }
+          ],
+          min_consensus: 2
+        },
+        llm_payload: {
+          model: "SAQ-v7-all-fk-gpt-turbo-v1.5",
+          messages: [
+            {
+              role: "system",
+              content: "Hello"
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          max_tokens: 120,
+          temperature: 0,
+          top_p: 1,
+          stop: ["<|eot_id|>"]
+        },
+        llm_endpoint: "http://saq-v7-fk-gpt-char-fix-modelhost.mlp-h100-modelhost-prod.fkcloud.in/predict"
+      };
       
       // Parse URL from curl command
       const urlMatch = config.curlCommand.match(/curl\s+.*?'(http[^']+)'/);
@@ -36,24 +71,15 @@ export async function handleCustomEndpoint(
       }
       const url = urlMatch[1];
       
-      // Extract headers from curl command
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      };
-      
-      const headerMatches = config.curlCommand.matchAll(/--header\s+'([^:]+):\s*([^']+)'/g);
-      for (const match of Array.from(headerMatches)) {
-        headers[match[1].trim()] = match[2].trim();
-      }
-      
       console.log('Making request to:', url);
-      console.log('With headers:', headers);
-      console.log('With body:', body);
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
       
       const response = await fetch(url, {
         method: 'POST',
-        headers,
-        body
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {
