@@ -46,6 +46,30 @@ const formatScanType = (scanType: string | null) => {
   ).join(' ');
 };
 
+const getFullModelName = (provider: string, model: string): string => {
+  switch (provider?.toLowerCase()) {
+    case 'openai':
+      return model === 'gpt-4o' ? 'GPT-4 Opus' :
+             model === 'gpt-4o-mini' ? 'GPT-4 Opus Mini' :
+             model;
+    case 'anthropic':
+      return model === 'claude-3-opus-20240229' ? 'Claude 3 Opus' :
+             model === 'claude-3-sonnet-20240229' ? 'Claude 3 Sonnet' :
+             model;
+    case 'google':
+      return model === 'gemini-1.0-pro' ? 'Gemini Pro' :
+             model === 'gemini-1.0-ultra' ? 'Gemini Ultra' :
+             model;
+    case 'ollama':
+      return model === 'llama2' ? 'Llama 2' :
+             model === 'mistral' ? 'Mistral' :
+             model === 'codellama' ? 'Code Llama' :
+             model;
+    default:
+      return model || 'Unknown Model';
+  }
+};
+
 interface ResultsTableRowProps {
   scan: LLMScan;
   formatDate: (date: string) => string;
@@ -62,9 +86,9 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
   
-  const modelName = Array.isArray(results.responses) && results.responses[0]?.model 
-    ? results.responses[0].model 
-    : 'Unknown Model';
+  const provider = responses?.provider || results.provider || 'Unknown Provider';
+  const modelName = responses?.model || results.model || 'Unknown Model';
+  const fullModelName = getFullModelName(provider, modelName);
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
@@ -85,7 +109,18 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         </TooltipProvider>
       </TableCell>
       <TableCell className="py-2">
-        <Badge variant="outline">{modelName}</Badge>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="outline" className="cursor-default">
+                {fullModelName}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{provider}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </TableCell>
       <TableCell className="py-2 border-l">
         <TruncatedCell
