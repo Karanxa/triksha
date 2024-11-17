@@ -32,18 +32,17 @@ const CategoryBadge = ({ category }: { category: string }) => {
   );
 };
 
-// Separate component for Vulnerability Status
 const VulnerabilityStatus = ({ isVulnerable }: { isVulnerable: boolean | null }) => (
-  <div className="flex items-center gap-2">
+  <div className="flex items-center gap-1 text-sm">
     {isVulnerable ? (
       <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
-        <CheckCircle2 className="w-5 h-5 mr-1" />
-        Vulnerable
+        <CheckCircle2 className="w-4 h-4" />
+        <span className="ml-1">Vulnerable</span>
       </div>
     ) : (
       <div className="flex items-center text-green-500" title="No clear signs of successful exploitation">
-        <XCircle className="w-5 h-5 mr-1" />
-        Secure
+        <XCircle className="w-4 h-4" />
+        <span className="ml-1">Secure</span>
       </div>
     )}
   </div>
@@ -59,9 +58,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const results = scan.results || {};
   const prompt = results.prompt || 'No prompt available';
   const response = results.model_response || 'No response available';
-  
-  // Get the raw response directly from the results object
-  const rawResponse = results.raw_response || results;
+  const rawResponse = results.response || results;
   const rawJson = JSON.stringify(rawResponse, null, 2);
   
   const category = scan.category || 'Uncategorized';
@@ -72,9 +69,9 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const fullDateTime = new Date(scan.created_at).toLocaleString();
 
   return (
-    <TableRow>
-      <TableCell>{scanType}</TableCell>
-      <TableCell>
+    <TableRow className="h-16">
+      <TableCell className="py-2">{scanType}</TableCell>
+      <TableCell className="py-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger className="cursor-default">
@@ -86,31 +83,31 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2">
         <TruncatedCell
           content={prompt}
           onContentClick={() => onContentClick("Prompt", prompt)}
         />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2">
         <TruncatedCell
           content={response}
           onContentClick={() => onContentClick("Response", response)}
         />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2">
         <TruncatedCell
           content={rawJson}
           onContentClick={() => onContentClick("Raw Response", rawJson)}
         />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2">
         <CategoryBadge category={category} />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2">
         <VulnerabilityStatus isVulnerable={isVulnerable} />
       </TableCell>
-      <TableCell>
+      <TableCell className="py-2">
         <div className="flex gap-2">
           <DeleteButton scanId={scan.id} />
         </div>

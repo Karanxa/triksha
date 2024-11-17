@@ -16,15 +16,15 @@ export const TruncatedCell = ({ content = "N/A", onContentClick }: TruncatedCell
     <Tooltip>
       <TooltipTrigger asChild>
         <div
-          className="max-w-[200px] truncate cursor-pointer hover:text-primary transition-colors break-all whitespace-pre-wrap line-clamp-1"
+          className="max-w-[200px] truncate cursor-pointer hover:text-primary transition-colors break-all line-clamp-2 text-sm"
           onClick={onContentClick}
         >
           {content}
         </div>
       </TooltipTrigger>
-      <TooltipContent side="bottom" align="start" className="max-w-[400px]">
-        <ScrollArea className="h-[300px]">
-          <p className="whitespace-pre-wrap break-words">{content}</p>
+      <TooltipContent side="bottom" align="start" className="max-w-[300px]">
+        <ScrollArea className="h-[200px]">
+          <p className="whitespace-pre-wrap break-words text-sm">{content}</p>
         </ScrollArea>
       </TooltipContent>
     </Tooltip>
