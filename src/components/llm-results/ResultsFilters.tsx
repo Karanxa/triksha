@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ATTACK_CATEGORIES } from "../datasets/AttackCategorySelect"
 
 interface ResultsFiltersProps {
   searchQuery: string;
@@ -42,15 +43,12 @@ export const ResultsFilters = ({
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
-              <SelectItem value="jailbreaking">Jailbreaking</SelectItem>
-              <SelectItem value="prompt injection">Prompt Injection</SelectItem>
-              <SelectItem value="data extraction">Data Extraction</SelectItem>
-              <SelectItem value="prompt leaking">Prompt Leaking</SelectItem>
-              <SelectItem value="social engineering">Social Engineering</SelectItem>
-              <SelectItem value="system prompt extraction">System Prompt Extraction</SelectItem>
-              <SelectItem value="unauthorized actions">Unauthorized Actions</SelectItem>
-              <SelectItem value="sensitive information disclosure">Sensitive Information Disclosure</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
+              {ATTACK_CATEGORIES.map((category) => (
+                <SelectItem key={category} value={category.toLowerCase()}>
+                  {category}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -62,7 +60,7 @@ export const ResultsFilters = ({
               <SelectValue placeholder="Select severity" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Severities</SelectItem>
+              <SelectItem value="all">All Severities</SelectItem>
               <SelectItem value="critical">Critical</SelectItem>
               <SelectItem value="high">High</SelectItem>
               <SelectItem value="medium">Medium</SelectItem>
@@ -78,7 +76,7 @@ export const ResultsFilters = ({
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="vulnerable">Vulnerable</SelectItem>
               <SelectItem value="secure">Secure</SelectItem>
             </SelectContent>
