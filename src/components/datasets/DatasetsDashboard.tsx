@@ -61,28 +61,29 @@ export const DatasetsDashboard = () => {
 
       if (downloadError) throw downloadError
 
+      let downloadContent: Blob
+      let contentType: string
+      let filename: string = dataset.name
+
       const content = await fileData.text()
-      let downloadContent = content
-      let contentType = 'text/plain'
-      let filename = dataset.name
 
       if (format === 'csv') {
         contentType = 'text/csv'
         filename = `${filename}.csv`
+        downloadContent = new Blob([content], { type: contentType })
       } else if (format === 'zip') {
-        // Create a zip file containing the CSV
         const zip = new JSZip()
         zip.file(`${dataset.name}.csv`, content)
         downloadContent = await zip.generateAsync({ type: 'blob' })
         contentType = 'application/zip'
         filename = `${filename}.zip`
       } else {
+        contentType = 'text/plain'
         filename = `${filename}.txt`
+        downloadContent = new Blob([content], { type: contentType })
       }
 
-      // Create blob and trigger download
-      const blob = new Blob([downloadContent], { type: contentType })
-      const url = window.URL.createObjectURL(blob)
+      const url = window.URL.createObjectURL(downloadContent)
       const a = document.createElement('a')
       a.href = url
       a.download = filename
