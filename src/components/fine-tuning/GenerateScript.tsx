@@ -21,7 +21,7 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
   const [taskType, setTaskType] = useState("")
   const [file, setFile] = useState<File | null>(null)
   
-  // Basic Parameters
+  // Basic Parameters with default values
   const [learningRate, setLearningRate] = useState("0.0001")
   const [batchSize, setBatchSize] = useState("32")
   const [epochs, setEpochs] = useState("10")
@@ -34,13 +34,16 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
   const [saveStrategy, setSaveStrategy] = useState("steps")
   const [randomSeed, setRandomSeed] = useState("42")
 
-  // Advanced Parameters
+  // Advanced Parameters with default values
   const [precision, setPrecision] = useState("fp16")
   const [gradientAccumulation, setGradientAccumulation] = useState("4")
   const [useDeepSpeed, setUseDeepSpeed] = useState(false)
   const [useFlashAttention, setUseFlashAttention] = useState(false)
   const [useMemoryOptimization, setUseMemoryOptimization] = useState(false)
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
+
+  // Check if all required inputs are filled
+  const areRequiredInputsFilled = Boolean(model && datasetType && taskType && file)
 
   const handleGenerateScript = async () => {
     if (!isGoogleAuthed) {
@@ -52,11 +55,11 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
       return
     }
 
-    if (!model || !datasetType || !taskType || !file) {
+    if (!areRequiredInputsFilled) {
       toast({
         variant: "destructive",
         title: "Missing information",
-        description: "Please fill in all required fields"
+        description: "Please fill in all required fields: Base Model, Dataset Type, Task Type, and Dataset"
       })
       return
     }
@@ -124,7 +127,7 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
         className="w-full" 
         size="lg"
         onClick={handleGenerateScript}
-        disabled={!isGoogleAuthed}
+        disabled={!isGoogleAuthed || !areRequiredInputsFilled}
       >
         Generate Fine-tuning Script
       </Button>
