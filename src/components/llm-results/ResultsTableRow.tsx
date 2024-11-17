@@ -88,10 +88,20 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         <Badge variant="outline">{modelName}</Badge>
       </TableCell>
       <TableCell className="py-2">
-        <TruncatedCell
-          content={prompt}
-          onContentClick={() => onContentClick("Prompt", prompt)}
-        />
+        <div className="flex items-center gap-2">
+          <TruncatedCell
+            content={prompt}
+            onContentClick={() => onContentClick("Prompt", prompt)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-muted-foreground hover:text-foreground h-auto py-0 px-1"
+            onClick={() => onContentClick("Raw Prompt", JSON.stringify({ prompt }, null, 2))}
+          >
+            raw
+          </Button>
+        </div>
       </TableCell>
       <TableCell className="py-2">
         <div className="flex items-center gap-2">
