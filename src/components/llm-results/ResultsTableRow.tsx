@@ -2,7 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { DeleteButton } from "./DeleteButton";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, FileJson } from "lucide-react";
 import { LLMScan } from "./types";
 import {
   Tooltip,
@@ -88,28 +88,26 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         <Badge variant="outline">{modelName}</Badge>
       </TableCell>
       <TableCell className="py-2 border-l">
-        <div className="flex items-center gap-2">
-          <TruncatedCell
-            content={prompt}
-            onContentClick={() => onContentClick("Prompt", prompt)}
-          />
-        </div>
+        <TruncatedCell
+          content={prompt}
+          onContentClick={() => onContentClick("Prompt", prompt)}
+        />
       </TableCell>
-      <TableCell className="py-2 relative">
-        <div className="flex items-center gap-2">
-          <TruncatedCell
-            content={response}
-            onContentClick={() => onContentClick("Response", response)}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => onContentClick("Raw Data", JSON.stringify(rawResponse, null, 2))}
-          >
-            raw
-          </Button>
-        </div>
+      <TableCell className="py-2">
+        <TruncatedCell
+          content={response}
+          onContentClick={() => onContentClick("Response", response)}
+        />
+      </TableCell>
+      <TableCell className="py-2 w-[60px] text-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => onContentClick("Raw Data", JSON.stringify(rawResponse, null, 2))}
+        >
+          <FileJson className="h-4 w-4" />
+        </Button>
       </TableCell>
       <TableCell className="py-2 border-l">
         <CategoryBadge category={category} />
