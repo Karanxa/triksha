@@ -24,6 +24,8 @@ const formatPromptText = (text: string): string => {
   // Remove "Feel free to..." and similar ending phrases
   text = text.replace(/Feel free to.*$/i, '')
   text = text.replace(/You can.*$/i, '')
+  text = text.replace(/Sure!.*$/i, '')
+  text = text.replace(/Certainly!.*$/i, '')
   
   // Remove empty lines and trim
   text = text.split('\n')
@@ -32,6 +34,45 @@ const formatPromptText = (text: string): string => {
     .join('\n')
   
   return text.trim()
+}
+
+const parseCSVLine = (line: string): string[] => {
+  const values: string[] = []
+  let currentValue = ''
+  let insideQuotes = false
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i]
+    
+    if (char === '"') {
+      if (insideQuotes && line[i + 1] === '"') {
+        currentValue += '"'
+        i++
+      } else {
+        insideQuotes = !insideQuotes
+      }
+    } else if (char === ',' && !insideQuotes) {
+      values.push(currentValue.trim())
+      currentValue = ''
+    } else {
+      currentValue += char
+    }
+  }
+  
+  values.push(currentValue.trim())
+  return values.map(v => v.replace(/^"|"$/g, ''))
+}
+
+const parseCSVContent = (rawText: string) => {
+  const lines = rawText.split(/\r?\n/)
+  const headers = parseCSVLine(lines[0])
+  
+  const data = lines.slice(1)
+    .filter(line => line.trim())
+    .map(line => parseCSVLine(line))
+    .filter(row => row.length === headers.length)
+  
+  return { headers, data }
 }
 
 const filterEasyJailbreakData = (data: string[][], headers: string[]): string[][] => {
@@ -51,14 +92,16 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
   if (!content) return null
 
   if (viewType === 'table' && content.type === 'csv') {
-    const filteredData = filterEasyJailbreakData(content.data, content.headers)
+    // Re-parse the raw content to handle multi-line cells properly
+    const { headers, data } = parseCSVContent(content.raw)
+    const filteredData = filterEasyJailbreakData(data, headers)
 
     return (
       <ScrollArea className="h-[60vh]">
         <Table>
           <TableHeader>
             <TableRow>
-              {content.headers.map((header, i) => (
+              {headers.map((header, i) => (
                 <TableHead key={i} className="whitespace-nowrap">
                   {header}
                 </TableHead>
@@ -70,7 +113,7 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
               <TableRow key={i}>
                 {row.map((cell, j) => {
                   // Format the prompt column if it exists
-                  const isPromptColumn = content.headers[j].toLowerCase().includes('prompt')
+                  const isPromptColumn = headers[j].toLowerCase().includes('prompt')
                   const formattedCell = isPromptColumn ? formatPromptText(cell) : cell
                   
                   return (
