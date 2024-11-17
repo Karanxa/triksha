@@ -10,7 +10,7 @@ export async function checkEndpointHealth(url: string): Promise<boolean> {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout to 10s
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     try {
       const response = await fetch(url, {
@@ -25,7 +25,7 @@ export async function checkEndpointHealth(url: string): Promise<boolean> {
       clearTimeout(timeoutId);
       return response.ok;
     } catch (fetchError) {
-      console.error('Fetch error during health check:', fetchError);
+      console.error('Health check fetch error:', fetchError);
       return false;
     }
   } catch (error) {

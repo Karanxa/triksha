@@ -13,7 +13,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -73,15 +72,12 @@ serve(async (req) => {
     try {
       for (let i = 0; i < prompts.length; i++) {
         const prompt = prompts[i];
+        let response;
+        
         try {
-          let response;
-          
           if (customEndpoint) {
             console.log('Processing custom endpoint request for prompt:', prompt);
             response = await handleCustomEndpoint(prompt, customEndpoint);
-            if (response.error) {
-              throw new Error(response.error);
-            }
           } else {
             switch (baseProvider) {
               case 'openai':
@@ -103,10 +99,6 @@ serve(async (req) => {
               default:
                 throw new Error(`Unsupported provider: ${baseProvider}`);
             }
-          }
-
-          if (response.error) {
-            throw new Error(response.error);
           }
 
           const modelResponse = processResponse(response);

@@ -14,8 +14,8 @@ export async function handleCustomEndpoint(
       method: config.method,
       url: config.url 
     });
-    
-    // Extract base URL for health check
+
+    // For curl requests, we'll use a predefined endpoint
     let url = config.url;
     if (config.inputType === 'curl') {
       url = 'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt';
@@ -29,9 +29,9 @@ export async function handleCustomEndpoint(
                              url.includes('fkcloud.in');
 
     if (!isTrustedEndpoint) {
+      console.log('Checking endpoint health for:', url);
       const isHealthy = await checkEndpointHealth(url);
       if (!isHealthy) {
-        console.error('External endpoint health check failed for URL:', url);
         throw new Error('External endpoint is not accessible');
       }
     }
@@ -42,10 +42,6 @@ export async function handleCustomEndpoint(
     return result;
   } catch (error) {
     console.error('Custom endpoint error:', error);
-    return {
-      error: error instanceof Error ? 
-        `Custom endpoint error: ${error.message}` : 
-        'Unknown error occurred while processing the request'
-    };
+    throw new Error(`Custom endpoint error: ${error.message}`);
   }
 }
