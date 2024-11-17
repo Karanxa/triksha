@@ -96,7 +96,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex gap-2">
+      <CardFooter>
         {isGitHub ? (
           <Button
             variant="outline"
