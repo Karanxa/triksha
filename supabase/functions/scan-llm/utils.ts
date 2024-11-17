@@ -21,6 +21,11 @@ export function processResponse(rawResponse: any): string {
     return rawResponse.response;
   }
   
+  // Custom endpoint
+  if (rawResponse.model_response) {
+    return rawResponse.model_response;
+  }
+  
   // Fallback
   return JSON.stringify(rawResponse);
 }

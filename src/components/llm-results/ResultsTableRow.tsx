@@ -80,18 +80,16 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
   const results = scan.results || {};
-  const firstResponse = Array.isArray(results.responses) && results.responses.length > 0 
-    ? results.responses[0] 
-    : null;
+  const responses = results.responses || [];
+  const firstResponse = responses[0] || {};
   
-  // Get prompt from either the first response, results.prompt, or stored prompts array
-  const prompt = firstResponse?.prompt || results.prompt || (results.prompts && results.prompts[0]) || 'No prompt available';
-  const response = firstResponse?.model_response || results.model_response || 'No response available';
-  const rawResponse = firstResponse || results;
+  const prompt = firstResponse.prompt || results.prompts?.[0] || 'No prompt available';
+  const response = firstResponse.model_response || 'No response available';
+  const rawResponse = firstResponse.raw_response || firstResponse;
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
   
-  const modelName = firstResponse?.model || results.model || 'Unknown Model';
+  const modelName = firstResponse.model || results.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
