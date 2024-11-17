@@ -26,3 +26,5 @@ export interface TruncatedCellProps {
   content: string;
   onContentClick: () => void;
 }
+
+export type ScanType = 'manual_scan' | 'batch_scan' | 'garak' | 'prompt_fuzzer';

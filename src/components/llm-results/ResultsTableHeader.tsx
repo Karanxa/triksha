@@ -4,7 +4,7 @@ export const ResultsTableHeader = () => {
   return (
     <TableHeader>
       <TableRow>
-        <TableHead>Type</TableHead>
+        <TableHead>Scan Type</TableHead>
         <TableHead>Date</TableHead>
         <TableHead>Prompt</TableHead>
         <TableHead>Response</TableHead>
