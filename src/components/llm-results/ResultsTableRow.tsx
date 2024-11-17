@@ -88,34 +88,30 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
         <Badge variant="outline">{modelName}</Badge>
       </TableCell>
       <TableCell className="py-2 border-l">
-        <div className="flex items-center gap-4">
-          <div className="flex-1 space-y-2">
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Prompt</div>
-              <TruncatedCell
-                content={prompt}
-                onContentClick={() => onContentClick("Prompt", prompt)}
-              />
-            </div>
-            <div className="space-y-1">
-              <div className="text-xs text-muted-foreground">Response</div>
-              <TruncatedCell
-                content={response}
-                onContentClick={() => onContentClick("Response", response)}
-              />
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <TruncatedCell
+            content={prompt}
+            onContentClick={() => onContentClick("Prompt", prompt)}
+          />
+        </div>
+      </TableCell>
+      <TableCell className="py-2 relative">
+        <div className="flex items-center gap-2">
+          <TruncatedCell
+            content={response}
+            onContentClick={() => onContentClick("Response", response)}
+          />
           <Button
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground self-center"
+            className="text-xs text-muted-foreground hover:text-foreground"
             onClick={() => onContentClick("Raw Data", JSON.stringify(rawResponse, null, 2))}
           >
             raw
           </Button>
         </div>
       </TableCell>
-      <TableCell className="py-2">
+      <TableCell className="py-2 border-l">
         <CategoryBadge category={category} />
       </TableCell>
       <TableCell className="py-2">
