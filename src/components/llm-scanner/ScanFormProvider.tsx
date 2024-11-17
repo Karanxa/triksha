@@ -50,11 +50,12 @@ export const ScanFormProvider = ({
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
             <SelectItem value="ollama">Ollama</SelectItem>
+            <SelectItem value="custom">Custom Endpoint</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {selectedProvider === 'ollama' ? (
+      {selectedProvider === 'custom' ? (
         <CustomEndpointInput 
           customEndpoint={customEndpoint}
           onCustomEndpointChange={onCustomEndpointChange}

@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface ScanSubmitProps {
   onSubmit: (data: any) => Promise<any>;
   setResult: (result: any) => void;
+  setScanId?: (id: string | null) => void;
 }
 
-export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
+export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProps) => {
   const [isScanning, setIsScanning] = useState(false);
 
   const handleSubmit = async ({
@@ -64,24 +65,9 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
         throw new Error(`Failed to create scan: ${scanError.message}`);
       }
 
-      // Subscribe to scan updates
-      const subscription = supabase
-        .channel(`scan_${scanData.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'llm_scans',
-            filter: `id=eq.${scanData.id}`,
-          },
-          (payload) => {
-            if (payload.new.status === 'completed') {
-              subscription.unsubscribe();
-            }
-          }
-        )
-        .subscribe();
+      if (setScanId) {
+        setScanId(scanData.id);
+      }
 
       // Call the edge function
       const response = await supabase.functions.invoke('scan-llm', {
@@ -121,6 +107,9 @@ export const useScanSubmit = ({ onSubmit, setResult }: ScanSubmitProps) => {
       return null;
     } finally {
       setIsScanning(false);
+      if (setScanId) {
+        setScanId(null);
+      }
     }
   };
 
