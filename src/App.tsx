@@ -48,31 +48,29 @@ if (typeof window !== 'undefined') {
 
 const App = () => {
   return (
-    <React.StrictMode>
-      <GoogleOAuthProvider clientId={process.env.VITE_GOOGLE_CLIENT_ID || ''}>
-        <QueryClientProvider client={queryClient}>
-          <SessionContextProvider supabaseClient={supabase}>
-            <TooltipProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                  <Route path="/llm-scanner" element={<ProtectedRoute><LLMScanner /></ProtectedRoute>} />
-                  <Route path="/llm-results" element={<ProtectedRoute><LLMResults /></ProtectedRoute>} />
-                  <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
-                  <Route path="/augment-prompt" element={<ProtectedRoute><AugmentPrompt /></ProtectedRoute>} />
-                  <Route path="/fine-tuning" element={<ProtectedRoute><FineTuning /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                </Routes>
-              </BrowserRouter>
-              <Toaster />
-              <Sonner />
-            </TooltipProvider>
-          </SessionContextProvider>
-        </QueryClientProvider>
-      </GoogleOAuthProvider>
-    </React.StrictMode>
+    <GoogleOAuthProvider clientId={process.env.VITE_GOOGLE_CLIENT_ID || ''}>
+      <QueryClientProvider client={queryClient}>
+        <SessionContextProvider supabaseClient={supabase}>
+          <TooltipProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/llm-scanner" element={<ProtectedRoute><LLMScanner /></ProtectedRoute>} />
+                <Route path="/llm-results" element={<ProtectedRoute><LLMResults /></ProtectedRoute>} />
+                <Route path="/datasets" element={<ProtectedRoute><Datasets /></ProtectedRoute>} />
+                <Route path="/augment-prompt" element={<ProtectedRoute><AugmentPrompt /></ProtectedRoute>} />
+                <Route path="/fine-tuning" element={<ProtectedRoute><FineTuning /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              </Routes>
+            </BrowserRouter>
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
+        </SessionContextProvider>
+      </QueryClientProvider>
+    </GoogleOAuthProvider>
   );
 };
 
