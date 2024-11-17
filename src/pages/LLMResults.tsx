@@ -17,23 +17,26 @@ const LLMResults = () => {
   const { data: scans, isLoading } = useQuery({
     queryKey: ['llm-scans', debouncedSearch, selectedCategory, selectedSeverity, vulnerabilityStatus],
     queryFn: async () => {
-      console.log('Fetching scans...');
+      console.log('Fetching scans with filters:', {
+        search: debouncedSearch,
+        category: selectedCategory,
+        severity: selectedSeverity,
+        vulnerability: vulnerabilityStatus
+      });
+
       let query = supabase
         .from('llm_scans')
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Only apply category filter if not "all"
       if (selectedCategory !== 'all') {
         query = query.ilike('category', selectedCategory);
       }
 
-      // Only apply severity filter if not "all"
       if (selectedSeverity !== 'all') {
         query = query.ilike('severity', selectedSeverity.toLowerCase());
       }
 
-      // Apply vulnerability status filter
       if (vulnerabilityStatus === 'vulnerable') {
         query = query.eq('is_vulnerable', true);
       } else if (vulnerabilityStatus === 'secure') {
@@ -49,8 +52,7 @@ const LLMResults = () => {
 
       console.log('Fetched scans:', data);
 
-      // Filter results based on search query if provided
-      if (debouncedSearch && data) {
+      if (debouncedSearch) {
         return data.filter((scan: LLMScan) => {
           const results = scan.results || {};
           const promptText = String(results.prompt || '');
@@ -65,7 +67,8 @@ const LLMResults = () => {
       return data as LLMScan[];
     },
     refetchOnWindowFocus: true,
-    staleTime: 0, // Consider all data stale immediately
+    staleTime: 0,
+    retry: 1,
   });
 
   if (isLoading) {
