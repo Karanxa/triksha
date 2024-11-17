@@ -2,7 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, FileJson } from "lucide-react";
-import { LLMScan } from "./types";
+import { LLMScan, ScanResponse } from "./types";
 import {
   Tooltip,
   TooltipContent,
@@ -80,8 +80,8 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
   const results = scan.results || {};
-  const responses = results.responses || [];
-  const firstResponse = responses[0] || {};
+  const responses: ScanResponse[] = results.responses || [];
+  const firstResponse = responses[0] || {} as ScanResponse;
   
   const prompt = firstResponse.prompt || results.prompts?.[0] || 'No prompt available';
   const response = firstResponse.model_response || 'No response available';
