@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { generateAdversarialPrompts } from './adversarialGenerator.ts'
 import { enhanceWithOpenAI } from './openaiEnhancer.ts'
 import { generateRecipePrompts } from './recipeGenerator.ts'
+import { enhanceRecipePrompts } from './recipeEnhancer.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,14 +54,23 @@ serve(async (req) => {
         targetModel,
         numSamples
       }
-      // Generate recipe-based prompts
+      // Generate base recipe prompts
       prompts = await generateRecipePrompts({ recipe, targetModel, numSamples })
-      console.log('Generated recipe prompts:', prompts)
+      
+      // Get user's OpenAI API key for enhancement
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.api_keys?.openai) {
+        // Enhance the prompts using OpenAI
+        prompts = await enhanceRecipePrompts(prompts, { recipe, targetModel, numSamples }, profile.api_keys.openai)
+      }
     } else if (method === 'adversarial') {
-      // Generate base adversarial prompts
       prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
       
-      // Enhance prompts using OpenAI
       const { data: profile } = await supabase
         .from('profiles')
         .select('api_keys')
@@ -83,7 +93,7 @@ serve(async (req) => {
       prompts = [basePrompt]
     }
 
-    // Create CSV content with proper escaping
+    // Create CSV content
     fileContent = 'prompt,category,method\n'
     prompts.forEach((prompt) => {
       if (prompt) {
