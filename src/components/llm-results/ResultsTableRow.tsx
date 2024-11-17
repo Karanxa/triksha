@@ -55,10 +55,10 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
   const results = scan.results || {};
   const prompt = results.prompt || 'No prompt available';
   const response = results.model_response || 'No response available';
-  // Get the complete raw response from the first response in the responses array
-  const rawResponse = results.responses?.[0] || results;
+  const rawResponse = results.responses?.[0]?.raw_response || results;
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
+  const provider = results.responses?.[0]?.provider || 'Unknown Provider';
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
@@ -77,6 +77,9 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTab
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+      </TableCell>
+      <TableCell className="py-2">
+        <Badge variant="outline">{provider}</Badge>
       </TableCell>
       <TableCell className="py-2">
         <TruncatedCell
