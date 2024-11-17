@@ -53,12 +53,14 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick }: ResultsTableRowProps) => {
   const results = scan.results || {};
-  const prompt = results.prompt || 'No prompt available';
-  const response = results.model_response || 'No response available';
-  const rawResponse = results.raw_response || results;
+  const responses = Array.isArray(results.responses) ? results.responses[0] : results;
+  
+  const prompt = responses?.prompt || results.prompt || 'No prompt available';
+  const response = responses?.model_response || results.model_response || 'No response available';
+  const rawResponse = responses?.raw_response || results;
   const category = scan.category || 'Uncategorized';
   const isVulnerable = scan.is_vulnerable;
-  const provider = results.provider || scan.provider || 'Unknown Provider';
+  const provider = responses?.provider || scan.provider || results.provider || 'Unknown Provider';
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
