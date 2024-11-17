@@ -12,8 +12,13 @@ export const ModelSelect = ({ provider, selectedProvider, onModelChange }: Model
     switch (selectedProvider) {
       case "openai":
         return [
-          { value: "gpt-4", label: "GPT-4" },
-          { value: "gpt-4-turbo-preview", label: "GPT-4 Turbo" }
+          { value: "gpt-4o", label: "GPT-4 Opus (Most Powerful)" },
+          { value: "gpt-4o-mini", label: "GPT-4 Opus Mini (Fast)" },
+          { value: "gpt-4-0125-preview", label: "GPT-4 Turbo Preview" },
+          { value: "gpt-4-1106-preview", label: "GPT-4 Turbo (Legacy)" },
+          { value: "gpt-4", label: "GPT-4 (Legacy)" },
+          { value: "gpt-3.5-turbo-0125", label: "GPT-3.5 Turbo" },
+          { value: "gpt-3.5-turbo-instruct", label: "GPT-3.5 Turbo Instruct" }
         ];
       case "anthropic":
         return [
