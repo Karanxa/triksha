@@ -11,9 +11,11 @@ function App() {
       <Router>
         <AuthGuard>
           <div className="min-h-screen bg-background">
-            <Navigation />
-            <ScanNotification />
-            <Toaster />
+            <div className="container mx-auto px-4">
+              <Navigation />
+              <ScanNotification />
+              <Toaster />
+            </div>
           </div>
         </AuthGuard>
       </Router>
