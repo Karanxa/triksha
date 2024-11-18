@@ -15,8 +15,8 @@ const Navigation = () => {
     { href: "/llm-scanner", label: "Red Teaming" },
     { href: "/llm-results", label: "Results" },
     { href: "/datasets", label: "Datasets" },
-    { href: "/augment-prompt", label: "Augment Prompt" },
-    { href: "/fine-tuning", label: "Fine Tuning" },
+    { href: "/augment-prompt", label: "Prompt Augmentation" },
+    { href: "/fine-tuning", label: "Fine-tuning" },
   ];
 
   const handleLogout = async () => {
@@ -64,7 +64,7 @@ const Navigation = () => {
                 : "text-muted-foreground"
             )}
           >
-            API Keys
+            Keys
           </Link>
           <ThemeToggle />
           <Button 
