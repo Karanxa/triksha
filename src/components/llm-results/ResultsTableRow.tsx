@@ -79,6 +79,8 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
+  console.log('Rendering scan:', scan); // Debug log
+  
   // Handle both single prompt and batch responses
   const isSinglePrompt = scan.scan_type === 'manual_scan';
   
@@ -86,21 +88,33 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
   let response = 'No response available';
   let rawResponse = {};
   
-  if (isSinglePrompt) {
-    // For single prompt scans
-    prompt = scan.results?.prompt || scan.results?.responses?.[0]?.prompt || 'No prompt available';
-    response = scan.results?.model_response || scan.results?.responses?.[0]?.model_response || 'No response available';
-    rawResponse = scan.results?.raw_response || scan.results || {};
-  } else {
-    // For batch scans, get responses from the responses array
-    const responses = scan.results?.responses || [];
-    if (responses && responses.length > 0) {
-      // Find the first valid response
-      const validResponse = responses.find(r => r && (r.prompt || r.model_response));
-      if (validResponse) {
-        prompt = validResponse.prompt || 'No prompt available';
-        response = validResponse.model_response || validResponse.response || 'No response available';
-        rawResponse = validResponse.raw_response || validResponse;
+  if (scan.results) {
+    console.log('Scan results:', scan.results); // Debug log
+    
+    if (isSinglePrompt) {
+      // For single prompt scans
+      if (scan.results.prompt || scan.results.model_response) {
+        prompt = scan.results.prompt || 'No prompt available';
+        response = scan.results.model_response || 'No response available';
+        rawResponse = scan.results.raw_response || scan.results;
+      } else if (scan.results.responses?.[0]) {
+        // Fallback to first response if available
+        prompt = scan.results.responses[0].prompt || 'No prompt available';
+        response = scan.results.responses[0].model_response || 'No response available';
+        rawResponse = scan.results.responses[0].raw_response || scan.results.responses[0];
+      }
+    } else {
+      // For batch scans
+      if (Array.isArray(scan.results.responses) && scan.results.responses.length > 0) {
+        console.log('Batch responses:', scan.results.responses); // Debug log
+        
+        // Find the first valid response
+        const validResponse = scan.results.responses.find(r => r && (r.prompt || r.model_response));
+        if (validResponse) {
+          prompt = validResponse.prompt || 'No prompt available';
+          response = validResponse.model_response || validResponse.response || 'No response available';
+          rawResponse = validResponse.raw_response || validResponse;
+        }
       }
     }
   }
