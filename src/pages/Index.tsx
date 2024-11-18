@@ -6,10 +6,10 @@ const Index = () => {
   const navigate = useNavigate();
   
   const tools = [
-    { icon: Brain, title: "Red Teaming", path: "/llm-scanner" },
-    { icon: List, title: "LLM Results", path: "/llm-results" },
+    { icon: Brain, title: "Scans", path: "/llm-scanner" },
+    { icon: List, title: "Results", path: "/llm-results" },
     { icon: Database, title: "Datasets", path: "/datasets" },
-    { icon: FileText, title: "Prompt Augmentation", path: "/augment-prompt" },
+    { icon: FileText, title: "Augmentation", path: "/augment-prompt" },
     { icon: Settings, title: "Fine-tuning", path: "/fine-tuning" },
   ];
 
