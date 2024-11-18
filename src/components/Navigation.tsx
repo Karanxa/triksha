@@ -1,9 +1,14 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
+import { Button } from "./ui/button";
+import { LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   const links = [
     { href: "/", label: "Home" },
@@ -13,6 +18,17 @@ const Navigation = () => {
     { href: "/augment-prompt", label: "Augment Prompt" },
     { href: "/fine-tuning", label: "Fine Tuning" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      toast.error("Error logging out");
+    }
+  };
 
   return (
     <nav className="border-b">
@@ -46,6 +62,14 @@ const Navigation = () => {
             Keys
           </Link>
           <ThemeToggle />
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
         </div>
       </div>
     </nav>
