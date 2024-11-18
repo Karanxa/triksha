@@ -40,7 +40,8 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           responses = [{
             prompt: scan.results.prompt,
             model_response: scan.results.model_response,
-            raw_response: scan.results.raw_response
+            raw_response: scan.results.raw_response,
+            model: scan.results.model
           }];
         }
       }
@@ -50,17 +51,20 @@ export function ResultsTable({ scans }: ResultsTableProps) {
         responses = [{
           prompt: 'No prompt available',
           model_response: 'No response available',
-          raw_response: {}
+          raw_response: {},
+          model: scan.results?.model || 'Unknown Model'
         }];
       }
 
       // Map each response to include scan metadata
       return responses.map((response, index) => ({
         ...scan,
+        scan_type: scan.scan_type || 'manual_scan',
         response: {
           prompt: response?.prompt || 'No prompt available',
           model_response: response?.model_response || response?.response || 'No response available',
-          raw_response: response?.raw_response || {}
+          raw_response: response?.raw_response || {},
+          model: response?.model || scan.results?.model || 'Unknown Model'
         }
       }));
     });

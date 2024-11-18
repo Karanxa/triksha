@@ -41,34 +41,33 @@ const VulnerabilityStatus = ({ isVulnerable }: { isVulnerable: boolean | null })
 
 const formatScanType = (scanType: string | null) => {
   if (!scanType) return 'Manual Scan';
-  return scanType.split('_').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
+  
+  const typeMap: { [key: string]: string } = {
+    'manual_scan': 'Manual Scan',
+    'batch_scan': 'Batch Scan',
+    'garak': 'Garak',
+    'prompt_fuzzer': 'Prompt Fuzzer'
+  };
+  
+  return typeMap[scanType] || scanType.split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 };
 
 const getFullModelName = (model: string): string => {
-  switch (model) {
-    case 'gpt-4o':
-      return 'GPT-4 Opus';
-    case 'gpt-4o-mini':
-      return 'GPT-4 Opus Mini';
-    case 'claude-3-opus-20240229':
-      return 'Claude 3 Opus';
-    case 'claude-3-sonnet-20240229':
-      return 'Claude 3 Sonnet';
-    case 'gemini-1.0-pro':
-      return 'Gemini Pro';
-    case 'gemini-1.0-ultra':
-      return 'Gemini Ultra';
-    case 'llama2':
-      return 'Llama 2';
-    case 'mistral':
-      return 'Mistral';
-    case 'codellama':
-      return 'Code Llama';
-    default:
-      return model || 'Unknown Model';
-  }
+  const modelMap: { [key: string]: string } = {
+    'gpt-4o': 'GPT-4 Opus',
+    'gpt-4o-mini': 'GPT-4 Opus Mini',
+    'claude-3-opus-20240229': 'Claude 3 Opus',
+    'claude-3-sonnet-20240229': 'Claude 3 Sonnet',
+    'gemini-1.0-pro': 'Gemini Pro',
+    'gemini-1.0-ultra': 'Gemini Ultra',
+    'llama2': 'Llama 2',
+    'mistral': 'Mistral',
+    'codellama': 'Code Llama'
+  };
+  
+  return modelMap[model] || model || 'Unknown Model';
 };
 
 interface ResultsTableRowProps {
@@ -77,6 +76,7 @@ interface ResultsTableRowProps {
     prompt: string;
     model_response: string;
     raw_response: any;
+    model?: string;
   };
   formatDate: (date: string) => string;
   onContentClick: (title: string, content: string) => void;
@@ -84,7 +84,7 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
-  const modelName = scan.results?.model || 'Unknown Model';
+  const modelName = response.model || scan.results?.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
