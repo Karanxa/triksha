@@ -26,17 +26,52 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     setHiddenScans(prev => new Set([...prev, scanId]));
   };
 
-  const visibleScans = scans.filter(scan => !hiddenScans.has(scan.id));
+  // Filter out hidden scans and flatten the results
+  const visibleResults = scans
+    .filter(scan => !hiddenScans.has(scan.id))
+    .flatMap(scan => {
+      // Get responses from the scan
+      let responses = [];
+      if (scan.results?.responses && Array.isArray(scan.results.responses)) {
+        responses = scan.results.responses;
+      } else if (scan.results?.prompt || scan.results?.model_response) {
+        responses = [{
+          prompt: scan.results.prompt,
+          model_response: scan.results.model_response,
+          raw_response: scan.results.raw_response
+        }];
+      }
+
+      // If no responses, create a default one
+      if (responses.length === 0) {
+        responses = [{
+          prompt: 'No prompt available',
+          model_response: 'No response available',
+          raw_response: {}
+        }];
+      }
+
+      // Map each response to include scan metadata
+      return responses.map((response, index) => ({
+        ...scan,
+        response: {
+          prompt: response.prompt || 'No prompt available',
+          model_response: response.model_response || response.response || 'No response available',
+          raw_response: response.raw_response || {}
+        }
+      }));
+    });
 
   return (
     <>
       <Table>
         <ResultsTableHeader />
         <TableBody>
-          {visibleScans.map((scan) => (
+          {visibleResults.map((result, index) => (
             <ResultsTableRow
-              key={scan.id}
-              scan={scan}
+              key={`${result.id}-${index}`}
+              scan={result}
+              response={result.response}
               formatDate={formatDate}
               onContentClick={handleContentClick}
               onHide={handleHideScan}
