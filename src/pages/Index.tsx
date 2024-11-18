@@ -15,8 +15,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container py-12">
-        <div className="mb-12 text-center">
+      <div className="container max-w-4xl mx-auto py-12 px-4">
+        <div className="mb-16 text-center">
           <h1 className="text-6xl font-bold mb-4">Geraid</h1>
           <p className="text-xl text-muted-foreground">
             An E2E LLM Offensive Security Testing Platform
@@ -34,20 +34,24 @@ const Index = () => {
           </p>
         </div>
 
-        <h2 className="text-2xl font-semibold mb-4">Tools</h2>
-        <p className="text-lg text-muted-foreground mb-8">
-          Select a tool to get started with genai security testing.
-        </p>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold">Tools</h2>
+            <p className="text-muted-foreground">
+              Select a tool to get started with genai security testing.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
-          {tools.map((tool) => (
-            <ToolCard
-              key={tool.title}
-              icon={tool.icon}
-              title={tool.title}
-              onClick={() => tool.path ? navigate(tool.path) : null}
-            />
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tools.map((tool) => (
+              <ToolCard
+                key={tool.title}
+                icon={tool.icon}
+                title={tool.title}
+                onClick={() => tool.path ? navigate(tool.path) : null}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
