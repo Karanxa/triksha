@@ -92,21 +92,17 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
     response = scan.results?.model_response || 'No response available';
     rawResponse = scan.results?.raw_response || scan.results || {};
   } else {
-    // For batch scans
+    // For batch scans, get responses from the responses array
     const responses = scan.results?.responses || [];
-    const firstResponse: ScanResponse = responses[0] || {
-      prompt: '',
-      model_response: '',
-      response: '',
-      raw_response: null,
-      category: '',
-      is_vulnerable: null,
-      model: ''
-    };
-    
-    prompt = firstResponse.prompt || 'No prompt available';
-    response = firstResponse.model_response || firstResponse.response || 'No response available';
-    rawResponse = firstResponse.raw_response || firstResponse;
+    if (responses && responses.length > 0) {
+      // Find the first valid response
+      const validResponse = responses.find(r => r && (r.prompt || r.model_response));
+      if (validResponse) {
+        prompt = validResponse.prompt || 'No prompt available';
+        response = validResponse.model_response || validResponse.response || 'No response available';
+        rawResponse = validResponse.raw_response || validResponse;
+      }
+    }
   }
   
   const category = scan.category || 'Uncategorized';
