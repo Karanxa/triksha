@@ -21,15 +21,17 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route element={<AuthGuard />}>
-              <Route element={
-                <>
-                  <Navigation />
-                  <div className="container mx-auto px-4">
-                    <Outlet />
-                  </div>
-                </>
-              }>
-                <Route index element={<Index />} />
+              <Route
+                element={
+                  <>
+                    <Navigation />
+                    <main className="container mx-auto px-4">
+                      <Outlet />
+                    </main>
+                  </>
+                }
+              >
+                <Route path="/" element={<Index />} />
                 <Route path="/llm-scanner" element={<LLMScanner />} />
                 <Route path="/llm-results" element={<LLMResults />} />
                 <Route path="/datasets" element={<Datasets />} />
