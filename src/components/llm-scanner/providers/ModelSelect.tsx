@@ -8,7 +8,7 @@ interface ModelSelectProps {
 
 export const ModelSelect = ({ provider, onModelChange }: ModelSelectProps) => {
   const getModelsForProvider = () => {
-    switch (provider.split('-')[0]) {
+    switch (provider) {
       case 'openai':
         return [
           { value: 'gpt-4o', displayName: 'GPT-4 Opus' },
@@ -39,13 +39,11 @@ export const ModelSelect = ({ provider, onModelChange }: ModelSelectProps) => {
     onModelChange(value);
   };
 
-  const currentValue = provider.split('-')[1] || "";
-
   return (
     <div className="space-y-4">
       <Label>Model</Label>
       <Select
-        value={currentValue}
+        value=""
         onValueChange={handleModelChange}
       >
         <SelectTrigger>

@@ -60,8 +60,7 @@ export const ScanFormProvider = ({
         />
       ) : selectedProvider && (
         <ModelSelect 
-          provider={provider}
-          selectedProvider={selectedProvider}
+          provider={selectedProvider}
           onModelChange={(model) => onProviderChange(`${selectedProvider}-${model}`)}
         />
       )}
