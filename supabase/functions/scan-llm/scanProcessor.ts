@@ -14,12 +14,14 @@ export async function processScan(
   apiKeys: any,
   supabase: any,
   userId: string,
-  category: string = 'jailbreaking' // Default category if none provided
+  category: string = 'jailbreaking'
 ) {
   const [baseProvider, model] = provider ? provider.split('-') : [null, null];
   console.log('Processing scan with provider:', baseProvider, 'model:', model);
 
   const results = [];
+  let processedCount = 0;
+  const totalPrompts = prompts.length;
   
   for (const prompt of prompts) {
     try {
@@ -44,7 +46,7 @@ export async function processScan(
           raw_response: response,
           provider: baseProvider || 'custom',
           model: model || 'custom-endpoint',
-          category // Ensure category is set
+          category
         })
         .single();
 
@@ -53,11 +55,29 @@ export async function processScan(
         throw new Error(`Database error: ${resultError.message}`);
       }
 
-      results.push({
+      const result = {
         prompt,
         model_response: modelResponse,
         raw_response: response
-      });
+      };
+      
+      results.push(result);
+      
+      // Update progress
+      processedCount++;
+      const progress = Math.round((processedCount / totalPrompts) * 100);
+      
+      // Update scan status with progress
+      await supabase
+        .from('llm_scans')
+        .update({
+          status: 'processing',
+          results: {
+            progress,
+            responses: results
+          }
+        })
+        .eq('id', scanId);
 
     } catch (error) {
       console.error('Error processing prompt:', error);
@@ -68,13 +88,14 @@ export async function processScan(
     }
   }
 
-  // Update scan status
+  // Update final scan status
   await supabase
     .from('llm_scans')
     .update({
       status: 'completed',
       results: {
-        responses: results
+        responses: results,
+        progress: 100
       }
     })
     .eq('id', scanId);

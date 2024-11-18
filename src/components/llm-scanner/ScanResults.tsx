@@ -23,11 +23,7 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<string>('pending');
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<{
-    processed: number;
-    failed: number;
-    total: number;
-  } | null>(null);
+  const [results, setResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (!scanId) return;
@@ -47,20 +43,15 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
             setStatus('processing');
             const results = payload.new.results || {};
             setProgress(results.progress || 0);
-            setStats({
-              processed: results.processed || 0,
-              failed: results.failed || 0,
-              total: results.total || 0
-            });
+            if (results.responses) {
+              setResults(results.responses);
+            }
           } else if (payload.new.status === 'completed') {
             setStatus('completed');
             setProgress(100);
-            const results = payload.new.results || {};
-            setStats({
-              processed: results.processed || 0,
-              failed: results.failed || 0,
-              total: results.total || 0
-            });
+            if (payload.new.results?.responses) {
+              setResults(payload.new.results.responses);
+            }
           } else if (payload.new.status === 'failed') {
             setStatus('failed');
             setError(payload.new.results?.error || 'Unknown error occurred');
@@ -87,10 +78,9 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
               <p className="text-sm text-muted-foreground">
                 Processing scan... {progress}% complete
               </p>
-              {stats && (
+              {results.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Processed {stats.processed} of {stats.total} prompts
-                  {stats.failed > 0 && ` (${stats.failed} failed)`}
+                  Processed {results.length} prompts
                 </p>
               )}
             </div>
@@ -110,7 +100,10 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
     );
   }
 
-  if (!result) {
+  // Handle array of results (batch scan)
+  const resultsToDisplay = Array.isArray(result) ? result : results;
+
+  if (!resultsToDisplay || resultsToDisplay.length === 0) {
     return (
       <Alert variant="default" className="mt-8">
         <AlertCircle className="h-4 w-4" />
@@ -120,21 +113,15 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
     );
   }
 
-  // Handle array of results (batch scan)
-  if (Array.isArray(result)) {
-    return (
-      <ScrollArea className="h-[60vh] mt-8">
-        <div className="space-y-4">
-          {result.map((item, index) => (
-            <SingleResult key={index} result={item} />
-          ))}
-        </div>
-      </ScrollArea>
-    );
-  }
-
-  // Handle single result
-  return <SingleResult result={result} />;
+  return (
+    <ScrollArea className="h-[60vh] mt-8">
+      <div className="space-y-4">
+        {resultsToDisplay.map((item, index) => (
+          <SingleResult key={index} result={item} />
+        ))}
+      </div>
+    </ScrollArea>
+  );
 };
 
 const SingleResult = ({ result }: { result: ScanResult }) => {
