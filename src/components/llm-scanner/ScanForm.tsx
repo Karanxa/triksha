@@ -12,6 +12,7 @@ import { ScanPromptInput } from "./ScanPromptInput";
 import { ScanProgress } from "./ScanProgress";
 import { ScanFormActions } from "./ScanFormActions";
 import { ScanStatusHandler } from "./ScanStatusHandler";
+import { ScanNotification } from "./ScanNotification";
 import { CustomEndpoint } from "./types/CustomEndpoint";
 import { useScanSubmit } from "./hooks/useScanSubmit";
 
@@ -60,6 +61,14 @@ export const ScanForm = () => {
           setLabel("");
           setSchedule("none");
           setIsRecurring(false);
+          
+          // For batch scans, show a notification and optionally redirect
+          if (scanType === "batch") {
+            toast.success('Batch scan started successfully', {
+              description: 'You can navigate away - the scan will continue in the background.'
+            });
+          }
+          
           return result;
         }
       } catch (error) {
@@ -107,6 +116,7 @@ export const ScanForm = () => {
 
   return (
     <div className="space-y-8">
+      <ScanNotification />
       <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
 
       <ScanFormProvider 
