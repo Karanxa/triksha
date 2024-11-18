@@ -13,7 +13,8 @@ export async function processScan(
   customEndpoint: any,
   apiKeys: any,
   supabase: any,
-  userId: string
+  userId: string,
+  category: string = 'jailbreaking' // Default category if none provided
 ) {
   const [baseProvider, model] = provider ? provider.split('-') : [null, null];
   console.log('Processing scan with provider:', baseProvider, 'model:', model);
@@ -32,7 +33,7 @@ export async function processScan(
       const modelResponse = processProviderResponse(response, baseProvider || 'custom');
       console.log('Processed response:', modelResponse);
 
-      // Store result
+      // Store result with category
       const { error: resultError } = await supabase
         .from('llm_scan_results')
         .insert({
@@ -42,7 +43,8 @@ export async function processScan(
           model_response: modelResponse,
           raw_response: response,
           provider: baseProvider || 'custom',
-          model: model || 'custom-endpoint'
+          model: model || 'custom-endpoint',
+          category // Ensure category is set
         })
         .single();
 

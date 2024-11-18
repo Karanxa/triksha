@@ -28,8 +28,8 @@ serve(async (req) => {
     if (userError || !user) throw new Error('Invalid user token');
 
     // Get request data
-    const { scanId, prompts, provider, customEndpoint } = await req.json();
-    console.log('Received scan request:', { scanId, promptCount: prompts?.length, provider });
+    const { scanId, prompts, provider, customEndpoint, category } = await req.json();
+    console.log('Received scan request:', { scanId, promptCount: prompts?.length, provider, category });
 
     if (!prompts?.length) throw new Error('No prompts provided');
     if (!provider && !customEndpoint) throw new Error('Provider or custom endpoint required');
@@ -53,7 +53,7 @@ serve(async (req) => {
     if (profileError) throw new Error(`Failed to get profile: ${profileError.message}`);
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
-    // Process the scan
+    // Process the scan with category
     const results = await processScan(
       scanId,
       prompts,
@@ -61,7 +61,8 @@ serve(async (req) => {
       customEndpoint,
       profile.api_keys,
       supabase,
-      user.id
+      user.id,
+      category || 'jailbreaking' // Provide default category if none specified
     );
 
     return new Response(
