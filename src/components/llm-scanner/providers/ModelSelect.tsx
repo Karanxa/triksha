@@ -1,4 +1,10 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
 interface ModelSelectProps {
@@ -12,23 +18,23 @@ export const ModelSelect = ({ provider, onModelChange }: ModelSelectProps) => {
       case 'openai':
         return [
           { value: 'gpt-4o', displayName: 'GPT-4 Opus' },
-          { value: 'gpt-4o-mini', displayName: 'GPT-4 Opus Mini' },
+          { value: 'gpt-4o-mini', displayName: 'GPT-4 Opus Mini' }
         ];
       case 'anthropic':
         return [
           { value: 'claude-3-opus-20240229', displayName: 'Claude 3 Opus' },
-          { value: 'claude-3-sonnet-20240229', displayName: 'Claude 3 Sonnet' },
+          { value: 'claude-3-sonnet-20240229', displayName: 'Claude 3 Sonnet' }
         ];
       case 'google':
         return [
           { value: 'gemini-1.0-pro', displayName: 'Gemini Pro' },
-          { value: 'gemini-1.0-ultra', displayName: 'Gemini Ultra' },
+          { value: 'gemini-1.0-ultra', displayName: 'Gemini Ultra' }
         ];
       case 'ollama':
         return [
           { value: 'llama2', displayName: 'Llama 2' },
           { value: 'mistral', displayName: 'Mistral' },
-          { value: 'codellama', displayName: 'Code Llama' },
+          { value: 'codellama', displayName: 'Code Llama' }
         ];
       default:
         return [];
@@ -43,11 +49,10 @@ export const ModelSelect = ({ provider, onModelChange }: ModelSelectProps) => {
     <div className="space-y-4">
       <Label>Model</Label>
       <Select
-        value=""
         onValueChange={handleModelChange}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Select a model" />
+          <SelectValue placeholder="Select model" />
         </SelectTrigger>
         <SelectContent>
           {getModelsForProvider().map((model) => (
