@@ -9,14 +9,14 @@ import { useDebounce } from "@/hooks/useDebounce";
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedSeverity, setSelectedSeverity] = useState("all");
+  const [selectedScanType, setSelectedScanType] = useState("all");
   const [vulnerabilityStatus, setVulnerabilityStatus] = useState("all");
   const [selectedModel, setSelectedModel] = useState("all");
   
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   const { data: scans, isLoading } = useQuery({
-    queryKey: ['llm-scans', debouncedSearch, selectedCategory, selectedSeverity, vulnerabilityStatus, selectedModel],
+    queryKey: ['llm-scans', debouncedSearch, selectedCategory, selectedScanType, vulnerabilityStatus, selectedModel],
     queryFn: async () => {
       let query = supabase
         .from('llm_scans')
@@ -27,8 +27,8 @@ const LLMResults = () => {
         query = query.ilike('category', selectedCategory);
       }
 
-      if (selectedSeverity !== 'all') {
-        query = query.ilike('severity', selectedSeverity.toLowerCase());
+      if (selectedScanType !== 'all') {
+        query = query.eq('scan_type', selectedScanType);
       }
 
       if (vulnerabilityStatus === 'vulnerable') {
@@ -92,8 +92,8 @@ const LLMResults = () => {
         setSearchQuery={setSearchQuery}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
-        selectedSeverity={selectedSeverity}
-        setSelectedSeverity={setSelectedSeverity}
+        selectedScanType={selectedScanType}
+        setSelectedScanType={setSelectedScanType}
         vulnerabilityStatus={vulnerabilityStatus}
         setVulnerabilityStatus={setVulnerabilityStatus}
         selectedModel={selectedModel}

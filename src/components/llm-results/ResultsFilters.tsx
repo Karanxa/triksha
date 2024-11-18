@@ -2,27 +2,35 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ATTACK_CATEGORIES } from "../datasets/AttackCategorySelect"
+import { ScanType } from "./types"
 
 interface ResultsFiltersProps {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   selectedCategory: string;
   setSelectedCategory: (value: string) => void;
-  selectedSeverity: string;
-  setSelectedSeverity: (value: string) => void;
+  selectedScanType: string;
+  setSelectedScanType: (value: string) => void;
   vulnerabilityStatus: string;
   setVulnerabilityStatus: (value: string) => void;
   selectedModel: string;
   setSelectedModel: (value: string) => void;
 }
 
+const SCAN_TYPES = [
+  { value: 'manual_scan', label: 'Manual Scan' },
+  { value: 'batch_scan', label: 'Batch Scan' },
+  { value: 'garak', label: 'Garak' },
+  { value: 'prompt_fuzzer', label: 'Prompt Fuzzer' }
+];
+
 export const ResultsFilters = ({
   searchQuery,
   setSearchQuery,
   selectedCategory,
   setSelectedCategory,
-  selectedSeverity,
-  setSelectedSeverity,
+  selectedScanType,
+  setSelectedScanType,
   vulnerabilityStatus,
   setVulnerabilityStatus,
   selectedModel,
@@ -58,17 +66,18 @@ export const ResultsFilters = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Severity</Label>
-          <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
+          <Label>Scan Type</Label>
+          <Select value={selectedScanType} onValueChange={setSelectedScanType}>
             <SelectTrigger>
-              <SelectValue placeholder="Select severity" />
+              <SelectValue placeholder="Select scan type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Severities</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
+              {SCAN_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -109,5 +118,5 @@ export const ResultsFilters = ({
         </div>
       </div>
     </div>
-  )
+  );
 }
