@@ -8,11 +8,6 @@ interface ScanTabsProps {
 }
 
 export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
-  const handleSubmit = async (data: any) => {
-    // Handle form submission
-    console.log("Form submitted:", data);
-  };
-
   return (
     <Tabs defaultValue={initialTab} className="w-full">
       <TabsList className="grid w-full grid-cols-3">
@@ -21,7 +16,7 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
         <TabsTrigger value="fuzzer">Security Fuzzer</TabsTrigger>
       </TabsList>
       <TabsContent value="basic">
-        <ScanForm onSubmit={handleSubmit} />
+        <ScanForm />
       </TabsContent>
       <TabsContent value="garak">
         <GarakScanForm />

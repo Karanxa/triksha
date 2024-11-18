@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { ScanFormProvider } from "./ScanFormProvider";
@@ -136,7 +136,9 @@ export const ScanForm = () => {
         />
       </div>
 
-      <QPSControl qps={qps} onQPSChange={setQPS} />
+      {scanType === "batch" && (
+        <QPSControl qps={qps} onQPSChange={setQPS} />
+      )}
 
       <ScanFormSchedule
         schedule={schedule}
@@ -165,7 +167,7 @@ export const ScanForm = () => {
         </div>
       )}
 
-      {scanType === "batch_scan" && scanResult && (
+      {scanType === "batch" && scanResult && (
         <div className="mt-8 flex justify-center">
           <Button onClick={() => navigate('/llm-results')}>
             View Results

@@ -91,6 +91,7 @@ export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => 
   return (
     <ScrollArea className="h-[300px]">
       <div className="space-y-2 p-1">
+        <h3 className="text-lg font-medium mb-4">Your Datasets</h3>
         {datasets?.map((dataset) => (
           <Card key={dataset.id} className="cursor-pointer hover:bg-accent">
             <CardContent className="p-4">
