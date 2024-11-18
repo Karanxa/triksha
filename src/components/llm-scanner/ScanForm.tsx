@@ -13,21 +13,9 @@ import { ScanProgress } from "./ScanProgress";
 import { ScanFormActions } from "./ScanFormActions";
 import { ScanStatusHandler } from "./ScanStatusHandler";
 import { CustomEndpoint } from "./types/CustomEndpoint";
+import { useScanSubmit } from "./hooks/useScanSubmit";
 
-interface ScanFormProps {
-  onSubmit: (data: {
-    prompts: string[];
-    provider: string;
-    category: string;
-    label?: string;
-    schedule?: string;
-    isRecurring: boolean;
-    qps: number;
-    customEndpoint?: CustomEndpoint;
-  }) => Promise<any>;
-}
-
-export const ScanForm = ({ onSubmit }: ScanFormProps) => {
+export const ScanForm = () => {
   const navigate = useNavigate();
   const [scanType, setScanType] = useState("manual");
   const [provider, setProvider] = useState("");
@@ -52,11 +40,47 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     method: 'POST'
   });
 
+  const { handleSubmit, isScanning } = useScanSubmit({
+    onSubmit: async (data) => {
+      try {
+        const result = await handleSubmit({
+          provider,
+          customEndpoint,
+          prompts: scanType === "manual" ? [singlePrompt] : prompts,
+          category,
+          label,
+          schedule,
+          isRecurring,
+          qps: Math.min(qps, 50)
+        });
+
+        if (result) {
+          setSinglePrompt("");
+          setPrompts([]);
+          setLabel("");
+          setSchedule("none");
+          setIsRecurring(false);
+          return result;
+        }
+      } catch (error) {
+        console.error("Scan submission error:", error);
+        toast.error("Failed to start scan: " + (error instanceof Error ? error.message : "Unknown error"));
+      }
+    },
+    setResult: setScanResult,
+    setScanId: setCurrentScanId
+  });
+
   const onFormSubmit = async () => {
     const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
 
     if (promptsToSubmit.length === 0) {
       toast.error("Please enter at least one prompt");
+      return;
+    }
+
+    if (!provider) {
+      toast.error("Please select a provider");
       return;
     }
 
@@ -69,11 +93,9 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
     }
 
-    const result = await onSubmit({
+    await handleSubmit({
       provider,
       customEndpoint,
-      scanType,
-      singlePrompt,
       prompts: promptsToSubmit,
       category,
       label,
@@ -81,14 +103,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       isRecurring,
       qps: Math.min(qps, 50)
     });
-
-    if (result) {
-      setSinglePrompt("");
-      setPrompts([]);
-      setLabel("");
-      setSchedule("none");
-      setIsRecurring(false);
-    }
   };
 
   return (
@@ -134,7 +148,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
 
       <ScanFormActions 
-        isScanning={Boolean(currentScanId)} 
+        isScanning={isScanning} 
         onSubmit={onFormSubmit} 
       />
 

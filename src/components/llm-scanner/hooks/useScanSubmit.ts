@@ -14,8 +14,6 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
   const handleSubmit = async ({
     provider,
     customEndpoint,
-    scanType,
-    singlePrompt,
     prompts,
     category,
     label,
@@ -25,12 +23,10 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
   }: {
     provider: string;
     customEndpoint?: any;
-    scanType: string;
-    singlePrompt: string;
     prompts: string[];
     category: string;
-    label: string;
-    schedule: string;
+    label?: string;
+    schedule?: string;
     isRecurring: boolean;
     qps: number;
   }) => {
@@ -57,10 +53,10 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           schedule,
           is_recurring: isRecurring,
           status: 'pending',
-          scan_type: scanType === 'manual' ? 'manual_scan' : 'batch_scan',
+          scan_type: prompts.length === 1 ? 'manual_scan' : 'batch_scan',
           results: { 
             prompts,
-            model: model || 'custom' // Store the model in results
+            model: model || 'custom'
           }
         })
         .select()
@@ -85,14 +81,12 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           schedule,
           isRecurring,
           qps,
-          customEndpoint,
-          scanType: scanType === 'manual' ? 'manual_scan' : 'batch_scan',
-          model: model || 'custom' // Pass the model to the edge function
+          customEndpoint
         }
       });
 
       if (response.error) {
-        throw new Error(response.error);
+        throw new Error(response.error.message);
       }
 
       if (!response.data) {
