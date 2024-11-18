@@ -1,3 +1,5 @@
+export type ScanType = 'manual_scan' | 'batch_scan' | 'garak' | 'prompt_fuzzer';
+
 export interface ScanResponse {
   prompt: string;
   model_response?: string;
@@ -32,5 +34,5 @@ export interface LLMScan {
   next_run: string | null;
   severity: string | null;
   is_vulnerable: boolean | null;
-  scan_type: string | null;
+  scan_type: ScanType | null;
 }

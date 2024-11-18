@@ -81,15 +81,23 @@ interface ResultsTableRowProps {
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
   // Extract responses from either the responses array or the results object
   const responses = scan.results?.responses || [];
-  const firstResponse = responses[0] || {};
+  const firstResponse: ScanResponse = responses[0] || {
+    prompt: '',
+    model_response: '',
+    response: '',
+    raw_response: null,
+    category: '',
+    is_vulnerable: null,
+    model: ''
+  };
   
   // Get prompt and response from the correct location in the data structure
-  const prompt = firstResponse.prompt || scan.results?.prompts?.[0] || 'No prompt available';
+  const prompt = firstResponse.prompt || scan.results?.prompt || 'No prompt available';
   const response = firstResponse.model_response || firstResponse.response || 'No response available';
   const rawResponse = firstResponse.raw_response || firstResponse;
   
   const category = scan.category || firstResponse.category || 'Uncategorized';
-  const isVulnerable = scan.is_vulnerable ?? firstResponse.is_vulnerable;
+  const isVulnerable = scan.is_vulnerable ?? firstResponse.is_vulnerable ?? null;
   
   const modelName = firstResponse.model || scan.results?.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
