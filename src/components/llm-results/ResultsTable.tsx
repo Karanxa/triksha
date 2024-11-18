@@ -57,7 +57,7 @@ export function ResultsTable({ scans }: ResultsTableProps) {
       }
 
       // Map each response to include scan metadata and preserve the original scan_type
-      return responses.map((response, index) => ({
+      return responses.map((response) => ({
         ...scan,
         response: {
           prompt: response?.prompt || 'No prompt available',

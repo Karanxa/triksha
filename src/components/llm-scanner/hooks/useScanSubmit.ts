@@ -43,7 +43,7 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
         throw new Error('Authentication required');
       }
 
-      // Create a new scan record
+      // Create a new scan record with the correct scan_type
       const { data: scanData, error: scanError } = await supabase
         .from('llm_scans')
         .insert({
@@ -54,7 +54,8 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           schedule,
           is_recurring: isRecurring,
           status: 'pending',
-          results: { prompts } // Store all prompts in results
+          scan_type: scanType === 'manual' ? 'manual_scan' : 'batch_scan',
+          results: { prompts }
         })
         .select()
         .single();
@@ -78,7 +79,8 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           schedule,
           isRecurring,
           qps,
-          customEndpoint
+          customEndpoint,
+          scanType: scanType === 'manual' ? 'manual_scan' : 'batch_scan'
         }
       });
 
