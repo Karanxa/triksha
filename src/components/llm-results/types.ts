@@ -1,37 +1,28 @@
-import { Database } from "@/integrations/supabase/types";
+export type ScanType = 'manual_scan' | 'batch_scan' | 'garak' | 'prompt_fuzzer';
 
-export type LLMScan = Database['public']['Tables']['llm_scans']['Row'] & {
-  results?: ScanResults | null;
-  scan_type?: string;
-};
-
-export interface ScanResults {
-  prompts?: string[];
-  prompt?: string;
-  responses?: ScanResponse[];
-  model_response?: string;
-  response?: string;
-  timestamp?: string;
-  provider?: string;
-  model?: string;
-  progress?: number;
-  error?: string;
+export interface LLMScan {
+  id: string;
+  user_id: string;
+  name: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  created_at: string;
+  updated_at: string;
+  results: any;
+  category: string | null;
+  label: string | null;
+  schedule: string | null;
+  is_recurring: boolean;
+  next_run: string | null;
+  severity: string | null;
+  is_vulnerable: boolean | null;
+  scan_type: ScanType;
 }
 
 export interface ScanResponse {
   prompt: string;
   model_response?: string;
-  response?: string;
   raw_response?: any;
   error?: string;
-  timestamp?: string;
-  model: string;
-  provider: string;
+  is_vulnerable?: boolean;
+  model?: string;
 }
-
-export interface TruncatedCellProps {
-  content: string;
-  onContentClick: () => void;
-}
-
-export type ScanType = 'manual_scan' | 'batch_scan' | 'garak' | 'prompt_fuzzer';

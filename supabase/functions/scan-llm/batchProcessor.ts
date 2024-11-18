@@ -13,11 +13,10 @@ export async function processBatchWithProgress(
   processPrompt: (prompt: string) => Promise<any>,
   options: ProcessBatchOptions
 ): Promise<any[]> {
-  const { scanId, supabase, user, baseProvider, model, category } = options;
+  const { scanId, supabase } = options;
   const results: any[] = [];
-  const totalBatches = Math.ceil(prompts.length / batchSize);
-  const CHUNK_SIZE = 1000; // Number of results to store at once
-  let resultsBuffer: any[] = [];
+  const totalPrompts = prompts.length;
+  let processedCount = 0;
   
   const updateProgress = async (progress: number) => {
     await supabase
@@ -30,78 +29,40 @@ export async function processBatchWithProgress(
   };
 
   try {
+    // Process prompts in batches
     for (let i = 0; i < prompts.length; i += batchSize) {
       const batch = prompts.slice(i, i + batchSize);
-      const currentBatch = Math.floor(i / batchSize) + 1;
-      
-      console.log(`Processing batch ${currentBatch}/${totalBatches} (${batch.length} prompts)`);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(prompts.length / batchSize)}`);
       
       const batchPromises = batch.map(async (prompt) => {
         try {
-          const response = await processPrompt(prompt);
-          const modelResponse = typeof response === 'string' ? response : JSON.stringify(response);
-          
-          // Store individual result
-          const { data: resultData, error: resultError } = await supabase
-            .from('llm_scan_results')
-            .insert({
-              scan_id: scanId,
-              user_id: user.id,
-              prompt,
-              model_response: modelResponse,
-              raw_response: response,
-              provider: baseProvider || 'custom',
-              model: model || 'custom-endpoint',
-              category,
-            })
-            .select()
-            .single();
-
-          if (resultError) throw resultError;
-          return resultData;
+          const result = await processPrompt(prompt);
+          processedCount++;
+          const progress = Math.floor((processedCount / totalPrompts) * 100);
+          await updateProgress(progress);
+          return result;
         } catch (error) {
-          console.error(`Error processing prompt "${prompt}":`, error);
-          // Store error result
-          const { data: errorResult } = await supabase
-            .from('llm_scan_results')
-            .insert({
-              scan_id: scanId,
-              user_id: user.id,
-              prompt,
-              error: error instanceof Error ? error.message : 'Unknown error occurred',
-              provider: baseProvider || 'custom',
-              model: model || 'custom-endpoint',
-              category,
-            })
-            .select()
-            .single();
-          
-          return errorResult;
+          console.error(`Error processing prompt: ${prompt}`, error);
+          processedCount++;
+          const progress = Math.floor((processedCount / totalPrompts) * 100);
+          await updateProgress(progress);
+          throw error;
         }
       });
 
-      const batchResults = await Promise.all(batchPromises);
-      resultsBuffer.push(...batchResults);
-
-      // Store results in chunks to avoid memory issues
-      if (resultsBuffer.length >= CHUNK_SIZE) {
-        results.push(...resultsBuffer);
-        resultsBuffer = [];
-      }
-
-      // Update progress
-      const progress = Math.floor((currentBatch / totalBatches) * 100);
-      await updateProgress(progress);
+      const batchResults = await Promise.allSettled(batchPromises);
       
+      // Filter and transform results
+      const validResults = batchResults
+        .map(result => result.status === 'fulfilled' ? result.value : null)
+        .filter(Boolean);
+      
+      results.push(...validResults);
+
       // Add delay between batches to respect rate limits
       if (i + batchSize < prompts.length) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
-    }
-
-    // Store any remaining results
-    if (resultsBuffer.length > 0) {
-      results.push(...resultsBuffer);
     }
 
     return results;
