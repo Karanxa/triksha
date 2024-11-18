@@ -31,30 +31,25 @@ const Navigation = () => {
     }
   };
 
-  // Don't show navigation links on home page
-  const showLinks = location.pathname !== "/";
-
   return (
     <nav className="border-b">
       <div className="flex h-16 items-center px-4">
-        {showLinks && (
-          <div className="flex items-center space-x-4 lg:space-x-6 mx-6">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === link.href
-                    ? "text-foreground"
-                    : "text-muted-foreground"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center space-x-4 lg:space-x-6 mx-6">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              to={link.href}
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-primary",
+                location.pathname === link.href
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
         <div className="ml-auto flex items-center space-x-4">
           <Link
             to="/settings"
