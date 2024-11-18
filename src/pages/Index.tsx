@@ -19,17 +19,17 @@ const Index = () => {
         <div className="mb-12 text-center">
           <h1 className="text-6xl font-bold mb-4">Geraid</h1>
           <p className="text-xl text-muted-foreground">
-            LLM Security Testing Platform
+            LLM Offensive Security Testing Platform
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Developed by Karan Arora {" "}
+            Developed by{" "}
             <a 
               href="https://twitter.com/itskaranxa" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              @itskaranxa
+              Karan Arora
             </a>
           </p>
         </div>
