@@ -31,12 +31,12 @@ function App() {
               }
             >
               <Route index element={<Index />} />
-              <Route path="/llm-scanner" element={<LLMScanner />} />
-              <Route path="/llm-results" element={<LLMResults />} />
-              <Route path="/datasets" element={<Datasets />} />
-              <Route path="/augment-prompt" element={<AugmentPrompt />} />
-              <Route path="/fine-tuning" element={<FineTuning />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="llm-scanner" element={<LLMScanner />} />
+              <Route path="llm-results" element={<LLMResults />} />
+              <Route path="datasets" element={<Datasets />} />
+              <Route path="augment-prompt" element={<AugmentPrompt />} />
+              <Route path="fine-tuning" element={<FineTuning />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
           </Route>
         </Routes>
