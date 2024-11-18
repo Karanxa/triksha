@@ -104,12 +104,16 @@ export const ResultsFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Models</SelectItem>
-              <SelectItem value="gpt-4o">GPT-4 Opus</SelectItem>
-              <SelectItem value="gpt-4o-mini">GPT-4 Opus Mini</SelectItem>
+              {/* OpenAI Models */}
+              <SelectItem value="gpt-4-0125-preview">GPT-4 Turbo</SelectItem>
+              <SelectItem value="gpt-3.5-turbo-0125">GPT-3.5 Turbo</SelectItem>
+              {/* Anthropic Models */}
               <SelectItem value="claude-3-opus-20240229">Claude 3 Opus</SelectItem>
               <SelectItem value="claude-3-sonnet-20240229">Claude 3 Sonnet</SelectItem>
+              {/* Google Models */}
               <SelectItem value="gemini-1.0-pro">Gemini Pro</SelectItem>
               <SelectItem value="gemini-1.0-ultra">Gemini Ultra</SelectItem>
+              {/* Ollama Models */}
               <SelectItem value="llama2">Llama 2</SelectItem>
               <SelectItem value="mistral">Mistral</SelectItem>
               <SelectItem value="codellama">Code Llama</SelectItem>
