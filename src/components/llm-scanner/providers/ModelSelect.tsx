@@ -37,7 +37,7 @@ export const ModelSelect = ({ provider, selectedProvider, onModelChange }: Model
 
   const handleModelChange = (value: string) => {
     const selectedModel = getModelsForProvider().find(model => model.value === value);
-    onModelChange(`${value}|${selectedModel?.displayName || value}`);
+    onModelChange(selectedModel?.displayName || value);
   };
 
   const currentValue = provider.split('|')[0].split('-')[1] || "";

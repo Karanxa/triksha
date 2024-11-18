@@ -54,26 +54,6 @@ const formatScanType = (scanType: string | null) => {
     .join(' ');
 };
 
-const getFullModelName = (model: string): string => {
-  if (!model || model === 'Unknown Model') {
-    return 'Unknown Model';
-  }
-
-  const modelMap: { [key: string]: string } = {
-    'gpt-4o': 'GPT-4 Opus',
-    'gpt-4o-mini': 'GPT-4 Opus Mini',
-    'claude-3-opus-20240229': 'Claude 3 Opus',
-    'claude-3-sonnet-20240229': 'Claude 3 Sonnet',
-    'gemini-1.0-pro': 'Gemini Pro',
-    'gemini-1.0-ultra': 'Gemini Ultra',
-    'llama2': 'Llama 2',
-    'mistral': 'Mistral',
-    'codellama': 'Code Llama'
-  };
-  
-  return modelMap[model] || model;
-};
-
 interface ResultsTableRowProps {
   scan: LLMScan;
   response: {
@@ -89,7 +69,6 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
   const modelName = response.model || scan.results?.model || 'Unknown Model';
-  const fullModelName = getFullModelName(modelName);
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
 
@@ -115,7 +94,7 @@ export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, on
           <Tooltip>
             <TooltipTrigger>
               <Badge variant="outline" className="cursor-default">
-                {fullModelName}
+                {modelName}
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
