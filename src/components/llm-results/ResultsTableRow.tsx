@@ -80,16 +80,27 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
   const isSinglePrompt = scan.scan_type === 'manual_scan';
-  const responses = scan.results?.responses || [];
-  
-  // If no responses, create a single row with default values
+  let responses: ScanResponse[] = [];
+
+  // Safely handle responses array
+  if (scan.results?.responses && Array.isArray(scan.results.responses)) {
+    responses = scan.results.responses;
+  } else if (scan.results?.prompt || scan.results?.model_response) {
+    // Handle single response format
+    responses = [{
+      prompt: scan.results.prompt || 'No prompt available',
+      model_response: scan.results.model_response || 'No response available',
+      raw_response: scan.results.raw_response || {}
+    }];
+  }
+
+  // If still no responses, create a default one
   if (responses.length === 0) {
-    const defaultRow = {
+    responses = [{
       prompt: 'No prompt available',
       model_response: 'No response available',
       raw_response: {}
-    };
-    responses.push(defaultRow);
+    }];
   }
 
   const modelName = scan.results?.model || 'Unknown Model';
@@ -136,14 +147,14 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
           )}
           <TableCell className="py-2 border-l">
             <TruncatedCell
-              content={response.prompt || 'No prompt available'}
-              onContentClick={() => onContentClick("Prompt", response.prompt || 'No prompt available')}
+              content={response?.prompt || 'No prompt available'}
+              onContentClick={() => onContentClick("Prompt", response?.prompt || 'No prompt available')}
             />
           </TableCell>
           <TableCell className="py-2">
             <TruncatedCell
-              content={response.model_response || response.response || 'No response available'}
-              onContentClick={() => onContentClick("Response", response.model_response || response.response || 'No response available')}
+              content={response?.model_response || response?.response || 'No response available'}
+              onContentClick={() => onContentClick("Response", response?.model_response || response?.response || 'No response available')}
             />
           </TableCell>
           <TableCell className="py-2 w-[60px] text-center">
@@ -151,7 +162,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              onClick={() => onContentClick("Raw Data", JSON.stringify(response.raw_response || response, null, 2))}
+              onClick={() => onContentClick("Raw Data", JSON.stringify(response?.raw_response || {}, null, 2))}
             >
               <FileJson className="h-4 w-4" />
             </Button>
