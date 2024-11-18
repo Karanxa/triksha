@@ -1,4 +1,6 @@
 export async function handleOpenAIRequest(prompt: string, apiKey: string, model = 'gpt-4o-mini') {
+  console.log('Making OpenAI request with model:', model);
+  
   // Map our frontend model names to actual OpenAI API model names
   const modelMap: { [key: string]: string } = {
     'gpt-4o': 'gpt-4-0125-preview',
@@ -22,8 +24,11 @@ export async function handleOpenAIRequest(prompt: string, apiKey: string, model 
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error('OpenAI API error:', errorText);
     throw new Error(`OpenAI API error: ${errorText}`);
   }
 
-  return await response.json();
+  const data = await response.json();
+  console.log('OpenAI response:', data);
+  return data;
 }

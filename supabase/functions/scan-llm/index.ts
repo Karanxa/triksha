@@ -68,11 +68,13 @@ serve(async (req) => {
 
     const apiKeys = profile.api_keys;
     const [baseProvider, model] = provider ? provider.split('-') : [null, null];
+    console.log('Using provider:', baseProvider, 'with model:', model);
 
     // Process prompts in batches
     const batchSize = Math.min(qps, 10); // Limit batch size
     const results = await processBatchWithProgress(prompts, batchSize, async (prompt) => {
       try {
+        console.log('Processing prompt:', prompt);
         let response;
         if (customEndpoint) {
           response = await handleCustomEndpoint(prompt, customEndpoint);
@@ -99,6 +101,26 @@ serve(async (req) => {
           }
         }
 
+        console.log('Provider response:', response);
+
+        // Extract the text response based on provider
+        let modelResponse = '';
+        if (response.choices?.[0]?.message?.content) {
+          // OpenAI format
+          modelResponse = response.choices[0].message.content;
+        } else if (response.content?.[0]?.text) {
+          // Gemini format
+          modelResponse = response.content[0].text;
+        } else if (response.response) {
+          // Ollama format
+          modelResponse = response.response;
+        } else if (response.message?.content) {
+          // Anthropic format
+          modelResponse = response.message.content;
+        } else {
+          modelResponse = JSON.stringify(response);
+        }
+
         // Store individual result
         const { data: resultData, error: resultError } = await supabase
           .from('llm_scan_results')
@@ -106,7 +128,7 @@ serve(async (req) => {
             scan_id: scanId,
             user_id: user.id,
             prompt,
-            model_response: typeof response === 'string' ? response : JSON.stringify(response),
+            model_response: modelResponse,
             raw_response: response,
             provider: baseProvider || 'custom',
             model: model || 'custom-endpoint',
@@ -116,7 +138,13 @@ serve(async (req) => {
           .single();
 
         if (resultError) throw resultError;
-        return resultData;
+
+        // Return formatted result
+        return {
+          prompt,
+          model_response: modelResponse,
+          raw_response: response
+        };
       } catch (error) {
         console.error(`Error processing prompt: ${prompt}`, error);
         // Store error result
@@ -134,7 +162,10 @@ serve(async (req) => {
           .select()
           .single();
         
-        return errorResult;
+        return {
+          prompt,
+          error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
       }
     }, {
       scanId,
@@ -145,14 +176,19 @@ serve(async (req) => {
       category
     });
 
-    // Update final status
+    // Update final status with properly formatted results
     await supabase
       .from('llm_scans')
       .update({ 
         status: 'completed',
         results: { 
           progress: 100,
-          responses: results
+          responses: results.map(r => ({
+            prompt: r.prompt,
+            model_response: r.model_response,
+            raw_response: r.raw_response,
+            error: r.error
+          }))
         }
       })
       .eq('id', scanId);
