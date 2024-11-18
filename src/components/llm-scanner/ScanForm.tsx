@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomEndpoint } from "./types/CustomEndpoint";
 import { ScanProgress } from "./ScanProgress";
 import { ScanFormActions } from "./ScanFormActions";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../ui/button";
 
 interface ScanFormProps {
   onSubmit: (data: {
@@ -29,6 +31,7 @@ interface ScanFormProps {
 }
 
 export const ScanForm = ({ onSubmit }: ScanFormProps) => {
+  const navigate = useNavigate();
   const [scanType, setScanType] = useState("manual");
   const [provider, setProvider] = useState("");
   const [singlePrompt, setSinglePrompt] = useState("");
@@ -77,8 +80,13 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
             setScanProgress(progress);
           } else if (payload.new.status === 'completed') {
             setScanProgress(100);
-            toast.success('Scan completed successfully');
-            setScanResult(payload.new.results?.responses || []);
+            if (scanType === 'batch_scan') {
+              toast.success('Batch scan completed! View results in the Results page.');
+              navigate('/llm-results');
+            } else {
+              toast.success('Scan completed successfully');
+              setScanResult(payload.new.results?.responses || []);
+            }
           } else if (payload.new.status === 'failed') {
             toast.error('Scan failed: ' + (payload.new.results?.error || 'Unknown error'));
           }
@@ -89,7 +97,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentScanId]);
+  }, [currentScanId, scanType, navigate]);
 
   const onFormSubmit = async () => {
     const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
@@ -184,9 +192,17 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
 
       <ScanFormActions isScanning={isScanning} onSubmit={onFormSubmit} />
 
-      {scanResult && (
+      {scanType === "manual" && scanResult && (
         <div className="mt-8">
           <ScanResults result={scanResult} />
+        </div>
+      )}
+
+      {scanType === "batch_scan" && scanResult && (
+        <div className="mt-8 flex justify-center">
+          <Button onClick={() => navigate('/llm-results')}>
+            View Results
+          </Button>
         </div>
       )}
     </div>

@@ -1,3 +1,5 @@
+import { Json } from '@/integrations/supabase/types';
+
 export type ScanType = 'manual_scan' | 'batch_scan' | 'garak' | 'prompt_fuzzer';
 
 export interface ScanResponse {

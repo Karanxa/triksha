@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { Loader2 } from "lucide-react";
+import { LLMScan } from "@/components/llm-results/types";
 
 const LLMResults = () => {
   const { data: scans, isLoading, error } = useQuery({
@@ -13,7 +14,7 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as LLMScan[];
     },
   });
 
