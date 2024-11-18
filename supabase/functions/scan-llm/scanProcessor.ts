@@ -84,10 +84,12 @@ async function getProviderResponse(
   customEndpoint: any,
   apiKeys: any
 ) {
-  if (customEndpoint) {
+  // Only use customEndpoint if no standard provider is specified
+  if (!provider && customEndpoint) {
     return await handleCustomEndpoint(prompt, customEndpoint);
   }
 
+  // Handle standard providers without health checks
   switch (provider) {
     case 'openai':
       if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
@@ -97,7 +99,7 @@ async function getProviderResponse(
       if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
       return await handleAnthropicRequest(prompt, apiKeys.anthropic, model);
     
-    case 'gemini':
+    case 'google':
       if (!apiKeys.gemini) throw new Error('Google API key not configured');
       return await handleGeminiRequest(prompt, apiKeys.gemini, model);
     
@@ -106,6 +108,9 @@ async function getProviderResponse(
       return await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
     
     default:
+      if (customEndpoint) {
+        return await handleCustomEndpoint(prompt, customEndpoint);
+      }
       throw new Error(`Unsupported provider: ${provider}`);
   }
 }
