@@ -56,10 +56,9 @@ export function ResultsTable({ scans }: ResultsTableProps) {
         }];
       }
 
-      // Map each response to include scan metadata
+      // Map each response to include scan metadata and preserve the original scan_type
       return responses.map((response, index) => ({
         ...scan,
-        scan_type: scan.scan_type || (responses.length > 1 ? 'batch_scan' : 'manual_scan'),
         response: {
           prompt: response?.prompt || 'No prompt available',
           model_response: response?.model_response || response?.response || 'No response available',
