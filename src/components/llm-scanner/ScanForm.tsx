@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormSchedule } from "./ScanFormSchedule";
 import { QPSControl } from "./QPSControl";
-import { Loader2 } from "lucide-react";
 import { ScanResults } from "./ScanResults";
 import { ScanTypeSelect } from "./ScanTypeSelect";
 import { ScanPromptInput } from "./ScanPromptInput";
 import { useScanSubmit } from "./hooks/useScanSubmit";
 import { toast } from "sonner";
-import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomEndpoint } from "./types/CustomEndpoint";
+import { ScanProgress } from "./ScanProgress";
+import { ScanFormActions } from "./ScanFormActions";
 
 interface ScanFormProps {
   onSubmit: (data: {
@@ -79,7 +78,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
           } else if (payload.new.status === 'completed') {
             setScanProgress(100);
             toast.success('Scan completed successfully');
-            // Update scan results with all responses
             setScanResult(payload.new.results?.responses || []);
           } else if (payload.new.status === 'failed') {
             toast.error('Scan failed: ' + (payload.new.results?.error || 'Unknown error'));
@@ -182,30 +180,9 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
         onRecurringChange={setIsRecurring}
       />
 
-      {isScanning && scanProgress > 0 && (
-        <div className="space-y-2">
-          <Progress value={scanProgress} />
-          <p className="text-sm text-muted-foreground text-center">
-            Processing scan... {scanProgress}% complete
-          </p>
-        </div>
-      )}
+      <ScanProgress isScanning={isScanning} progress={scanProgress} />
 
-      <Button 
-        className="w-full" 
-        size="lg"
-        onClick={onFormSubmit}
-        disabled={isScanning}
-      >
-        {isScanning ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing Scan...
-          </>
-        ) : (
-          "Start LLM Scan"
-        )}
-      </Button>
+      <ScanFormActions isScanning={isScanning} onSubmit={onFormSubmit} />
 
       {scanResult && (
         <div className="mt-8">

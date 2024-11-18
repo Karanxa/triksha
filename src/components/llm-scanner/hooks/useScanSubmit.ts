@@ -35,7 +35,6 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
     qps: number;
   }) => {
     setIsScanning(true);
-    const scanStartTime = Date.now();
     
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -82,9 +81,6 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           customEndpoint
         }
       });
-
-      const scanDuration = Date.now() - scanStartTime;
-      console.log(`Scan completed in ${scanDuration}ms`);
 
       if (response.error) {
         throw new Error(response.error);
