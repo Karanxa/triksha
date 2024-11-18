@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to Geraide
 
 ## Project info
 
@@ -17,10 +17,10 @@ There are several ways to run this application:
 
 ```sh
 # Build the Docker image
-docker build -t lovable-app .
+docker build -t geraide-app .
 
 # Run the container
-docker run -p 5173:5173 lovable-app
+docker run -p 5173:5173 geraide-app
 ```
 
 5. Open your browser and visit `http://localhost:5173`
