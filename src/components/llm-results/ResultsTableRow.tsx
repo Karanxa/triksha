@@ -82,14 +82,14 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
   // Handle both single prompt and batch responses
   const isSinglePrompt = scan.scan_type === 'manual_scan';
   
-  let prompt = '';
-  let response = '';
-  let rawResponse = null;
+  let prompt = 'No prompt available';
+  let response = 'No response available';
+  let rawResponse = {};
   
   if (isSinglePrompt) {
     // For single prompt scans
-    prompt = scan.results?.prompt || 'No prompt available';
-    response = scan.results?.model_response || 'No response available';
+    prompt = scan.results?.prompt || scan.results?.responses?.[0]?.prompt || 'No prompt available';
+    response = scan.results?.model_response || scan.results?.responses?.[0]?.model_response || 'No response available';
     rawResponse = scan.results?.raw_response || scan.results || {};
   } else {
     // For batch scans, get responses from the responses array
