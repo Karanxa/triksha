@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState } from "react";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormSchedule } from "./ScanFormSchedule";
@@ -8,14 +9,10 @@ import { QPSControl } from "./QPSControl";
 import { ScanResults } from "./ScanResults";
 import { ScanTypeSelect } from "./ScanTypeSelect";
 import { ScanPromptInput } from "./ScanPromptInput";
-import { useScanSubmit } from "./hooks/useScanSubmit";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { CustomEndpoint } from "./types/CustomEndpoint";
 import { ScanProgress } from "./ScanProgress";
 import { ScanFormActions } from "./ScanFormActions";
-import { useNavigate } from "react-router-dom";
-import { Button } from "../ui/button";
+import { ScanStatusHandler } from "./ScanStatusHandler";
+import { CustomEndpoint } from "./types/CustomEndpoint";
 
 interface ScanFormProps {
   onSubmit: (data: {
@@ -55,50 +52,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     method: 'POST'
   });
 
-  const { handleSubmit, isScanning } = useScanSubmit({
-    onSubmit,
-    setResult: setScanResult,
-    setScanId: setCurrentScanId
-  });
-
-  useEffect(() => {
-    if (!currentScanId) return;
-
-    const subscription = supabase
-      .channel(`scan_${currentScanId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'llm_scans',
-          filter: `id=eq.${currentScanId}`,
-        },
-        (payload) => {
-          if (payload.new.status === 'processing') {
-            const progress = payload.new.results?.progress || 0;
-            setScanProgress(progress);
-          } else if (payload.new.status === 'completed') {
-            setScanProgress(100);
-            if (scanType === 'batch_scan') {
-              toast.success('Batch scan completed! View results in the Results page.');
-              navigate('/llm-results');
-            } else {
-              toast.success('Scan completed successfully');
-              setScanResult(payload.new.results?.responses || []);
-            }
-          } else if (payload.new.status === 'failed') {
-            toast.error('Scan failed: ' + (payload.new.results?.error || 'Unknown error'));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [currentScanId, scanType, navigate]);
-
   const onFormSubmit = async () => {
     const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
 
@@ -116,7 +69,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
     }
 
-    const result = await handleSubmit({
+    const result = await onSubmit({
       provider,
       customEndpoint,
       scanType,
@@ -163,7 +116,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       />
 
       <div className="space-y-4">
-        <Label>Attack Category</Label>
         <AttackCategorySelect
           value={category}
           onValueChange={setCategory}
@@ -172,15 +124,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
 
       <QPSControl qps={qps} onQPSChange={setQPS} />
 
-      <div className="space-y-4">
-        <Label>Scan Label (Optional)</Label>
-        <Input 
-          placeholder="Enter a label for this scan"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-        />
-      </div>
-
       <ScanFormSchedule
         schedule={schedule}
         onScheduleChange={setSchedule}
@@ -188,9 +131,19 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
         onRecurringChange={setIsRecurring}
       />
 
-      <ScanProgress isScanning={isScanning} progress={scanProgress} />
+      <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
 
-      <ScanFormActions isScanning={isScanning} onSubmit={onFormSubmit} />
+      <ScanFormActions 
+        isScanning={Boolean(currentScanId)} 
+        onSubmit={onFormSubmit} 
+      />
+
+      <ScanStatusHandler
+        scanId={currentScanId}
+        scanType={scanType}
+        onProgressUpdate={setScanProgress}
+        onResultUpdate={setScanResult}
+      />
 
       {scanType === "manual" && scanResult && (
         <div className="mt-8">
