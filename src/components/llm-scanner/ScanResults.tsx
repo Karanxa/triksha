@@ -7,14 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ScanResult {
-  prompt: string;
+  prompt?: string;
   model_response?: string;
   error?: string;
   is_vulnerable?: boolean;
 }
 
 interface ScanResultsProps {
-  result: ScanResult | ScanResult[];
+  result: ScanResult | ScanResult[] | null;
   isLoading?: boolean;
   scanId?: string;
 }
@@ -75,18 +75,25 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
     );
   }
 
-  if (error || (result && 'error' in result)) {
-    const errorMessage = error || (result && 'error' in result ? result.error : 'Unknown error occurred');
+  if (error) {
     return (
       <Alert variant="destructive" className="mt-8">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Scan Failed</AlertTitle>
-        <AlertDescription>{errorMessage}</AlertDescription>
+        <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
   }
 
-  if (!result) return null;
+  if (!result) {
+    return (
+      <Alert variant="default" className="mt-8">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>No Results</AlertTitle>
+        <AlertDescription>No scan results available.</AlertDescription>
+      </Alert>
+    );
+  }
 
   // Handle array of results (batch scan)
   if (Array.isArray(result)) {
@@ -106,6 +113,10 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
 };
 
 const SingleResult = ({ result }: { result: ScanResult }) => {
+  if (!result) {
+    return null;
+  }
+
   if (result.error) {
     return (
       <Alert variant="destructive">
