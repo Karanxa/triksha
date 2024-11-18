@@ -35,7 +35,7 @@ export async function processScan(
       const modelResponse = processProviderResponse(response, baseProvider || 'custom');
       console.log('Processed response:', modelResponse);
 
-      // Store result with category
+      // Store result with category and model
       const { error: resultError } = await supabase
         .from('llm_scan_results')
         .insert({
@@ -58,7 +58,8 @@ export async function processScan(
       const result = {
         prompt,
         model_response: modelResponse,
-        raw_response: response
+        raw_response: response,
+        model: model || 'custom-endpoint'
       };
       
       results.push(result);
@@ -67,14 +68,15 @@ export async function processScan(
       processedCount++;
       const progress = Math.round((processedCount / totalPrompts) * 100);
       
-      // Update scan status with progress
+      // Update scan status with progress and model
       await supabase
         .from('llm_scans')
         .update({
           status: 'processing',
           results: {
             progress,
-            responses: results
+            responses: results,
+            model: model || 'custom-endpoint'
           }
         })
         .eq('id', scanId);
@@ -83,7 +85,8 @@ export async function processScan(
       console.error('Error processing prompt:', error);
       results.push({
         prompt,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        model: model || 'custom-endpoint'
       });
     }
   }
@@ -95,7 +98,8 @@ export async function processScan(
       status: 'completed',
       results: {
         responses: results,
-        progress: 100
+        progress: 100,
+        model: model || 'custom-endpoint'
       }
     })
     .eq('id', scanId);

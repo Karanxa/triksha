@@ -88,7 +88,7 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
-  const modelName = response.model || 'Unknown Model';
+  const modelName = response.model || scan.results?.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();

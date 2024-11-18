@@ -56,7 +56,7 @@ export function ResultsTable({ scans }: ResultsTableProps) {
         }];
       }
 
-      // Map each response to include scan metadata and preserve the original scan_type and model
+      // Map each response to include scan metadata
       return responses.map((response) => ({
         ...scan,
         response: {
