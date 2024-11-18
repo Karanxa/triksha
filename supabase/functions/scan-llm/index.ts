@@ -44,12 +44,13 @@ serve(async (req) => {
       .eq('id', scanId);
 
     // Get user's API keys
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('api_keys')
       .eq('id', user.id)
       .single();
 
+    if (profileError) throw new Error(`Failed to get profile: ${profileError.message}`);
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
     // Process the scan
@@ -75,7 +76,7 @@ serve(async (req) => {
     console.error('Scan error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         results: null 
       }), {
         status: 200,
