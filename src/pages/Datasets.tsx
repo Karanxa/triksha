@@ -6,7 +6,8 @@ import { DatasetsDashboard } from "@/components/datasets/DatasetsDashboard"
 const Datasets = () => {
   return (
     <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-8">Datasets</h1>
+      <h1 className="text-3xl font-bold mb-2">Datasets</h1>
+      <p className="text-muted-foreground mb-8">Manage and explore datasets for LLM testing and fine-tuning.</p>
       
       <Tabs defaultValue="dashboard" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
@@ -28,7 +29,7 @@ const Datasets = () => {
         </TabsContent>
       </Tabs>
     </div>
-  )
-}
+  );
+};
 
-export default Datasets
+export default Datasets;

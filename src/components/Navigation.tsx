@@ -64,7 +64,7 @@ const Navigation = () => {
                 : "text-muted-foreground"
             )}
           >
-            Keys
+            API Keys
           </Link>
           <ThemeToggle />
           <Button 
