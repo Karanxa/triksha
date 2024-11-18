@@ -29,7 +29,7 @@ function App() {
                   </div>
                 </>
               }>
-                <Route path="/" element={<Index />} />
+                <Route index element={<Index />} />
                 <Route path="/llm-scanner" element={<LLMScanner />} />
                 <Route path="/llm-results" element={<LLMResults />} />
                 <Route path="/datasets" element={<Datasets />} />
