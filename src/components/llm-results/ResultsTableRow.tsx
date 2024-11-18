@@ -79,27 +79,40 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
-  // Extract responses from either the responses array or the results object
-  const responses = scan.results?.responses || [];
-  const firstResponse: ScanResponse = responses[0] || {
-    prompt: '',
-    model_response: '',
-    response: '',
-    raw_response: null,
-    category: '',
-    is_vulnerable: null,
-    model: ''
-  };
+  // Handle both single prompt and batch responses
+  const isSinglePrompt = scan.scan_type === 'manual_scan';
   
-  // Get prompt and response from the correct location in the data structure
-  const prompt = firstResponse.prompt || scan.results?.prompt || 'No prompt available';
-  const response = firstResponse.model_response || firstResponse.response || 'No response available';
-  const rawResponse = firstResponse.raw_response || firstResponse;
+  let prompt = '';
+  let response = '';
+  let rawResponse = null;
   
-  const category = scan.category || firstResponse.category || 'Uncategorized';
-  const isVulnerable = scan.is_vulnerable ?? firstResponse.is_vulnerable ?? null;
+  if (isSinglePrompt) {
+    // For single prompt scans
+    prompt = scan.results?.prompt || 'No prompt available';
+    response = scan.results?.model_response || 'No response available';
+    rawResponse = scan.results?.raw_response || scan.results || {};
+  } else {
+    // For batch scans
+    const responses = scan.results?.responses || [];
+    const firstResponse: ScanResponse = responses[0] || {
+      prompt: '',
+      model_response: '',
+      response: '',
+      raw_response: null,
+      category: '',
+      is_vulnerable: null,
+      model: ''
+    };
+    
+    prompt = firstResponse.prompt || 'No prompt available';
+    response = firstResponse.model_response || firstResponse.response || 'No response available';
+    rawResponse = firstResponse.raw_response || firstResponse;
+  }
   
-  const modelName = firstResponse.model || scan.results?.model || 'Unknown Model';
+  const category = scan.category || 'Uncategorized';
+  const isVulnerable = scan.is_vulnerable ?? null;
+  
+  const modelName = scan.results?.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();

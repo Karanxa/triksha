@@ -26,6 +26,7 @@ export interface LLMScan {
     error?: string;
     model_response?: string;
     prompt?: string;
+    raw_response?: any;
   };
   category: string | null;
   label: string | null;
