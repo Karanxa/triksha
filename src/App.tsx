@@ -10,9 +10,11 @@ function App() {
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Router>
         <AuthGuard>
-          <Navigation />
-          <ScanNotification />
-          <Toaster />
+          <div className="min-h-screen bg-background">
+            <Navigation />
+            <ScanNotification />
+            <Toaster />
+          </div>
         </AuthGuard>
       </Router>
     </ThemeProvider>
