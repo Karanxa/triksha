@@ -32,14 +32,17 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     .flatMap(scan => {
       // Get responses from the scan
       let responses = [];
-      if (scan.results?.responses && Array.isArray(scan.results.responses)) {
-        responses = scan.results.responses;
-      } else if (scan.results?.prompt || scan.results?.model_response) {
-        responses = [{
-          prompt: scan.results.prompt,
-          model_response: scan.results.model_response,
-          raw_response: scan.results.raw_response
-        }];
+      
+      if (scan.results) {
+        if (Array.isArray(scan.results.responses)) {
+          responses = scan.results.responses;
+        } else if (scan.results.prompt || scan.results.model_response) {
+          responses = [{
+            prompt: scan.results.prompt,
+            model_response: scan.results.model_response,
+            raw_response: scan.results.raw_response
+          }];
+        }
       }
 
       // If no responses, create a default one
@@ -55,9 +58,9 @@ export function ResultsTable({ scans }: ResultsTableProps) {
       return responses.map((response, index) => ({
         ...scan,
         response: {
-          prompt: response.prompt || 'No prompt available',
-          model_response: response.model_response || response.response || 'No response available',
-          raw_response: response.raw_response || {}
+          prompt: response?.prompt || 'No prompt available',
+          model_response: response?.model_response || response?.response || 'No response available',
+          raw_response: response?.raw_response || {}
         }
       }));
     });
