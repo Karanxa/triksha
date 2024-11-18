@@ -21,16 +21,35 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold">Welcome to GenAI Security</h2>
-          <p className="text-muted-foreground mt-2">
-            Sign in to access the platform
+          <h1 className="text-6xl font-bold mb-4">Geraid</h1>
+          <p className="text-xl text-muted-foreground">
+            An E2E LLM Offensive Security Testing Platform
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Developed by {" "}
+            <a 
+              href="https://twitter.com/itskaranxa" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Karan Arora
+            </a>
           </p>
         </div>
         <Auth
           supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
+          appearance={{ 
+            theme: ThemeSupa,
+            style: {
+              button: { fontFamily: 'inherit' },
+              input: { fontFamily: 'inherit' },
+              label: { fontFamily: 'inherit' },
+              anchor: { fontFamily: 'inherit' }
+            }
+          }}
           providers={[]}
-          theme="light"
+          theme="dark"
         />
       </div>
     </div>
