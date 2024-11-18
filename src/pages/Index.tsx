@@ -16,9 +16,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container py-12">
-        <h1 className="text-4xl font-bold mb-4">GenAI Security</h1>
-        <p className="text-lg text-muted-foreground mb-12">
-          Select a tool from the sidebar to get started with genai security security testing.
+        <div className="mb-12 text-center">
+          <h1 className="text-6xl font-bold mb-4">Geraid</h1>
+          <p className="text-xl text-muted-foreground">
+            LLM Security Testing Platform
+          </p>
+        </div>
+
+        <h2 className="text-2xl font-semibold mb-4">Tools</h2>
+        <p className="text-lg text-muted-foreground mb-8">
+          Select a tool to get started with genai security testing.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
