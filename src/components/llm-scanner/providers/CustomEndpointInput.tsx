@@ -1,3 +1,4 @@
+import React from "react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HttpRequestInput } from "./HttpRequestInput";
@@ -8,13 +9,18 @@ import { CustomEndpoint } from "../types/CustomEndpoint";
 interface CustomEndpointInputProps {
   customEndpoint: CustomEndpoint;
   onCustomEndpointChange: (endpoint: Partial<CustomEndpoint>) => void;
+  inputType: 'curl' | 'manual' | 'http';
+  onInputTypeChange: (value: 'curl' | 'manual' | 'http') => void;
 }
 
 export const CustomEndpointInput = ({ 
   customEndpoint,
-  onCustomEndpointChange
+  onCustomEndpointChange,
+  inputType,
+  onInputTypeChange
 }: CustomEndpointInputProps) => {
   const handleInputTypeChange = (value: 'curl' | 'manual' | 'http') => {
+    onInputTypeChange(value);
     onCustomEndpointChange({
       inputType: value,
       url: '',
@@ -32,8 +38,8 @@ export const CustomEndpointInput = ({
       <div className="space-y-2">
         <Label>Input Method</Label>
         <RadioGroup
-          value={customEndpoint.inputType}
-          onValueChange={(value: 'curl' | 'manual' | 'http') => handleInputTypeChange(value)}
+          value={inputType}
+          onValueChange={handleInputTypeChange}
           className="flex flex-col space-y-2"
         >
           <div className="flex items-center space-x-2">
@@ -51,7 +57,7 @@ export const CustomEndpointInput = ({
         </RadioGroup>
       </div>
 
-      {customEndpoint.inputType === 'http' && (
+      {inputType === 'http' && (
         <HttpRequestInput
           httpRequest={customEndpoint.httpRequest}
           placeholder={customEndpoint.placeholder}
@@ -60,7 +66,7 @@ export const CustomEndpointInput = ({
         />
       )}
 
-      {customEndpoint.inputType === 'curl' && (
+      {inputType === 'curl' && (
         <CurlInput
           curlCommand={customEndpoint.curlCommand}
           placeholder={customEndpoint.placeholder}
@@ -69,7 +75,7 @@ export const CustomEndpointInput = ({
         />
       )}
 
-      {customEndpoint.inputType === 'manual' && (
+      {inputType === 'manual' && (
         <ManualInput
           url={customEndpoint.url}
           apiKey={customEndpoint.apiKey}

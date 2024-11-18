@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import CustomEndpointInput from "./CustomEndpointInput";
-import ModelSelect from "./providers/ModelSelect";
+import { CustomEndpointInput } from "./providers/CustomEndpointInput";
+import { ModelSelect } from "./providers/ModelSelect";
 
 interface ScanFormProviderProps {
   provider: string;
@@ -11,8 +11,6 @@ interface ScanFormProviderProps {
   onCustomEndpointChange: (endpoint: any) => void;
 }
 
-type InputType = "manual" | "batch";
-
 export const ScanFormProvider = ({
   provider,
   onProviderChange,
@@ -20,7 +18,7 @@ export const ScanFormProvider = ({
   onCustomEndpointChange,
 }: ScanFormProviderProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
-  const [inputType, setInputType] = useState<InputType>("manual");
+  const [inputType, setInputType] = useState<'curl' | 'manual' | 'http'>("manual");
 
   const handleProviderChange = (value: string) => {
     setSelectedProvider(value);
