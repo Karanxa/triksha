@@ -105,8 +105,8 @@ serve(async (req) => {
       prompts = [basePrompt]
     }
 
-    // Create CSV content with both original and enhanced prompts
-    fileContent = 'prompt,enhanced_prompt,category,method\n'
+    // Create CSV content with prompts
+    fileContent = 'original_prompt,prompt,category,method\n'
     prompts.forEach((prompt, index) => {
       if (prompt) {
         const escapedPrompt = prompt.replace(/"/g, '""')
