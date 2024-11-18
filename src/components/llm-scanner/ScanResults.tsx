@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ScanResult {
   prompt: string;
@@ -90,11 +91,13 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
   // Handle array of results (batch scan)
   if (Array.isArray(result)) {
     return (
-      <div className="mt-8 space-y-4">
-        {result.map((item, index) => (
-          <SingleResult key={index} result={item} />
-        ))}
-      </div>
+      <ScrollArea className="h-[60vh] mt-8">
+        <div className="space-y-4">
+          {result.map((item, index) => (
+            <SingleResult key={index} result={item} />
+          ))}
+        </div>
+      </ScrollArea>
     );
   }
 

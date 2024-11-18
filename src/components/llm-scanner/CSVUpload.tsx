@@ -51,10 +51,11 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
         return;
       }
 
+      // Pass all prompts to the parent component
       onPromptsExtracted(prompts);
       toast.success(`${prompts.length} prompts extracted successfully`);
       
-      // Reset the input
+      // Reset input
       event.target.value = '';
     } catch (error) {
       console.error("CSV processing error:", error);
