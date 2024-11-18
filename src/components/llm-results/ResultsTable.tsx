@@ -4,6 +4,7 @@ import { ResultsTableRow } from "./ResultsTableRow";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { LLMScan } from "./types";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ResultsTableProps {
   scans: LLMScan[];
@@ -45,11 +46,13 @@ export function ResultsTable({ scans }: ResultsTableProps) {
       </Table>
 
       <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <h3 className="text-lg font-semibold mb-2">{selectedContent?.title}</h3>
-          <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md">
-            {selectedContent?.content}
-          </pre>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <ScrollArea className="h-full max-h-[70vh]">
+            <h3 className="text-lg font-semibold mb-2">{selectedContent?.title}</h3>
+            <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md">
+              {selectedContent?.content}
+            </pre>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </>

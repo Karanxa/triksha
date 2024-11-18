@@ -79,17 +79,19 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
-  const results = scan.results || {};
-  const responses: ScanResponse[] = results.responses || [];
-  const firstResponse = responses[0] || {} as ScanResponse;
+  // Extract responses from either the responses array or the results object
+  const responses = scan.results?.responses || [];
+  const firstResponse = responses[0] || {};
   
-  const prompt = firstResponse.prompt || results.prompts?.[0] || 'No prompt available';
-  const response = firstResponse.model_response || 'No response available';
+  // Get prompt and response from the correct location in the data structure
+  const prompt = firstResponse.prompt || scan.results?.prompts?.[0] || 'No prompt available';
+  const response = firstResponse.model_response || firstResponse.response || 'No response available';
   const rawResponse = firstResponse.raw_response || firstResponse;
-  const category = scan.category || 'Uncategorized';
-  const isVulnerable = scan.is_vulnerable;
   
-  const modelName = firstResponse.model || results.model || 'Unknown Model';
+  const category = scan.category || firstResponse.category || 'Uncategorized';
+  const isVulnerable = scan.is_vulnerable ?? firstResponse.is_vulnerable;
+  
+  const modelName = firstResponse.model || scan.results?.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
 
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
