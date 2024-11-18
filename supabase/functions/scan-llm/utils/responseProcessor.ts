@@ -14,3 +14,20 @@ export function processProviderResponse(response: any, provider: string): string
       return typeof response === 'string' ? response : JSON.stringify(response);
   }
 }
+
+export function extractModelFromResponse(response: any, provider: string): string {
+  if (!response) return 'Unknown Model';
+  
+  switch (provider) {
+    case 'openai':
+      return response.model || 'Unknown OpenAI Model';
+    case 'anthropic':
+      return response.model || 'Unknown Anthropic Model';
+    case 'gemini':
+      return response.model || 'Unknown Gemini Model';
+    case 'ollama':
+      return response.model || 'Unknown Ollama Model';
+    default:
+      return 'Unknown Model';
+  }
+}

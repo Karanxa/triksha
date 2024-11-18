@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { processProviderResponse } from "./utils/responseProcessor.ts";
+import { processProviderResponse, extractModelFromResponse } from "./utils/responseProcessor.ts";
 import { handleOpenAIRequest } from "./providers/openai.ts";
 import { handleAnthropicRequest } from "./providers/anthropic.ts";
 import { handleGeminiRequest } from "./providers/gemini.ts";
@@ -16,11 +16,10 @@ export async function processScan(
   userId: string,
   category: string = 'jailbreaking'
 ) {
-  // Split provider string to get base provider, model value, and display name
-  const [baseProvider, modelInfo] = provider ? provider.split('-') : [null, null];
-  const [modelValue, displayName] = modelInfo ? modelInfo.split('|') : [null, null];
+  // Get base provider for API calls
+  const [baseProvider] = provider ? provider.split('-') : [null];
   
-  console.log('Processing scan with provider:', baseProvider, 'model:', modelValue, 'display name:', displayName);
+  console.log('Processing scan with provider:', baseProvider);
 
   const results = [];
   let processedCount = 0;
@@ -31,14 +30,16 @@ export async function processScan(
       console.log('Processing prompt:', prompt);
       
       // Get response from provider
-      const response = await getProviderResponse(prompt, baseProvider, modelValue, customEndpoint, apiKeys);
+      const response = await getProviderResponse(prompt, baseProvider, null, customEndpoint, apiKeys);
       console.log('Raw provider response:', response);
       
-      // Extract readable response
+      // Extract readable response and model info
       const modelResponse = processProviderResponse(response, baseProvider || 'custom');
+      const modelName = extractModelFromResponse(response, baseProvider || 'custom');
       console.log('Processed response:', modelResponse);
+      console.log('Extracted model:', modelName);
 
-      // Store result with category and model display name
+      // Store result with category and extracted model name
       const { error: resultError } = await supabase
         .from('llm_scan_results')
         .insert({
@@ -48,7 +49,7 @@ export async function processScan(
           model_response: modelResponse,
           raw_response: response,
           provider: baseProvider || 'custom',
-          model: displayName || modelValue || 'custom-endpoint',
+          model: modelName,
           category
         })
         .single();
@@ -62,7 +63,7 @@ export async function processScan(
         prompt,
         model_response: modelResponse,
         raw_response: response,
-        model: displayName || modelValue || 'custom-endpoint'
+        model: modelName
       };
       
       results.push(result);
@@ -79,7 +80,7 @@ export async function processScan(
           results: {
             progress,
             responses: results,
-            model: displayName || modelValue || 'custom-endpoint'
+            model: modelName
           }
         })
         .eq('id', scanId);
@@ -89,7 +90,7 @@ export async function processScan(
       results.push({
         prompt,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
-        model: displayName || modelValue || 'custom-endpoint'
+        model: 'Unknown Model'
       });
     }
   }
@@ -102,7 +103,7 @@ export async function processScan(
       results: {
         responses: results,
         progress: 100,
-        model: displayName || modelValue || 'custom-endpoint'
+        model: results[0]?.model || 'Unknown Model'
       }
     })
     .eq('id', scanId);
