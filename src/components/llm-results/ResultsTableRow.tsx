@@ -55,6 +55,10 @@ const formatScanType = (scanType: string | null) => {
 };
 
 const getFullModelName = (model: string): string => {
+  if (!model || model === 'Unknown Model') {
+    return 'Unknown Model';
+  }
+
   const modelMap: { [key: string]: string } = {
     'gpt-4o': 'GPT-4 Opus',
     'gpt-4o-mini': 'GPT-4 Opus Mini',
@@ -67,7 +71,7 @@ const getFullModelName = (model: string): string => {
     'codellama': 'Code Llama'
   };
   
-  return modelMap[model] || model || 'Unknown Model';
+  return modelMap[model] || model;
 };
 
 interface ResultsTableRowProps {
@@ -84,7 +88,7 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
-  const modelName = response.model || scan.results?.model || 'Unknown Model';
+  const modelName = response.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();

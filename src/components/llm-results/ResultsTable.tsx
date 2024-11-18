@@ -52,19 +52,19 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           prompt: 'No prompt available',
           model_response: 'No response available',
           raw_response: {},
-          model: scan.results?.model || 'Unknown Model'
+          model: 'Unknown Model'
         }];
       }
 
       // Map each response to include scan metadata
       return responses.map((response, index) => ({
         ...scan,
-        scan_type: scan.scan_type || 'manual_scan',
+        scan_type: scan.scan_type || (responses.length > 1 ? 'batch_scan' : 'manual_scan'),
         response: {
           prompt: response?.prompt || 'No prompt available',
           model_response: response?.model_response || response?.response || 'No response available',
           raw_response: response?.raw_response || {},
-          model: response?.model || scan.results?.model || 'Unknown Model'
+          model: response?.model || 'Unknown Model'
         }
       }));
     });
