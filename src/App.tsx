@@ -21,14 +21,25 @@ function App() {
           <div className="container mx-auto px-4">
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route element={<AuthGuard><Navigation /></AuthGuard>}>
-                <Route path="/" element={<Index />} />
-                <Route path="/llm-scanner" element={<LLMScanner />} />
-                <Route path="/llm-results" element={<LLMResults />} />
-                <Route path="/datasets" element={<Datasets />} />
-                <Route path="/augment-prompt" element={<AugmentPrompt />} />
-                <Route path="/fine-tuning" element={<FineTuning />} />
-                <Route path="/settings" element={<Settings />} />
+              <Route element={<AuthGuard />}>
+                <Route
+                  element={
+                    <>
+                      <Navigation />
+                      <main className="mt-6">
+                        <Outlet />
+                      </main>
+                    </>
+                  }
+                >
+                  <Route path="/" element={<Index />} />
+                  <Route path="/llm-scanner" element={<LLMScanner />} />
+                  <Route path="/llm-results" element={<LLMResults />} />
+                  <Route path="/datasets" element={<Datasets />} />
+                  <Route path="/augment-prompt" element={<AugmentPrompt />} />
+                  <Route path="/fine-tuning" element={<FineTuning />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
               </Route>
             </Routes>
             <ScanNotification />
