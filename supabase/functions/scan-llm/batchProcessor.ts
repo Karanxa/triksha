@@ -1,6 +1,10 @@
 interface ProcessBatchOptions {
   scanId: string;
   supabase: any;
+  user: any;
+  baseProvider: string | null;
+  model: string | null;
+  category: string;
 }
 
 export async function processBatchWithProgress(
@@ -9,7 +13,7 @@ export async function processBatchWithProgress(
   processPrompt: (prompt: string) => Promise<any>,
   options: ProcessBatchOptions
 ): Promise<any[]> {
-  const { scanId, supabase } = options;
+  const { scanId, supabase, user, baseProvider, model, category } = options;
   const results: any[] = [];
   const totalBatches = Math.ceil(prompts.length / batchSize);
   const CHUNK_SIZE = 1000; // Number of results to store at once
@@ -25,25 +29,6 @@ export async function processBatchWithProgress(
       .eq('id', scanId);
   };
 
-  const storeResults = async (results: any[]) => {
-    if (results.length === 0) return;
-
-    await supabase
-      .from('llm_scan_results')
-      .insert(
-        results.map(result => ({
-          scan_id: scanId,
-          prompt: result.prompt,
-          model_response: result.model_response,
-          raw_response: result.raw_response,
-          provider: result.provider,
-          model: result.model,
-          error: result.error,
-          created_at: result.timestamp
-        }))
-      );
-  };
-
   try {
     for (let i = 0; i < prompts.length; i += batchSize) {
       const batch = prompts.slice(i, i + batchSize);
@@ -53,13 +38,45 @@ export async function processBatchWithProgress(
       
       const batchPromises = batch.map(async (prompt) => {
         try {
-          return await processPrompt(prompt);
+          const response = await processPrompt(prompt);
+          const modelResponse = typeof response === 'string' ? response : JSON.stringify(response);
+          
+          // Store individual result
+          const { data: resultData, error: resultError } = await supabase
+            .from('llm_scan_results')
+            .insert({
+              scan_id: scanId,
+              user_id: user.id,
+              prompt,
+              model_response: modelResponse,
+              raw_response: response,
+              provider: baseProvider || 'custom',
+              model: model || 'custom-endpoint',
+              category,
+            })
+            .select()
+            .single();
+
+          if (resultError) throw resultError;
+          return resultData;
         } catch (error) {
-          console.error(`Error processing prompt: ${error.message}`);
-          return {
-            error: error.message,
-            prompt
-          };
+          console.error(`Error processing prompt "${prompt}":`, error);
+          // Store error result
+          const { data: errorResult } = await supabase
+            .from('llm_scan_results')
+            .insert({
+              scan_id: scanId,
+              user_id: user.id,
+              prompt,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+              provider: baseProvider || 'custom',
+              model: model || 'custom-endpoint',
+              category,
+            })
+            .select()
+            .single();
+          
+          return errorResult;
         }
       });
 
@@ -68,7 +85,6 @@ export async function processBatchWithProgress(
 
       // Store results in chunks to avoid memory issues
       if (resultsBuffer.length >= CHUNK_SIZE) {
-        await storeResults(resultsBuffer);
         results.push(...resultsBuffer);
         resultsBuffer = [];
       }
@@ -85,7 +101,6 @@ export async function processBatchWithProgress(
 
     // Store any remaining results
     if (resultsBuffer.length > 0) {
-      await storeResults(resultsBuffer);
       results.push(...resultsBuffer);
     }
 

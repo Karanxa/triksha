@@ -6,6 +6,7 @@ import { handleAnthropicRequest } from "./providers/anthropic.ts";
 import { handleGeminiRequest } from "./providers/gemini.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { processResponse } from "./utils.ts";
+import { processBatchWithProgress } from "./batchProcessor.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -67,142 +68,62 @@ serve(async (req) => {
 
     const apiKeys = profile.api_keys;
     const [baseProvider, model] = provider ? provider.split('-') : [null, null];
-    const results = [];
-    
-    try {
-      for (let i = 0; i < prompts.length; i++) {
-        const prompt = prompts[i];
-        let response;
-        
-        try {
-          if (customEndpoint) {
-            console.log('Processing custom endpoint request for prompt:', prompt);
-            response = await handleCustomEndpoint(prompt, customEndpoint);
-          } else {
-            switch (baseProvider) {
-              case 'openai':
-                if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
-                response = await handleOpenAIRequest(prompt, apiKeys.openai, model);
-                break;
-              case 'anthropic':
-                if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
-                response = await handleAnthropicRequest(prompt, apiKeys.anthropic, model);
-                break;
-              case 'gemini':
-                if (!apiKeys.gemini) throw new Error('Google API key not configured');
-                response = await handleGeminiRequest(prompt, apiKeys.gemini, model);
-                break;
-              case 'ollama':
-                if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
-                response = await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
-                break;
-              default:
-                throw new Error(`Unsupported provider: ${baseProvider}`);
-            }
-          }
 
-          const modelResponse = processResponse(response);
-          
-          // Store individual result
-          const { data: resultData, error: resultError } = await supabase
-            .from('llm_scan_results')
-            .insert({
-              scan_id: scanId,
-              user_id: user.id,
-              prompt,
-              model_response: modelResponse,
-              raw_response: response,
-              provider: baseProvider || 'custom',
-              model: model || 'custom-endpoint',
-              category,
-            })
-            .select()
-            .single();
-
-          if (resultError) throw resultError;
-          results.push(resultData);
-
-          // Update progress
-          const progress = Math.round(((i + 1) / prompts.length) * 100);
-          await supabase
-            .from('llm_scans')
-            .update({ 
-              results: { 
-                prompts,
-                progress,
-                responses: results
-              }
-            })
-            .eq('id', scanId);
-
-          // Add delay between requests to respect rate limits
-          if (i < prompts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 1000 / qps));
-          }
-        } catch (error) {
-          console.error(`Error processing prompt "${prompt}":`, error);
-          // Store error result
-          const { data: errorResult } = await supabase
-            .from('llm_scan_results')
-            .insert({
-              scan_id: scanId,
-              user_id: user.id,
-              prompt,
-              error: error instanceof Error ? error.message : 'Unknown error occurred',
-              provider: baseProvider || 'custom',
-              model: model || 'custom-endpoint',
-              category,
-            })
-            .select()
-            .single();
-          
-          if (errorResult) {
-            results.push(errorResult);
-          }
-          
-          // Continue with next prompt instead of failing entire batch
-          continue;
-        }
+    // Process single prompt vs batch
+    const processPrompt = async (prompt: string) => {
+      if (customEndpoint) {
+        return await handleCustomEndpoint(prompt, customEndpoint);
       }
 
-      // Update final status
-      await supabase
-        .from('llm_scans')
-        .update({ 
-          status: 'completed',
-          results: { 
-            prompts,
-            progress: 100,
-            responses: results
-          }
-        })
-        .eq('id', scanId);
+      switch (baseProvider) {
+        case 'openai':
+          if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
+          return await handleOpenAIRequest(prompt, apiKeys.openai, model);
+        case 'anthropic':
+          if (!apiKeys.anthropic) throw new Error('Anthropic API key not configured');
+          return await handleAnthropicRequest(prompt, apiKeys.anthropic, model);
+        case 'gemini':
+          if (!apiKeys.gemini) throw new Error('Google API key not configured');
+          return await handleGeminiRequest(prompt, apiKeys.gemini, model);
+        case 'ollama':
+          if (!apiKeys.ollama_endpoint) throw new Error('Ollama endpoint not configured');
+          return await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
+        default:
+          throw new Error(`Unsupported provider: ${baseProvider}`);
+      }
+    };
 
-      return new Response(
-        JSON.stringify({ results }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
+    // Use batch processor for multiple prompts
+    const batchSize = 5; // Process 5 prompts at a time
+    const results = await processBatchWithProgress(prompts, batchSize, processPrompt, {
+      scanId,
+      supabase,
+      user,
+      baseProvider,
+      model,
+      category
+    });
+
+    // Update final status
+    await supabase
+      .from('llm_scans')
+      .update({ 
+        status: 'completed',
+        results: { 
+          prompts,
+          progress: 100,
+          responses: results
         }
-      );
+      })
+      .eq('id', scanId);
 
-    } catch (processingError) {
-      console.error('Processing error:', processingError);
-      // Update scan status to failed with error details
-      await supabase
-        .from('llm_scans')
-        .update({ 
-          status: 'failed',
-          results: { 
-            error: processingError instanceof Error ? processingError.message : 'Unknown error occurred',
-            prompts,
-            responses: results
-          }
-        })
-        .eq('id', scanId);
-
-      throw processingError;
-    }
+    return new Response(
+      JSON.stringify({ results }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    );
 
   } catch (error) {
     console.error('Scan error:', error);
