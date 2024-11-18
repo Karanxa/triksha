@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DatasetSelector } from "./DatasetSelector";
 
 interface CSVUploadProps {
   onPromptsExtracted: (prompts: string[]) => void;
@@ -62,28 +64,40 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">Upload CSV</label>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-          onClick={() => document.getElementById("csv-upload-scanner")?.click()}
-        >
-          <Upload className="w-4 h-4" />
-          Upload CSV
-        </Button>
-      </div>
-      <input
-        id="csv-upload-scanner"
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={handleFileUpload}
-      />
-      <p className="text-sm text-muted-foreground">
-        Upload a CSV file with a 'prompts' column
-      </p>
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upload">Upload CSV</TabsTrigger>
+          <TabsTrigger value="select">Select Dataset</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upload" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 w-full"
+              onClick={() => document.getElementById("csv-upload-scanner")?.click()}
+            >
+              <Upload className="w-4 h-4" />
+              Upload CSV
+            </Button>
+          </div>
+          <input
+            id="csv-upload-scanner"
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+          <p className="text-sm text-muted-foreground">
+            Upload a CSV file with a 'prompts' column
+          </p>
+        </TabsContent>
+        
+        <TabsContent value="select">
+          <DatasetSelector onDatasetSelected={onPromptsExtracted} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
