@@ -41,7 +41,7 @@ export const ModelSelect = ({ provider, selectedProvider, onModelChange }: Model
         value={provider.split('-')[1] || ""} 
         onValueChange={onModelChange}
       >
-        <SelectTrigger>
+        <SelectTrigger className="bg-background">
           <SelectValue placeholder="Select model" />
         </SelectTrigger>
         <SelectContent>
