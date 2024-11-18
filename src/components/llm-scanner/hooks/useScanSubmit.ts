@@ -44,8 +44,6 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
         throw new Error('Authentication required');
       }
 
-      const promptsToScan = scanType === "manual" ? [singlePrompt] : prompts;
-
       // Create a new scan record
       const { data: scanData, error: scanError } = await supabase
         .from('llm_scans')
@@ -57,7 +55,7 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           schedule,
           is_recurring: isRecurring,
           status: 'pending',
-          results: { prompts: promptsToScan } // Store prompts in results
+          results: { prompts } // Store all prompts in results
         })
         .select()
         .single();
@@ -70,12 +68,12 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
         setScanId(scanData.id);
       }
 
-      // Call the edge function
+      // Call the edge function with all prompts
       const response = await supabase.functions.invoke('scan-llm', {
         body: {
           scanId: scanData.id,
-          prompts: promptsToScan,
-          provider: provider,
+          prompts,
+          provider,
           category,
           label,
           schedule,
@@ -98,7 +96,6 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
 
       const { results } = response.data;
       setResult(results);
-      toast.success("Scan completed successfully");
       return results;
     } catch (error) {
       console.error("Scan failed:", error);

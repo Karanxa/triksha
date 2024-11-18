@@ -59,7 +59,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     setScanId: setCurrentScanId
   });
 
-  // Subscribe to scan progress updates
   useEffect(() => {
     if (!currentScanId) return;
 
@@ -80,6 +79,8 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
           } else if (payload.new.status === 'completed') {
             setScanProgress(100);
             toast.success('Scan completed successfully');
+            // Update scan results with all responses
+            setScanResult(payload.new.results?.responses || []);
           } else if (payload.new.status === 'failed') {
             toast.error('Scan failed: ' + (payload.new.results?.error || 'Unknown error'));
           }
@@ -93,14 +94,20 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   }, [currentScanId]);
 
   const onFormSubmit = async () => {
-    // Validate input size
-    if (scanType === "batch" && prompts.length > 100000) {
+    const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+
+    if (promptsToSubmit.length === 0) {
+      toast.error("Please enter at least one prompt");
+      return;
+    }
+
+    if (promptsToSubmit.length > 100000) {
       toast.error("Maximum batch size is 100,000 prompts");
       return;
     }
 
-    if (scanType === "batch" && prompts.length > 1000) {
-      toast.info(`Processing ${prompts.length} prompts. This may take a while.`);
+    if (promptsToSubmit.length > 1000) {
+      toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
     }
 
     const result = await handleSubmit({
@@ -108,16 +115,15 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       customEndpoint,
       scanType,
       singlePrompt,
-      prompts,
+      prompts: promptsToSubmit,
       category,
       label,
       schedule,
       isRecurring,
-      qps: Math.min(qps, 50) // Ensure QPS doesn't exceed 50
+      qps: Math.min(qps, 50)
     });
 
     if (result) {
-      // Only reset form on successful submission
       setSinglePrompt("");
       setPrompts([]);
       setLabel("");
