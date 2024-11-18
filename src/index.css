@@ -51,19 +51,17 @@
 
 @layer base {
   * {
-    @apply border-border selection:bg-white/10 selection:text-white;
+    @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
   }
-
-  html {
-    @apply scroll-smooth;
+  input, select, textarea {
+    @apply bg-background;
   }
+}
 
-  [data-radix-popper-content-wrapper] {
-    @apply bg-popover border-border;
-  }
+[data-radix-popper-content-wrapper] {
+  @apply bg-background border-border;
 }
