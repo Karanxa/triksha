@@ -314,6 +314,7 @@ export type Database = {
           name: string
           next_run: string | null
           results: Json | null
+          scan_type: string | null
           schedule: string | null
           severity: string | null
           status: string
@@ -330,6 +331,7 @@ export type Database = {
           name: string
           next_run?: string | null
           results?: Json | null
+          scan_type?: string | null
           schedule?: string | null
           severity?: string | null
           status?: string
@@ -346,6 +348,7 @@ export type Database = {
           name?: string
           next_run?: string | null
           results?: Json | null
+          scan_type?: string | null
           schedule?: string | null
           severity?: string | null
           status?: string

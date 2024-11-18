@@ -23,6 +23,11 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<string>('pending');
   const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<{
+    processed: number;
+    failed: number;
+    total: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!scanId) return;
@@ -40,10 +45,22 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
         (payload) => {
           if (payload.new.status === 'processing') {
             setStatus('processing');
-            setProgress(payload.new.results?.progress || 0);
+            const results = payload.new.results || {};
+            setProgress(results.progress || 0);
+            setStats({
+              processed: results.processed || 0,
+              failed: results.failed || 0,
+              total: results.total || 0
+            });
           } else if (payload.new.status === 'completed') {
             setStatus('completed');
             setProgress(100);
+            const results = payload.new.results || {};
+            setStats({
+              processed: results.processed || 0,
+              failed: results.failed || 0,
+              total: results.total || 0
+            });
           } else if (payload.new.status === 'failed') {
             setStatus('failed');
             setError(payload.new.results?.error || 'Unknown error occurred');
@@ -66,9 +83,17 @@ export const ScanResults = ({ result, isLoading, scanId }: ScanResultsProps) => 
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
             <Progress value={progress} className="w-full" />
-            <p className="text-center text-sm text-muted-foreground">
-              Processing scan... {progress}% complete
-            </p>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Processing scan... {progress}% complete
+              </p>
+              {stats && (
+                <p className="text-xs text-muted-foreground">
+                  Processed {stats.processed} of {stats.total} prompts
+                  {stats.failed > 0 && ` (${stats.failed} failed)`}
+                </p>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

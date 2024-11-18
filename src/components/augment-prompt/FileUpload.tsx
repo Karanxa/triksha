@@ -19,51 +19,83 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
     }
 
     try {
-      const text = await file.text();
-      // Split by newlines and handle both \n and \r\n
-      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-      
-      if (lines.length === 0) {
-        toast.error("CSV file is empty");
-        return;
-      }
+      // For large files, use FileReader with chunks
+      const chunkSize = 1024 * 1024; // 1MB chunks
+      const fileSize = file.size;
+      let offset = 0;
+      let prompts: string[] = [];
+      let headerProcessed = false;
+      let promptIndex = -1;
 
-      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
-      const promptIndex = headers.findIndex(header => 
-        header === "prompts" || header === "prompt" || header === "text"
-      );
+      const processChunk = async (chunk: string) => {
+        const lines = chunk.split(/\r?\n/);
+        
+        if (!headerProcessed && lines.length > 0) {
+          const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
+          promptIndex = headers.findIndex(header => 
+            header === "prompts" || header === "prompt" || header === "text"
+          );
+          
+          if (promptIndex === -1) {
+            throw new Error("CSV must have a 'prompts', 'prompt', or 'text' column");
+          }
+          
+          headerProcessed = true;
+          lines.shift(); // Remove header line
+        }
 
-      if (promptIndex === -1) {
-        toast.error("CSV must have a 'prompts', 'prompt', or 'text' column");
-        return;
-      }
+        const validPrompts = lines
+          .map(line => {
+            const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+            const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
+            return cleanedValues[promptIndex];
+          })
+          .filter(Boolean);
 
-      // Process each line, properly handling quoted values
-      const prompts = lines.slice(1).map(line => {
-        // Handle quoted values containing commas
-        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
-        return cleanedValues[promptIndex];
-      }).filter(Boolean);
+        prompts.push(...validPrompts);
+      };
 
-      if (prompts.length === 0) {
-        toast.error("No valid prompts found in the CSV file");
-        return;
-      }
+      const readNextChunk = () => {
+        const reader = new FileReader();
+        const blob = file.slice(offset, offset + chunkSize);
+        
+        reader.onload = async (e) => {
+          const chunk = e.target?.result as string;
+          await processChunk(chunk);
+          
+          offset += chunkSize;
+          const progress = Math.min(100, Math.round((offset / fileSize) * 100));
+          
+          if (offset < fileSize) {
+            // Show progress for large files
+            toast.info(`Processing file... ${progress}%`, { id: 'csv-progress' });
+            readNextChunk();
+          } else {
+            // Processing complete
+            if (prompts.length === 0) {
+              toast.error("No valid prompts found in the CSV file");
+              return;
+            }
 
-      // Add warning for large files
-      if (prompts.length > 10000) {
-        toast.warning(`Processing ${prompts.length.toLocaleString()} prompts may take some time. The system will provide real-time progress updates.`);
-      }
+            onFileUpload(prompts.join("\n"));
+            toast.success(`${prompts.length.toLocaleString()} prompts loaded successfully`);
+          }
+        };
 
-      onFileUpload(prompts.join("\n"));
-      toast.success(`${prompts.length.toLocaleString()} prompts loaded successfully`);
-      
-      // Reset input
-      event.target.value = '';
+        reader.onerror = () => {
+          toast.error("Error reading file");
+        };
+
+        reader.readAsText(blob);
+      };
+
+      readNextChunk();
     } catch (error) {
       console.error("CSV processing error:", error);
       toast.error("Error processing CSV file: " + (error as Error).message);
+    } finally {
+      // Reset input
+      event.target.value = '';
     }
   };
 
@@ -90,7 +122,7 @@ const FileUpload = ({ onFileUpload }: FileUploadProps) => {
       />
       <Alert className="mt-2">
         <AlertDescription>
-          You can upload CSV files containing up to 100,000 prompts. For large files, progress will be shown in real-time.
+          CSV files are processed in chunks to handle large datasets efficiently. Progress will be shown for large files.
         </AlertDescription>
       </Alert>
       <p className="text-sm text-muted-foreground mb-4">
