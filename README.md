@@ -1,4 +1,4 @@
-# Welcome to Geraide
+# Welcome to Geraid
 
 ## Project info
 
@@ -17,10 +17,10 @@ There are several ways to run this application:
 
 ```sh
 # Build the Docker image
-docker build -t geraide-app .
+docker build -t geraid-app .
 
 # Run the container
-docker run -p 5173:5173 geraide-app
+docker run -p 5173:5173 geraid-app
 ```
 
 5. Open your browser and visit `http://localhost:5173`
