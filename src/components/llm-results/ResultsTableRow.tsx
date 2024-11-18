@@ -79,117 +79,100 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
-  console.log('Rendering scan:', scan); // Debug log
-  
-  // Handle both single prompt and batch responses
   const isSinglePrompt = scan.scan_type === 'manual_scan';
+  const responses = scan.results?.responses || [];
   
-  let prompt = 'No prompt available';
-  let response = 'No response available';
-  let rawResponse = {};
-  
-  if (scan.results) {
-    console.log('Scan results:', scan.results); // Debug log
-    
-    if (isSinglePrompt) {
-      // For single prompt scans
-      if (scan.results.prompt || scan.results.model_response) {
-        prompt = scan.results.prompt || 'No prompt available';
-        response = scan.results.model_response || 'No response available';
-        rawResponse = scan.results.raw_response || scan.results;
-      } else if (scan.results.responses?.[0]) {
-        // Fallback to first response if available
-        prompt = scan.results.responses[0].prompt || 'No prompt available';
-        response = scan.results.responses[0].model_response || 'No response available';
-        rawResponse = scan.results.responses[0].raw_response || scan.results.responses[0];
-      }
-    } else {
-      // For batch scans
-      if (Array.isArray(scan.results.responses) && scan.results.responses.length > 0) {
-        console.log('Batch responses:', scan.results.responses); // Debug log
-        
-        // Find the first valid response
-        const validResponse = scan.results.responses.find(r => r && (r.prompt || r.model_response));
-        if (validResponse) {
-          prompt = validResponse.prompt || 'No prompt available';
-          response = validResponse.model_response || validResponse.response || 'No response available';
-          rawResponse = validResponse.raw_response || validResponse;
-        }
-      }
-    }
+  // If no responses, create a single row with default values
+  if (responses.length === 0) {
+    const defaultRow = {
+      prompt: 'No prompt available',
+      model_response: 'No response available',
+      raw_response: {}
+    };
+    responses.push(defaultRow);
   }
-  
-  const category = scan.category || 'Uncategorized';
-  const isVulnerable = scan.is_vulnerable ?? null;
-  
+
   const modelName = scan.results?.model || 'Unknown Model';
   const fullModelName = getFullModelName(modelName);
-
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
 
   return (
-    <TableRow className="h-16">
-      <TableCell className="py-2">{formatScanType(scan.scan_type)}</TableCell>
-      <TableCell className="py-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger className="cursor-default">
-              {dateOnly}
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{fullDateTime}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </TableCell>
-      <TableCell className="py-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="outline" className="cursor-default">
-                {fullModelName}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{modelName}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </TableCell>
-      <TableCell className="py-2 border-l">
-        <TruncatedCell
-          content={prompt}
-          onContentClick={() => onContentClick("Prompt", prompt)}
-        />
-      </TableCell>
-      <TableCell className="py-2">
-        <TruncatedCell
-          content={response}
-          onContentClick={() => onContentClick("Response", response)}
-        />
-      </TableCell>
-      <TableCell className="py-2 w-[60px] text-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => onContentClick("Raw Data", JSON.stringify(rawResponse, null, 2))}
-        >
-          <FileJson className="h-4 w-4" />
-        </Button>
-      </TableCell>
-      <TableCell className="py-2 border-l">
-        <CategoryBadge category={category} />
-      </TableCell>
-      <TableCell className="py-2">
-        <VulnerabilityStatus isVulnerable={isVulnerable} />
-      </TableCell>
-      <TableCell className="py-2">
-        <div className="flex gap-2">
-          <HideButton scanId={scan.id} onHide={onHide} />
-        </div>
-      </TableCell>
-    </TableRow>
+    <>
+      {responses.map((response: ScanResponse, index: number) => (
+        <TableRow key={`${scan.id}-${index}`} className="h-16">
+          {index === 0 && (
+            <>
+              <TableCell className="py-2" rowSpan={responses.length}>
+                {formatScanType(scan.scan_type)}
+              </TableCell>
+              <TableCell className="py-2" rowSpan={responses.length}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="cursor-default">
+                      {dateOnly}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{fullDateTime}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableCell>
+              <TableCell className="py-2" rowSpan={responses.length}>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="outline" className="cursor-default">
+                        {fullModelName}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{modelName}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableCell>
+            </>
+          )}
+          <TableCell className="py-2 border-l">
+            <TruncatedCell
+              content={response.prompt || 'No prompt available'}
+              onContentClick={() => onContentClick("Prompt", response.prompt || 'No prompt available')}
+            />
+          </TableCell>
+          <TableCell className="py-2">
+            <TruncatedCell
+              content={response.model_response || response.response || 'No response available'}
+              onContentClick={() => onContentClick("Response", response.model_response || response.response || 'No response available')}
+            />
+          </TableCell>
+          <TableCell className="py-2 w-[60px] text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => onContentClick("Raw Data", JSON.stringify(response.raw_response || response, null, 2))}
+            >
+              <FileJson className="h-4 w-4" />
+            </Button>
+          </TableCell>
+          {index === 0 && (
+            <>
+              <TableCell className="py-2 border-l" rowSpan={responses.length}>
+                <CategoryBadge category={scan.category || 'Uncategorized'} />
+              </TableCell>
+              <TableCell className="py-2" rowSpan={responses.length}>
+                <VulnerabilityStatus isVulnerable={scan.is_vulnerable} />
+              </TableCell>
+              <TableCell className="py-2" rowSpan={responses.length}>
+                <div className="flex gap-2">
+                  <HideButton scanId={scan.id} onHide={onHide} />
+                </div>
+              </TableCell>
+            </>
+          )}
+        </TableRow>
+      ))}
+    </>
   );
 };
