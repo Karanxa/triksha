@@ -1,16 +1,13 @@
-# Use Node.js LTS (Long Term Support) version
-FROM node:20-slim
+# Use Node.js LTS (Long Term Support) version with Alpine for smaller image size
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies including git for potential package dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apk add --no-cache git curl
 
-# Install bun for faster package installation (optional but recommended)
+# Install bun (optional but recommended for faster builds)
 RUN curl -fsSL https://bun.sh/install | bash
 
 # Copy package files
@@ -30,13 +27,17 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Expose the port the app runs on
-EXPOSE 5173
+# Use a lightweight nginx image to serve the built application
+FROM nginx:alpine
 
-# Set environment variables with default values
-ENV VITE_SUPABASE_URL=your_supabase_url
-ENV VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-ENV VITE_GOOGLE_CLIENT_ID=your_google_client_id
+# Copy the built application from the previous stage
+COPY --from=0 /app/dist /usr/share/nginx/html
 
-# Command to run the application
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
