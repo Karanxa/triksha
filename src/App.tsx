@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import Navigation from "@/components/Navigation";
@@ -18,21 +18,10 @@ function App() {
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Router>
         <div className="min-h-screen bg-background">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route element={<AuthGuard />}>
-              <Route
-                element={
-                  <>
-                    <Navigation />
-                    <div className="container mx-auto px-4">
-                      <main className="mt-6">
-                        <Outlet />
-                      </main>
-                    </div>
-                  </>
-                }
-              >
+          <div className="container mx-auto px-4">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<AuthGuard><Navigation /></AuthGuard>}>
                 <Route path="/" element={<Index />} />
                 <Route path="/llm-scanner" element={<LLMScanner />} />
                 <Route path="/llm-results" element={<LLMResults />} />
@@ -41,10 +30,10 @@ function App() {
                 <Route path="/fine-tuning" element={<FineTuning />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
-            </Route>
-          </Routes>
-          <ScanNotification />
-          <Toaster />
+            </Routes>
+            <ScanNotification />
+            <Toaster />
+          </div>
         </div>
       </Router>
     </ThemeProvider>
