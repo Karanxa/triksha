@@ -12,24 +12,36 @@ There are several ways to run this application:
 
 1. Make sure you have Docker installed on your machine
 2. Clone this repository
-3. Navigate to the project directory
-4. Build and run the Docker container:
+3. Create a `.env` file in the root directory with the following variables:
+```sh
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+```
+4. Navigate to the project directory
+5. Build and run the Docker container:
 
 ```sh
 # Build the Docker image
 docker build -t geraid-app .
 
 # Run the container
-docker run -p 5173:5173 geraid-app
+docker run -p 5173:5173 \
+  -e VITE_SUPABASE_URL=your_supabase_url \
+  -e VITE_SUPABASE_ANON_KEY=your_supabase_anon_key \
+  -e VITE_GOOGLE_CLIENT_ID=your_google_client_id \
+  geraid-app
 ```
 
-5. Open your browser and visit `http://localhost:5173`
+6. Open your browser and visit `http://localhost:5173`
 
 **Use your preferred IDE**
 
 If you want to work locally using your own IDE without Docker, you can:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Requirements:
+- Node.js & npm - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Bun (optional but recommended for faster package installation) - [install guide](https://bun.sh/docs/installation)
 
 Follow these steps:
 
@@ -40,10 +52,16 @@ git clone <YOUR_GIT_URL>
 # Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Step 3: Create a .env file with the required environment variables
+cp .env.example .env
+# Edit the .env file with your values
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Install the necessary dependencies (using bun or npm).
+bun install
+# or
+npm install
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
@@ -61,15 +79,25 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Required Environment Variables
+
+The following environment variables are required to run the application:
+
+- `VITE_SUPABASE_URL`: Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Your Supabase project's anonymous key
+- `VITE_GOOGLE_CLIENT_ID`: Your Google OAuth client ID (for authentication)
+
 ## What technologies are used for this project?
 
-This project is built with .
+This project is built with:
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Backend & Authentication)
+- Docker
 
 ## How can I deploy this project?
 
