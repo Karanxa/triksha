@@ -12,6 +12,8 @@ interface DatasetContentProps {
 }
 
 const formatPromptText = (text: string): string => {
+  if (!text) return '';
+  
   // Remove markdown code blocks
   text = text.replace(/```[\s\S]*?```/g, '')
   
@@ -64,28 +66,21 @@ const parseCSVLine = (line: string): string[] => {
 }
 
 const parseCSVContent = (rawText: string) => {
-  const lines = rawText.split(/\r?\n/)
+  const lines = rawText.split(/\r?\n/).filter(line => line.trim())
   const headers = parseCSVLine(lines[0])
   
   const data = lines.slice(1)
-    .filter(line => line.trim())
-    .map(line => parseCSVLine(line))
-    .filter(row => row.length === headers.length)
+    .map((line, index) => {
+      const values = parseCSVLine(line)
+      // Add sequence number as first column
+      return [String(index + 1), ...values]
+    })
+    .filter(row => row.length === headers.length + 1) // +1 for sequence number
   
-  return { headers, data }
-}
-
-const filterEasyJailbreakData = (data: string[][], headers: string[]): string[][] => {
-  const methodIndex = headers.findIndex(h => h.toLowerCase() === 'method')
-  const categoryIndex = headers.findIndex(h => h.toLowerCase() === 'category')
+  // Add sequence number header
+  const updatedHeaders = ['#', ...headers]
   
-  if (methodIndex === -1 && categoryIndex === -1) return data
-
-  return data.filter(row => {
-    const method = methodIndex !== -1 ? row[methodIndex]?.toLowerCase() : ''
-    const category = categoryIndex !== -1 ? row[categoryIndex]?.toLowerCase() : ''
-    return method === 'recipe' || category === 'easyjailbreak' || category === 'recipe'
-  })
+  return { headers: updatedHeaders, data }
 }
 
 export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
@@ -94,7 +89,6 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
   if (viewType === 'table' && content.type === 'csv') {
     // Re-parse the raw content to handle multi-line cells properly
     const { headers, data } = parseCSVContent(content.raw)
-    const filteredData = filterEasyJailbreakData(data, headers)
 
     return (
       <ScrollArea className="h-[60vh]">
@@ -109,7 +103,7 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.map((row, i) => (
+            {data.map((row, i) => (
               <TableRow key={i}>
                 {row.map((cell, j) => {
                   // Format the prompt column if it exists
@@ -135,7 +129,7 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
 
   return (
     <ScrollArea className="h-[60vh]">
-      <pre className="whitespace-pre-wrap p-4 bg-muted rounded-lg">
+      <pre className="whitespace-pre-wrap p-4 bg-background rounded-lg border">
         {content.raw}
       </pre>
     </ScrollArea>
