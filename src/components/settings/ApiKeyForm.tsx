@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ApiKeys } from "@/integrations/supabase/types/common";
 
 export const ApiKeyForm = () => {
   const session = useSession();
-  const [keys, setKeys] = useState({
+  const [keys, setKeys] = useState<ApiKeys>({
     openai: "",
     anthropic: "",
     gemini: "",
@@ -18,8 +19,7 @@ export const ApiKeyForm = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Fetch existing API keys on component mount
-  useState(() => {
+  useEffect(() => {
     const fetchKeys = async () => {
       if (!session?.user?.id) return;
       
@@ -32,7 +32,7 @@ export const ApiKeyForm = () => {
           
         if (error) throw error;
         if (data?.api_keys) {
-          setKeys(data.api_keys);
+          setKeys(data.api_keys as ApiKeys);
         }
       } catch (error) {
         toast.error("Failed to load API keys");
@@ -61,7 +61,7 @@ export const ApiKeyForm = () => {
     }
   };
 
-  const handleChange = (key: keyof typeof keys, value: string) => {
+  const handleChange = (key: keyof ApiKeys, value: string) => {
     setKeys(prev => ({ ...prev, [key]: value }));
   };
 
