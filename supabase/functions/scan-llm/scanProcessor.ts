@@ -25,14 +25,8 @@ export async function processScan(
       console.log('Processing prompt:', prompt);
       
       // Get response from provider
-      let response;
-      try {
-        response = await getProviderResponse(prompt, baseProvider, model, customEndpoint, apiKeys);
-        console.log('Raw provider response:', response);
-      } catch (error) {
-        console.error('Provider response error:', error);
-        throw new Error(`Provider error: ${error.message}`);
-      }
+      const response = await getProviderResponse(prompt, baseProvider, model, customEndpoint, apiKeys);
+      console.log('Raw provider response:', response);
       
       // Extract readable response
       const modelResponse = processProviderResponse(response, baseProvider || 'custom');
@@ -69,20 +63,6 @@ export async function processScan(
         prompt,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       });
-      
-      // Update scan status with error
-      await supabase
-        .from('llm_scans')
-        .update({
-          status: 'failed',
-          results: {
-            error: error instanceof Error ? error.message : 'Unknown error occurred',
-            responses: results
-          }
-        })
-        .eq('id', scanId);
-        
-      throw error;
     }
   }
 
@@ -107,12 +87,7 @@ async function getProviderResponse(
   customEndpoint: any,
   apiKeys: any
 ) {
-  // Only use customEndpoint if no standard provider is specified
-  if (!provider && customEndpoint) {
-    return await handleCustomEndpoint(prompt, customEndpoint);
-  }
-
-  // Handle standard providers without health checks
+  // Handle standard providers
   switch (provider) {
     case 'openai':
       if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
@@ -131,6 +106,7 @@ async function getProviderResponse(
       return await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
     
     default:
+      // Only use customEndpoint if no standard provider is specified
       if (customEndpoint) {
         return await handleCustomEndpoint(prompt, customEndpoint);
       }

@@ -7,7 +7,7 @@ export async function handleOpenAIRequest(prompt: string, apiKey: string, model 
     'gpt-4o-mini': 'gpt-3.5-turbo-0125',
   };
 
-  const apiModel = modelMap[model] || 'gpt-3.5-turbo-0125'; // fallback to a safe default
+  const apiModel = modelMap[model] || 'gpt-3.5-turbo-0125';
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -28,7 +28,5 @@ export async function handleOpenAIRequest(prompt: string, apiKey: string, model 
     throw new Error(`OpenAI API error: ${errorText}`);
   }
 
-  const data = await response.json();
-  console.log('OpenAI response:', data);
-  return data;
+  return await response.json();
 }
