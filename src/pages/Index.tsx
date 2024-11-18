@@ -34,24 +34,15 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-2xl font-semibold">Tools</h2>
-            <p className="text-muted-foreground">
-              Select a tool to get started with genai security testing.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {tools.map((tool) => (
-              <ToolCard
-                key={tool.title}
-                icon={tool.icon}
-                title={tool.title}
-                onClick={() => tool.path ? navigate(tool.path) : null}
-              />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tools.map((tool) => (
+            <ToolCard
+              key={tool.title}
+              icon={tool.icon}
+              title={tool.title}
+              onClick={() => tool.path ? navigate(tool.path) : null}
+            />
+          ))}
         </div>
       </div>
     </div>
