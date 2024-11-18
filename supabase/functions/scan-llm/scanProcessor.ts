@@ -16,8 +16,11 @@ export async function processScan(
   userId: string,
   category: string = 'jailbreaking'
 ) {
-  const [baseProvider, model] = provider ? provider.split('-') : [null, null];
-  console.log('Processing scan with provider:', baseProvider, 'model:', model);
+  // Split provider string to get base provider, model value, and display name
+  const [baseProvider, modelInfo] = provider ? provider.split('-') : [null, null];
+  const [modelValue, displayName] = modelInfo ? modelInfo.split('|') : [null, null];
+  
+  console.log('Processing scan with provider:', baseProvider, 'model:', modelValue, 'display name:', displayName);
 
   const results = [];
   let processedCount = 0;
@@ -28,14 +31,14 @@ export async function processScan(
       console.log('Processing prompt:', prompt);
       
       // Get response from provider
-      const response = await getProviderResponse(prompt, baseProvider, model, customEndpoint, apiKeys);
+      const response = await getProviderResponse(prompt, baseProvider, modelValue, customEndpoint, apiKeys);
       console.log('Raw provider response:', response);
       
       // Extract readable response
       const modelResponse = processProviderResponse(response, baseProvider || 'custom');
       console.log('Processed response:', modelResponse);
 
-      // Store result with category and model
+      // Store result with category and model display name
       const { error: resultError } = await supabase
         .from('llm_scan_results')
         .insert({
@@ -45,7 +48,7 @@ export async function processScan(
           model_response: modelResponse,
           raw_response: response,
           provider: baseProvider || 'custom',
-          model: model || 'custom-endpoint',
+          model: displayName || modelValue || 'custom-endpoint',
           category
         })
         .single();
@@ -59,7 +62,7 @@ export async function processScan(
         prompt,
         model_response: modelResponse,
         raw_response: response,
-        model: model || 'custom-endpoint'
+        model: displayName || modelValue || 'custom-endpoint'
       };
       
       results.push(result);
@@ -76,7 +79,7 @@ export async function processScan(
           results: {
             progress,
             responses: results,
-            model: model || 'custom-endpoint'
+            model: displayName || modelValue || 'custom-endpoint'
           }
         })
         .eq('id', scanId);
@@ -86,7 +89,7 @@ export async function processScan(
       results.push({
         prompt,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
-        model: model || 'custom-endpoint'
+        model: displayName || modelValue || 'custom-endpoint'
       });
     }
   }
@@ -99,7 +102,7 @@ export async function processScan(
       results: {
         responses: results,
         progress: 100,
-        model: model || 'custom-endpoint'
+        model: displayName || modelValue || 'custom-endpoint'
       }
     })
     .eq('id', scanId);

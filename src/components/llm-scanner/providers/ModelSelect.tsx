@@ -11,35 +11,42 @@ export const ModelSelect = ({ provider, selectedProvider, onModelChange }: Model
     switch (selectedProvider) {
       case 'openai':
         return [
-          { value: 'gpt-4o', label: 'GPT-4 Opus' },
-          { value: 'gpt-4o-mini', label: 'GPT-4 Opus Mini' }
+          { value: 'gpt-4o', label: 'GPT-4 Opus', displayName: 'GPT-4 Opus' },
+          { value: 'gpt-4o-mini', label: 'GPT-4 Opus Mini', displayName: 'GPT-4 Opus Mini' }
         ];
       case 'anthropic':
         return [
-          { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-          { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' }
+          { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus', displayName: 'Claude 3 Opus' },
+          { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet', displayName: 'Claude 3 Sonnet' }
         ];
       case 'google':
         return [
-          { value: 'gemini-1.0-pro', label: 'Gemini Pro' },
-          { value: 'gemini-1.0-ultra', label: 'Gemini Ultra' }
+          { value: 'gemini-1.0-pro', label: 'Gemini Pro', displayName: 'Gemini Pro' },
+          { value: 'gemini-1.0-ultra', label: 'Gemini Ultra', displayName: 'Gemini Ultra' }
         ];
       case 'ollama':
         return [
-          { value: 'llama2', label: 'Llama 2' },
-          { value: 'mistral', label: 'Mistral' },
-          { value: 'codellama', label: 'Code Llama' }
+          { value: 'llama2', label: 'Llama 2', displayName: 'Llama 2' },
+          { value: 'mistral', label: 'Mistral', displayName: 'Mistral' },
+          { value: 'codellama', label: 'Code Llama', displayName: 'Code Llama' }
         ];
       default:
         return [];
     }
   };
 
+  const handleModelChange = (value: string) => {
+    const selectedModel = getModelsForProvider().find(model => model.value === value);
+    onModelChange(`${value}|${selectedModel?.displayName || value}`);
+  };
+
+  const currentValue = provider.split('|')[0].split('-')[1] || "";
+
   return (
     <div className="space-y-2">
       <Select 
-        value={provider.split('-')[1] || ""} 
-        onValueChange={onModelChange}
+        value={currentValue}
+        onValueChange={handleModelChange}
       >
         <SelectTrigger className="bg-background">
           <SelectValue placeholder="Select model" />
