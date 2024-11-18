@@ -52,18 +52,18 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           prompt: 'No prompt available',
           model_response: 'No response available',
           raw_response: {},
-          model: 'Unknown Model'
+          model: scan.results?.model || 'Unknown Model'
         }];
       }
 
-      // Map each response to include scan metadata and preserve the original scan_type
+      // Map each response to include scan metadata and preserve the original scan_type and model
       return responses.map((response) => ({
         ...scan,
         response: {
           prompt: response?.prompt || 'No prompt available',
           model_response: response?.model_response || response?.response || 'No response available',
           raw_response: response?.raw_response || {},
-          model: response?.model || 'Unknown Model'
+          model: response?.model || scan.results?.model || 'Unknown Model'
         }
       }));
     });

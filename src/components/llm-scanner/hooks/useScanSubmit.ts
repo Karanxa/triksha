@@ -43,7 +43,10 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
         throw new Error('Authentication required');
       }
 
-      // Create a new scan record with the correct scan_type
+      // Extract model from provider string (e.g., "openai-gpt-4" -> "gpt-4")
+      const [baseProvider, model] = provider.split('-');
+      
+      // Create a new scan record with the correct scan_type and model
       const { data: scanData, error: scanError } = await supabase
         .from('llm_scans')
         .insert({
@@ -55,7 +58,10 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           is_recurring: isRecurring,
           status: 'pending',
           scan_type: scanType === 'manual' ? 'manual_scan' : 'batch_scan',
-          results: { prompts }
+          results: { 
+            prompts,
+            model: model || 'custom' // Store the model in results
+          }
         })
         .select()
         .single();
@@ -68,7 +74,7 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
         setScanId(scanData.id);
       }
 
-      // Call the edge function with all prompts
+      // Call the edge function with all prompts and model information
       const response = await supabase.functions.invoke('scan-llm', {
         body: {
           scanId: scanData.id,
@@ -80,7 +86,8 @@ export const useScanSubmit = ({ onSubmit, setResult, setScanId }: ScanSubmitProp
           isRecurring,
           qps,
           customEndpoint,
-          scanType: scanType === 'manual' ? 'manual_scan' : 'batch_scan'
+          scanType: scanType === 'manual' ? 'manual_scan' : 'batch_scan',
+          model: model || 'custom' // Pass the model to the edge function
         }
       });
 
