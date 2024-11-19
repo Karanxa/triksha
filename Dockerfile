@@ -22,11 +22,11 @@ RUN curl -fsSL https://bun.sh/install | bash
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies
+# Install Python dependencies in correct order
 RUN pip install --upgrade pip && \
+    pip install numpy==1.24.3 && \
     pip install \
     --no-cache-dir \
-    numpy==1.24.3 \
     torch==2.1.0+cpu \
     torchvision==0.16.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu \
@@ -64,11 +64,11 @@ RUN apk add --no-cache \
 
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install PyTorch and Garak
+# Install PyTorch and Garak in correct order
 RUN pip install --upgrade pip && \
+    pip install numpy==1.24.3 && \
     pip install \
     --no-cache-dir \
-    numpy==1.24.3 \
     torch==2.1.0+cpu \
     torchvision==0.16.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu \
