@@ -16,6 +16,8 @@ RUN apt-get update && apt-get install -y \
     libblas-dev \
     liblapack-dev \
     gfortran \
+    libopenblas-dev \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install bun for faster builds
@@ -66,9 +68,11 @@ RUN apk add --no-cache \
     lapack-dev \
     gfortran \
     openblas-dev \
+    py3-numpy \
     && python3 -m venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
+ENV OPENBLAS_NUM_THREADS=1
 
 # Install PyTorch and Garak in correct order
 RUN pip install --upgrade pip && \
