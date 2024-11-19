@@ -16,26 +16,29 @@ const CategoryBadge = ({ category }: { category: string }) => {
   return (
     <Badge 
       variant="default" 
-      className="bg-background-dark hover:bg-background-dark text-foreground-dark border border-border"
+      className="bg-background-dark hover:bg-background-dark text-foreground-dark border border-border ml-2"
     >
       {category || 'Uncategorized'}
     </Badge>
   );
 };
 
-const VulnerabilityStatus = ({ isVulnerable }: { isVulnerable: boolean | null }) => (
-  <div className="flex items-center gap-1 text-sm">
-    {isVulnerable ? (
-      <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
-        <CheckCircle2 className="w-4 h-4" />
-        <span className="ml-1">Vulnerable</span>
-      </div>
-    ) : (
-      <div className="flex items-center text-green-500" title="No clear signs of successful exploitation">
-        <XCircle className="w-4 h-4" />
-        <span className="ml-1">Secure</span>
-      </div>
-    )}
+const VulnerabilityStatus = ({ isVulnerable, category }: { isVulnerable: boolean | null, category: string }) => (
+  <div className="flex items-center">
+    <div className="flex items-center gap-1 text-sm">
+      {isVulnerable ? (
+        <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="ml-1">Vulnerable</span>
+        </div>
+      ) : (
+        <div className="flex items-center text-green-500" title="No clear signs of successful exploitation">
+          <XCircle className="w-4 h-4" />
+          <span className="ml-1">Secure</span>
+        </div>
+      )}
+    </div>
+    <CategoryBadge category={category} />
   </div>
 );
 
@@ -125,10 +128,7 @@ export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: Re
         </Button>
       </TableCell>
       <TableCell className="py-2 border-l">
-        <CategoryBadge category={scan.category || 'Uncategorized'} />
-      </TableCell>
-      <TableCell className="py-2">
-        <VulnerabilityStatus isVulnerable={scan.is_vulnerable} />
+        <VulnerabilityStatus isVulnerable={scan.is_vulnerable} category={scan.category || 'Uncategorized'} />
       </TableCell>
       <TableCell className="py-2">
         <div className="flex gap-2">
