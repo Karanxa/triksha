@@ -10,7 +10,8 @@ export const ResultsTableHeader = () => {
         <TableHead className="border-l">Prompt</TableHead>
         <TableHead>Response</TableHead>
         <TableHead className="w-[60px]">Raw</TableHead>
-        <TableHead className="border-l">Status & Category</TableHead>
+        <TableHead className="border-l">Category</TableHead>
+        <TableHead>Status</TableHead>
         <TableHead>Actions</TableHead>
       </TableRow>
     </TableHeader>
