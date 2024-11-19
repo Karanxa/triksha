@@ -17,24 +17,24 @@ const LLMScanner = () => {
     {
       id: "garak",
       title: "Garak",
-      description: "Advanced scanning using the Garak testing framework. Learn more at https://github.com/leondz/garak",
+      description: "Advanced scanning using the Garak testing framework",
       icon: Zap
     },
     {
       id: "fuzzer",
       title: "Prompt Security Fuzzer",
-      description: "Automatically generate variations of prompts to test security boundaries. Based on research at https://arxiv.org/abs/2402.09155",
+      description: "Automatically generate variations of prompts to test security boundaries",
       icon: Bug
     }
   ];
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-2">Scans</h1>
-      <p className="text-muted-foreground mb-8">Test LLM models for security vulnerabilities and analyze their responses.</p>
+    <div className="container py-4 md:py-8 px-4 md:px-8">
+      <h1 className="text-2xl md:text-3xl font-bold mb-2">Scans</h1>
+      <p className="text-muted-foreground mb-6 md:mb-8">Test LLM models for security vulnerabilities and analyze their responses.</p>
       
       {!selectedTool ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {tools.map((tool) => (
             <ToolCard
               key={tool.id}
@@ -46,12 +46,12 @@ const LLMScanner = () => {
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="mb-6">
+        <Card className="w-full max-w-3xl mx-auto">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="mb-4 md:mb-6">
               <button 
                 onClick={() => setSelectedTool(null)}
-                className="text-sm text-muted-foreground hover:text-primary"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 ← Back to tools
               </button>

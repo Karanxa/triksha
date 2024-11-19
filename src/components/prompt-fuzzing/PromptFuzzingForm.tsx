@@ -93,26 +93,27 @@ export const PromptFuzzingForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <Label>Scan Name</Label>
+    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 max-w-2xl mx-auto">
+      <div className="space-y-3">
+        <Label className="text-sm md:text-base">Scan Name</Label>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter scan name"
+          className="w-full"
           required
         />
       </div>
 
       <Tabs value={scanMode} onValueChange={(value: "batch" | "custom" | "subset") => setScanMode(value)}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="batch">Batch Mode</TabsTrigger>
-          <TabsTrigger value="custom">Custom Benchmark</TabsTrigger>
-          <TabsTrigger value="subset">Subset Tests</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 mb-4">
+          <TabsTrigger value="batch" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Batch Mode</TabsTrigger>
+          <TabsTrigger value="custom" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Custom Benchmark</TabsTrigger>
+          <TabsTrigger value="subset" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Subset Tests</TabsTrigger>
         </TabsList>
 
-        <div className="space-y-4 mt-4">
-          <Label>System Prompt File</Label>
+        <div className="space-y-4">
+          <Label className="text-sm md:text-base">System Prompt File</Label>
           <FileUpload
             file={config.system_prompt_file}
             onFileSelect={(file) => setConfig(prev => ({ ...prev, system_prompt_file: file }))}
@@ -120,9 +121,9 @@ export const PromptFuzzingForm = () => {
           />
         </div>
 
-        <TabsContent value="custom" className="space-y-4">
-          <div className="space-y-2">
-            <Label>Custom Benchmark File</Label>
+        <TabsContent value="custom" className="space-y-4 mt-4">
+          <div className="space-y-3">
+            <Label className="text-sm md:text-base">Custom Benchmark File</Label>
             <FileUpload
               file={config.custom_benchmark}
               onFileSelect={(file) => setConfig(prev => ({ ...prev, custom_benchmark: file }))}
@@ -131,7 +132,7 @@ export const PromptFuzzingForm = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="subset" className="space-y-4">
+        <TabsContent value="subset" className="space-y-4 mt-4">
           <TestSelector
             selectedTests={selectedTests}
             setSelectedTests={setSelectedTests}

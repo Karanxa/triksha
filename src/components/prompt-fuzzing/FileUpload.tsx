@@ -40,8 +40,8 @@ export const FileUpload = ({ file, onFileSelect, accept }: FileUploadProps) => {
 
   return (
     <div
-      className={`border-2 border-dashed rounded-lg p-6 text-center ${
-        dragActive ? "border-primary" : "border-muted"
+      className={`border-2 border-dashed rounded-lg p-4 md:p-6 text-center transition-colors ${
+        dragActive ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/50"
       }`}
       onDragEnter={handleDrag}
       onDragLeave={handleDrag}
@@ -57,14 +57,15 @@ export const FileUpload = ({ file, onFileSelect, accept }: FileUploadProps) => {
       />
       <Label
         htmlFor="file-upload"
-        className="cursor-pointer text-sm text-muted-foreground hover:text-foreground"
+        className="cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         {file ? (
-          <span className="text-foreground">{file.name}</span>
+          <span className="text-foreground break-all">{file.name}</span>
         ) : (
-          <>
-            <span className="font-semibold">Click to upload</span> or drag and drop
-          </>
+          <div className="space-y-2">
+            <p className="font-medium">Click to upload or drag and drop</p>
+            <p className="text-xs text-muted-foreground">Supported formats: {accept || 'All files'}</p>
+          </div>
         )}
       </Label>
     </div>

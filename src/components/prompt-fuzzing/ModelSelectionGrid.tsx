@@ -15,12 +15,12 @@ export const ModelSelectionGrid = ({ config, setConfig }: ModelSelectionGridProp
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label>Attack Provider</Label>
+        <Label className="text-sm md:text-base">Attack Provider</Label>
         <Select 
           value={config.attack_provider}
           onValueChange={(value) => setConfig(prev => ({ ...prev, attack_provider: value }))}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select attack provider" />
           </SelectTrigger>
           <SelectContent>
@@ -32,12 +32,12 @@ export const ModelSelectionGrid = ({ config, setConfig }: ModelSelectionGridProp
       </div>
 
       <div className="space-y-2">
-        <Label>Attack Model</Label>
+        <Label className="text-sm md:text-base">Attack Model</Label>
         <Select 
           value={config.attack_model}
           onValueChange={(value) => setConfig(prev => ({ ...prev, attack_model: value }))}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select attack model" />
           </SelectTrigger>
           <SelectContent>
@@ -49,12 +49,12 @@ export const ModelSelectionGrid = ({ config, setConfig }: ModelSelectionGridProp
       </div>
 
       <div className="space-y-2">
-        <Label>Target Provider</Label>
+        <Label className="text-sm md:text-base">Target Provider</Label>
         <Select 
           value={config.target_provider}
           onValueChange={(value) => setConfig(prev => ({ ...prev, target_provider: value }))}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select target provider" />
           </SelectTrigger>
           <SelectContent>
@@ -66,12 +66,12 @@ export const ModelSelectionGrid = ({ config, setConfig }: ModelSelectionGridProp
       </div>
 
       <div className="space-y-2">
-        <Label>Target Model</Label>
+        <Label className="text-sm md:text-base">Target Model</Label>
         <Select 
           value={config.target_model}
           onValueChange={(value) => setConfig(prev => ({ ...prev, target_model: value }))}
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Select target model" />
           </SelectTrigger>
           <SelectContent>
