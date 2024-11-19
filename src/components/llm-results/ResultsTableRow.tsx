@@ -56,19 +56,18 @@ const formatScanType = (scanType: string | null) => {
 
 interface ResultsTableRowProps {
   scan: LLMScan;
-  response: {
-    prompt: string;
-    model_response: string;
-    raw_response: any;
-    model?: string;
-  };
   formatDate: (date: string) => string;
   onContentClick: (title: string, content: string) => void;
   onHide: (scanId: string) => void;
 }
 
-export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
-  const modelName = response.model || scan.results?.model || 'Unknown Model';
+export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
+  const results = scan.results || {};
+  const modelResponse = results.model_response || results.responses?.[0]?.model_response;
+  const prompt = results.prompt || results.responses?.[0]?.prompt;
+  const rawResponse = results.raw_response || results.responses?.[0]?.raw_response;
+  const model = results.model || 'Unknown Model';
+  
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
 
@@ -94,25 +93,25 @@ export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, on
           <Tooltip>
             <TooltipTrigger>
               <Badge variant="outline" className="cursor-default">
-                {modelName}
+                {model}
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{modelName}</p>
+              <p>{model}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </TableCell>
       <TableCell className="py-2 border-l">
         <TruncatedCell
-          content={response.prompt}
-          onContentClick={() => onContentClick("Prompt", response.prompt)}
+          content={prompt || 'No prompt available'}
+          onContentClick={() => onContentClick("Prompt", prompt || 'No prompt available')}
         />
       </TableCell>
       <TableCell className="py-2">
         <TruncatedCell
-          content={response.model_response}
-          onContentClick={() => onContentClick("Response", response.model_response)}
+          content={modelResponse || 'No response available'}
+          onContentClick={() => onContentClick("Response", modelResponse || 'No response available')}
         />
       </TableCell>
       <TableCell className="py-2 w-[60px] text-center">
@@ -120,7 +119,7 @@ export const ResultsTableRow = ({ scan, response, formatDate, onContentClick, on
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0"
-          onClick={() => onContentClick("Raw Data", JSON.stringify(response.raw_response, null, 2))}
+          onClick={() => onContentClick("Raw Data", JSON.stringify(rawResponse, null, 2))}
         >
           <FileJson className="h-4 w-4" />
         </Button>

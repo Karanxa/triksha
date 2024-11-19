@@ -36,9 +36,12 @@ export function ResultsTable({ scans }: ResultsTableProps) {
   };
 
   // Mobile card view component
-  const MobileResultCard = ({ scan }: { scan: any }) => {
+  const MobileResultCard = ({ scan }: { scan: LLMScan }) => {
     const isExpanded = expandedScan === scan.id;
-    const response = scan.response || {};
+    const results = scan.results || {};
+    const modelResponse = results.model_response || results.responses?.[0]?.model_response;
+    const prompt = results.prompt || results.responses?.[0]?.prompt;
+    const model = results.model || 'Unknown Model';
 
     return (
       <Card className="mb-4">
@@ -52,7 +55,7 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                 {formatDate(scan.created_at)}
               </div>
             </div>
-            <Badge>{response.model || scan.results?.model || 'Unknown Model'}</Badge>
+            <Badge variant="outline">{model}</Badge>
           </div>
         </CardHeader>
         <CardContent>
@@ -74,13 +77,13 @@ export function ResultsTable({ scans }: ResultsTableProps) {
               <div>
                 <div className="font-medium mb-1">Prompt:</div>
                 <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                  {response.prompt || 'No prompt available'}
+                  {prompt || 'No prompt available'}
                 </div>
               </div>
               <div>
                 <div className="font-medium mb-1">Response:</div>
                 <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                  {response.model_response || 'No response available'}
+                  {modelResponse || 'No response available'}
                 </div>
               </div>
               {scan.category && (
@@ -92,7 +95,7 @@ export function ResultsTable({ scans }: ResultsTableProps) {
               {scan.is_vulnerable !== undefined && (
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Status:</span>
-                  <Badge variant={scan.is_vulnerable ? "destructive" : "success"}>
+                  <Badge variant={scan.is_vulnerable ? "destructive" : "default"}>
                     {scan.is_vulnerable ? "Vulnerable" : "Secure"}
                   </Badge>
                 </div>
@@ -111,11 +114,10 @@ export function ResultsTable({ scans }: ResultsTableProps) {
       <TableBody>
         {scans
           .filter(scan => !hiddenScans.has(scan.id))
-          .map((scan, index) => (
+          .map((scan) => (
             <ResultsTableRow
-              key={`${scan.id}-${index}`}
+              key={scan.id}
               scan={scan}
-              response={scan.response}
               formatDate={formatDate}
               onContentClick={handleContentClick}
               onHide={handleHideScan}
