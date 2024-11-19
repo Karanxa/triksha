@@ -69,17 +69,24 @@ export function ResultsTable({ scans }: ResultsTableProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {scan.is_vulnerable !== undefined && (
-                    <div className="flex items-center">
-                      {scan.is_vulnerable ? (
-                        <ShieldAlert className="w-4 h-4 text-destructive" />
-                      ) : (
-                        <ShieldCheck className="w-4 h-4 text-green-500" />
+                    <>
+                      <div className="flex items-center">
+                        {scan.is_vulnerable ? (
+                          <ShieldAlert className="w-4 h-4 text-destructive" />
+                        ) : (
+                          <ShieldCheck className="w-4 h-4 text-green-500" />
+                        )}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {scan.is_vulnerable ? "Vulnerable" : "Secure"}
+                      </span>
+                      {scan.category && (
+                        <Badge variant="secondary" className="text-xs ml-2">
+                          {scan.category}
+                        </Badge>
                       )}
-                    </div>
+                    </>
                   )}
-                  <span className="text-sm font-medium">
-                    {scan.is_vulnerable ? "Vulnerable" : "Secure"}
-                  </span>
                 </div>
                 <Button 
                   variant="ghost" 
@@ -101,11 +108,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                 <Badge variant="outline" className="text-xs">
                   {model}
                 </Badge>
-                {scan.category && (
-                  <Badge variant="secondary" className="text-xs">
-                    {scan.category}
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
