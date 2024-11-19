@@ -14,6 +14,21 @@ interface ResultsTableProps {
   scans: LLMScan[];
 }
 
+const formatScanType = (scanType: string | null) => {
+  if (!scanType) return 'Manual Scan';
+  
+  const typeMap: { [key: string]: string } = {
+    'manual_scan': 'Manual Scan',
+    'batch_scan': 'Batch Scan',
+    'garak': 'Garak',
+    'prompt_fuzzer': 'Prompt Fuzzer'
+  };
+  
+  return typeMap[scanType] || scanType.split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 export function ResultsTable({ scans }: ResultsTableProps) {
   const [selectedContent, setSelectedContent] = useState<{ title: string; content: string } | null>(null);
   const [hiddenScans, setHiddenScans] = useState<Set<string>>(new Set());
