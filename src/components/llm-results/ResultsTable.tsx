@@ -7,12 +7,7 @@ import { LLMScan } from "./types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface ResultsTableProps {
-  scans: LLMScan[];
-}
 
 const formatScanType = (scanType: string | null) => {
   if (!scanType) return 'Manual Scan';
@@ -29,14 +24,14 @@ const formatScanType = (scanType: string | null) => {
     .join(' ');
 };
 
+interface ResultsTableProps {
+  scans: LLMScan[];
+}
+
 export function ResultsTable({ scans }: ResultsTableProps) {
   const [selectedContent, setSelectedContent] = useState<{ title: string; content: string } | null>(null);
   const [hiddenScans, setHiddenScans] = useState<Set<string>>(new Set());
   const [expandedScan, setExpandedScan] = useState<string | null>(null);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
 
   const handleContentClick = (title: string, content: string) => {
     setSelectedContent({ title, content });
@@ -62,26 +57,17 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
-      <Card className="mb-4">
-        <CardHeader className="p-4 space-y-0">
+      <Card className={`mb-4 ${scan.is_vulnerable ? 'border-destructive' : 'border-green-500'}`}>
+        <CardHeader 
+          className="p-4 space-y-0 cursor-pointer hover:bg-accent/50 transition-colors"
+          onClick={() => toggleExpand(scan.id)}
+        >
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2 flex-1">
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className="text-xs">
                   {model}
                 </Badge>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => toggleExpand(scan.id)}
-                  className="h-8 w-8 p-0"
-                >
-                  {isExpanded ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
               </div>
               <div className="flex items-center justify-between">
                 {scan.category && (
@@ -89,12 +75,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                     {scan.category}
                   </Badge>
                 )}
-                <Badge 
-                  variant={scan.is_vulnerable ? "destructive" : "default"} 
-                  className="text-xs"
-                >
-                  {scan.is_vulnerable ? "Vulnerable" : "Secure"}
-                </Badge>
               </div>
             </div>
           </div>
@@ -107,6 +87,15 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                 <div className="text-xs font-medium text-muted-foreground mb-1">Scan Type</div>
                 <Badge variant="outline" className="text-xs">
                   {formatScanType(scan.scan_type)}
+                </Badge>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-1">Status</div>
+                <Badge 
+                  variant={scan.is_vulnerable ? "destructive" : "default"} 
+                  className="text-xs"
+                >
+                  {scan.is_vulnerable ? "Vulnerable" : "Secure"}
                 </Badge>
               </div>
               <div>
