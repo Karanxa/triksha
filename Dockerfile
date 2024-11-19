@@ -4,11 +4,14 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache git curl python3 make g++
+# Install system dependencies including Python
+RUN apk add --no-cache git curl python3 py3-pip make g++ bash
 
 # Install bun for faster builds
 RUN curl -fsSL https://bun.sh/install | bash
+
+# Install Garak
+RUN python3 -m pip install -U garak
 
 # Copy package files
 COPY package*.json ./
@@ -30,6 +33,10 @@ RUN npm run build
 # Production Stage
 FROM nginx:alpine
 
+# Install Python and Garak in production image
+RUN apk add --no-cache python3 py3-pip bash
+RUN python3 -m pip install -U garak
+
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
@@ -38,6 +45,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Add bash for debugging if needed
 RUN apk add --no-cache bash
+
+# Create a directory for Garak outputs
+RUN mkdir -p /app/garak-results && chmod 777 /app/garak-results
 
 # Expose port 80
 EXPOSE 80
