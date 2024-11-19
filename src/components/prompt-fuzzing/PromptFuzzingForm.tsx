@@ -1,19 +1,18 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@supabase/auth-helpers-react";
-import { FuzzingFormHeader } from "./FuzzingFormHeader";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileUpload } from "./FileUpload";
 import { ModelSelectionGrid } from "./ModelSelectionGrid";
 import { FuzzingControls } from "./FuzzingControls";
 import { TestSelector } from "./TestSelector";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Label } from "@/components/ui/label";
-import { FileUpload } from "./FileUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 export const PromptFuzzingForm = () => {
   const [name, setName] = useState("");
-  const [basePrompt, setBasePrompt] = useState("");
+  const [scanMode, setScanMode] = useState<"batch" | "custom" | "subset">("batch");
   const [config, setConfig] = useState({
     attack_provider: "openai",
     attack_model: "gpt-4",
@@ -27,12 +26,11 @@ export const PromptFuzzingForm = () => {
   });
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [scanMode, setScanMode] = useState<"interactive" | "batch" | "custom" | "subset">("interactive");
-  const session = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session?.user?.id) {
+    const session = await supabase.auth.getSession();
+    if (!session.data.session?.user?.id) {
       toast.error("You must be logged in to create a scan");
       return;
     }
@@ -42,12 +40,7 @@ export const PromptFuzzingForm = () => {
       return;
     }
 
-    if (scanMode === "interactive" && !basePrompt) {
-      toast.error("Please provide a base prompt");
-      return;
-    }
-
-    if ((scanMode === "batch" || scanMode === "subset") && !config.system_prompt_file) {
+    if (!config.system_prompt_file) {
       toast.error("Please upload a system prompt file");
       return;
     }
@@ -67,7 +60,6 @@ export const PromptFuzzingForm = () => {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("scanMode", scanMode);
-      formData.append("basePrompt", basePrompt);
       formData.append("config", JSON.stringify(config));
       formData.append("selectedTests", JSON.stringify(selectedTests));
       
@@ -86,15 +78,8 @@ export const PromptFuzzingForm = () => {
 
       toast.success("Prompt fuzzing scan started successfully");
       setName("");
-      setBasePrompt("");
       setConfig({
-        attack_provider: "openai",
-        attack_model: "gpt-4",
-        target_provider: "openai",
-        target_model: "gpt-4",
-        num_attempts: 3,
-        num_threads: 4,
-        attack_temperature: 0.6,
+        ...config,
         custom_benchmark: null,
         system_prompt_file: null,
       });
@@ -109,76 +94,44 @@ export const PromptFuzzingForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Tabs value={scanMode} onValueChange={(value: "interactive" | "batch" | "custom" | "subset") => setScanMode(value)}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="interactive">Interactive Mode</TabsTrigger>
+      <div className="space-y-4">
+        <Label>Scan Name</Label>
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter scan name"
+          required
+        />
+      </div>
+
+      <Tabs value={scanMode} onValueChange={(value: "batch" | "custom" | "subset") => setScanMode(value)}>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="batch">Batch Mode</TabsTrigger>
           <TabsTrigger value="custom">Custom Benchmark</TabsTrigger>
           <TabsTrigger value="subset">Subset Tests</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="interactive" className="space-y-6">
-          <div className="text-sm text-muted-foreground">
-            Interactive mode allows you to test your system prompt with real-time feedback.
-          </div>
-          <FuzzingFormHeader
-            name={name}
-            setName={setName}
-            basePrompt={basePrompt}
-            setBasePrompt={setBasePrompt}
+        <div className="space-y-4 mt-4">
+          <Label>System Prompt File</Label>
+          <FileUpload
+            file={config.system_prompt_file}
+            onFileSelect={(file) => setConfig(prev => ({ ...prev, system_prompt_file: file }))}
+            accept=".txt"
           />
-        </TabsContent>
+        </div>
 
-        <TabsContent value="batch" className="space-y-6">
-          <div className="text-sm text-muted-foreground">
-            Batch mode runs tests against the system prompt in non-interactive mode.
-          </div>
-          <div className="space-y-4">
-            <Label>System Prompt File</Label>
+        <TabsContent value="custom" className="space-y-4">
+          <div className="space-y-2">
+            <Label>Custom Benchmark File</Label>
             <FileUpload
-              file={config.system_prompt_file}
-              onFileSelect={(file) => setConfig(prev => ({ ...prev, system_prompt_file: file }))}
-              accept=".txt"
+              file={config.custom_benchmark}
+              onFileSelect={(file) => setConfig(prev => ({ ...prev, custom_benchmark: file }))}
+              accept=".csv"
             />
           </div>
         </TabsContent>
 
-        <TabsContent value="custom" className="space-y-6">
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Run tests against the system prompt with a custom benchmark file.
-            </div>
-            <div className="space-y-2">
-              <Label>System Prompt File</Label>
-              <FileUpload
-                file={config.system_prompt_file}
-                onFileSelect={(file) => setConfig(prev => ({ ...prev, system_prompt_file: file }))}
-                accept=".txt"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Custom Benchmark File</Label>
-              <FileUpload
-                file={config.custom_benchmark}
-                onFileSelect={(file) => setConfig(prev => ({ ...prev, custom_benchmark: file }))}
-                accept=".csv"
-              />
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="subset" className="space-y-6">
-          <div className="text-sm text-muted-foreground">
-            Run a subset of security tests against the system prompt.
-          </div>
-          <div className="space-y-4">
-            <Label>System Prompt File</Label>
-            <FileUpload
-              file={config.system_prompt_file}
-              onFileSelect={(file) => setConfig(prev => ({ ...prev, system_prompt_file: file }))}
-              accept=".txt"
-            />
-          </div>
+        <TabsContent value="subset" className="space-y-4">
           <TestSelector
             selectedTests={selectedTests}
             setSelectedTests={setSelectedTests}
