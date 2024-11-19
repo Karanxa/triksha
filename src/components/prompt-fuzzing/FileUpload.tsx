@@ -40,7 +40,7 @@ export const FileUpload = ({ file, onFileSelect, accept }: FileUploadProps) => {
 
   return (
     <div
-      className={`border-2 border-dashed rounded-lg p-4 md:p-6 text-center transition-colors ${
+      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
         dragActive ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/50"
       }`}
       onDragEnter={handleDrag}

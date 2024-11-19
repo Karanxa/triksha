@@ -93,9 +93,9 @@ export const PromptFuzzingForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 max-w-2xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto px-4">
       <div className="space-y-3">
-        <Label className="text-sm md:text-base">Scan Name</Label>
+        <Label className="text-base">Scan Name</Label>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -106,45 +106,47 @@ export const PromptFuzzingForm = () => {
       </div>
 
       <Tabs value={scanMode} onValueChange={(value: "batch" | "custom" | "subset") => setScanMode(value)}>
-        <TabsList className="w-full grid grid-cols-3 mb-4">
-          <TabsTrigger value="batch" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Batch Mode</TabsTrigger>
-          <TabsTrigger value="custom" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Custom Benchmark</TabsTrigger>
-          <TabsTrigger value="subset" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Subset Tests</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 mb-6">
+          <TabsTrigger value="batch" className="text-xs sm:text-sm px-2 py-2 h-auto">Batch Mode</TabsTrigger>
+          <TabsTrigger value="custom" className="text-xs sm:text-sm px-2 py-2 h-auto">Custom Benchmark</TabsTrigger>
+          <TabsTrigger value="subset" className="text-xs sm:text-sm px-2 py-2 h-auto">Subset Tests</TabsTrigger>
         </TabsList>
 
-        <div className="space-y-4">
-          <Label className="text-sm md:text-base">System Prompt File</Label>
-          <FileUpload
-            file={config.system_prompt_file}
-            onFileSelect={(file) => setConfig(prev => ({ ...prev, system_prompt_file: file }))}
-            accept=".txt"
-          />
-        </div>
-
-        <TabsContent value="custom" className="space-y-4 mt-4">
+        <div className="space-y-6">
           <div className="space-y-3">
-            <Label className="text-sm md:text-base">Custom Benchmark File</Label>
+            <Label className="text-base">System Prompt File</Label>
             <FileUpload
-              file={config.custom_benchmark}
-              onFileSelect={(file) => setConfig(prev => ({ ...prev, custom_benchmark: file }))}
-              accept=".csv"
+              file={config.system_prompt_file}
+              onFileSelect={(file) => setConfig(prev => ({ ...prev, system_prompt_file: file }))}
+              accept=".txt"
             />
           </div>
-        </TabsContent>
 
-        <TabsContent value="subset" className="space-y-4 mt-4">
-          <TestSelector
-            selectedTests={selectedTests}
-            setSelectedTests={setSelectedTests}
-          />
-        </TabsContent>
+          <TabsContent value="custom" className="mt-6">
+            <div className="space-y-3">
+              <Label className="text-base">Custom Benchmark File</Label>
+              <FileUpload
+                file={config.custom_benchmark}
+                onFileSelect={(file) => setConfig(prev => ({ ...prev, custom_benchmark: file }))}
+                accept=".csv"
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="subset" className="mt-6">
+            <TestSelector
+              selectedTests={selectedTests}
+              setSelectedTests={setSelectedTests}
+            />
+          </TabsContent>
+        </div>
       </Tabs>
       
       <ModelSelectionGrid config={config} setConfig={setConfig} />
       
       <FuzzingControls config={config} setConfig={setConfig} />
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full mt-6" disabled={isLoading}>
         {isLoading ? "Creating Scan..." : "Create Fuzzing Scan"}
       </Button>
     </form>

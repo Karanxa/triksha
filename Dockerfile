@@ -10,25 +10,25 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     python3-dev \
     unzip \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
-# Install bun
-RUN curl -fsSL https://bun.sh/install | bash
+# Install bun (with fallback to npm)
+RUN curl -fsSL https://bun.sh/install | bash && \
+    echo 'export BUN_INSTALL="$HOME/.bun"' >> $HOME/.bashrc && \
+    echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $HOME/.bashrc
 
 # Create and activate virtual environment
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies
+# Copy package files
 COPY package*.json ./
 COPY bun.lockb ./
 
-# Install dependencies using bun
-RUN if command -v bun >/dev/null 2>&1; then \
-    bun install; \
-    else \
-    npm install; \
-    fi
+# Install dependencies (fallback to npm if bun fails)
+RUN /root/.bun/bin/bun install || npm install
 
 # Copy the rest of the application
 COPY . .
