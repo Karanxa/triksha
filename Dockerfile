@@ -17,8 +17,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install PyTorch 2.1.2 (CPU version) first as it's the version Garak needs
-RUN pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
+# Install PyTorch 2.0.1 (CPU version) first as it's a stable version compatible with Garak
+RUN pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
 
 # Install Garak after PyTorch is installed
 RUN pip install garak==0.9.0.16
@@ -51,8 +51,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install PyTorch 2.1.2 (CPU version) first
-RUN pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
+# Install PyTorch 2.0.1 (CPU version) first
+RUN pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
 
 # Install Garak after PyTorch
 RUN pip install garak==0.9.0.16
