@@ -58,7 +58,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     const prompt = results.prompt || results.responses?.[0]?.prompt;
     const model = results.model || 'Unknown Model';
     const date = new Date(scan.created_at);
-    const formattedDate = date.toLocaleDateString();
     const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
@@ -68,7 +67,7 @@ export function ResultsTable({ scans }: ResultsTableProps) {
             <div className="flex flex-col gap-2 flex-1">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">
-                  {scan.name || `${formattedDate} • ${formattedTime}`}
+                  {formattedTime}
                 </span>
                 <Button 
                   variant="ghost" 
