@@ -17,8 +17,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install Garak core first
-RUN pip install garak[core]
+# Install Garak first
+RUN pip install garak
 
 # Install PyTorch (CPU version to keep image size smaller)
 RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
@@ -51,8 +51,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install Garak core first
-RUN pip install garak[core]
+# Install Garak first
+RUN pip install garak
 
 # Install PyTorch (CPU version)
 RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
