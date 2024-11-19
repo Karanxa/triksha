@@ -2,10 +2,11 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
 import { Button } from "./ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Navigation = () => {
   const location = useLocation();
@@ -31,37 +32,73 @@ const Navigation = () => {
     }
   };
 
+  const NavLinks = () => (
+    <>
+      {links.map((link) => (
+        <Link
+          key={link.href}
+          to={link.href}
+          className={cn(
+            "text-sm font-medium transition-colors hover:text-primary",
+            location.pathname === link.href
+              ? "text-foreground"
+              : "text-muted-foreground"
+          )}
+        >
+          {link.label}
+        </Link>
+      ))}
+    </>
+  );
+
   return (
     <nav className="border-b">
-      <div className="flex flex-col md:flex-row h-auto md:h-16 items-start md:items-center px-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-6 my-4 md:my-0 w-full md:w-auto">
-          {links.map((link) => (
+      <div className="h-16 px-4 flex items-center justify-between">
+        {/* Mobile Menu */}
+        <Sheet>
+          <SheetTrigger asChild className="md:hidden">
+            <Button variant="ghost" size="icon">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[240px] sm:w-[280px]">
+            <div className="flex flex-col space-y-4 py-4">
+              <NavLinks />
+              <Link
+                to="/settings"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary",
+                  location.pathname === "/settings"
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                Keys
+              </Link>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center space-x-6">
+          <NavLinks />
+        </div>
+
+        {/* Right side items (visible on all screens) */}
+        <div className="flex items-center space-x-4">
+          <div className="hidden md:block">
             <Link
-              key={link.href}
-              to={link.href}
+              to="/settings"
               className={cn(
-                "text-sm font-medium transition-colors hover:text-primary whitespace-nowrap",
-                location.pathname === link.href
+                "text-sm font-medium transition-colors hover:text-primary",
+                location.pathname === "/settings"
                   ? "text-foreground"
                   : "text-muted-foreground"
               )}
             >
-              {link.label}
+              Keys
             </Link>
-          ))}
-        </div>
-        <div className="flex items-center space-x-4 ml-0 md:ml-auto mb-4 md:mb-0">
-          <Link
-            to="/settings"
-            className={cn(
-              "text-sm font-medium transition-colors hover:text-primary",
-              location.pathname === "/settings"
-                ? "text-foreground"
-                : "text-muted-foreground"
-            )}
-          >
-            Keys
-          </Link>
+          </div>
           <ThemeToggle />
           <Button 
             variant="ghost" 
