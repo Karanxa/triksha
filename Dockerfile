@@ -49,12 +49,14 @@ RUN apt-get update && apt-get install -y \
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python packages
+# Install Python packages with specific versions to avoid conflicts
 RUN pip install --upgrade pip && \
     pip install wheel setuptools && \
     pip install numpy==1.23.5 && \
     pip install torch==2.1.0+cpu torchvision==0.16.0+cpu --index-url https://download.pytorch.org/whl/cpu && \
-    pip install garak==0.10.0 prompt-security-fuzzer
+    pip install openai==1.6.1 && \
+    pip install garak==0.10.0 && \
+    pip install prompt-security-fuzzer==0.1.7
 
 # Copy nginx configuration and built assets
 COPY nginx.conf /etc/nginx/conf.d/default.conf
