@@ -39,8 +39,9 @@ RUN npm run build
 # Production Stage
 FROM python:3.10-slim
 
-# Install system dependencies
+# Install nginx and required dependencies
 RUN apt-get update && apt-get install -y \
+    nginx \
     python3-dev \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -62,9 +63,13 @@ RUN pip install --upgrade pip && \
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create directories for outputs
+# Create directories for outputs and set permissions
 RUN mkdir -p /app/garak-results /app/fuzzer-results && \
     chmod 777 /app/garak-results /app/fuzzer-results
+
+# Create required nginx directories and set permissions
+RUN mkdir -p /var/log/nginx /var/lib/nginx /var/run && \
+    chown -R www-data:www-data /var/log/nginx /var/lib/nginx /var/run
 
 EXPOSE 80
 
@@ -72,4 +77,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
