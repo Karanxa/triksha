@@ -50,58 +50,59 @@ export function ResultsTable({ scans }: ResultsTableProps) {
       <Card className="mb-4">
         <CardHeader className="p-4 space-y-0">
           <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">
+                  {scan.name || `${formattedDate} • ${formattedTime}`}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => toggleExpand(scan.id)}
+                  className="h-8 w-8 p-0"
+                >
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="text-xs">
-                  {scan.scan_type || 'Manual Scan'}
+                  {formatScanType(scan.scan_type)}
                 </Badge>
                 <Badge variant="outline" className="text-xs">
                   {model}
                 </Badge>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {formattedDate} • {formattedTime}
+                {scan.category && (
+                  <Badge variant="secondary" className="text-xs">
+                    {scan.category}
+                  </Badge>
+                )}
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => toggleExpand(scan.id)}
-              className="h-8 w-8 p-0"
-            >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
           </div>
         </CardHeader>
         
         {isExpanded && (
           <CardContent className="p-4 pt-0 space-y-4">
-            <div>
-              <div className="font-medium text-sm mb-1">Prompt:</div>
-              <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                {prompt || 'No prompt available'}
-              </div>
-            </div>
-            <div>
-              <div className="font-medium text-sm mb-1">Response:</div>
-              <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                {modelResponse || 'No response available'}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {scan.category && (
-                <div className="flex items-center gap-1">
-                  <span className="text-sm font-medium">Category:</span>
-                  <Badge variant="secondary" className="text-xs">{scan.category}</Badge>
+            <div className="grid gap-4">
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-1">Prompt</div>
+                <div className="text-sm bg-muted/50 p-3 rounded-md">
+                  {prompt || 'No prompt available'}
                 </div>
-              )}
+              </div>
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-1">Response</div>
+                <div className="text-sm bg-muted/50 p-3 rounded-md">
+                  {modelResponse || 'No response available'}
+                </div>
+              </div>
               {scan.is_vulnerable !== undefined && (
-                <div className="flex items-center gap-1">
-                  <span className="text-sm font-medium">Status:</span>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-medium text-muted-foreground">Status:</div>
                   <Badge variant={scan.is_vulnerable ? "destructive" : "default"} className="text-xs">
                     {scan.is_vulnerable ? "Vulnerable" : "Secure"}
                   </Badge>
