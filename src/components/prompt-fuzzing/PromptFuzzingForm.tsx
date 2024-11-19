@@ -107,12 +107,27 @@ export const PromptFuzzingForm = () => {
 
       <Tabs value={scanMode} onValueChange={(value: "batch" | "custom" | "subset") => setScanMode(value)}>
         <TabsList className="w-full grid grid-cols-3 mb-6">
-          <TabsTrigger value="batch" className="text-xs sm:text-sm px-2 py-2 h-auto">Batch Mode</TabsTrigger>
-          <TabsTrigger value="custom" className="text-xs sm:text-sm px-2 py-2 h-auto">Custom Benchmark</TabsTrigger>
-          <TabsTrigger value="subset" className="text-xs sm:text-sm px-2 py-2 h-auto">Subset Tests</TabsTrigger>
+          <TabsTrigger 
+            value="batch" 
+            className="text-xs sm:text-sm px-1 py-2 h-auto min-h-[40px] whitespace-normal text-center"
+          >
+            Batch Mode
+          </TabsTrigger>
+          <TabsTrigger 
+            value="custom" 
+            className="text-xs sm:text-sm px-1 py-2 h-auto min-h-[40px] whitespace-normal text-center"
+          >
+            Custom Benchmark
+          </TabsTrigger>
+          <TabsTrigger 
+            value="subset" 
+            className="text-xs sm:text-sm px-1 py-2 h-auto min-h-[40px] whitespace-normal text-center"
+          >
+            Subset Tests
+          </TabsTrigger>
         </TabsList>
 
-        <div className="space-y-6">
+        <div className="space-y-6 mt-4">
           <div className="space-y-3">
             <Label className="text-base">System Prompt File</Label>
             <FileUpload

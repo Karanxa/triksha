@@ -11,9 +11,24 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
   return (
     <Tabs defaultValue={initialTab} className="w-full space-y-6">
       <TabsList className="w-full grid grid-cols-3 mb-4">
-        <TabsTrigger value="basic" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Custom Scan</TabsTrigger>
-        <TabsTrigger value="garak" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Garak</TabsTrigger>
-        <TabsTrigger value="fuzzer" className="text-xs md:text-sm whitespace-nowrap px-2 md:px-3">Security Fuzzer</TabsTrigger>
+        <TabsTrigger 
+          value="basic" 
+          className="text-xs md:text-sm whitespace-normal px-1 py-2 min-h-[40px] text-center"
+        >
+          Custom Scan
+        </TabsTrigger>
+        <TabsTrigger 
+          value="garak" 
+          className="text-xs md:text-sm whitespace-normal px-1 py-2 min-h-[40px] text-center"
+        >
+          Garak
+        </TabsTrigger>
+        <TabsTrigger 
+          value="fuzzer" 
+          className="text-xs md:text-sm whitespace-normal px-1 py-2 min-h-[40px] text-center"
+        >
+          Security Fuzzer
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="basic" className="mt-0">
         <ScanForm />
