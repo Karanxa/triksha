@@ -7,7 +7,7 @@ import { LLMScan } from "./types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ResultsTableProps {
@@ -67,20 +67,9 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2 flex-1">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {scan.is_vulnerable !== undefined && (
-                    <div className="flex items-center">
-                      {scan.is_vulnerable ? (
-                        <ShieldAlert className="w-4 h-4 text-destructive" />
-                      ) : (
-                        <ShieldCheck className="w-4 h-4 text-green-500" />
-                      )}
-                    </div>
-                  )}
-                  <span className="text-sm font-medium">
-                    {scan.is_vulnerable ? "Vulnerable" : "Secure"}
-                  </span>
-                </div>
+                <Badge variant="outline" className="text-xs">
+                  {model}
+                </Badge>
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -94,18 +83,18 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                   )}
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {formatScanType(scan.scan_type)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {model}
-                </Badge>
+              <div className="flex items-center justify-between">
                 {scan.category && (
                   <Badge variant="secondary" className="text-xs">
                     {scan.category}
                   </Badge>
                 )}
+                <Badge 
+                  variant={scan.is_vulnerable ? "destructive" : "default"} 
+                  className="text-xs"
+                >
+                  {scan.is_vulnerable ? "Vulnerable" : "Secure"}
+                </Badge>
               </div>
             </div>
           </div>
@@ -114,6 +103,12 @@ export function ResultsTable({ scans }: ResultsTableProps) {
         {isExpanded && (
           <CardContent className="p-4 pt-0 space-y-4">
             <div className="grid gap-4">
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-1">Scan Type</div>
+                <Badge variant="outline" className="text-xs">
+                  {formatScanType(scan.scan_type)}
+                </Badge>
+              </div>
               <div>
                 <div className="text-xs font-medium text-muted-foreground mb-1">Prompt</div>
                 <div className="text-sm bg-muted/50 p-3 rounded-md">
