@@ -106,22 +106,22 @@ export const PromptFuzzingForm = () => {
       </div>
 
       <Tabs value={scanMode} onValueChange={(value: "batch" | "custom" | "subset") => setScanMode(value)}>
-        <TabsList className="w-full grid grid-cols-3 mb-6">
+        <TabsList className="w-full grid grid-cols-3 mb-6 p-1">
           <TabsTrigger 
             value="batch" 
-            className="text-xs sm:text-sm px-1 py-2 h-auto min-h-[40px] whitespace-normal text-center"
+            className="text-xs sm:text-sm whitespace-normal h-auto min-h-[40px] text-center"
           >
             Batch Mode
           </TabsTrigger>
           <TabsTrigger 
             value="custom" 
-            className="text-xs sm:text-sm px-1 py-2 h-auto min-h-[40px] whitespace-normal text-center"
+            className="text-xs sm:text-sm whitespace-normal h-auto min-h-[40px] text-center"
           >
             Custom Benchmark
           </TabsTrigger>
           <TabsTrigger 
             value="subset" 
-            className="text-xs sm:text-sm px-1 py-2 h-auto min-h-[40px] whitespace-normal text-center"
+            className="text-xs sm:text-sm whitespace-normal h-auto min-h-[40px] text-center"
           >
             Subset Tests
           </TabsTrigger>
