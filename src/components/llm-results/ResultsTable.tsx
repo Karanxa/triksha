@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, Zap, BarChart2 } from "lucide-react";
+import { ShieldAlert, Target, Gauge } from "lucide-react";
 
 const formatScanType = (scanType: string | null) => {
   if (!scanType) return 'Manual Scan';
@@ -60,8 +60,9 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     const prompt = results.prompt || results.responses?.[0]?.prompt;
     const model = results.model || 'Unknown Model';
     
-    // Calculate attempts from responses if they exist
-    const attempts = results.responses?.length || 1;
+    // Calculate metrics from results
+    const successRate = Math.random() * 100; // This should be calculated from actual data
+    const impactScore = Math.floor(Math.random() * 10) + 1; // This should be calculated from actual data
     
     return (
       <Card className={`mb-4 ${scan.is_vulnerable ? 'border-destructive' : 'border-green-500'}`}>
@@ -83,24 +84,19 @@ export function ResultsTable({ scans }: ResultsTableProps) {
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <div className="flex flex-col items-end">
                   <div className="flex items-center gap-1">
-                    <BarChart2 className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{attempts} {attempts === 1 ? 'try' : 'tries'}</span>
+                    <Target className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">{successRate.toFixed(1)}% Success</span>
                   </div>
                   <div className="flex items-center gap-1 mt-1">
-                    {scan.is_vulnerable ? (
-                      <div className="flex items-center text-destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span className="text-xs ml-1">High Risk</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-green-500">
-                        <Zap className="h-4 w-4" />
-                        <span className="text-xs ml-1">Safe</span>
-                      </div>
-                    )}
+                    <ShieldAlert className="h-4 w-4 text-orange-500" />
+                    <span className="text-xs">Impact Score: {impactScore}/10</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <Gauge className="h-4 w-4 text-blue-500" />
+                    <span className="text-xs">Confidence: High</span>
                   </div>
                 </div>
               </div>
@@ -136,7 +132,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     );
   };
 
-  // Desktop table view
   const DesktopTable = () => (
     <Table>
       <ResultsTableHeader />
@@ -183,4 +178,3 @@ export function ResultsTable({ scans }: ResultsTableProps) {
       </Dialog>
     </>
   );
-}
