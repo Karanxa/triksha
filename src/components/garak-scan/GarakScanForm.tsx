@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 
@@ -42,7 +41,6 @@ export const GarakScanForm = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [model, setModel] = useState("");
-  const [prompt, setPrompt] = useState("");
   const [selectedSuites, setSelectedSuites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const session = useSession();
@@ -68,7 +66,7 @@ export const GarakScanForm = () => {
         .insert({
           name,
           model,
-          prompts: [prompt],
+          prompts: [], // Garak will generate its own test prompts
           test_suites: selectedSuites,
           user_id: session.user.id,
           status: 'pending'
@@ -83,7 +81,6 @@ export const GarakScanForm = () => {
         body: { 
           scanId: scanData.id,
           model,
-          prompts: [prompt],
           test_suites: selectedSuites
         }
       });
@@ -128,18 +125,6 @@ export const GarakScanForm = () => {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="prompt">Test Prompt</Label>
-        <Textarea
-          id="prompt"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter the prompt to test"
-          className="min-h-[100px]"
-          required
-        />
       </div>
 
       <div className="space-y-4">
