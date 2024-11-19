@@ -17,11 +17,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install Garak first
-RUN pip install garak
+# Install PyTorch 2.1.3 (CPU version) first as it's the version Garak needs
+RUN pip install torch==2.1.3 --index-url https://download.pytorch.org/whl/cpu
 
-# Install PyTorch (CPU version to keep image size smaller)
-RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Install Garak after PyTorch is installed
+RUN pip install garak==0.9.0.16
 
 # Copy package files
 COPY package*.json ./
@@ -51,11 +51,11 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install Garak first
-RUN pip install garak
+# Install PyTorch 2.1.3 (CPU version) first
+RUN pip install torch==2.1.3 --index-url https://download.pytorch.org/whl/cpu
 
-# Install PyTorch (CPU version)
-RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Install Garak after PyTorch
+RUN pip install garak==0.9.0.16
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
