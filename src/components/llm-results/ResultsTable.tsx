@@ -178,3 +178,4 @@ export function ResultsTable({ scans }: ResultsTableProps) {
       </Dialog>
     </>
   );
+}
