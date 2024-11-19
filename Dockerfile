@@ -26,6 +26,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip && \
     pip install \
     --no-cache-dir \
+    numpy==1.24.3 \
     torch==2.1.0+cpu \
     torchvision==0.16.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu \
@@ -56,6 +57,9 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     bash \
+    gcc \
+    musl-dev \
+    python3-dev \
     && python3 -m venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
@@ -64,6 +68,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip && \
     pip install \
     --no-cache-dir \
+    numpy==1.24.3 \
     torch==2.1.0+cpu \
     torchvision==0.16.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu \
