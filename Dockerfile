@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies including Python and Rust
+# Install system dependencies
 RUN apk add --no-cache git curl python3 py3-pip make g++ bash rust cargo
 
 # Install bun for faster builds
@@ -17,8 +17,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install PyTorch 2.1.2 (CPU version) which is available in Alpine
-RUN pip install torch==2.1.2 torchvision==0.16.2 --extra-index-url https://download.pytorch.org/whl/cpu
+# Install PyTorch 2.0.1 which is compatible with Alpine
+RUN pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
 
 # Install Garak after PyTorch is installed
 RUN pip install garak==0.10.0
@@ -43,7 +43,7 @@ RUN npm run build
 # Production Stage
 FROM nginx:alpine
 
-# Install Python, Rust and create virtual environment
+# Install Python and create virtual environment
 RUN apk add --no-cache python3 py3-pip bash rust cargo
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -51,8 +51,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install PyTorch 2.1.2 (CPU version)
-RUN pip install torch==2.1.2 torchvision==0.16.2 --extra-index-url https://download.pytorch.org/whl/cpu
+# Install PyTorch 2.0.1 (CPU version)
+RUN pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
 
 # Install Garak after PyTorch
 RUN pip install garak==0.10.0
