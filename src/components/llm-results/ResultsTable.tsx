@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertTriangle, Zap, BarChart2 } from "lucide-react";
 
 const formatScanType = (scanType: string | null) => {
   if (!scanType) return 'Manual Scan';
@@ -45,6 +46,12 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     setExpandedScan(expandedScan === scanId ? null : scanId);
   };
 
+  // Helper function to get severity color
+  const getSeverityColor = (isVulnerable: boolean | null) => {
+    if (isVulnerable === null) return "bg-gray-200";
+    return isVulnerable ? "bg-red-500" : "bg-green-500";
+  };
+
   // Mobile card view component
   const MobileResultCard = ({ scan }: { scan: LLMScan }) => {
     const isExpanded = expandedScan === scan.id;
@@ -52,10 +59,10 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     const modelResponse = results.model_response || results.responses?.[0]?.model_response;
     const prompt = results.prompt || results.responses?.[0]?.prompt;
     const model = results.model || 'Unknown Model';
-    const date = new Date(scan.created_at);
-    const formattedDate = date.toLocaleDateString();
-    const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+    
+    // Calculate attempts from responses if they exist
+    const attempts = results.responses?.length || 1;
+    
     return (
       <Card className={`mb-4 ${scan.is_vulnerable ? 'border-destructive' : 'border-green-500'}`}>
         <CardHeader 
@@ -63,18 +70,39 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           onClick={() => toggleExpand(scan.id)}
         >
           <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-2 flex-1">
-              <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-xs">
                   {model}
                 </Badge>
-              </div>
-              <div className="flex items-center justify-between">
                 {scan.category && (
                   <Badge variant="secondary" className="text-xs">
                     {scan.category}
                   </Badge>
                 )}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-1">
+                    <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{attempts} {attempts === 1 ? 'try' : 'tries'}</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    {scan.is_vulnerable ? (
+                      <div className="flex items-center text-destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="text-xs ml-1">High Risk</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-green-500">
+                        <Zap className="h-4 w-4" />
+                        <span className="text-xs ml-1">Safe</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -90,15 +118,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                 </Badge>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground mb-1">Status</div>
-                <Badge 
-                  variant={scan.is_vulnerable ? "destructive" : "default"} 
-                  className="text-xs"
-                >
-                  {scan.is_vulnerable ? "Vulnerable" : "Secure"}
-                </Badge>
-              </div>
-              <div>
                 <div className="text-xs font-medium text-muted-foreground mb-1">Prompt</div>
                 <div className="text-sm bg-muted/50 p-3 rounded-md">
                   {prompt || 'No prompt available'}
@@ -109,11 +128,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                 <div className="text-sm bg-muted/50 p-3 rounded-md">
                   {modelResponse || 'No response available'}
                 </div>
-              </div>
-              <div className="flex justify-end">
-                <span className="text-xs text-muted-foreground">
-                  {formattedDate} at {formattedTime}
-                </span>
               </div>
             </div>
           </CardContent>
