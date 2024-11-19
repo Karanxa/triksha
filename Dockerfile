@@ -37,33 +37,34 @@ COPY . .
 RUN npm run build
 
 # Production Stage
-FROM nginx:alpine
+FROM python:3.10-slim
 
-# Install Python and required packages
-RUN apk add --no-cache python3 py3-pip build-base python3-dev
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python packages with specific versions
+# Install Python packages with specific versions to avoid conflicts
 RUN pip install --upgrade pip && \
     pip install wheel setuptools && \
     pip install numpy==1.23.5 && \
     pip install torch==2.1.0+cpu torchvision==0.16.0+cpu --index-url https://download.pytorch.org/whl/cpu && \
     pip install openai==1.6.1 && \
     pip install garak==0.10.0 && \
-    pip install prompt-security-fuzzer==0.1.7
+    pip install prompt-security-fuzzer==0.1.7 openai==1.6.1
 
-# Copy nginx configuration
+# Copy nginx configuration and built assets
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create directories for outputs with proper permissions
+# Create directories for outputs
 RUN mkdir -p /app/garak-results /app/fuzzer-results && \
-    chown -R nginx:nginx /app/garak-results /app/fuzzer-results
+    chmod 777 /app/garak-results /app/fuzzer-results
 
 EXPOSE 80
 
