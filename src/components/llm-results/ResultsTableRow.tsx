@@ -59,12 +59,11 @@ const formatScanType = (scanType: string | null) => {
 
 interface ResultsTableRowProps {
   scan: LLMScan;
-  formatDate: (date: string) => string;
   onContentClick: (title: string, content: string) => void;
   onHide: (scanId: string) => void;
 }
 
-export const ResultsTableRow = ({ scan, formatDate, onContentClick, onHide }: ResultsTableRowProps) => {
+export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRowProps) => {
   const results = scan.results || {};
   const modelResponse = results.model_response || results.responses?.[0]?.model_response;
   const prompt = results.prompt || results.responses?.[0]?.prompt;

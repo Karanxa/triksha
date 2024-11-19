@@ -133,7 +133,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
             <ResultsTableRow
               key={scan.id}
               scan={scan}
-              formatDate={formatDate}
               onContentClick={handleContentClick}
               onHide={handleHideScan}
             />
