@@ -67,45 +67,47 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2 flex-1">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {scan.is_vulnerable !== undefined && (
-                    <div className="flex items-center">
-                      {scan.is_vulnerable ? (
-                        <ShieldAlert className="w-4 h-4 text-destructive" />
-                      ) : (
-                        <ShieldCheck className="w-4 h-4 text-green-500" />
-                      )}
-                    </div>
-                  )}
-                  <span className="text-sm font-medium">
-                    {scan.is_vulnerable ? "Vulnerable" : "Secure"}
-                  </span>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => toggleExpand(scan.id)}
-                  className="h-8 w-8 p-0"
-                >
-                  {isExpanded ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="text-xs">
                   {formatScanType(scan.scan_type)}
                 </Badge>
+                <div className="flex items-center gap-2">
+                  {scan.category && (
+                    <Badge variant="secondary" className="text-xs">
+                      {scan.category}
+                    </Badge>
+                  )}
+                  <div className="flex items-center">
+                    {scan.is_vulnerable !== undefined && (
+                      <div className="flex items-center">
+                        {scan.is_vulnerable ? (
+                          <ShieldAlert className="w-4 h-4 text-destructive" />
+                        ) : (
+                          <ShieldCheck className="w-4 h-4 text-green-500" />
+                        )}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium ml-1">
+                      {scan.is_vulnerable ? "Vulnerable" : "Secure"}
+                    </span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => toggleExpand(scan.id)}
+                    className="h-8 w-8 p-0"
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="text-xs">
                   {model}
                 </Badge>
-                {scan.category && (
-                  <Badge variant="secondary" className="text-xs">
-                    {scan.category}
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
