@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { LLMScan } from "./types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -42,67 +42,74 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     const modelResponse = results.model_response || results.responses?.[0]?.model_response;
     const prompt = results.prompt || results.responses?.[0]?.prompt;
     const model = results.model || 'Unknown Model';
+    const date = new Date(scan.created_at);
+    const formattedDate = date.toLocaleDateString();
+    const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
       <Card className="mb-4">
-        <CardHeader className="pb-2">
+        <CardHeader className="p-4 space-y-0">
           <div className="flex items-center justify-between">
-            <div>
-              <Badge variant="outline" className="mb-2">
-                {scan.scan_type || 'Manual Scan'}
-              </Badge>
-              <div className="text-sm text-muted-foreground">
-                {formatDate(scan.created_at)}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {scan.scan_type || 'Manual Scan'}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {model}
+                </Badge>
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {formattedDate} • {formattedTime}
               </div>
             </div>
-            <Badge variant="outline">{model}</Badge>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => toggleExpand(scan.id)}
+              className="h-8 w-8 p-0"
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          <Button 
-            variant="outline" 
-            className="w-full flex items-center justify-between"
-            onClick={() => toggleExpand(scan.id)}
-          >
-            View Details
-            {isExpanded ? (
-              <ChevronUp className="h-4 w-4 ml-2" />
-            ) : (
-              <ChevronDown className="h-4 w-4 ml-2" />
-            )}
-          </Button>
-          
-          {isExpanded && (
-            <div className="mt-4 space-y-4">
-              <div>
-                <div className="font-medium mb-1">Prompt:</div>
-                <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                  {prompt || 'No prompt available'}
-                </div>
+        
+        {isExpanded && (
+          <CardContent className="p-4 pt-0 space-y-4">
+            <div>
+              <div className="font-medium text-sm mb-1">Prompt:</div>
+              <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                {prompt || 'No prompt available'}
               </div>
-              <div>
-                <div className="font-medium mb-1">Response:</div>
-                <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                  {modelResponse || 'No response available'}
-                </div>
+            </div>
+            <div>
+              <div className="font-medium text-sm mb-1">Response:</div>
+              <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                {modelResponse || 'No response available'}
               </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
               {scan.category && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Category:</span>
-                  <Badge variant="secondary">{scan.category}</Badge>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-medium">Category:</span>
+                  <Badge variant="secondary" className="text-xs">{scan.category}</Badge>
                 </div>
               )}
               {scan.is_vulnerable !== undefined && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Status:</span>
-                  <Badge variant={scan.is_vulnerable ? "destructive" : "default"}>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-medium">Status:</span>
+                  <Badge variant={scan.is_vulnerable ? "destructive" : "default"} className="text-xs">
                     {scan.is_vulnerable ? "Vulnerable" : "Secure"}
                   </Badge>
                 </div>
               )}
             </div>
-          )}
-        </CardContent>
+          </CardContent>
+        )}
       </Card>
     );
   };
