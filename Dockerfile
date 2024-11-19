@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     bash \
     rustc \
     cargo \
+    libblas-dev \
+    liblapack-dev \
+    gfortran \
     && rm -rf /var/lib/apt/lists/*
 
 # Install bun for faster builds
@@ -60,6 +63,9 @@ RUN apk add --no-cache \
     gcc \
     musl-dev \
     python3-dev \
+    lapack-dev \
+    gfortran \
+    openblas-dev \
     && python3 -m venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
