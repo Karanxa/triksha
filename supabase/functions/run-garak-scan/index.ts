@@ -12,8 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, model, prompts, test_suites } = await req.json();
-    console.log('Received Garak scan request:', { scanId, model, test_suites });
+    const { scanId, model, test_suites, config } = await req.json();
+    console.log('Received Garak scan request:', { scanId, model, test_suites, config });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -29,17 +29,27 @@ serve(async (req) => {
       })
       .eq('id', scanId);
 
-    // Run Garak scan using Deno.run
+    // Extract model type and name
+    const [modelType, modelName] = model.split('/');
+
+    // Build Garak command
     const command = [
       "python3",
       "-m",
       "garak",
-      "--model_type", "huggingface",
-      "--model_name", model,
+      "--model_type", modelType,
+      "--model_name", modelName,
       "--probes", test_suites.join(','),
       "--output_format", "json",
       "--output", `/app/garak-results/${scanId}.json`
     ];
+
+    // Add custom endpoint if provided
+    if (config?.endpoint) {
+      command.push("--endpoint", config.endpoint);
+    }
+
+    console.log('Running Garak command:', command.join(' '));
 
     const process = new Deno.Command("python3", {
       args: command,

@@ -29,26 +29,33 @@ const TEST_SUITES = [
   { id: "json_match", label: "JSON Matching", description: "JSON structure validation tests" }
 ];
 
-const MODEL_TYPES = [
-  { value: "openai", label: "OpenAI Models" },
-  { value: "anthropic", label: "Anthropic Models" },
-  { value: "google", label: "Google Models" },
-  { value: "ollama", label: "Ollama Models" },
+const MODEL_CONFIGS = [
+  { value: "huggingface/gpt2", label: "GPT-2" },
+  { value: "huggingface/llama2", label: "Llama 2" },
+  { value: "huggingface/mistral", label: "Mistral" },
+  { value: "openai/gpt-4", label: "GPT-4" },
+  { value: "anthropic/claude", label: "Claude" },
+  { value: "google/gemini", label: "Gemini" },
   { value: "custom", label: "Custom Model" }
 ];
 
 export const GarakScanForm = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [model, setModel] = useState("");
+  const [modelConfig, setModelConfig] = useState("");
   const [selectedSuites, setSelectedSuites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [customModelConfig, setCustomModelConfig] = useState({
+    type: "",
+    name: "",
+    endpoint: ""
+  });
   const session = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !model || selectedSuites.length === 0) {
+    if (!name || !modelConfig || selectedSuites.length === 0) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -65,11 +72,14 @@ export const GarakScanForm = () => {
         .from('garak_scans')
         .insert({
           name,
-          model,
-          prompts: [], // Garak will generate its own test prompts
+          model: modelConfig === 'custom' ? `${customModelConfig.type}/${customModelConfig.name}` : modelConfig,
+          prompts: [], // Garak generates its own test prompts
           test_suites: selectedSuites,
           user_id: session.user.id,
-          status: 'pending'
+          status: 'pending',
+          config: modelConfig === 'custom' ? {
+            endpoint: customModelConfig.endpoint
+          } : null
         })
         .select()
         .single();
@@ -80,15 +90,18 @@ export const GarakScanForm = () => {
       const response = await supabase.functions.invoke('run-garak-scan', {
         body: { 
           scanId: scanData.id,
-          model,
-          test_suites: selectedSuites
+          model: modelConfig === 'custom' ? `${customModelConfig.type}/${customModelConfig.name}` : modelConfig,
+          test_suites: selectedSuites,
+          config: modelConfig === 'custom' ? {
+            endpoint: customModelConfig.endpoint
+          } : null
         }
       });
 
       if (response.error) throw response.error;
 
       toast.success("Garak scan started successfully");
-      navigate('/llm-results'); // Redirect to results page after successful scan creation
+      navigate('/llm-results');
       
     } catch (error: any) {
       console.error("Error creating garak scan:", error);
@@ -112,20 +125,60 @@ export const GarakScanForm = () => {
       </div>
 
       <div className="space-y-2">
-        <Label>Model Type</Label>
-        <Select value={model} onValueChange={setModel}>
+        <Label>Model Configuration</Label>
+        <Select value={modelConfig} onValueChange={setModelConfig}>
           <SelectTrigger>
-            <SelectValue placeholder="Select model type" />
+            <SelectValue placeholder="Select model configuration" />
           </SelectTrigger>
           <SelectContent>
-            {MODEL_TYPES.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
+            {MODEL_CONFIGS.map((config) => (
+              <SelectItem key={config.value} value={config.value}>
+                {config.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
+
+      {modelConfig === 'custom' && (
+        <div className="space-y-4">
+          <div>
+            <Label>Model Type</Label>
+            <Select 
+              value={customModelConfig.type} 
+              onValueChange={(value) => setCustomModelConfig(prev => ({ ...prev, type: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select model type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="huggingface">Hugging Face</SelectItem>
+                <SelectItem value="openai">OpenAI</SelectItem>
+                <SelectItem value="anthropic">Anthropic</SelectItem>
+                <SelectItem value="google">Google</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label>Model Name</Label>
+            <Input
+              value={customModelConfig.name}
+              onChange={(e) => setCustomModelConfig(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter model name"
+            />
+          </div>
+          
+          <div>
+            <Label>API Endpoint (optional)</Label>
+            <Input
+              value={customModelConfig.endpoint}
+              onChange={(e) => setCustomModelConfig(prev => ({ ...prev, endpoint: e.target.value }))}
+              placeholder="Enter API endpoint"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <Label>Test Suites</Label>
