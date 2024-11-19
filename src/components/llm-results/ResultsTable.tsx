@@ -67,23 +67,18 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2 flex-1">
               <div className="flex items-center justify-between">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    {scan.is_vulnerable !== undefined && (
-                      <div className="flex items-center">
-                        {scan.is_vulnerable ? (
-                          <ShieldAlert className="w-4 h-4 text-destructive" />
-                        ) : (
-                          <ShieldCheck className="w-4 h-4 text-green-500" />
-                        )}
-                      </div>
-                    )}
-                    <span className="text-sm font-medium">
-                      {scan.is_vulnerable ? "Vulnerable" : "Secure"}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formattedDate} at {formattedTime}
+                <div className="flex items-center gap-2">
+                  {scan.is_vulnerable !== undefined && (
+                    <div className="flex items-center">
+                      {scan.is_vulnerable ? (
+                        <ShieldAlert className="w-4 h-4 text-destructive" />
+                      ) : (
+                        <ShieldCheck className="w-4 h-4 text-green-500" />
+                      )}
+                    </div>
+                  )}
+                  <span className="text-sm font-medium">
+                    {scan.is_vulnerable ? "Vulnerable" : "Secure"}
                   </span>
                 </div>
                 <Button 
@@ -130,6 +125,11 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                 <div className="text-sm bg-muted/50 p-3 rounded-md">
                   {modelResponse || 'No response available'}
                 </div>
+              </div>
+              <div className="flex justify-end">
+                <span className="text-xs text-muted-foreground">
+                  {formattedDate} at {formattedTime}
+                </span>
               </div>
             </div>
           </CardContent>
