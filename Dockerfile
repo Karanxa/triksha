@@ -4,8 +4,8 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies including Python
-RUN apk add --no-cache git curl python3 py3-pip make g++ bash
+# Install system dependencies including Python and Rust
+RUN apk add --no-cache git curl python3 py3-pip make g++ bash rust cargo
 
 # Install bun for faster builds
 RUN curl -fsSL https://bun.sh/install | bash
@@ -37,8 +37,8 @@ RUN npm run build
 # Production Stage
 FROM nginx:alpine
 
-# Install Python and create virtual environment
-RUN apk add --no-cache python3 py3-pip bash
+# Install Python, Rust and create virtual environment
+RUN apk add --no-cache python3 py3-pip bash rust cargo
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
