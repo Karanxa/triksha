@@ -14,11 +14,14 @@ RUN curl -fsSL https://bun.sh/install | bash
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Upgrade pip first
+RUN pip install --upgrade pip
+
 # Install PyTorch first (CPU version to keep image size smaller)
 RUN pip install torch==2.1.3 --index-url https://download.pytorch.org/whl/cpu
 
-# Install Garak in virtual environment
-RUN pip install -U garak
+# Install specific version of Garak
+RUN pip install garak==0.9.0
 
 # Copy package files
 COPY package*.json ./
@@ -45,11 +48,14 @@ RUN apk add --no-cache python3 py3-pip bash rust cargo
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Upgrade pip first
+RUN pip install --upgrade pip
+
 # Install PyTorch first (CPU version)
 RUN pip install torch==2.1.3 --index-url https://download.pytorch.org/whl/cpu
 
-# Install Garak in virtual environment
-RUN pip install -U garak
+# Install specific version of Garak
+RUN pip install garak==0.9.0
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
