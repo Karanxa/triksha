@@ -1,7 +1,6 @@
 # Build Stage
 FROM python:3.10-slim AS builder
 
-# Set working directory
 WORKDIR /app
 
 # Install system dependencies and development tools
@@ -15,14 +14,14 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install bun for faster builds
+# Install bun
 RUN curl -fsSL https://bun.sh/install | bash
 
 # Create and activate virtual environment
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies in correct order with specific versions
+# Install Python dependencies in correct order
 RUN pip install --upgrade pip && \
     pip install wheel setuptools && \
     pip install numpy==1.23.5 && \
@@ -81,7 +80,7 @@ RUN pip install --upgrade pip && \
     && pip install garak==0.10.0 \
     && pip install prompt-security-fuzzer
 
-# Copy custom nginx configuration
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets from builder stage

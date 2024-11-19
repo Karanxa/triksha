@@ -6,10 +6,21 @@ interface TestSelectorProps {
 }
 
 const AVAILABLE_TESTS = [
-  "ucar", "amnesia", "toxic", "prompt_injection", "prompt_leaking",
-  "jailbreak", "data_exfiltration", "system_prompt", "role_play",
-  "social_engineering", "xss", "sql_injection", "command_injection",
-  "path_traversal", "ssrf"
+  "ucar",           // Universal Classifier Attack Replacement
+  "amnesia",        // Memory Manipulation
+  "toxic",          // Toxic Content Generation
+  "prompt_injection", // Direct Prompt Injection
+  "prompt_leaking",  // System Prompt Extraction
+  "jailbreak",      // Security Bypass
+  "data_exfiltration", // Sensitive Data Extraction
+  "system_prompt",   // System Prompt Manipulation
+  "role_play",      // Unauthorized Role Playing
+  "social_engineering", // Social Engineering Attacks
+  "xss",            // Cross-site Scripting
+  "sql_injection",  // SQL Injection Attempts
+  "command_injection", // Command Injection
+  "path_traversal", // Path Traversal
+  "ssrf"            // Server-side Request Forgery
 ];
 
 export const TestSelector = ({ selectedTests, setSelectedTests }: TestSelectorProps) => {

@@ -3,18 +3,20 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 
 interface FuzzerConfig {
-  attackProvider: string
-  attackModel: string
-  targetProvider: string
-  targetModel: string
-  numAttempts: number
-  numThreads: number
-  attackTemperature: number
-  customBenchmark: string[]
-  tests: string[]
+  attack_provider: string
+  attack_model: string
+  target_provider: string
+  target_model: string
+  num_attempts: number
+  num_threads: number
+  attack_temperature: number
+  tests?: string[]
+  custom_benchmark?: string
+  debug_level?: number
 }
 
 serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -44,20 +46,63 @@ serve(async (req) => {
       .update({ status: 'processing' })
       .eq('id', scanId)
 
-    // Run the fuzzer using Deno subprocess
+    // Get user's API keys
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', scan.user_id)
+      .single()
+
+    if (!profile?.api_keys) {
+      throw new Error('API keys not configured')
+    }
+
+    // Set environment variables for the selected providers
+    const apiKeys = profile.api_keys
+    const mutations: FuzzerConfig = scan.mutations
+
+    // Set provider API key as environment variable
+    switch (mutations.attack_provider) {
+      case 'openai':
+        Deno.env.set('OPENAI_API_KEY', apiKeys.openai)
+        break
+      case 'anthropic':
+        Deno.env.set('ANTHROPIC_API_KEY', apiKeys.anthropic)
+        break
+      case 'google':
+        Deno.env.set('GOOGLE_API_KEY', apiKeys.gemini)
+        break
+      // Add other providers as needed
+    }
+
+    // Build command arguments
+    const args = [
+      '-b',  // batch mode
+      '--attack-provider', mutations.attack_provider,
+      '--attack-model', mutations.attack_model,
+      '--target-provider', mutations.target_provider,
+      '--target-model', mutations.target_model,
+      '--num-attempts', mutations.num_attempts.toString(),
+      '--num-threads', mutations.num_threads.toString(),
+      '--attack-temperature', mutations.attack_temperature.toString(),
+    ]
+
+    // Add optional arguments
+    if (mutations.debug_level !== undefined) {
+      args.push('--debug-level', mutations.debug_level.toString())
+    }
+
+    if (mutations.custom_benchmark) {
+      args.push('--custom-benchmark', mutations.custom_benchmark)
+    }
+
+    if (mutations.tests && mutations.tests.length > 0) {
+      args.push('--tests', JSON.stringify(mutations.tests))
+    }
+
+    // Run the fuzzer
     const command = new Deno.Command('prompt-security-fuzzer', {
-      args: [
-        '-b',  // batch mode
-        '--attack-provider', scan.mutations.attack_provider,
-        '--attack-model', scan.mutations.attack_model,
-        '--target-provider', scan.mutations.target_provider,
-        '--target-model', scan.mutations.target_model,
-        '--num-attempts', scan.mutations.num_attempts.toString(),
-        '--num-threads', scan.mutations.num_threads.toString(),
-        '--attack-temperature', scan.mutations.attack_temperature.toString(),
-        ...(scan.mutations.custom_benchmark ? ['--custom-benchmark', scan.mutations.custom_benchmark] : []),
-        ...(scan.mutations.tests ? ['--tests', JSON.stringify(scan.mutations.tests)] : [])
-      ],
+      args,
       stdin: 'piped',
       stdout: 'piped',
       stderr: 'piped',
