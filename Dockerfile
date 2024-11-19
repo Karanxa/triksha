@@ -44,6 +44,7 @@ RUN apt-get update && apt-get install -y \
     nginx \
     python3-dev \
     build-essential \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment
@@ -71,11 +72,11 @@ RUN mkdir -p /app/garak-results /app/fuzzer-results && \
 RUN mkdir -p /var/log/nginx /var/lib/nginx /var/run && \
     chown -R www-data:www-data /var/log/nginx /var/lib/nginx /var/run
 
-EXPOSE 80
+EXPOSE 5173
 
-# Health check
+# Health check on port 5173
 HEALTHCHECK --interval=30s --timeout=3s \
-    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:5173/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
