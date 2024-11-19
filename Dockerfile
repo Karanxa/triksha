@@ -4,17 +4,12 @@ FROM python:3.10-slim AS builder
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies and development tools
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     make \
     g++ \
-    bash \
-    rustc \
-    cargo \
-    libblas-dev \
-    liblapack-dev \
     gfortran \
     libopenblas-dev \
     python3-dev \
@@ -27,8 +22,9 @@ RUN curl -fsSL https://bun.sh/install | bash
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies in correct order
+# Install Python dependencies in correct order with specific versions
 RUN pip install --upgrade pip && \
+    pip install wheel setuptools && \
     pip install numpy==1.23.5 && \
     pip install \
     --no-cache-dir \
@@ -62,21 +58,20 @@ FROM nginx:1.24-alpine
 RUN apk add --no-cache \
     python3 \
     py3-pip \
-    bash \
     gcc \
     musl-dev \
     python3-dev \
-    lapack-dev \
-    gfortran \
     openblas-dev \
+    gfortran \
     py3-numpy \
     && python3 -m venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV OPENBLAS_NUM_THREADS=1
 
-# Install PyTorch, Garak and Prompt Fuzzer in correct order
+# Install PyTorch, Garak and Prompt Fuzzer
 RUN pip install --upgrade pip && \
+    pip install wheel setuptools && \
     pip install numpy==1.23.5 && \
     pip install \
     --no-cache-dir \
