@@ -14,6 +14,9 @@ RUN curl -fsSL https://bun.sh/install | bash
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Install PyTorch first (CPU version to keep image size smaller)
+RUN pip install torch==2.1.3 --index-url https://download.pytorch.org/whl/cpu
+
 # Install Garak in virtual environment
 RUN pip install -U garak
 
@@ -41,6 +44,9 @@ FROM nginx:alpine
 RUN apk add --no-cache python3 py3-pip bash rust cargo
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+
+# Install PyTorch first (CPU version)
+RUN pip install torch==2.1.3 --index-url https://download.pytorch.org/whl/cpu
 
 # Install Garak in virtual environment
 RUN pip install -U garak
