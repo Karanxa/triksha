@@ -1,19 +1,18 @@
 # Build Stage
-FROM python:3.9-alpine AS builder
+FROM python:3.9-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     git \
     curl \
     make \
     g++ \
     bash \
-    rust \
-    cargo \
-    linux-headers
+    rustc \
+    cargo
 
 # Install bun for faster builds
 RUN curl -fsSL https://bun.sh/install | bash
@@ -25,11 +24,12 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip first
 RUN pip install --upgrade pip
 
-# Install PyTorch with CPU support (using a version known to work with Alpine)
+# Install PyTorch with CPU support
 RUN pip install \
-    torch==1.8.1+cpu \
-    torchvision==0.9.1+cpu \
-    -f https://download.pytorch.org/whl/torch_stable.html
+    --no-cache-dir \
+    torch==2.1.0+cpu \
+    torchvision==0.16.0+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
 
 # Install Garak after PyTorch is installed
 RUN pip install garak==0.10.0
@@ -52,16 +52,17 @@ COPY . .
 RUN npm run build
 
 # Production Stage
-FROM nginx:alpine
+FROM nginx:stable-slim
 
 # Install Python and dependencies
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     python3 \
-    py3-pip \
+    python3-pip \
+    python3-venv \
     bash \
-    rust \
+    rustc \
     cargo \
-    linux-headers
+    && rm -rf /var/lib/apt/lists/*
 
 # Create and activate virtual environment
 RUN python3 -m venv /opt/venv
@@ -72,9 +73,10 @@ RUN pip install --upgrade pip
 
 # Install PyTorch with CPU support
 RUN pip install \
-    torch==1.8.1+cpu \
-    torchvision==0.9.1+cpu \
-    -f https://download.pytorch.org/whl/torch_stable.html
+    --no-cache-dir \
+    torch==2.1.0+cpu \
+    torchvision==0.16.0+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
 
 # Install Garak after PyTorch
 RUN pip install garak==0.10.0
