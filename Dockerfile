@@ -12,7 +12,8 @@ RUN apt-get update && apt-get install -y \
     g++ \
     bash \
     rustc \
-    cargo
+    cargo \
+    unzip
 
 # Install bun for faster builds
 RUN curl -fsSL https://bun.sh/install | bash
