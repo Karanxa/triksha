@@ -16,7 +16,6 @@ There are several ways to run this application:
 ```sh
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 4. Navigate to the project directory
 5. Build and run the Docker container:
@@ -29,7 +28,6 @@ docker build -t geraid-app .
 docker run -p 5173:5173 \
   -e VITE_SUPABASE_URL=your_supabase_url \
   -e VITE_SUPABASE_ANON_KEY=your_supabase_anon_key \
-  -e VITE_GOOGLE_CLIENT_ID=your_google_client_id \
   geraid-app
 ```
 
@@ -85,7 +83,6 @@ The following environment variables are required to run the application:
 
 - `VITE_SUPABASE_URL`: Your Supabase project URL
 - `VITE_SUPABASE_ANON_KEY`: Your Supabase project's anonymous key
-- `VITE_GOOGLE_CLIENT_ID`: Your Google OAuth client ID (for authentication)
 
 ## What technologies are used for this project?
 
