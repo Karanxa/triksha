@@ -52,7 +52,7 @@ COPY . .
 RUN npm run build
 
 # Production Stage
-FROM nginx:stable-slim
+FROM nginx:1.24 
 
 # Install Python and dependencies
 RUN apt-get update && apt-get install -y \
