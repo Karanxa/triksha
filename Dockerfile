@@ -35,7 +35,8 @@ RUN pip install --upgrade pip && \
     torch==2.1.0+cpu \
     torchvision==0.16.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu \
-    && pip install garak==0.10.0
+    && pip install garak==0.10.0 \
+    && pip install prompt-security-fuzzer
 
 # Copy package files
 COPY package*.json ./
@@ -74,7 +75,7 @@ RUN apk add --no-cache \
 ENV PATH="/opt/venv/bin:$PATH"
 ENV OPENBLAS_NUM_THREADS=1
 
-# Install PyTorch and Garak in correct order
+# Install PyTorch, Garak and Prompt Fuzzer in correct order
 RUN pip install --upgrade pip && \
     pip install numpy==1.23.5 && \
     pip install \
@@ -82,7 +83,8 @@ RUN pip install --upgrade pip && \
     torch==2.1.0+cpu \
     torchvision==0.16.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu \
-    && pip install garak==0.10.0
+    && pip install garak==0.10.0 \
+    && pip install prompt-security-fuzzer
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
@@ -90,8 +92,9 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create a directory for Garak outputs
+# Create directories for outputs
 RUN mkdir -p /app/garak-results && chmod 777 /app/garak-results
+RUN mkdir -p /app/fuzzer-results && chmod 777 /app/fuzzer-results
 
 # Expose port 80
 EXPOSE 80
