@@ -48,7 +48,7 @@ COPY . .
 RUN npm run build
 
 # Production Stage
-FROM nginx:stable-slim
+FROM docker.io/library/nginx:1.24-slim
 
 # Install Python and create virtual environment
 RUN apt-get update && apt-get install -y \
