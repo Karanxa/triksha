@@ -1,14 +1,14 @@
+import { useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Table, TableBody } from "@/components/ui/table";
 import { ResultsTableHeader } from "./ResultsTableHeader";
 import { ResultsTableRow } from "./ResultsTableRow";
-import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { LLMScan } from "./types";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ResultsTableProps {
   scans: LLMScan[];
@@ -58,6 +58,7 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     const prompt = results.prompt || results.responses?.[0]?.prompt;
     const model = results.model || 'Unknown Model';
     const date = new Date(scan.created_at);
+    const formattedDate = date.toLocaleDateString();
     const formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
@@ -66,18 +67,23 @@ export function ResultsTable({ scans }: ResultsTableProps) {
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-2 flex-1">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {scan.is_vulnerable !== undefined && (
-                    <div className="flex items-center">
-                      {scan.is_vulnerable ? (
-                        <ShieldAlert className="w-4 h-4 text-destructive" />
-                      ) : (
-                        <ShieldCheck className="w-4 h-4 text-green-500" />
-                      )}
-                    </div>
-                  )}
-                  <span className="text-sm font-medium text-foreground">
-                    {formattedTime}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    {scan.is_vulnerable !== undefined && (
+                      <div className="flex items-center">
+                        {scan.is_vulnerable ? (
+                          <ShieldAlert className="w-4 h-4 text-destructive" />
+                        ) : (
+                          <ShieldCheck className="w-4 h-4 text-green-500" />
+                        )}
+                      </div>
+                    )}
+                    <span className="text-sm font-medium">
+                      {scan.is_vulnerable ? "Vulnerable" : "Secure"}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {formattedDate} at {formattedTime}
                   </span>
                 </div>
                 <Button 
@@ -103,14 +109,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
                 {scan.category && (
                   <Badge variant="secondary" className="text-xs">
                     {scan.category}
-                  </Badge>
-                )}
-                {scan.is_vulnerable !== undefined && (
-                  <Badge 
-                    variant={scan.is_vulnerable ? "destructive" : "outline"} 
-                    className="text-xs"
-                  >
-                    {scan.is_vulnerable ? "Vulnerable" : "Secure"}
                   </Badge>
                 )}
               </div>
