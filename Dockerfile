@@ -24,7 +24,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Install Python dependencies in correct order
 RUN pip install --upgrade pip && \
-    pip install numpy==1.24.3 && \
+    pip install numpy==1.23.5 && \
     pip install \
     --no-cache-dir \
     torch==2.1.0+cpu \
@@ -66,7 +66,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Install PyTorch and Garak in correct order
 RUN pip install --upgrade pip && \
-    pip install numpy==1.24.3 && \
+    pip install numpy==1.23.5 && \
     pip install \
     --no-cache-dir \
     torch==2.1.0+cpu \
