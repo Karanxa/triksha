@@ -7,6 +7,9 @@ import { FuzzingFormHeader } from "./FuzzingFormHeader";
 import { ModelSelectionGrid } from "./ModelSelectionGrid";
 import { FuzzingControls } from "./FuzzingControls";
 import { TestSelector } from "./TestSelector";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 const DEFAULT_CONFIG = {
   attack_provider: "openai",
@@ -25,6 +28,8 @@ export const PromptFuzzingForm = () => {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [selectedTests, setSelectedTests] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [scanMode, setScanMode] = useState<"interactive" | "batch" | "custom">("interactive");
+  const [customBenchmarkPath, setCustomBenchmarkPath] = useState("");
   const session = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +55,9 @@ export const PromptFuzzingForm = () => {
           fuzzing_type: "security",
           mutations: {
             ...config,
-            tests: selectedTests
+            mode: scanMode,
+            tests: selectedTests,
+            custom_benchmark_path: customBenchmarkPath,
           }
         })
         .select()
@@ -79,6 +86,42 @@ export const PromptFuzzingForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <Tabs value={scanMode} onValueChange={(value: "interactive" | "batch" | "custom") => setScanMode(value)}>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="interactive">Interactive Mode</TabsTrigger>
+          <TabsTrigger value="batch">Batch Mode</TabsTrigger>
+          <TabsTrigger value="custom">Custom Benchmark</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="interactive" className="space-y-6">
+          <div className="text-sm text-muted-foreground">
+            Interactive mode allows you to test your system prompt with real-time feedback.
+          </div>
+        </TabsContent>
+
+        <TabsContent value="batch" className="space-y-6">
+          <div className="text-sm text-muted-foreground">
+            Batch mode runs tests against the system prompt in non-interactive mode.
+          </div>
+        </TabsContent>
+
+        <TabsContent value="custom" className="space-y-6">
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Run tests against the system prompt with a custom benchmark file.
+            </div>
+            <div className="space-y-2">
+              <Label>Custom Benchmark Path</Label>
+              <Input
+                placeholder="Path to custom benchmark file"
+                value={customBenchmarkPath}
+                onChange={(e) => setCustomBenchmarkPath(e.target.value)}
+              />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
       <FuzzingFormHeader
         name={name}
         setName={setName}

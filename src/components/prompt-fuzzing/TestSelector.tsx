@@ -1,4 +1,6 @@
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TestSelectorProps {
   selectedTests: string[];
@@ -6,46 +8,46 @@ interface TestSelectorProps {
 }
 
 const AVAILABLE_TESTS = [
-  "ucar",           // Universal Classifier Attack Replacement
-  "amnesia",        // Memory Manipulation
-  "toxic",          // Toxic Content Generation
-  "prompt_injection", // Direct Prompt Injection
-  "prompt_leaking",  // System Prompt Extraction
-  "jailbreak",      // Security Bypass
-  "data_exfiltration", // Sensitive Data Extraction
-  "system_prompt",   // System Prompt Manipulation
-  "role_play",      // Unauthorized Role Playing
-  "social_engineering", // Social Engineering Attacks
-  "xss",            // Cross-site Scripting
-  "sql_injection",  // SQL Injection Attempts
-  "command_injection", // Command Injection
-  "path_traversal", // Path Traversal
-  "ssrf"            // Server-side Request Forgery
+  { id: "ucar", label: "Universal Classifier Attack Replacement" },
+  { id: "amnesia", label: "Memory Manipulation" },
+  { id: "toxic", label: "Toxic Content Generation" },
+  { id: "prompt_injection", label: "Direct Prompt Injection" },
+  { id: "prompt_leaking", label: "System Prompt Extraction" },
+  { id: "jailbreak", label: "Security Bypass" },
+  { id: "data_exfiltration", label: "Sensitive Data Extraction" },
+  { id: "system_prompt", label: "System Prompt Manipulation" },
+  { id: "role_play", label: "Unauthorized Role Playing" },
+  { id: "social_engineering", label: "Social Engineering Attacks" },
+  { id: "xss", label: "Cross-site Scripting" },
+  { id: "sql_injection", label: "SQL Injection Attempts" },
+  { id: "command_injection", label: "Command Injection" },
+  { id: "path_traversal", label: "Path Traversal" },
+  { id: "ssrf", label: "Server-side Request Forgery" }
 ];
 
 export const TestSelector = ({ selectedTests, setSelectedTests }: TestSelectorProps) => {
   return (
     <div className="space-y-2">
       <Label>Select Tests</Label>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        {AVAILABLE_TESTS.map((test) => (
-          <label key={test} className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={selectedTests.includes(test)}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  setSelectedTests([...selectedTests, test]);
-                } else {
-                  setSelectedTests(selectedTests.filter(t => t !== test));
-                }
-              }}
-              className="form-checkbox h-4 w-4"
-            />
-            <span className="text-sm">{test}</span>
-          </label>
-        ))}
-      </div>
+      <ScrollArea className="h-[200px] border rounded-md p-4">
+        <div className="space-y-2">
+          {AVAILABLE_TESTS.map((test) => (
+            <label key={test.id} className="flex items-center space-x-2">
+              <Checkbox
+                checked={selectedTests.includes(test.id)}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setSelectedTests([...selectedTests, test.id]);
+                  } else {
+                    setSelectedTests(selectedTests.filter(t => t !== test.id));
+                  }
+                }}
+              />
+              <span className="text-sm">{test.label}</span>
+            </label>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
