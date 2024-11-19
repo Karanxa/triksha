@@ -10,8 +10,12 @@ RUN apk add --no-cache git curl python3 py3-pip make g++ bash
 # Install bun for faster builds
 RUN curl -fsSL https://bun.sh/install | bash
 
-# Install Garak
-RUN python3 -m pip install -U garak
+# Create and activate virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Garak in virtual environment
+RUN pip install -U garak
 
 # Copy package files
 COPY package*.json ./
@@ -33,18 +37,19 @@ RUN npm run build
 # Production Stage
 FROM nginx:alpine
 
-# Install Python and Garak in production image
+# Install Python and create virtual environment
 RUN apk add --no-cache python3 py3-pip bash
-RUN python3 -m pip install -U garak
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Garak in virtual environment
+RUN pip install -U garak
 
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Add bash for debugging if needed
-RUN apk add --no-cache bash
 
 # Create a directory for Garak outputs
 RUN mkdir -p /app/garak-results && chmod 777 /app/garak-results
