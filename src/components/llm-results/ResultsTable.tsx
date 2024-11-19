@@ -34,10 +34,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
   const [hiddenScans, setHiddenScans] = useState<Set<string>>(new Set());
   const [expandedScan, setExpandedScan] = useState<string | null>(null);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
   const handleContentClick = (title: string, content: string) => {
     setSelectedContent({ title, content });
   };
@@ -64,58 +60,57 @@ export function ResultsTable({ scans }: ResultsTableProps) {
     return (
       <Card className="mb-4">
         <CardHeader className="p-4 space-y-0">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-2 flex-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {scan.is_vulnerable !== undefined && (
-                    <>
-                      <div className="flex items-center">
-                        {scan.is_vulnerable ? (
-                          <ShieldAlert className="w-4 h-4 text-destructive" />
-                        ) : (
-                          <ShieldCheck className="w-4 h-4 text-green-500" />
-                        )}
-                      </div>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {scan.is_vulnerable !== undefined && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      {scan.is_vulnerable ? (
+                        <ShieldAlert className="w-4 h-4 text-destructive" />
+                      ) : (
+                        <ShieldCheck className="w-4 h-4 text-green-500" />
+                      )}
                       <span className="text-sm font-medium">
                         {scan.is_vulnerable ? "Vulnerable" : "Secure"}
                       </span>
-                      {scan.category && (
-                        <Badge variant="secondary" className="text-xs ml-2">
-                          {scan.category}
-                        </Badge>
-                      )}
-                    </>
-                  )}
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => toggleExpand(scan.id)}
-                  className="h-8 w-8 p-0"
-                >
-                  {isExpanded ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {model}
+                    </Badge>
+                  </>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {formatScanType(scan.scan_type)}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {model}
-                </Badge>
-              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => toggleExpand(scan.id)}
+                className="h-8 w-8 p-0"
+              >
+                {isExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
             </div>
+            {scan.category && (
+              <Badge variant="secondary" className="text-xs w-fit">
+                {scan.category}
+              </Badge>
+            )}
           </div>
         </CardHeader>
         
         {isExpanded && (
           <CardContent className="p-4 pt-0 space-y-4">
             <div className="grid gap-4">
+              <div className="flex flex-col gap-2">
+                <div className="text-xs font-medium text-muted-foreground">Scan Type</div>
+                <Badge variant="outline" className="text-xs w-fit">
+                  {formatScanType(scan.scan_type)}
+                </Badge>
+              </div>
               <div>
                 <div className="text-xs font-medium text-muted-foreground mb-1">Prompt</div>
                 <div className="text-sm bg-muted/50 p-3 rounded-md">
@@ -151,7 +146,6 @@ export function ResultsTable({ scans }: ResultsTableProps) {
             <ResultsTableRow
               key={scan.id}
               scan={scan}
-              formatDate={formatDate}
               onContentClick={handleContentClick}
               onHide={handleHideScan}
             />
