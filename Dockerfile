@@ -56,7 +56,7 @@ RUN pip install --upgrade pip && \
     pip install torch==2.1.0+cpu torchvision==0.16.0+cpu --index-url https://download.pytorch.org/whl/cpu && \
     pip install openai==1.6.1 && \
     pip install garak==0.10.0 && \
-    pip install prompt-security-fuzzer==0.1.7
+    pip install prompt-security-fuzzer==0.1.7 openai==1.6.1
 
 # Copy nginx configuration and built assets
 COPY nginx.conf /etc/nginx/conf.d/default.conf

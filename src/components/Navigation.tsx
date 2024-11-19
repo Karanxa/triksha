@@ -33,14 +33,14 @@ const Navigation = () => {
 
   return (
     <nav className="border-b">
-      <div className="flex h-16 items-center px-4">
-        <div className="flex items-center space-x-4 lg:space-x-6 mx-6">
+      <div className="flex flex-col md:flex-row h-auto md:h-16 items-start md:items-center px-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-6 my-4 md:my-0 w-full md:w-auto">
           {links.map((link) => (
             <Link
               key={link.href}
               to={link.href}
               className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
+                "text-sm font-medium transition-colors hover:text-primary whitespace-nowrap",
                 location.pathname === link.href
                   ? "text-foreground"
                   : "text-muted-foreground"
@@ -50,7 +50,7 @@ const Navigation = () => {
             </Link>
           ))}
         </div>
-        <div className="ml-auto flex items-center space-x-4">
+        <div className="flex items-center space-x-4 ml-0 md:ml-auto mb-4 md:mb-0">
           <Link
             to="/settings"
             className={cn(
