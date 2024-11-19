@@ -39,17 +39,15 @@ const MODEL_TYPES = [
 
 export const GarakScanForm = () => {
   const [name, setName] = useState("");
-  const [modelType, setModelType] = useState("");
   const [model, setModel] = useState("");
   const [prompt, setPrompt] = useState("");
   const [selectedSuites, setSelectedSuites] = useState<string[]>([]);
-  const [customEndpoint, setCustomEndpoint] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const session = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !model || !prompt || selectedSuites.length === 0) {
+    if (!name || !model || selectedSuites.length === 0) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -61,22 +59,40 @@ export const GarakScanForm = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.from("garak_scans").insert({
-        name,
-        model,
-        prompts: [prompt],
-        test_suites: selectedSuites,
-        user_id: session.user.id,
-        config: modelType === 'custom' ? { endpoint: customEndpoint } : null
+      // Create scan record
+      const { data: scanData, error: scanError } = await supabase
+        .from('garak_scans')
+        .insert({
+          name,
+          model,
+          prompts: [prompt],
+          test_suites: selectedSuites,
+          user_id: session.user.id,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (scanError) throw scanError;
+
+      // Run Garak scan
+      const response = await supabase.functions.invoke('run-garak-scan', {
+        body: { 
+          scanId: scanData.id,
+          model,
+          prompts: [prompt],
+          test_suites: selectedSuites
+        }
       });
 
-      if (error) throw error;
-      toast.success("Garak scan created successfully");
+      if (response.error) throw response.error;
+
+      toast.success("Garak scan started successfully");
       setName("");
       setModel("");
       setPrompt("");
       setSelectedSuites([]);
-      setCustomEndpoint("");
+      
     } catch (error) {
       console.error("Error creating garak scan:", error);
       toast.error("Failed to create garak scan");
@@ -100,7 +116,7 @@ export const GarakScanForm = () => {
 
       <div className="space-y-2">
         <Label>Model Type</Label>
-        <Select value={modelType} onValueChange={setModelType}>
+        <Select value={model} onValueChange={setModel}>
           <SelectTrigger>
             <SelectValue placeholder="Select model type" />
           </SelectTrigger>
@@ -113,30 +129,6 @@ export const GarakScanForm = () => {
           </SelectContent>
         </Select>
       </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="model">Model Name</Label>
-        <Input
-          id="model"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          placeholder="Enter the specific model name (e.g., gpt-4)"
-          required
-        />
-      </div>
-
-      {modelType === 'custom' && (
-        <div className="space-y-2">
-          <Label htmlFor="endpoint">Custom Endpoint</Label>
-          <Input
-            id="endpoint"
-            value={customEndpoint}
-            onChange={(e) => setCustomEndpoint(e.target.value)}
-            placeholder="Enter custom model endpoint URL"
-            required
-          />
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label htmlFor="prompt">Test Prompt</Label>
