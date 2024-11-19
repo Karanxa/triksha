@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 const TEST_SUITES = [
   { id: "encoding", label: "Encoding Tests", description: "Tests for various encoding and decoding attacks" },
@@ -38,6 +39,7 @@ const MODEL_TYPES = [
 ];
 
 export const GarakScanForm = () => {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [model, setModel] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -47,6 +49,7 @@ export const GarakScanForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!name || !model || selectedSuites.length === 0) {
       toast.error("Please fill in all required fields");
       return;
@@ -88,14 +91,11 @@ export const GarakScanForm = () => {
       if (response.error) throw response.error;
 
       toast.success("Garak scan started successfully");
-      setName("");
-      setModel("");
-      setPrompt("");
-      setSelectedSuites([]);
+      navigate('/llm-results'); // Redirect to results page after successful scan creation
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating garak scan:", error);
-      toast.error("Failed to create garak scan");
+      toast.error("Failed to create garak scan: " + error.message);
     } finally {
       setIsLoading(false);
     }
