@@ -15,14 +15,23 @@ serve(async (req) => {
     const { scanId, model, test_suites } = await req.json();
     console.log('Received Garak scan request:', { scanId, model, test_suites });
 
+    if (!scanId || !model || !test_suites?.length) {
+      throw new Error('Missing required parameters');
+    }
+
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Update scan status to processing
     console.log('Updating scan status to processing...');
-    await supabase
+    const { error: updateError } = await supabase
       .from('garak_scans')
       .update({ 
         status: 'processing',
@@ -30,9 +39,17 @@ serve(async (req) => {
       })
       .eq('id', scanId);
 
+    if (updateError) {
+      throw new Error(`Failed to update scan status: ${updateError.message}`);
+    }
+
     // Extract model type and name
     const [modelType, modelName] = model.split('/');
     console.log('Extracted model info:', { modelType, modelName });
+
+    if (!modelType || !modelName) {
+      throw new Error('Invalid model format');
+    }
 
     // Build Garak command
     const command = [
@@ -60,6 +77,15 @@ serve(async (req) => {
     if (code !== 0) {
       const errorMessage = new TextDecoder().decode(stderr);
       console.error('Garak process error:', errorMessage);
+      
+      await supabase
+        .from('garak_scans')
+        .update({
+          status: 'failed',
+          results: { error: errorMessage }
+        })
+        .eq('id', scanId);
+        
       throw new Error(`Garak scan failed: ${errorMessage}`);
     }
 
@@ -70,13 +96,17 @@ serve(async (req) => {
     
     // Update scan with results
     console.log('Updating scan with results...');
-    await supabase
+    const { error: resultsError } = await supabase
       .from('garak_scans')
       .update({
         status: 'completed',
         results: JSON.parse(results)
       })
       .eq('id', scanId);
+
+    if (resultsError) {
+      throw new Error(`Failed to update scan results: ${resultsError.message}`);
+    }
 
     return new Response(
       JSON.stringify({ success: true, results: JSON.parse(results) }),

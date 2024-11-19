@@ -54,8 +54,12 @@ export const GarakScanForm = () => {
       }
 
       console.log("Scan record created:", scanData);
-      console.log("Invoking run-garak-scan function...");
+      
+      if (!scanData?.id) {
+        throw new Error("No scan ID returned from database");
+      }
 
+      console.log("Invoking run-garak-scan function...");
       const { data: functionData, error: functionError } = await supabase.functions.invoke('run-garak-scan', {
         body: { 
           scanId: scanData.id,
@@ -75,7 +79,7 @@ export const GarakScanForm = () => {
       
     } catch (error: any) {
       console.error("Error creating garak scan:", error);
-      toast.error("Failed to create garak scan: " + error.message);
+      toast.error("Failed to create garak scan: " + (error.message || "Unknown error"));
     } finally {
       setIsLoading(false);
     }
