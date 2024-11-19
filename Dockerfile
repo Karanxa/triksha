@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     build-essential \
     python3-dev \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install bun
