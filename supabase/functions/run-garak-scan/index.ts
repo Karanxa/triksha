@@ -12,8 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId, model, test_suites, config } = await req.json();
-    console.log('Received Garak scan request:', { scanId, model, test_suites, config });
+    const { scanId, model, test_suites } = await req.json();
+    console.log('Received Garak scan request:', { scanId, model, test_suites });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -21,6 +21,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Update scan status to processing
+    console.log('Updating scan status to processing...');
     await supabase
       .from('garak_scans')
       .update({ 
@@ -31,6 +32,7 @@ serve(async (req) => {
 
     // Extract model type and name
     const [modelType, modelName] = model.split('/');
+    console.log('Extracted model info:', { modelType, modelName });
 
     // Build Garak command
     const command = [
@@ -44,11 +46,6 @@ serve(async (req) => {
       "--output", `/app/garak-results/${scanId}.json`
     ];
 
-    // Add custom endpoint if provided
-    if (config?.endpoint) {
-      command.push("--endpoint", config.endpoint);
-    }
-
     console.log('Running Garak command:', command.join(' '));
 
     const process = new Deno.Command("python3", {
@@ -58,15 +55,21 @@ serve(async (req) => {
     });
 
     const { code, stdout, stderr } = await process.output();
+    console.log('Garak process completed with code:', code);
     
     if (code !== 0) {
-      throw new Error(`Garak scan failed: ${new TextDecoder().decode(stderr)}`);
+      const errorMessage = new TextDecoder().decode(stderr);
+      console.error('Garak process error:', errorMessage);
+      throw new Error(`Garak scan failed: ${errorMessage}`);
     }
 
     // Read results file
+    console.log('Reading results file...');
     const results = await Deno.readTextFile(`/app/garak-results/${scanId}.json`);
+    console.log('Results file read successfully');
     
     // Update scan with results
+    console.log('Updating scan with results...');
     await supabase
       .from('garak_scans')
       .update({
