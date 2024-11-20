@@ -20,6 +20,7 @@ export const GarakScanForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Form submitted with:", { name, modelType, modelName, selectedSuites });
     
     if (!name || !modelType || !modelName || selectedSuites.length === 0) {
       toast.error("Please fill in all required fields");
@@ -33,7 +34,7 @@ export const GarakScanForm = () => {
 
     setIsLoading(true);
     try {
-      // Create scan record
+      console.log("Creating Garak scan record...");
       const { data: scanData, error: scanError } = await supabase
         .from('garak_scans')
         .insert({
@@ -47,13 +48,18 @@ export const GarakScanForm = () => {
         .select()
         .single();
 
-      if (scanError) throw scanError;
+      if (scanError) {
+        console.error("Error creating scan record:", scanError);
+        throw scanError;
+      }
+
+      console.log("Scan record created:", scanData);
       
       if (!scanData?.id) {
         throw new Error("No scan ID returned from database");
       }
 
-      // Start the Garak scan
+      console.log("Invoking run-garak-scan function...");
       const { data: functionData, error: functionError } = await supabase.functions.invoke('run-garak-scan', {
         body: { 
           scanId: scanData.id,
@@ -62,8 +68,12 @@ export const GarakScanForm = () => {
         }
       });
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        console.error("Edge function error:", functionError);
+        throw functionError;
+      }
 
+      console.log("Edge function response:", functionData);
       toast.success("Garak scan started successfully");
       navigate('/llm-results');
       
