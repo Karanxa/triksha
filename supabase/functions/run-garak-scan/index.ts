@@ -7,13 +7,18 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { scanId, model, test_suites } = await req.json();
-    console.log('Received Garak scan request:', { scanId, model, test_suites });
+    console.log("Edge Function started");
+    
+    const requestData = await req.json();
+    console.log("Received request data:", requestData);
+    
+    const { scanId, model, test_suites } = requestData;
 
     if (!scanId || !model || !test_suites?.length) {
       throw new Error('Missing required parameters');
@@ -27,10 +32,11 @@ serve(async (req) => {
       throw new Error('Missing Supabase configuration');
     }
 
+    console.log("Initializing Supabase client...");
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Update scan status to processing
-    console.log('Updating scan status to processing...');
+    console.log("Updating scan status to processing...");
     const { error: updateError } = await supabase
       .from('garak_scans')
       .update({ 
@@ -40,12 +46,13 @@ serve(async (req) => {
       .eq('id', scanId);
 
     if (updateError) {
+      console.error("Error updating scan status:", updateError);
       throw new Error(`Failed to update scan status: ${updateError.message}`);
     }
 
     // Extract model type and name
     const [modelType, modelName] = model.split('/');
-    console.log('Extracted model info:', { modelType, modelName });
+    console.log("Processing scan with model:", { modelType, modelName });
 
     if (!modelType || !modelName) {
       throw new Error('Invalid model format');
@@ -63,7 +70,7 @@ serve(async (req) => {
       "--output", `/app/garak-results/${scanId}.json`
     ];
 
-    console.log('Running Garak command:', command.join(' '));
+    console.log("Executing Garak command:", command.join(' '));
 
     const process = new Deno.Command("python3", {
       args: command,
@@ -71,12 +78,13 @@ serve(async (req) => {
       stderr: "piped",
     });
 
+    console.log("Waiting for Garak process to complete...");
     const { code, stdout, stderr } = await process.output();
-    console.log('Garak process completed with code:', code);
+    console.log("Garak process completed with code:", code);
     
     if (code !== 0) {
       const errorMessage = new TextDecoder().decode(stderr);
-      console.error('Garak process error:', errorMessage);
+      console.error("Garak process error:", errorMessage);
       
       await supabase
         .from('garak_scans')
@@ -90,12 +98,12 @@ serve(async (req) => {
     }
 
     // Read results file
-    console.log('Reading results file...');
+    console.log("Reading results file...");
     const results = await Deno.readTextFile(`/app/garak-results/${scanId}.json`);
-    console.log('Results file read successfully');
+    console.log("Results file read successfully");
     
     // Update scan with results
-    console.log('Updating scan with results...');
+    console.log("Updating scan with results...");
     const { error: resultsError } = await supabase
       .from('garak_scans')
       .update({
@@ -105,9 +113,11 @@ serve(async (req) => {
       .eq('id', scanId);
 
     if (resultsError) {
+      console.error("Error updating scan results:", resultsError);
       throw new Error(`Failed to update scan results: ${resultsError.message}`);
     }
 
+    console.log("Scan completed successfully");
     return new Response(
       JSON.stringify({ success: true, results: JSON.parse(results) }),
       { 
@@ -117,7 +127,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error running Garak scan:', error);
+    console.error("Edge Function error:", error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error occurred'
