@@ -12,12 +12,12 @@ import { Loader2 } from "lucide-react";
 
 export const GarakScanForm = () => {
   const navigate = useNavigate();
+  const session = useSession();
   const [name, setName] = useState("");
   const [modelType, setModelType] = useState("");
   const [modelName, setModelName] = useState("");
   const [selectedSuites, setSelectedSuites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const session = useSession();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
