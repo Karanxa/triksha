@@ -112,7 +112,15 @@ export const GarakScanForm = () => {
         onSuitesChange={setSelectedSuites}
       />
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={isLoading}
+        onClick={(e) => {
+          e.preventDefault();
+          handleSubmit(e);
+        }}
+      >
         {isLoading ? "Creating Scan..." : "Create Garak Scan"}
       </Button>
     </form>
