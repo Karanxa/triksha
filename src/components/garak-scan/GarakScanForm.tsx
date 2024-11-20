@@ -20,21 +20,26 @@ export const GarakScanForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted with:', { name, modelType, modelName, selectedSuites });
     
-    if (!name || !modelType || !modelName || selectedSuites.length === 0) {
-      toast.error("Please fill in all required fields");
-      return;
+    // Throw explicit errors for missing fields
+    if (!name) {
+      throw new Error("Scan name is required");
     }
-
+    if (!modelType) {
+      throw new Error("Model type is required");
+    }
+    if (!modelName) {
+      throw new Error("Model name is required");
+    }
+    if (selectedSuites.length === 0) {
+      throw new Error("At least one test suite must be selected");
+    }
     if (!session?.user?.id) {
-      toast.error("You must be logged in to create a scan");
-      return;
+      throw new Error("User must be logged in to create a scan");
     }
 
     setIsLoading(true);
     try {
-      console.log('Creating scan record...');
       // Create the scan record
       const { data: scanData, error: scanError } = await supabase
         .from('garak_scans')
@@ -50,17 +55,13 @@ export const GarakScanForm = () => {
         .single();
 
       if (scanError) {
-        console.error("Error creating scan record:", scanError);
-        throw scanError;
+        throw new Error(`Database error: ${scanError.message}`);
       }
 
-      console.log("Scan record created:", scanData);
-      
       if (!scanData?.id) {
         throw new Error("No scan ID returned from database");
       }
 
-      console.log('Calling Edge Function...');
       // Call the Edge Function to run the Garak scan
       const { data: functionData, error: functionError } = await supabase.functions.invoke('run-garak-scan', {
         body: { 
@@ -71,19 +72,20 @@ export const GarakScanForm = () => {
       });
 
       if (functionError) {
-        console.error("Edge function error:", functionError);
-        throw functionError;
+        throw new Error(`Edge function error: ${functionError.message}`);
       }
 
-      console.log("Edge function response:", functionData);
+      if (!functionData) {
+        throw new Error("No response from edge function");
+      }
+
       toast.success("Garak scan started successfully");
       navigate('/llm-results');
       
     } catch (error: any) {
-      console.error("Error creating garak scan:", error);
-      toast.error("Failed to create garak scan: " + (error.message || "Unknown error"));
-    } finally {
       setIsLoading(false);
+      // Re-throw the error to be caught by the error boundary
+      throw error;
     }
   };
 
@@ -116,10 +118,6 @@ export const GarakScanForm = () => {
         type="submit" 
         className="w-full" 
         disabled={isLoading}
-        onClick={(e) => {
-          e.preventDefault();
-          handleSubmit(e);
-        }}
       >
         {isLoading ? "Creating Scan..." : "Create Garak Scan"}
       </Button>
