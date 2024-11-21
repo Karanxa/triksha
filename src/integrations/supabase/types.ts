@@ -709,6 +709,13 @@ export type Database = {
         | "safety_bounds"
         | "system_prompt"
         | "performance"
+      test_category:
+        | "prompt_injection"
+        | "data_leakage"
+        | "model_behavior"
+        | "safety_bounds"
+        | "system_prompt"
+        | "performance"
     }
     CompositeTypes: {
       [_ in never]: never
