@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ProviderSelect } from "@/components/augment-prompt/ProviderSelect";
+import ProviderSelect from "@/components/augment-prompt/ProviderSelect";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 
 export const AutomatedScanForm = () => {
@@ -29,6 +29,13 @@ export const AutomatedScanForm = () => {
       return;
     }
 
+    // Extract model from provider string (format: "provider-model")
+    const [providerName, model] = provider.split('-');
+    if (!model) {
+      toast.error("Please select both a provider and a model");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('scheduled_llm_scans')
@@ -36,8 +43,9 @@ export const AutomatedScanForm = () => {
           user_id: session.user.id,
           name,
           description,
-          provider,
-          prompts: prompts.split('\n').filter(p => p.trim()),
+          provider: providerName,
+          model,
+          prompts: JSON.parse(JSON.stringify(prompts.split('\n').filter(p => p.trim()))),
           schedule,
           is_active: isActive,
           next_run: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Set next run to tomorrow
