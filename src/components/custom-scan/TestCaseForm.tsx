@@ -8,20 +8,22 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 
-const TEST_CATEGORIES = [
+type ScanTestCategory = "prompt_injection" | "data_leakage" | "model_behavior" | "safety_bounds" | "system_prompt" | "performance";
+
+const TEST_CATEGORIES: ScanTestCategory[] = [
   "prompt_injection",
   "data_leakage",
   "model_behavior",
   "safety_bounds",
   "system_prompt",
   "performance"
-] as const;
+];
 
 export const TestCaseForm = () => {
   const session = useSession();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<string>("");
+  const [category, setCategory] = useState<ScanTestCategory>("prompt_injection");
   const [testPrompt, setTestPrompt] = useState("");
   const [expectedBehavior, setExpectedBehavior] = useState("");
 
@@ -50,7 +52,7 @@ export const TestCaseForm = () => {
       toast.success("Test case created successfully!");
       setName("");
       setDescription("");
-      setCategory("");
+      setCategory("prompt_injection");
       setTestPrompt("");
       setExpectedBehavior("");
       
@@ -84,7 +86,7 @@ export const TestCaseForm = () => {
 
       <div className="space-y-2">
         <Label htmlFor="category">Category</Label>
-        <Select value={category} onValueChange={setCategory}>
+        <Select value={category} onValueChange={(value: ScanTestCategory) => setCategory(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select test category" />
           </SelectTrigger>
