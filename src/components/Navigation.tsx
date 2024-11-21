@@ -15,6 +15,7 @@ const Navigation = () => {
   const links = [
     { href: "/", label: "Home" },
     { href: "/llm-scanner", label: "Scans" },
+    { href: "/automated-scans", label: "Automated" },
     { href: "/llm-results", label: "Results" },
     { href: "/datasets", label: "Datasets" },
     { href: "/augment-prompt", label: "Augmentation" },
@@ -55,7 +56,6 @@ const Navigation = () => {
   return (
     <nav className="border-b">
       <div className="h-16 px-4 flex items-center justify-between">
-        {/* Mobile Menu */}
         <Sheet>
           <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon">
@@ -80,12 +80,10 @@ const Navigation = () => {
           </SheetContent>
         </Sheet>
 
-        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-6">
           <NavLinks />
         </div>
 
-        {/* Right side items (visible on all screens) */}
         <div className="flex items-center space-x-4">
           <div className="hidden md:block">
             <Link
