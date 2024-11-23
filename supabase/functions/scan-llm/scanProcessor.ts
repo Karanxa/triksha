@@ -5,6 +5,7 @@ import { handleAnthropicRequest } from "./providers/anthropic.ts";
 import { handleGeminiRequest } from "./providers/gemini.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { handleCustomEndpoint } from "./customEndpoint.ts";
+import { augmentPrompt } from "./utils/promptAugmentation.ts";
 
 export async function processScan(
   scanId: string,
@@ -21,13 +22,13 @@ export async function processScan(
   console.log('Processing scan with provider:', baseProvider);
   console.log('Initial prompts received:', prompts?.length || 0);
 
-  // Validate and clean prompts
+  // More lenient prompt validation
   if (!Array.isArray(prompts)) {
     console.error('Invalid prompts format:', typeof prompts);
     throw new Error('Prompts must be provided as an array');
   }
 
-  // Clean and validate prompts
+  // Clean prompts more gracefully
   const validPrompts = prompts
     .filter(prompt => prompt && typeof prompt === 'string')
     .map(prompt => prompt.trim())
@@ -36,7 +37,7 @@ export async function processScan(
   console.log('Valid prompts after cleaning:', validPrompts.length);
 
   if (validPrompts.length === 0) {
-    throw new Error('No valid prompts found after cleaning');
+    throw new Error('No valid prompts found after cleaning. Please check your input.');
   }
 
   const results = [];

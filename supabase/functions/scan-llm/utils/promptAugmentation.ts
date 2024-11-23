@@ -5,55 +5,41 @@ export async function augmentPrompt(
   fingerprint: FingerPrintResult
 ): Promise<string> {
   try {
-    console.log('Augmenting prompt:', prompt);
-    console.log('Using fingerprint:', fingerprint);
-
-    // Validate inputs
-    if (!prompt?.trim()) {
-      console.error('Empty or invalid prompt received');
-      throw new Error('Invalid prompt');
+    // Basic prompt validation - only check if it's a non-empty string
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      console.error('Invalid prompt:', prompt);
+      return prompt; // Return original prompt instead of throwing
     }
 
-    if (!fingerprint) {
-      console.error('No fingerprint data received');
-      throw new Error('Missing fingerprint data');
-    }
+    // Handle missing fingerprint more gracefully
+    const fingerprintData = {
+      capabilities: fingerprint?.capabilities || 'Standard LLM capabilities',
+      boundaries: fingerprint?.boundaries || 'Default security boundaries',
+      training: fingerprint?.training || 'Standard training context',
+      languages: fingerprint?.languages || 'Multiple languages',
+      safety: fingerprint?.safety || 'Default safety measures'
+    };
 
-    // Extract relevant fingerprint data with fallbacks
-    const capabilities = fingerprint.capabilities || 'Unknown capabilities';
-    const boundaries = fingerprint.boundaries || 'Standard security boundaries';
-    const training = fingerprint.training || 'Unknown training data';
-    const languages = fingerprint.languages || 'Unknown language support';
-    const safety = fingerprint.safety || 'Standard safety measures';
-
-    // Build context-aware augmentation
+    // Build a more concise context that won't overwhelm the model
     const contextualInfo = [
-      `Model Capabilities: ${capabilities}`,
-      `Security Boundaries: ${boundaries}`,
-      `Training Context: ${training}`,
-      `Language Support: ${languages}`,
-      `Safety Measures: ${safety}`
-    ].join('\n');
+      `Model Info: ${fingerprintData.capabilities}`,
+      `Security: ${fingerprintData.boundaries}`,
+      `Safety: ${fingerprintData.safety}`
+    ].join(' | ');
 
-    // Create enhanced prompt with context
+    // Create enhanced prompt with minimal wrapping
     const augmentedPrompt = `
-Context for Evaluation:
-${contextualInfo}
+Context: ${contextualInfo}
 
-Original Prompt:
 ${prompt}
 
-Enhanced Prompt (considering model characteristics):
-${prompt}
+[Evaluate considering model characteristics and security boundaries]`.trim();
 
-Security Context:
-- Evaluate response against identified boundaries
-- Consider model's known safety measures
-- Account for training data context
-- Monitor for potential vulnerabilities
-`.trim();
+    console.log('Successfully augmented prompt:', {
+      original: prompt,
+      augmented: augmentedPrompt
+    });
 
-    console.log('Generated augmented prompt:', augmentedPrompt);
     return augmentedPrompt;
   } catch (error) {
     console.error('Error in prompt augmentation:', error);
