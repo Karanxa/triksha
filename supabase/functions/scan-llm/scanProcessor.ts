@@ -20,12 +20,29 @@ export async function processScan(
   const [baseProvider] = provider ? provider.split('-') : [null];
   
   console.log('Processing scan with provider:', baseProvider);
+  console.log('Number of prompts to process:', prompts.length);
 
   const results = [];
   let processedCount = 0;
   const totalPrompts = prompts.length;
   
-  for (const prompt of prompts) {
+  // Validate prompts array
+  if (!Array.isArray(prompts) || prompts.length === 0) {
+    throw new Error('No valid prompts provided for processing');
+  }
+
+  // Filter out any invalid prompts
+  const validPrompts = prompts.filter(prompt => 
+    typeof prompt === 'string' && prompt.trim().length > 0
+  );
+
+  console.log('Valid prompts to process:', validPrompts.length);
+  
+  if (validPrompts.length === 0) {
+    throw new Error('No valid prompts found after filtering');
+  }
+
+  for (const prompt of validPrompts) {
     try {
       console.log('Processing prompt:', prompt);
       
