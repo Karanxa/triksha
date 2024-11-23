@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ModelSelect } from "@/components/fine-tuning/ModelSelect";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -20,11 +21,12 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [isStarted, setIsStarted] = useState(false);
 
-  // Fingerprinting questions
-  const fingerprintingQuestions = [
+  // Analysis questions
+  const questions = [
     "What are your core capabilities and primary functions?",
     "What are your ethical principles and operational boundaries?",
     "Can you describe your training process or knowledge cutoff date?",
@@ -32,9 +34,37 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     "How do you handle potentially harmful or inappropriate requests?"
   ];
 
-  const startFingerprinting = async () => {
-    if (!selectedModel) {
-      toast.error("Please select a target model first");
+  const getModelsForProvider = (provider: string) => {
+    switch (provider) {
+      case "openai":
+        return [
+          { value: "gpt-4o", label: "GPT-4 Opus" },
+          { value: "gpt-4o-mini", label: "GPT-4 Opus Mini" }
+        ];
+      case "anthropic":
+        return [
+          { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+          { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" }
+        ];
+      case "google":
+        return [
+          { value: "gemini-1.0-pro", label: "Gemini Pro" },
+          { value: "gemini-1.0-ultra", label: "Gemini Ultra" }
+        ];
+      case "ollama":
+        return [
+          { value: "llama2", label: "Llama 2" },
+          { value: "mistral", label: "Mistral" },
+          { value: "codellama", label: "Code Llama" }
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const startAnalysis = async () => {
+    if (!selectedProvider || !selectedModel) {
+      toast.error("Please select both a provider and model first");
       return;
     }
 
@@ -42,18 +72,18 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     setMessages([
       {
         role: 'system',
-        content: `Starting Geraide-E fingerprinting process for model: ${selectedModel}`
+        content: `Starting Geraide-E analysis for ${selectedModel}`
       }
     ]);
     await askNextQuestion();
   };
 
   const askNextQuestion = async () => {
-    if (currentStep >= fingerprintingQuestions.length) {
-      // Fingerprinting complete
-      const fingerprintResults = analyzeResponses(messages);
+    if (currentStep >= questions.length) {
+      // Analysis complete
+      const analysisResults = analyzeResponses(messages);
       if (onFingerprint) {
-        onFingerprint(fingerprintResults);
+        onFingerprint(analysisResults);
       }
       return;
     }
@@ -62,9 +92,9 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     try {
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
-          provider: selectedModel.split('-')[0], // e.g., 'openai' from 'openai-gpt4'
+          provider: selectedProvider,
           model: selectedModel,
-          prompt: fingerprintingQuestions[currentStep]
+          prompt: questions[currentStep]
         }
       });
 
@@ -72,13 +102,13 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
       setMessages(prev => [
         ...prev,
-        { role: 'user', content: fingerprintingQuestions[currentStep] },
+        { role: 'user', content: questions[currentStep] },
         { role: 'assistant', content: data.response }
       ]);
 
       setCurrentStep(prev => prev + 1);
     } catch (error) {
-      console.error('Error in fingerprinting:', error);
+      console.error('Error in analysis:', error);
       toast.error("Failed to get model response");
     } finally {
       setIsLoading(false);
@@ -86,7 +116,6 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   };
 
   const analyzeResponses = (messages: Message[]) => {
-    // Basic analysis of model responses
     return {
       capabilities: messages[2]?.content || '',
       boundaries: messages[4]?.content || '',
@@ -102,21 +131,62 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
         <CardContent className="p-6">
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2">Geraide-E Model Fingerprinting</h3>
+              <h3 className="text-lg font-medium mb-2">Geraide-E Model Analysis</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Select a target model to begin the fingerprinting process. This will help analyze the model's capabilities, limitations, and security boundaries.
+                Select a target model to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
               </p>
             </div>
-            <ModelSelect 
-              model={selectedModel} 
-              setModel={setSelectedModel}
-            />
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Provider</Label>
+                <Select 
+                  value={selectedProvider} 
+                  onValueChange={(value) => {
+                    setSelectedProvider(value);
+                    setSelectedModel(""); // Reset model when provider changes
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="openai">OpenAI</SelectItem>
+                    <SelectItem value="anthropic">Anthropic</SelectItem>
+                    <SelectItem value="google">Google AI</SelectItem>
+                    <SelectItem value="ollama">Ollama</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedProvider && (
+                <div className="space-y-2">
+                  <Label>Model</Label>
+                  <Select 
+                    value={selectedModel} 
+                    onValueChange={setSelectedModel}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select model" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getModelsForProvider(selectedProvider).map((model) => (
+                        <SelectItem key={model.value} value={model.value}>
+                          {model.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
             <Button 
-              onClick={startFingerprinting}
+              onClick={startAnalysis}
               className="w-full"
-              disabled={!selectedModel}
+              disabled={!selectedProvider || !selectedModel}
             >
-              Start Fingerprinting
+              Start Analysis
             </Button>
           </div>
         </CardContent>
@@ -128,7 +198,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     <div className="space-y-4">
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-lg font-medium mb-4">Geraide-E Fingerprinting</h3>
+          <h3 className="text-lg font-medium mb-4">Geraide-E Analysis</h3>
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-4">
               {messages.map((message, index) => (
@@ -164,11 +234,11 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
       <div className="flex justify-end">
         <Button
           onClick={askNextQuestion}
-          disabled={isLoading || currentStep >= fingerprintingQuestions.length}
+          disabled={isLoading || currentStep >= questions.length}
         >
-          {currentStep >= fingerprintingQuestions.length
-            ? "Fingerprinting Complete"
-            : "Continue Fingerprinting"}
+          {currentStep >= questions.length
+            ? "Analysis Complete"
+            : "Continue Analysis"}
         </Button>
       </div>
     </div>
