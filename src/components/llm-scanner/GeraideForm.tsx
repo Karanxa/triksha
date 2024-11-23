@@ -41,7 +41,7 @@ export const GeraideForm = () => {
           model,
           dataset_id: selectedDataset[0], // Currently supporting single dataset selection
           status: 'pending'
-        });
+        } as any); // Using type assertion temporarily until types are properly loaded
 
       if (error) throw error;
 
