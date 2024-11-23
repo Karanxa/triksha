@@ -42,9 +42,13 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
 
     setIsLoading(true);
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Not authenticated");
+
       const { data, error } = await supabase
         .from('model_fingerprint_sessions')
         .insert({
+          user_id: userData.user.id,
           provider,
           model,
           dataset_id: datasetId,
@@ -55,7 +59,7 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
 
       if (error) throw error;
       
-      onSessionCreated(data);
+      onSessionCreated(data as ModelFingerprintSession);
       toast.success("Scan initiated successfully");
     } catch (error: any) {
       toast.error(error.message || "Failed to create session");
