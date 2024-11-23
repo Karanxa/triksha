@@ -65,6 +65,7 @@ export const GeraidEngine = () => {
 
       if (dbError) {
         console.error('Error storing response:', dbError);
+        toast.error("Failed to store analysis result");
       }
 
       setMessages(prev => [

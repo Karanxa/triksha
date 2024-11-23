@@ -4,6 +4,7 @@ import { LLMScansTable } from './tables/llm-scans';
 import { ProfilesTable } from './tables/profiles';
 import { PromptsTable } from './tables/prompts';
 import { GeraideScanTable } from './tables/geraide-scans';
+import { GeraidAnalysisTable } from './tables/geraid-analysis';
 
 export interface Database {
   public: {
@@ -14,6 +15,7 @@ export interface Database {
       profiles: ProfilesTable;
       prompts: PromptsTable;
       geraide_scans: GeraideScanTable;
+      geraid_analysis: GeraidAnalysisTable;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
