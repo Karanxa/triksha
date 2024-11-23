@@ -20,20 +20,14 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
           value="geraide" 
           className="text-xs md:text-sm whitespace-normal h-auto min-h-[40px] text-center"
         >
-          Model Fingerprinting
+          Geraide-E Fingerprinting
         </TabsTrigger>
       </TabsList>
       <TabsContent value="basic" className="mt-0">
         <ScanForm />
       </TabsContent>
       <TabsContent value="geraide" className="mt-0">
-        <GeraideChatbot 
-          provider="openai"
-          model="gpt-3.5-turbo"
-          onFingerprint={(results) => {
-            console.log('Fingerprint results:', results);
-          }}
-        />
+        <GeraideChatbot />
       </TabsContent>
     </Tabs>
   );

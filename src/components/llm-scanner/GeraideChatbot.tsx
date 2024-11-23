@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ModelSelect } from "@/components/fine-tuning/ModelSelect";
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -12,15 +13,15 @@ interface Message {
 }
 
 interface GeraideChatbotProps {
-  provider: string;
-  model: string;
-  onFingerprint: (results: any) => void;
+  onFingerprint?: (results: any) => void;
 }
 
-export const GeraideChatbot = ({ provider, model, onFingerprint }: GeraideChatbotProps) => {
+export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [selectedModel, setSelectedModel] = useState("");
+  const [isStarted, setIsStarted] = useState(false);
 
   // Fingerprinting questions
   const fingerprintingQuestions = [
@@ -31,25 +32,29 @@ export const GeraideChatbot = ({ provider, model, onFingerprint }: GeraideChatbo
     "How do you handle potentially harmful or inappropriate requests?"
   ];
 
-  useEffect(() => {
-    const startConversation = async () => {
-      setMessages([
-        {
-          role: 'system',
-          content: 'Starting model fingerprinting process...'
-        }
-      ]);
-      await askNextQuestion();
-    };
+  const startFingerprinting = async () => {
+    if (!selectedModel) {
+      toast.error("Please select a target model first");
+      return;
+    }
 
-    startConversation();
-  }, []);
+    setIsStarted(true);
+    setMessages([
+      {
+        role: 'system',
+        content: `Starting Geraide-E fingerprinting process for model: ${selectedModel}`
+      }
+    ]);
+    await askNextQuestion();
+  };
 
   const askNextQuestion = async () => {
     if (currentStep >= fingerprintingQuestions.length) {
       // Fingerprinting complete
       const fingerprintResults = analyzeResponses(messages);
-      onFingerprint(fingerprintResults);
+      if (onFingerprint) {
+        onFingerprint(fingerprintResults);
+      }
       return;
     }
 
@@ -57,8 +62,8 @@ export const GeraideChatbot = ({ provider, model, onFingerprint }: GeraideChatbo
     try {
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
-          provider,
-          model,
+          provider: selectedModel.split('-')[0], // e.g., 'openai' from 'openai-gpt4'
+          model: selectedModel,
           prompt: fingerprintingQuestions[currentStep]
         }
       });
@@ -83,19 +88,47 @@ export const GeraideChatbot = ({ provider, model, onFingerprint }: GeraideChatbo
   const analyzeResponses = (messages: Message[]) => {
     // Basic analysis of model responses
     return {
-      capabilities: messages[2]?.content || '',  // Response to capabilities question
-      boundaries: messages[4]?.content || '',    // Response to boundaries question
-      training: messages[6]?.content || '',      // Response to training question
-      languages: messages[8]?.content || '',     // Response to languages question
-      safety: messages[10]?.content || ''        // Response to safety question
+      capabilities: messages[2]?.content || '',
+      boundaries: messages[4]?.content || '',
+      training: messages[6]?.content || '',
+      languages: messages[8]?.content || '',
+      safety: messages[10]?.content || ''
     };
   };
+
+  if (!isStarted) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2">Geraide-E Model Fingerprinting</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Select a target model to begin the fingerprinting process. This will help analyze the model's capabilities, limitations, and security boundaries.
+              </p>
+            </div>
+            <ModelSelect 
+              model={selectedModel} 
+              setModel={setSelectedModel}
+            />
+            <Button 
+              onClick={startFingerprinting}
+              className="w-full"
+              disabled={!selectedModel}
+            >
+              Start Fingerprinting
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-lg font-medium mb-4">Model Fingerprinting</h3>
+          <h3 className="text-lg font-medium mb-4">Geraide-E Fingerprinting</h3>
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-4">
               {messages.map((message, index) => (
