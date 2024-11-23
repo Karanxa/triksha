@@ -9,9 +9,11 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { AdversarialConfig } from "./AdversarialConfig"
+import { useSession } from "@supabase/auth-helpers-react"
 
 export const CreateDataset = () => {
   const { toast } = useToast()
+  const session = useSession()
   const [isGenerating, setIsGenerating] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -20,6 +22,7 @@ export const CreateDataset = () => {
   const [method, setMethod] = useState("manual")
   const [recipe, setRecipe] = useState("")
   const [targetModel, setTargetModel] = useState("")
+  const [fingerprintResults, setFingerprintResults] = useState(null)
   const [adversarialConfig, setAdversarialConfig] = useState({
     attackType: "evasion",
     vulnerabilityCategory: "prompt-injection",
@@ -28,33 +31,42 @@ export const CreateDataset = () => {
     context: "chatbot"
   })
 
-  const recipes = [
-    { id: "PAIR", name: "PAIR (Chao 2023)" },
-    { id: "AutoDAN", name: "AutoDAN" },
-    { id: "DeepInception", name: "Deep Inception" }
-  ]
-
-  const models = [
-    { id: "gpt-4", name: "GPT-4" },
-    { id: "claude-3", name: "Claude 3" },
-    { id: "llama-2", name: "Llama 2" },
-    { id: "vicuna", name: "Vicuna" }
-  ]
-
   const handleGenerate = async () => {
-    if (!name || (method === "manual" && !basePrompt) || 
-        (method === "recipe" && !recipe) || 
-        (method === "adversarial" && !adversarialConfig.attackType)) {
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please log in to generate datasets"
+      })
+      return
+    }
+
+    if (!name) {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Please fill in all required fields"
+        description: "Please provide a name for the dataset"
       })
       return
     }
 
     setIsGenerating(true)
     try {
+      // First, perform fingerprinting if needed
+      if (method !== 'manual') {
+        const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
+          body: {
+            provider: targetModel.split('-')[0],
+            model: targetModel.split('-')[1],
+            prompt: "Tell me about your capabilities and limitations"
+          }
+        })
+
+        if (fingerprintError) throw fingerprintError
+        setFingerprintResults(fingerprintData)
+      }
+
+      // Generate dataset with fingerprint results
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
         body: {
           name,
@@ -64,7 +76,8 @@ export const CreateDataset = () => {
           method,
           recipe,
           targetModel,
-          adversarialConfig: method === "adversarial" ? adversarialConfig : undefined
+          adversarialConfig: method === "adversarial" ? adversarialConfig : undefined,
+          fingerprintResults
         }
       })
 
@@ -82,7 +95,9 @@ export const CreateDataset = () => {
       setNumSamples("100")
       setRecipe("")
       setTargetModel("")
+      setFingerprintResults(null)
     } catch (error: any) {
+      console.error('Error generating dataset:', error)
       toast({
         variant: "destructive",
         title: "Generation failed",
@@ -155,11 +170,9 @@ export const CreateDataset = () => {
                   <SelectValue placeholder="Select EasyJailbreak recipe" />
                 </SelectTrigger>
                 <SelectContent>
-                  {recipes.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="PAIR">PAIR (Chao 2023)</SelectItem>
+                  <SelectItem value="AutoDAN">AutoDAN</SelectItem>
+                  <SelectItem value="DeepInception">Deep Inception</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -171,11 +184,10 @@ export const CreateDataset = () => {
                   <SelectValue placeholder="Select target model" />
                 </SelectTrigger>
                 <SelectContent>
-                  {models.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="gpt-4">GPT-4</SelectItem>
+                  <SelectItem value="claude-3">Claude 3</SelectItem>
+                  <SelectItem value="llama-2">Llama 2</SelectItem>
+                  <SelectItem value="vicuna">Vicuna</SelectItem>
                 </SelectContent>
               </Select>
             </div>
