@@ -52,14 +52,10 @@ export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => 
       }
 
       const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
-      
-      // Look for either 'prompt' or 'original_prompt' column
-      const promptIndex = headers.findIndex(header => 
-        header === "prompt" || header === "original_prompt"
-      );
+      const promptIndex = headers.findIndex(header => header === "original_prompt");
 
       if (promptIndex === -1) {
-        throw new Error("No prompt column found in dataset");
+        throw new Error("No 'original_prompt' column found in dataset");
       }
 
       // Skip header row and process the prompts
