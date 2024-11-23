@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ScanTabs } from "@/components/llm-scanner/ScanTabs";
 import ToolCard from "@/components/ToolCard";
-import { Shield } from "lucide-react";
+import { Shield, Zap } from "lucide-react";
 import { useState } from "react";
 
 const LLMScanner = () => {
@@ -13,6 +13,12 @@ const LLMScanner = () => {
       title: "Custom Scan",
       description: "Test LLMs with custom prompts and analyze their responses",
       icon: Shield
+    },
+    {
+      id: "geraide",
+      title: "Geraide",
+      description: "Advanced LLM testing with automated analysis and reporting",
+      icon: Zap
     }
   ];
 
