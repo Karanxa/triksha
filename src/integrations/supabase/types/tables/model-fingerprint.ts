@@ -24,12 +24,21 @@ export interface ModelFingerprintMessage {
 
 export interface ModelFingerprintSessionsTable {
   Row: ModelFingerprintSession;
-  Insert: Omit<ModelFingerprintSession, 'id' | 'created_at' | 'updated_at'>;
+  Insert: Omit<ModelFingerprintSession, 'id' | 'created_at' | 'updated_at' | 'results'> & {
+    id?: string;
+    created_at?: string;
+    updated_at?: string;
+    results?: Json | null;
+  };
   Update: Partial<Omit<ModelFingerprintSession, 'id'>>;
 }
 
 export interface ModelFingerprintMessagesTable {
   Row: ModelFingerprintMessage;
-  Insert: Omit<ModelFingerprintMessage, 'id' | 'created_at' | 'updated_at'>;
+  Insert: Omit<ModelFingerprintMessage, 'id' | 'created_at' | 'updated_at'> & {
+    id?: string;
+    created_at?: string;
+    updated_at?: string;
+  };
   Update: Partial<Omit<ModelFingerprintMessage, 'id'>>;
 }
