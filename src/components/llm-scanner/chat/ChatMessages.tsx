@@ -14,7 +14,7 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
 
   return (
     <ScrollArea className="h-[400px] pr-4">
-      <div className="space-y-4">
+      <div className="space-y-4 pb-4"> {/* Added pb-4 for bottom padding */}
         {messages.map((message, index) => (
           <ChatMessage
             key={index}
@@ -23,7 +23,7 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
           />
         ))}
         {isLoading && (
-          <div className="flex justify-center">
+          <div className="flex justify-center py-2"> {/* Added py-2 for loading indicator spacing */}
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         )}

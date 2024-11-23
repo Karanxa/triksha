@@ -5,7 +5,14 @@ export const useAutoScroll = (dependencies: any[]) => {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      // Add a small delay to ensure content is rendered
+      setTimeout(() => {
+        scrollRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'end',
+          inline: 'nearest'
+        });
+      }, 100);
     }
   }, dependencies);
 
