@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { CustomEndpointInput } from "./providers/CustomEndpointInput";
 import { ModelSelect } from "./providers/ModelSelect";
 import { useForm } from "react-hook-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ScanFormProviderProps {
   provider: string;
@@ -23,9 +24,7 @@ export const ScanFormProvider = ({
 
   const handleProviderChange = (value: string) => {
     setSelectedProvider(value);
-    if (value === 'custom') {
-      onProviderChange('custom');
-    }
+    onProviderChange(value);
   };
 
   const handleCustomEndpointChange = (endpoint: any) => {
@@ -38,21 +37,29 @@ export const ScanFormProvider = ({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Provider</Label>
-        <CustomEndpointInput
-          customEndpoint={customEndpoint}
-          onCustomEndpointChange={handleCustomEndpointChange}
-          inputType={inputType}
-          onInputTypeChange={setInputType}
-        />
+        <Select value={selectedProvider} onValueChange={handleProviderChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select provider" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="openai">OpenAI</SelectItem>
+            <SelectItem value="anthropic">Anthropic</SelectItem>
+            <SelectItem value="google">Google AI</SelectItem>
+            <SelectItem value="ollama">Ollama (Custom Endpoint)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      {selectedProvider === 'custom' ? (
+
+      {selectedProvider === 'custom' && (
         <CustomEndpointInput
           customEndpoint={customEndpoint}
           onCustomEndpointChange={handleCustomEndpointChange}
           inputType={inputType}
           onInputTypeChange={setInputType}
         />
-      ) : selectedProvider && (
+      )}
+
+      {selectedProvider && selectedProvider !== 'custom' && (
         <ModelSelect 
           name="model"
           label="Model"
