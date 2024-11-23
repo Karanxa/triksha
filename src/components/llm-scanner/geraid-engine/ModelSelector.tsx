@@ -43,9 +43,9 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-2">Geraid-Engine Analysis</h3>
+        <h3 className="text-lg font-medium mb-2">Geraid-Engine</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Select a target model to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
+          Select a target model to begin. This will help understand the model's capabilities, limitations, and security boundaries.
         </p>
       </div>
       

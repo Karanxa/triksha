@@ -96,7 +96,7 @@ export const GeraidEngine = () => {
     <div className="space-y-4">
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-lg font-medium mb-4">Geraid-Engine Analysis</h3>
+          <h3 className="text-lg font-medium mb-4">Geraid-Engine</h3>
           <ChatMessages messages={messages} isLoading={isLoading} />
         </CardContent>
       </Card>
