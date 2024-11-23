@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
+import { ModelFingerprintMessage } from "@/integrations/supabase/types/tables/model-fingerprint";
 
 interface ModelFingerprintChatProps {
   sessionId: string;
@@ -21,7 +22,7 @@ export function ModelFingerprintChat({ sessionId }: ModelFingerprintChatProps) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data;
+      return data as ModelFingerprintMessage[];
     },
   });
 

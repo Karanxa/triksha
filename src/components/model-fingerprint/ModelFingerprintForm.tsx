@@ -53,6 +53,9 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
     try {
       setIsSubmitting(true);
 
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Not authenticated");
+
       const { data, error } = await supabase
         .from('model_fingerprint_sessions')
         .insert({
@@ -61,6 +64,7 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
           model: values.model,
           dataset_id: values.datasetId,
           status: 'pending',
+          user_id: userData.user.id,
         })
         .select()
         .single();
