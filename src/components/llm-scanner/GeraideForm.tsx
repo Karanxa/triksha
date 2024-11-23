@@ -7,6 +7,7 @@ import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect
 import { DatasetSelector } from "./DatasetSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
+import { GeraideScanInsert } from "@/integrations/supabase/types/tables";
 
 export const GeraideForm = () => {
   const session = useSession();
@@ -32,16 +33,18 @@ export const GeraideForm = () => {
     try {
       const [providerName, model] = provider.split('-');
 
+      const scanData: GeraideScanInsert = {
+        user_id: session.user.id,
+        name: `Geraide Scan - ${new Date().toLocaleString()}`,
+        provider: providerName,
+        model,
+        dataset_id: selectedDataset[0],
+        status: 'pending'
+      };
+
       const { error } = await supabase
         .from('geraide_scans')
-        .insert({
-          user_id: session.user.id,
-          name: `Geraide Scan - ${new Date().toLocaleString()}`,
-          provider: providerName,
-          model,
-          dataset_id: selectedDataset[0], // Currently supporting single dataset selection
-          status: 'pending'
-        } as any); // Using type assertion temporarily until types are properly loaded
+        .insert(scanData);
 
       if (error) throw error;
 
