@@ -1,3 +1,5 @@
+import { Json } from '../common';
+
 export interface ModelFingerprintSession {
   id: string;
   user_id: string;
@@ -6,7 +8,7 @@ export interface ModelFingerprintSession {
   model: string;
   dataset_id: string | null;
   status: 'pending' | 'probing' | 'analyzing' | 'attacking' | 'completed' | 'failed';
-  results: any;
+  results: Json | null;
   created_at: string;
   updated_at: string;
 }
@@ -16,7 +18,7 @@ export interface ModelFingerprintMessage {
   session_id: string;
   role: 'assistant' | 'user' | 'system';
   content: string;
-  metadata: any;
+  metadata: Json | null;
   created_at: string;
 }
 
