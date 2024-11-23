@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { ChatMessages } from "./ChatMessages";
+import { ChatMessages } from "../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
 
