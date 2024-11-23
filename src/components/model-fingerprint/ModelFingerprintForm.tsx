@@ -94,8 +94,8 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
             <SelectContent>
               {provider === 'openai' && (
                 <>
-                  <SelectItem value="gpt-4">GPT-4</SelectItem>
-                  <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                  <SelectItem value="gpt-4o">GPT-4 Opus</SelectItem>
+                  <SelectItem value="gpt-4o-mini">GPT-4 Opus Mini</SelectItem>
                 </>
               )}
               {provider === 'anthropic' && (
