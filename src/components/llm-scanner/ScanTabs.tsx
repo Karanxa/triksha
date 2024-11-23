@@ -1,5 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScanForm } from "./ScanForm";
+import { GeraideChatbot } from "@/components/geraide/GeraideChatbot";
 
 interface ScanTabsProps {
   initialTab?: string;
@@ -8,16 +9,31 @@ interface ScanTabsProps {
 export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
   return (
     <Tabs defaultValue={initialTab} className="w-full space-y-6">
-      <TabsList className="w-full grid grid-cols-1 mb-4 p-1">
+      <TabsList className="w-full grid grid-cols-2 mb-4">
         <TabsTrigger 
           value="basic" 
           className="text-xs md:text-sm whitespace-normal h-auto min-h-[40px] text-center"
         >
           Custom Scan
         </TabsTrigger>
+        <TabsTrigger 
+          value="geraide" 
+          className="text-xs md:text-sm whitespace-normal h-auto min-h-[40px] text-center"
+        >
+          Model Fingerprinting
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="basic" className="mt-0">
         <ScanForm />
+      </TabsContent>
+      <TabsContent value="geraide" className="mt-0">
+        <GeraideChatbot 
+          provider="openai"
+          model="gpt-3.5-turbo"
+          onFingerprint={(results) => {
+            console.log('Fingerprint results:', results);
+          }}
+        />
       </TabsContent>
     </Tabs>
   );
