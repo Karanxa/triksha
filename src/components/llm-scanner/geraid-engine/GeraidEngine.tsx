@@ -53,21 +53,6 @@ export const GeraidEngine = () => {
 
       if (error) throw error;
 
-      // Store the response in the database
-      const { error: dbError } = await supabase
-        .from('geraid_analysis')
-        .insert({
-          provider: selectedProvider,
-          model: selectedModel,
-          question: questions[currentStep],
-          response: data.response
-        });
-
-      if (dbError) {
-        console.error('Error storing response:', dbError);
-        toast.error("Failed to store analysis result");
-      }
-
       setMessages(prev => [
         ...prev,
         { role: 'user', content: questions[currentStep] },
