@@ -1,3 +1,4 @@
+import { Json } from './common';
 import { DatasetsTable } from './tables/datasets';
 import { FineTuningJobsTable } from './tables/fine-tuning-jobs';
 import { LLMScansTable } from './tables/llm-scans';
