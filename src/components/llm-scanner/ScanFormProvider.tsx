@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { CustomEndpointInput } from "./providers/CustomEndpointInput";
 import { ModelSelect } from "./providers/ModelSelect";
+import { useForm } from "react-hook-form";
 
 interface ScanFormProviderProps {
   provider: string;
@@ -19,6 +20,7 @@ export const ScanFormProvider = ({
 }: ScanFormProviderProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [inputType, setInputType] = useState<'curl' | 'manual' | 'http'>("manual");
+  const form = useForm();
 
   const handleProviderChange = (value: string) => {
     setSelectedProvider(value);
@@ -52,8 +54,10 @@ export const ScanFormProvider = ({
         />
       ) : selectedProvider && (
         <ModelSelect 
-          provider={selectedProvider}
-          onModelChange={(model) => onProviderChange(`${selectedProvider}-${model}`)}
+          name="model"
+          label="Model"
+          placeholder="Select a model"
+          control={form.control}
         />
       )}
     </div>
