@@ -1,8 +1,16 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TestCaseForm } from "./TestCaseForm";
 import { ScanExecutionForm } from "./ScanExecutionForm";
+import { useState } from "react";
 
 export const CustomScanDashboard = () => {
+  const [selectedTests, setSelectedTests] = useState<string[]>([]);
+
+  const handleScanSubmit = async (values: any) => {
+    // Handle scan submission
+    console.log("Submitting scan with values:", values);
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <h1 className="text-3xl font-bold">Custom Scan Dashboard</h1>
@@ -21,7 +29,10 @@ export const CustomScanDashboard = () => {
         
         <TabsContent value="run-scan">
           <div className="max-w-2xl mx-auto">
-            <ScanExecutionForm />
+            <ScanExecutionForm 
+              selectedTests={selectedTests}
+              onSubmit={handleScanSubmit}
+            />
           </div>
         </TabsContent>
       </Tabs>
