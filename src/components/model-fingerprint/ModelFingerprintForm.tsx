@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ModelSelect } from "@/components/llm-scanner/providers/ModelSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { ModelFingerprintSession } from "@/integrations/supabase/types/tables/model-fingerprint";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -72,7 +73,7 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
       if (error) throw error;
 
       toast.success("Fingerprinting session created");
-      onSessionCreated(data.id);
+      onSessionCreated((data as ModelFingerprintSession).id);
     } catch (error: any) {
       toast.error("Failed to create session: " + error.message);
     } finally {

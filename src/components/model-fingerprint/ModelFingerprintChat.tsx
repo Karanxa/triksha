@@ -22,7 +22,7 @@ export function ModelFingerprintChat({ sessionId }: ModelFingerprintChatProps) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data as unknown as ModelFingerprintMessage[];
+      return data as ModelFingerprintMessage[];
     },
   });
 
