@@ -54,17 +54,7 @@ export const ModelSelect = ({
           { value: 'codellama', label: 'Code Llama' },
         ];
       default:
-        return [
-          { value: 'gpt-4o', label: 'GPT-4 Opus' },
-          { value: 'gpt-4o-mini', label: 'GPT-4 Opus Mini' },
-          { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-          { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
-          { value: 'gemini-1.0-pro', label: 'Gemini Pro' },
-          { value: 'gemini-1.0-ultra', label: 'Gemini Ultra' },
-          { value: 'llama2', label: 'Llama 2' },
-          { value: 'mistral', label: 'Mistral' },
-          { value: 'codellama', label: 'Code Llama' },
-        ];
+        return [];
     }
   };
 

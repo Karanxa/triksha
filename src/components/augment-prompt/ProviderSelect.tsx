@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
 
 interface ProviderSelectProps {
   value: string;
@@ -15,20 +14,17 @@ interface ProviderSelectProps {
 }
 
 const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
-  const [selectedProvider, setSelectedProvider] = useState("");
-
-  const handleProviderChange = (value: string) => {
-    setSelectedProvider(value);
-    // Reset the full provider value when changing main provider
-    onValueChange("");
+  const handleProviderChange = (newValue: string) => {
+    onValueChange(newValue);
   };
 
   const handleModelChange = (model: string) => {
-    onValueChange(`${selectedProvider}-${model}`);
+    onValueChange(`${value.split('-')[0]}-${model}`);
   };
 
   const getModelsForProvider = () => {
-    switch (selectedProvider) {
+    const provider = value.split('-')[0];
+    switch (provider) {
       case "openai":
         return [
           { value: "gpt-4o", label: "GPT-4 Opus" },
@@ -54,6 +50,8 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
         return [];
     }
   };
+
+  const selectedProvider = value.split('-')[0];
 
   return (
     <div>
