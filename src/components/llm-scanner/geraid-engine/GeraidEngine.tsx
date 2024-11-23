@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ModelSelector } from "./ModelSelector";
 import { ChatMessages } from "./ChatMessages";
-import { Message } from "./types";
+import { Message, GeraidConfig } from "./types";
 
 const questions = [
   "What are your core capabilities and primary functions?",
@@ -19,25 +19,30 @@ export const GeraidEngine = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedProvider, setSelectedProvider] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
+  const [config, setConfig] = useState<GeraidConfig | null>(null);
   const [isStarted, setIsStarted] = useState(false);
+  const [isFingerprinting, setIsFingerprinting] = useState(true);
 
-  const startAnalysis = async (provider: string, model: string) => {
+  const startAnalysis = async (newConfig: GeraidConfig) => {
     setIsStarted(true);
-    setSelectedProvider(provider);
-    setSelectedModel(model);
+    setConfig(newConfig);
     setMessages([
       {
         role: 'system',
-        content: `Starting Geraid-Engine analysis for ${model}`
+        content: `Starting Geraid-Engine analysis for ${newConfig.model}`
       }
     ]);
     await askNextQuestion();
   };
 
   const askNextQuestion = async () => {
+    if (!config) return;
+    
     if (currentStep >= questions.length) {
+      if (isFingerprinting) {
+        setIsFingerprinting(false);
+        await processDataset();
+      }
       return;
     }
 
@@ -45,8 +50,8 @@ export const GeraidEngine = () => {
     try {
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
-          provider: selectedProvider,
-          model: selectedModel,
+          provider: config.provider,
+          model: config.model,
           prompt: questions[currentStep]
         }
       });
@@ -68,14 +73,70 @@ export const GeraidEngine = () => {
     }
   };
 
+  const processDataset = async () => {
+    if (!config?.datasetId) return;
+
+    setIsLoading(true);
+    try {
+      const { data: dataset } = await supabase
+        .from('datasets')
+        .select('*')
+        .eq('id', config.datasetId)
+        .single();
+
+      if (!dataset?.file_path) {
+        throw new Error('Dataset file not found');
+      }
+
+      // Download dataset content
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('datasets')
+        .download(dataset.file_path);
+
+      if (downloadError) throw downloadError;
+
+      const text = await fileData.text();
+      const lines = text.split('\n').filter(Boolean);
+
+      // Process dataset with model responses
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'system', 
+          content: `Processing dataset: ${dataset.name} with ${lines.length} prompts` 
+        }
+      ]);
+
+      // Process each prompt through the model
+      for (const line of lines) {
+        const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
+          body: {
+            provider: config.provider,
+            model: config.model,
+            prompt: line
+          }
+        });
+
+        if (error) throw error;
+
+        setMessages(prev => [
+          ...prev,
+          { role: 'user', content: line },
+          { role: 'assistant', content: data.response }
+        ]);
+      }
+
+      toast.success("Dataset processing complete");
+    } catch (error: any) {
+      console.error('Error processing dataset:', error);
+      toast.error(error.message || "Failed to process dataset");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!isStarted) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <ModelSelector onStart={startAnalysis} />
-        </CardContent>
-      </Card>
-    );
+    return <ModelSelector onStart={startAnalysis} />;
   }
 
   return (
@@ -89,12 +150,15 @@ export const GeraidEngine = () => {
 
       <div className="flex justify-end">
         <Button
-          onClick={askNextQuestion}
-          disabled={isLoading || currentStep >= questions.length}
+          onClick={isFingerprinting ? askNextQuestion : processDataset}
+          disabled={isLoading || (!isFingerprinting && !config?.datasetId)}
         >
-          {currentStep >= questions.length
-            ? "Analysis Complete"
-            : "Continue Analysis"}
+          {isLoading ? "Processing..." : 
+           isFingerprinting ? 
+             currentStep >= questions.length ? 
+               "Start Dataset Analysis" : 
+               "Continue Analysis" :
+             "Process Dataset"}
         </Button>
       </div>
     </div>
