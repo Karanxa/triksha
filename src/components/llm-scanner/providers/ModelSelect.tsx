@@ -1,4 +1,4 @@
-import { Control, Controller } from "react-hook-form";
+import { Control, Controller, useFormContext } from "react-hook-form";
 import {
   FormControl,
   FormField,
@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/select";
 
 export interface ModelSelectProps {
-  control: Control<any>;
   name: string;
   label: string;
   placeholder: string;
@@ -23,13 +22,14 @@ export interface ModelSelectProps {
 }
 
 export const ModelSelect = ({
-  control,
   name,
   label,
   placeholder,
   provider,
   onModelChange,
 }: ModelSelectProps) => {
+  const form = useFormContext();
+
   const getModelOptions = () => {
     switch (provider) {
       case 'openai':
@@ -60,7 +60,7 @@ export const ModelSelect = ({
 
   return (
     <FormField
-      control={control}
+      control={form.control}
       name={name}
       render={({ field }) => (
         <FormItem>
