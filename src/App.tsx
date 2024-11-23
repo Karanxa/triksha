@@ -13,7 +13,6 @@ import AugmentPrompt from "@/pages/AugmentPrompt";
 import FineTuning from "@/pages/FineTuning";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
-import Geraide from "@/pages/Geraide";
 
 function App() {
   return (
@@ -40,7 +39,6 @@ function App() {
                 <Route path="/augment-prompt" element={<AugmentPrompt />} />
                 <Route path="/fine-tuning" element={<FineTuning />} />
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/geraide" element={<Geraide />} />
               </Route>
             </Route>
           </Routes>
