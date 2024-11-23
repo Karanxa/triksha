@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { ModelSelector } from "./ModelSelector";
 import { ChatMessages } from "./ChatMessages";
 import { Message, GeraidConfig, Phase, FingerPrintResult } from "./types";
-import { augmentPrompt } from "./utils/promptAugmentation";
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -38,7 +37,13 @@ export const GeraidEngine = () => {
   const runFingerprinting = async (config: GeraidConfig) => {
     setIsLoading(true);
     try {
-      const results: Record<string, string> = {};
+      const results: FingerPrintResult = {
+        capabilities: '',
+        boundaries: '',
+        training: '',
+        languages: '',
+        safety: ''
+      };
       
       // Process all questions sequentially
       for (const question of FINGERPRINTING_QUESTIONS) {
@@ -75,7 +80,7 @@ export const GeraidEngine = () => {
       }
 
       // Set fingerprint results for phase 2
-      setFingerprintResults(results as FingerPrintResult);
+      setFingerprintResults(results);
       
       // Add completion message
       setMessages(prev => [
@@ -130,9 +135,10 @@ export const GeraidEngine = () => {
         }
       ]);
 
-      // Process each prompt through augmentation and model
+      // Process each prompt
       for (const prompt of prompts) {
-        const augmentedPrompt = await augmentPrompt(prompt, fingerprintResults);
+        // TODO: Implement prompt augmentation based on fingerprint results
+        const augmentedPrompt = prompt; // This will be enhanced in the next iteration
         
         const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
           body: {
@@ -170,7 +176,7 @@ export const GeraidEngine = () => {
       <Card>
         <CardContent className="p-4">
           <h3 className="text-lg font-medium mb-4">
-            Geraid-Engine - {phase === 'fingerprinting' ? 'Phase 1: Fingerprinting' : 'Phase 2: Dataset Analysis'}
+            Geraid-Engine Analysis - {phase === 'fingerprinting' ? 'Phase 1: Fingerprinting' : 'Phase 2: Dataset Analysis'}
           </h3>
           <ChatMessages messages={messages} isLoading={isLoading} />
         </CardContent>
@@ -180,7 +186,6 @@ export const GeraidEngine = () => {
         {phase === 'fingerprinting' && !isLoading && fingerprintResults && (
           <Button
             onClick={startDatasetAnalysis}
-            disabled={isLoading}
           >
             Continue Analysis
           </Button>
