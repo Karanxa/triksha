@@ -3,18 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { augmentPrompt } from "../utils/promptAugmentation";
-import { processBatchesWithConcurrency } from "../utils/batchProcessor";
+import { processDatasetPrompts, augmentPrompts } from "@/utils/promptAugmentation";
 import { FingerPrintResult } from "../types";
-
-interface DatasetMetadata {
-  prompt: string;
-  [key: string]: any;
-}
 
 interface DatasetAnalysisProps {
   config: {
     datasetId: string;
+    provider: string;
+    model: string;
   };
   fingerprint: FingerPrintResult;
 }
@@ -22,69 +18,84 @@ interface DatasetAnalysisProps {
 export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
   const [progress, setProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<Array<{
+    original: string;
+    augmented: string;
+    response?: string;
+    error?: string;
+  }>>([]);
 
   useEffect(() => {
-    const processDataset = async () => {
+    const analyzeDataset = async () => {
       setIsProcessing(true);
-      setError(null);
+      setProgress(0);
       
       try {
-        const { data: dataset, error: datasetError } = await supabase
-          .from('datasets')
-          .select('*')
-          .eq('id', config.datasetId)
+        // Get user's API key
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('api_keys')
           .single();
 
-        if (datasetError) {
-          throw new Error('Failed to fetch dataset');
+        if (!profile?.api_keys?.openai) {
+          throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
 
-        const metadata = dataset.metadata as { rows: DatasetMetadata[] };
-
-        if (!metadata?.rows || !Array.isArray(metadata.rows)) {
-          throw new Error('No valid prompts found in dataset');
+        // Get original prompts from dataset
+        const originalPrompts = await processDatasetPrompts(config.datasetId);
+        if (originalPrompts.length === 0) {
+          throw new Error('No prompts found in dataset');
         }
 
-        const extractedPrompts = metadata.rows
-          .map(row => row.prompt)
-          .filter(Boolean);
+        setProgress(20);
 
-        if (extractedPrompts.length === 0) {
-          throw new Error('No valid prompts found in dataset');
+        // Augment prompts using OpenAI
+        const augmentedPrompts = await augmentPrompts(originalPrompts, profile.api_keys.openai);
+        setProgress(50);
+
+        // Process each prompt with the target model
+        const allResults = [];
+        for (let i = 0; i < originalPrompts.length; i++) {
+          try {
+            const response = await supabase.functions.invoke('scan-llm', {
+              body: {
+                prompts: [augmentedPrompts[i]],
+                provider: config.provider,
+                model: config.model
+              }
+            });
+
+            allResults.push({
+              original: originalPrompts[i],
+              augmented: augmentedPrompts[i],
+              response: response.data?.results?.[0]?.model_response,
+              error: response.error?.message
+            });
+          } catch (error) {
+            allResults.push({
+              original: originalPrompts[i],
+              augmented: augmentedPrompts[i],
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+
+          // Update progress
+          setProgress(50 + Math.floor((i + 1) / originalPrompts.length * 50));
         }
 
-        const augmentedPrompts = await processBatchesWithConcurrency(
-          extractedPrompts,
-          5,
-          async (prompt) => augmentPrompt(prompt, fingerprint),
-          (progress) => setProgress(progress)
-        );
-
-        setResults(augmentedPrompts);
+        setResults(allResults);
         toast.success('Dataset analysis complete');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to process dataset';
-        setError(message);
         toast.error(message);
       } finally {
         setIsProcessing(false);
+        setProgress(100);
       }
     };
 
-    processDataset();
-  }, [config.datasetId, fingerprint]);
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="py-4">
-          <div className="text-red-500">{error}</div>
-        </CardContent>
-      </Card>
-    );
-  }
+    analyzeDataset();
+  }, [config]);
 
   return (
     <div className="space-y-4">
@@ -106,10 +117,28 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
         <Card>
           <CardContent className="py-4">
             <h3 className="text-lg font-medium mb-4">Analysis Results</h3>
-            <div className="space-y-2">
+            <div className="space-y-4">
               {results.map((result, index) => (
-                <div key={index} className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm">{result}</p>
+                <div key={index} className="border rounded-lg p-4 space-y-2">
+                  <div>
+                    <h4 className="font-medium">Original Prompt:</h4>
+                    <p className="text-sm text-muted-foreground">{result.original}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Augmented Prompt:</h4>
+                    <p className="text-sm text-muted-foreground">{result.augmented}</p>
+                  </div>
+                  {result.response && (
+                    <div>
+                      <h4 className="font-medium">Model Response:</h4>
+                      <p className="text-sm text-muted-foreground">{result.response}</p>
+                    </div>
+                  )}
+                  {result.error && (
+                    <div className="text-red-500 text-sm">
+                      Error: {result.error}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
