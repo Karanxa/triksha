@@ -5,3 +5,4 @@ export * from './tables/fine-tuning-jobs';
 export * from './tables/llm-scans';
 export * from './tables/profiles';
 export * from './tables/prompts';
+export * from './tables/model-fingerprint';
