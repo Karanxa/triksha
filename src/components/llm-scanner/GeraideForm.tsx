@@ -4,34 +4,38 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import ProviderSelect from "@/components/augment-prompt/ProviderSelect";
 import { DatasetSelector } from "./DatasetSelector";
+import { GeraideChatbot } from "./GeraideChatbot";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
-import { TablesInsert } from "@/integrations/supabase/types";
 
 export const GeraideForm = () => {
   const session = useSession();
   const [provider, setProvider] = useState("");
   const [selectedDataset, setSelectedDataset] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
+  const [fingerprintResults, setFingerprintResults] = useState<any>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleStartGeraide = () => {
+    if (!provider || selectedDataset.length === 0) {
+      toast.error("Please select a provider and dataset first");
+      return;
+    }
+    setShowChatbot(true);
+  };
+
+  const handleFingerprintComplete = async (results: any) => {
     if (!session?.user?.id) {
       toast.error("You must be logged in to start a scan");
       return;
     }
 
-    if (!provider || selectedDataset.length === 0) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
+    setFingerprintResults(results);
     setIsLoading(true);
 
     try {
       const [providerName, model] = provider.split('-');
 
-      // Create the scan record
       const { data: scan, error: scanError } = await supabase
         .from('geraide_scans')
         .insert({
@@ -40,38 +44,37 @@ export const GeraideForm = () => {
           provider: providerName,
           model,
           dataset_id: selectedDataset[0],
-          status: 'pending'
+          status: 'fingerprinting_complete',
+          results: {
+            fingerprint: results
+          }
         })
         .select()
         .single();
 
       if (scanError) throw scanError;
 
-      // Start the scan processing
-      const response = await supabase.functions.invoke('process-geraide-scan', {
-        body: {
-          scanId: scan.id,
-          provider: providerName,
-          model,
-          datasetId: selectedDataset[0]
-        }
-      });
-
-      if (response.error) throw response.error;
-
-      toast.success("Geraide scan started successfully");
-      setProvider("");
-      setSelectedDataset([]);
+      toast.success("Fingerprinting completed successfully");
     } catch (error: any) {
-      console.error("Error starting Geraide scan:", error);
-      toast.error("Failed to start scan: " + error.message);
+      console.error("Error saving fingerprint results:", error);
+      toast.error("Failed to save fingerprint results: " + error.message);
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (showChatbot) {
+    return (
+      <GeraideChatbot
+        provider={provider.split('-')[0]}
+        model={provider.split('-')[1]}
+        onFingerprint={handleFingerprintComplete}
+      />
+    );
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <ProviderSelect
         value={provider}
         onValueChange={setProvider}
@@ -90,12 +93,12 @@ export const GeraideForm = () => {
       </div>
 
       <Button 
-        type="submit" 
+        onClick={handleStartGeraide}
         className="w-full"
-        disabled={isLoading}
+        disabled={isLoading || !provider || selectedDataset.length === 0}
       >
-        {isLoading ? "Starting Scan..." : "Start Geraide Scan"}
+        Start Geraide Analysis
       </Button>
-    </form>
+    </div>
   );
 };
