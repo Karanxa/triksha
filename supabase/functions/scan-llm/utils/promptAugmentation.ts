@@ -1,4 +1,4 @@
-import { FingerPrintResult } from "../types";
+import { FingerPrintResult } from "../types.ts";
 
 export async function augmentPrompt(
   prompt: string,
