@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { ModelSelector } from "./ModelSelector";
-import { Chat } from "./components/Chat";
-import { DatasetAnalysis } from "./components/DatasetAnalysis";
 import { Phase, FingerPrintResult } from "./types";
-import { AnalysisProgress } from "./components/AnalysisProgress";
+import { InitialPhase } from "./components/InitialPhase";
+import { FingerPrintPhase } from "./components/FingerPrintPhase";
+import { DatasetAnalysis } from "./components/DatasetAnalysis";
+import { toast } from "sonner";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -15,45 +15,60 @@ export const GeraidEngine = () => {
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
   const [fingerprintProgress, setFingerprintProgress] = useState(0);
 
-  const startAnalysis = async (newConfig: typeof config) => {
-    setPhase("fingerprinting");
-    setConfig(newConfig);
+  const handleStart = async (newConfig: typeof config) => {
+    try {
+      setConfig(newConfig);
+      setPhase("fingerprinting");
+    } catch (error) {
+      toast.error("Failed to start analysis");
+      setPhase("not_started");
+    }
   };
 
   const handleFingerprintComplete = (results: FingerPrintResult) => {
-    setFingerprintResults(results);
-    setPhase("dataset_analysis");
+    try {
+      setFingerprintResults(results);
+      setPhase("dataset_analysis");
+    } catch (error) {
+      toast.error("Failed to complete fingerprinting");
+      setPhase("not_started");
+    }
   };
 
   const handleFingerprintProgress = (progress: number) => {
     setFingerprintProgress(progress);
   };
 
-  if (phase === "not_started") {
-    return <ModelSelector onStart={startAnalysis} />;
-  }
+  const renderPhase = () => {
+    switch (phase) {
+      case "not_started":
+        return <InitialPhase onStart={handleStart} />;
+      
+      case "fingerprinting":
+        return config ? (
+          <FingerPrintPhase
+            config={config}
+            onComplete={handleFingerprintComplete}
+            onProgress={handleFingerprintProgress}
+          />
+        ) : null;
+      
+      case "dataset_analysis":
+        return config && fingerprintResults ? (
+          <DatasetAnalysis 
+            config={config}
+            fingerprint={fingerprintResults}
+          />
+        ) : null;
+      
+      default:
+        return null;
+    }
+  };
 
-  if (phase === "fingerprinting") {
-    return (
-      <div className="space-y-4">
-        <AnalysisProgress phase="fingerprinting" progress={fingerprintProgress} />
-        <Chat 
-          config={config} 
-          onComplete={handleFingerprintComplete}
-          onProgress={handleFingerprintProgress}
-        />
-      </div>
-    );
-  }
-
-  if (phase === "dataset_analysis" && config && fingerprintResults) {
-    return (
-      <DatasetAnalysis 
-        config={config}
-        fingerprint={fingerprintResults}
-      />
-    );
-  }
-
-  return null;
+  return (
+    <div className="space-y-6">
+      {renderPhase()}
+    </div>
+  );
 };

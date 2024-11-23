@@ -7,6 +7,11 @@ import { augmentPrompt } from "../utils/promptAugmentation";
 import { processBatchesWithConcurrency } from "../utils/batchProcessor";
 import { FingerPrintResult } from "../types";
 
+interface DatasetMetadata {
+  prompt: string;
+  [key: string]: any;
+}
+
 interface DatasetAnalysisProps {
   config: {
     datasetId: string;
@@ -14,19 +19,17 @@ interface DatasetAnalysisProps {
   fingerprint: FingerPrintResult;
 }
 
-interface DatasetMetadata {
-  prompt: string;
-  [key: string]: any;
-}
-
 export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
   const [progress, setProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const processDataset = async () => {
       setIsProcessing(true);
+      setError(null);
+      
       try {
         const { data: dataset, error: datasetError } = await supabase
           .from('datasets')
@@ -35,29 +38,26 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
           .single();
 
         if (datasetError) {
-          toast.error('Failed to fetch dataset');
-          return;
+          throw new Error('Failed to fetch dataset');
         }
 
         const metadata = dataset.metadata as { rows: DatasetMetadata[] };
 
         if (!metadata?.rows || !Array.isArray(metadata.rows)) {
-          toast.error('No valid prompts found in dataset');
-          return;
+          throw new Error('No valid prompts found in dataset');
         }
 
-        // Extract prompts from the rows
-        const extractedPrompts = metadata.rows.map(row => row.prompt).filter(Boolean);
+        const extractedPrompts = metadata.rows
+          .map(row => row.prompt)
+          .filter(Boolean);
 
         if (extractedPrompts.length === 0) {
-          toast.error('No valid prompts found in dataset');
-          return;
+          throw new Error('No valid prompts found in dataset');
         }
 
-        // Process prompts in batches of 5 with progress tracking
         const augmentedPrompts = await processBatchesWithConcurrency(
           extractedPrompts,
-          5, // Process 5 prompts concurrently
+          5,
           async (prompt) => augmentPrompt(prompt, fingerprint),
           (progress) => setProgress(progress)
         );
@@ -65,8 +65,9 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
         setResults(augmentedPrompts);
         toast.success('Dataset analysis complete');
       } catch (error) {
-        console.error('Error processing dataset:', error);
-        toast.error('Failed to process dataset');
+        const message = error instanceof Error ? error.message : 'Failed to process dataset';
+        setError(message);
+        toast.error(message);
       } finally {
         setIsProcessing(false);
       }
@@ -74,6 +75,16 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
 
     processDataset();
   }, [config.datasetId, fingerprint]);
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="py-4">
+          <div className="text-red-500">{error}</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
