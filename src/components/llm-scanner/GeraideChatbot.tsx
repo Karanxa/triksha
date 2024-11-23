@@ -1,17 +1,12 @@
 import { useState, useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-
-interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+import { ChatMessages } from "./chat/ChatMessages";
+import { Message } from "./geraid-engine/types";
 
 interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
@@ -90,6 +85,12 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
     setIsLoading(true);
     try {
+      // Add the question immediately
+      setMessages(prev => [
+        ...prev,
+        { role: 'user', content: questions[currentStep] }
+      ]);
+
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider: selectedProvider,
@@ -100,9 +101,11 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
       if (error) throw error;
 
+      // Add response after a small delay to simulate natural conversation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       setMessages(prev => [
         ...prev,
-        { role: 'user', content: questions[currentStep] },
         { role: 'assistant', content: data.response }
       ]);
 
@@ -114,6 +117,13 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (isStarted && !isLoading && currentStep < questions.length) {
+      const timer = setTimeout(askNextQuestion, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, isLoading, isStarted]);
 
   const analyzeResponses = (messages: Message[]) => {
     return {
@@ -199,35 +209,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
       <Card>
         <CardContent className="p-4">
           <h3 className="text-lg font-medium mb-4">Geraide-E Analysis</h3>
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-4">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : message.role === 'system'
-                        ? 'bg-muted text-muted-foreground'
-                        : 'bg-accent'
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              )}
-            </div>
-          </ScrollArea>
+          <ChatMessages messages={messages} isLoading={isLoading} />
         </CardContent>
       </Card>
 
