@@ -21,6 +21,7 @@ export const GeraidEngine = () => {
   const [config, setConfig] = useState<GeraidConfig | null>(null);
   const [phase, setPhase] = useState<Phase>('not_started');
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
   const startAnalysis = async (newConfig: GeraidConfig) => {
     setPhase('fingerprinting');
@@ -31,70 +32,78 @@ export const GeraidEngine = () => {
         content: `Starting Geraid-Engine fingerprinting phase for ${newConfig.model}`
       }
     ]);
-    await runFingerprinting(newConfig);
+    await processNextQuestion();
   };
 
-  const runFingerprinting = async (config: GeraidConfig) => {
+  const processNextQuestion = async () => {
+    if (!config || currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
+      return;
+    }
+
     setIsLoading(true);
+    const question = FINGERPRINTING_QUESTIONS[currentQuestionIndex];
+
+    // Add the question to messages immediately
+    setMessages(prev => [...prev, { role: 'user', content: question }]);
+
     try {
-      const results: FingerPrintResult = {
-        capabilities: '',
-        boundaries: '',
-        training: '',
-        languages: '',
-        safety: ''
-      };
-      
-      // Process all questions sequentially
-      for (const question of FINGERPRINTING_QUESTIONS) {
-        try {
-          const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
-            body: {
-              provider: config.provider,
-              model: config.model,
-              prompt: question
-            }
-          });
+      const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
+        body: {
+          provider: config.provider,
+          model: config.model,
+          prompt: question
+        }
+      });
 
-          if (error) throw error;
+      if (error) throw error;
 
+      // Add the response after a small delay to simulate natural conversation
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+        
+        // Store response in results
+        const results: FingerPrintResult = fingerprintResults || {
+          capabilities: '',
+          boundaries: '',
+          training: '',
+          languages: '',
+          safety: ''
+        };
+
+        // Map question to corresponding result key
+        const questionKey = question.toLowerCase().includes('capabilities') ? 'capabilities'
+          : question.toLowerCase().includes('ethical') ? 'boundaries'
+          : question.toLowerCase().includes('training') ? 'training'
+          : question.toLowerCase().includes('languages') ? 'languages'
+          : 'safety';
+
+        results[questionKey] = data.response;
+        setFingerprintResults(results);
+
+        // Move to next question
+        setCurrentQuestionIndex(prev => prev + 1);
+        setIsLoading(false);
+
+        // If this was the last question, add completion message
+        if (currentQuestionIndex === FINGERPRINTING_QUESTIONS.length - 1) {
           setMessages(prev => [
             ...prev,
-            { role: 'user', content: question },
-            { role: 'assistant', content: data.response }
+            {
+              role: 'system',
+              content: 'Fingerprinting phase complete. Click "Continue Analysis" to proceed with dataset analysis.'
+            }
           ]);
-
-          // Store response for analysis
-          const questionKey = question.toLowerCase().includes('capabilities') ? 'capabilities'
-            : question.toLowerCase().includes('ethical') ? 'boundaries'
-            : question.toLowerCase().includes('training') ? 'training'
-            : question.toLowerCase().includes('languages') ? 'languages'
-            : 'safety';
-
-          results[questionKey] = data.response;
-
-        } catch (error) {
-          console.error('Error processing question:', error);
-          toast.error(`Failed to process question: ${error.message}`);
+        } else {
+          // Process next question after a short delay
+          setTimeout(() => {
+            processNextQuestion();
+          }, 1000);
         }
-      }
+      }, 500);
 
-      // Set fingerprint results for phase 2
-      setFingerprintResults(results);
-      
-      // Add completion message
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'system',
-          content: 'Fingerprinting phase complete. Click "Continue Analysis" to proceed with dataset analysis.'
-        }
-      ]);
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in fingerprinting:', error);
-      toast.error("Failed to complete fingerprinting phase");
-    } finally {
+      toast.error(error.message || "Failed to process question");
       setIsLoading(false);
     }
   };
@@ -183,7 +192,7 @@ export const GeraidEngine = () => {
       </Card>
 
       <div className="flex justify-end">
-        {phase === 'fingerprinting' && !isLoading && fingerprintResults && (
+        {phase === 'fingerprinting' && !isLoading && fingerprintResults && currentQuestionIndex === FINGERPRINTING_QUESTIONS.length && (
           <Button
             onClick={startDatasetAnalysis}
           >
