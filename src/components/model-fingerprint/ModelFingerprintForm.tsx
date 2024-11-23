@@ -80,7 +80,8 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
             <SelectContent>
               <SelectItem value="openai">OpenAI</SelectItem>
               <SelectItem value="anthropic">Anthropic</SelectItem>
-              <SelectItem value="gemini">Google Gemini</SelectItem>
+              <SelectItem value="google">Google AI</SelectItem>
+              <SelectItem value="ollama">Ollama (Custom Endpoint)</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -104,8 +105,15 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
                   <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
                 </>
               )}
-              {provider === 'gemini' && (
+              {provider === 'google' && (
                 <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
+              )}
+              {provider === 'ollama' && (
+                <>
+                  <SelectItem value="llama2">Llama 2</SelectItem>
+                  <SelectItem value="mistral">Mistral</SelectItem>
+                  <SelectItem value="codellama">Code Llama</SelectItem>
+                </>
               )}
             </SelectContent>
           </Select>
