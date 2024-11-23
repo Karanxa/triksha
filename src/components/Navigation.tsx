@@ -15,6 +15,7 @@ const Navigation = () => {
   const links = [
     { href: "/", label: "Home" },
     { href: "/llm-scanner", label: "Scans" },
+    { href: "/model-fingerprint", label: "Fingerprinting" },
     { href: "/llm-results", label: "Results" },
     { href: "/datasets", label: "Datasets" },
     { href: "/augment-prompt", label: "Augmentation" },
