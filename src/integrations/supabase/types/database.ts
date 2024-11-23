@@ -3,7 +3,6 @@ import { FineTuningJobsTable } from './tables/fine-tuning-jobs';
 import { LLMScansTable } from './tables/llm-scans';
 import { ProfilesTable } from './tables/profiles';
 import { PromptsTable } from './tables/prompts';
-import { GeraideScanTable } from './tables/geraide-scans';
 
 export interface Database {
   public: {
@@ -13,7 +12,6 @@ export interface Database {
       llm_scans: LLMScansTable;
       profiles: ProfilesTable;
       prompts: PromptsTable;
-      geraide_scans: GeraideScanTable;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
