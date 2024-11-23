@@ -6,6 +6,7 @@ import { ModelSelect } from "@/components/llm-scanner/providers/ModelSelect";
 import { ScanFormProvider } from "@/components/llm-scanner/ScanFormProvider";
 import { DatasetSelector } from "@/components/llm-scanner/DatasetSelector";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types/database";
 
 export const GeraideScanForm = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export const GeraideScanForm = () => {
           provider,
           dataset_id: selectedDatasetId,
           status: 'pending'
-        });
+        } satisfies Partial<Database['public']['Tables']['geraide_scans']['Insert']>);
 
       if (error) throw error;
 
