@@ -14,7 +14,6 @@ import FineTuning from "@/pages/FineTuning";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
 import CustomScan from "@/pages/CustomScan";
-import ModelFingerprint from "@/pages/ModelFingerprint";
 
 function App() {
   return (
@@ -42,7 +41,6 @@ function App() {
                 <Route path="/fine-tuning" element={<FineTuning />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/geraid" element={<CustomScan />} />
-                <Route path="/model-fingerprint" element={<ModelFingerprint />} />
               </Route>
             </Route>
           </Routes>
