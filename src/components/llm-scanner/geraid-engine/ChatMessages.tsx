@@ -27,7 +27,7 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
                   : 'bg-accent'
               }`}
             >
-              <p className="text-sm">{message.content}</p>
+              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
             </div>
           </div>
         ))}

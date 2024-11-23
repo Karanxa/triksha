@@ -19,7 +19,6 @@ const FINGERPRINTING_QUESTIONS = [
 export const GeraidEngine = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [config, setConfig] = useState<GeraidConfig | null>(null);
   const [phase, setPhase] = useState<Phase>('not_started');
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
@@ -33,45 +32,63 @@ export const GeraidEngine = () => {
         content: `Starting Geraid-Engine fingerprinting phase for ${newConfig.model}`
       }
     ]);
-    await askNextQuestion();
+    await runFingerprinting(newConfig);
   };
 
-  const askNextQuestion = async () => {
-    if (!config) return;
-    
-    if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
-      // Fingerprinting phase complete
-      const results = analyzeFingerprinting(messages);
-      setFingerprintResults(results);
-      setMessages(prev => [...prev, {
-        role: 'system',
-        content: 'Fingerprinting phase complete. Click "Continue Analysis" to proceed with dataset analysis.'
-      }]);
-      return;
-    }
-
+  const runFingerprinting = async (config: GeraidConfig) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
-        body: {
-          provider: config.provider,
-          model: config.model,
-          prompt: FINGERPRINTING_QUESTIONS[currentStep]
+      const results: Record<string, string> = {};
+      
+      // Process all questions sequentially
+      for (const question of FINGERPRINTING_QUESTIONS) {
+        try {
+          const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
+            body: {
+              provider: config.provider,
+              model: config.model,
+              prompt: question
+            }
+          });
+
+          if (error) throw error;
+
+          setMessages(prev => [
+            ...prev,
+            { role: 'user', content: question },
+            { role: 'assistant', content: data.response }
+          ]);
+
+          // Store response for analysis
+          const questionKey = question.toLowerCase().includes('capabilities') ? 'capabilities'
+            : question.toLowerCase().includes('ethical') ? 'boundaries'
+            : question.toLowerCase().includes('training') ? 'training'
+            : question.toLowerCase().includes('languages') ? 'languages'
+            : 'safety';
+
+          results[questionKey] = data.response;
+
+        } catch (error) {
+          console.error('Error processing question:', error);
+          toast.error(`Failed to process question: ${error.message}`);
         }
-      });
+      }
 
-      if (error) throw error;
-
+      // Set fingerprint results for phase 2
+      setFingerprintResults(results as FingerPrintResult);
+      
+      // Add completion message
       setMessages(prev => [
         ...prev,
-        { role: 'user', content: FINGERPRINTING_QUESTIONS[currentStep] },
-        { role: 'assistant', content: data.response }
+        {
+          role: 'system',
+          content: 'Fingerprinting phase complete. Click "Continue Analysis" to proceed with dataset analysis.'
+        }
       ]);
 
-      setCurrentStep(prev => prev + 1);
     } catch (error) {
-      console.error('Error in analysis:', error);
-      toast.error("Failed to get model response");
+      console.error('Error in fingerprinting:', error);
+      toast.error("Failed to complete fingerprinting phase");
     } finally {
       setIsLoading(false);
     }
@@ -144,19 +161,6 @@ export const GeraidEngine = () => {
     }
   };
 
-  const analyzeFingerprinting = (messages: Message[]): FingerPrintResult => {
-    // Extract responses from the conversation
-    const responses = messages.filter(m => m.role === 'assistant').map(m => m.content);
-    
-    return {
-      capabilities: responses[0] || '',
-      boundaries: responses[1] || '',
-      training: responses[2] || '',
-      languages: responses[3] || '',
-      safety: responses[4] || ''
-    };
-  };
-
   if (phase === 'not_started') {
     return <ModelSelector onStart={startAnalysis} />;
   }
@@ -173,7 +177,7 @@ export const GeraidEngine = () => {
       </Card>
 
       <div className="flex justify-end">
-        {phase === 'fingerprinting' && currentStep >= FINGERPRINTING_QUESTIONS.length && (
+        {phase === 'fingerprinting' && !isLoading && fingerprintResults && (
           <Button
             onClick={startDatasetAnalysis}
             disabled={isLoading}

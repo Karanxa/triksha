@@ -11,7 +11,13 @@ export interface ProviderModel {
 export interface GeraidConfig {
   provider: string;
   model: string;
-  datasetId: string | null;
+  datasetId: string;
+}
+
+export interface DatasetOption {
+  id: string;
+  name: string;
+  description: string | null;
 }
 
 export interface FingerPrintResult {
