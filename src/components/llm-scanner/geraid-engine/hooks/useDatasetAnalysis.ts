@@ -5,38 +5,27 @@ import { Message, FingerPrintResult } from "../types";
 
 export const useDatasetAnalysis = (
   config: { provider: string; model: string; datasetId: string },
-  fingerprint: FingerPrintResult,
-  isStarted: boolean
+  fingerprint: FingerPrintResult
 ) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<any>(null);
 
   useEffect(() => {
-    if (!isStarted) return;
-
     const analyzeDataset = async () => {
       setIsLoading(true);
       try {
-        // Get dataset content
-        const { data: dataset, error: datasetError } = await supabase
-          .from('datasets')
-          .select('*')
-          .eq('id', config.datasetId)
-          .single();
-
-        if (datasetError) throw datasetError;
-
-        // Add initial message
+        // Initial message
         setMessages([
           {
             role: 'system',
-            content: `Starting dataset analysis for ${dataset.name} using ${config.model}`
+            content: `Starting dataset analysis for ${config.model} using fingerprint results`
           }
         ]);
 
-        // Call the analysis function
-        const { data, error } = await supabase.functions.invoke('process-geraide-scan', {
+        // Process dataset with fingerprint results
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
           body: {
             datasetId: config.datasetId,
             provider: config.provider,
@@ -47,30 +36,38 @@ export const useDatasetAnalysis = (
 
         if (error) throw error;
 
-        // Add analysis results to messages
+        // Update messages and progress as prompts are processed
+        let currentProgress = 0;
+        const updateInterval = setInterval(() => {
+          if (currentProgress < 100) {
+            currentProgress += 10;
+            setProgress(currentProgress);
+          } else {
+            clearInterval(updateInterval);
+          }
+        }, 1000);
+
+        // Add analysis results
         setMessages(prev => [
           ...prev,
           {
             role: 'assistant',
-            content: `Analysis complete. Found ${data.vulnerabilities?.length || 0} potential vulnerabilities.`
-          },
-          {
-            role: 'assistant',
-            content: data.summary || 'No issues found in the dataset.'
+            content: `Analysis complete. Processed ${analysisData.processedPrompts} prompts with fingerprint-based augmentation.`
           }
         ]);
 
-        setIsComplete(true);
+        setResults(analysisData);
       } catch (error) {
         console.error('Dataset analysis error:', error);
         toast.error('Failed to analyze dataset: ' + (error as Error).message);
       } finally {
         setIsLoading(false);
+        setProgress(100);
       }
     };
 
     analyzeDataset();
-  }, [config, fingerprint, isStarted]);
+  }, [config, fingerprint]);
 
-  return { messages, isLoading, isComplete };
+  return { messages, isLoading, progress, results };
 };

@@ -4,7 +4,7 @@ import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
 
-export const Chat = ({ config, onComplete }: ChatProps) => {
+export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
 
@@ -13,6 +13,11 @@ export const Chat = ({ config, onComplete }: ChatProps) => {
       if (!config || isLoading) return;
       
       const success = await processNextQuestion(config.provider, config.model);
+      
+      // Calculate and report progress
+      const totalQuestions = 5; // Total number of fingerprinting questions
+      const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
+      onProgress?.(progress);
       
       if (!success && fingerprintResults) {
         onComplete(fingerprintResults);

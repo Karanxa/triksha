@@ -3,6 +3,7 @@ import { ModelSelector } from "./ModelSelector";
 import { Chat } from "./components/Chat";
 import { DatasetAnalysis } from "./components/DatasetAnalysis";
 import { Phase, FingerPrintResult } from "./types";
+import { AnalysisProgress } from "./components/AnalysisProgress";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -12,6 +13,7 @@ export const GeraidEngine = () => {
     datasetId: string;
   } | null>(null);
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
+  const [fingerprintProgress, setFingerprintProgress] = useState(0);
 
   const startAnalysis = async (newConfig: typeof config) => {
     setPhase("fingerprinting");
@@ -23,16 +25,24 @@ export const GeraidEngine = () => {
     setPhase("dataset_analysis");
   };
 
+  const handleFingerprintProgress = (progress: number) => {
+    setFingerprintProgress(progress);
+  };
+
   if (phase === "not_started") {
     return <ModelSelector onStart={startAnalysis} />;
   }
 
   if (phase === "fingerprinting") {
     return (
-      <Chat 
-        config={config} 
-        onComplete={handleFingerprintComplete} 
-      />
+      <div className="space-y-4">
+        <AnalysisProgress phase="fingerprinting" progress={fingerprintProgress} />
+        <Chat 
+          config={config} 
+          onComplete={handleFingerprintComplete}
+          onProgress={handleFingerprintProgress}
+        />
+      </div>
     );
   }
 
