@@ -6,7 +6,7 @@ export interface GeraideScanTable {
     user_id: string;
     name: string;
     provider: string;
-    model: string | null;
+    model: string;
     dataset_id: string | null;
     status: string;
     results: Json | null;
@@ -18,7 +18,7 @@ export interface GeraideScanTable {
     user_id: string;
     name: string;
     provider: string;
-    model?: string | null;
+    model?: string;
     dataset_id?: string | null;
     status?: string;
     results?: Json | null;
@@ -30,7 +30,7 @@ export interface GeraideScanTable {
     user_id?: string;
     name?: string;
     provider?: string;
-    model?: string | null;
+    model?: string;
     dataset_id?: string | null;
     status?: string;
     results?: Json | null;

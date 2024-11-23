@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
@@ -15,11 +16,42 @@ serve(async (req) => {
     const { provider, model, prompt } = await req.json();
     console.log('Fingerprinting request:', { provider, model, prompt });
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw new Error('No authorization header');
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (userError || !user) throw new Error('Invalid user token');
+
+    // Get user's API keys
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) throw new Error('Failed to fetch user profile');
+    if (!profile?.api_keys) throw new Error('API keys not configured');
+
     let response;
     if (provider === 'openai') {
-      response = await handleOpenAIRequest(prompt, model);
+      const openaiKey = profile.api_keys.openai;
+      if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
+      
+      response = await handleOpenAIRequest(prompt, model, openaiKey);
     } else if (provider === 'anthropic') {
-      response = await handleAnthropicRequest(prompt, model);
+      const anthropicKey = profile.api_keys.anthropic;
+      if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
+      
+      response = await handleAnthropicRequest(prompt, model, anthropicKey);
     } else {
       throw new Error('Unsupported provider');
     }
@@ -40,18 +72,15 @@ serve(async (req) => {
   }
 });
 
-async function handleOpenAIRequest(prompt: string, model: string) {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!openAIApiKey) throw new Error('OpenAI API key not configured');
-
+async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: model,
+      model: model === 'gpt-4o' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     }),
@@ -66,14 +95,11 @@ async function handleOpenAIRequest(prompt: string, model: string) {
   return data.choices[0].message.content;
 }
 
-async function handleAnthropicRequest(prompt: string, model: string) {
-  const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-  if (!anthropicApiKey) throw new Error('Anthropic API key not configured');
-
+async function handleAnthropicRequest(prompt: string, model: string, apiKey: string) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
-      'x-api-key': anthropicApiKey,
+      'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json',
     },
