@@ -7,7 +7,7 @@ import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect
 import { DatasetSelector } from "./DatasetSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
-import { GeraideScanInsert } from "@/integrations/supabase/types/tables";
+import { TablesInsert } from "@/integrations/supabase/types/tables";
 
 export const GeraideForm = () => {
   const session = useSession();
@@ -33,7 +33,7 @@ export const GeraideForm = () => {
     try {
       const [providerName, model] = provider.split('-');
 
-      const scanData: GeraideScanInsert = {
+      const scanData: TablesInsert<'geraide_scans'> = {
         user_id: session.user.id,
         name: `Geraide Scan - ${new Date().toLocaleString()}`,
         provider: providerName,
