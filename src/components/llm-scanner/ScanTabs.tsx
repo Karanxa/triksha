@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScanForm } from "./ScanForm";
-import { GeraideChatbot } from "./GeraideChatbot";
+import { GeraidEngine } from "./geraid-engine/GeraidEngine";
 
 interface ScanTabsProps {
   initialTab?: string;
@@ -20,14 +20,14 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
           value="geraide" 
           className="text-xs md:text-sm whitespace-normal h-auto min-h-[40px] text-center"
         >
-          Geraide-E Analysis
+          Geraid-Engine Analysis
         </TabsTrigger>
       </TabsList>
       <TabsContent value="basic" className="mt-0">
         <ScanForm />
       </TabsContent>
       <TabsContent value="geraide" className="mt-0">
-        <GeraideChatbot />
+        <GeraidEngine />
       </TabsContent>
     </Tabs>
   );
