@@ -36,7 +36,7 @@ export function ModelFingerprintForm({ onSessionCreated }: ModelFingerprintFormP
     },
   });
 
-  const { data: datasets, isLoading: datasetsLoading } = useQuery({
+  const { data: datasets } = useQuery({
     queryKey: ['user-datasets'],
     queryFn: async () => {
       const { data, error } = await supabase

@@ -13,7 +13,9 @@ export interface Database {
       llm_scans: LLMScansTable;
       profiles: ProfilesTable;
       prompts: PromptsTable;
-    } & ModelFingerprintTables;
+      model_fingerprint_sessions: ModelFingerprintTables['model_fingerprint_sessions'];
+      model_fingerprint_messages: ModelFingerprintTables['model_fingerprint_messages'];
+    };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: Record<string, never>;
