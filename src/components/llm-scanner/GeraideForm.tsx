@@ -7,7 +7,7 @@ import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect
 import { DatasetSelector } from "./DatasetSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
-import { TablesInsert } from "@/integrations/supabase/types/tables";
+import { TablesInsert } from "@/integrations/supabase/types";
 
 export const GeraideForm = () => {
   const session = useSession();
