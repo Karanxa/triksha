@@ -18,7 +18,7 @@ interface DatasetAnalysisProps {
 }
 
 interface DatasetMetadata {
-  prompts: string[];
+  prompt: string;
   [key: string]: any;
 }
 
@@ -31,27 +31,35 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
 
   useEffect(() => {
     const fetchDataset = async () => {
-      const { data: dataset, error } = await supabase
+      const { data: dataset, error: datasetError } = await supabase
         .from('datasets')
-        .select('metadata')
+        .select('*')
         .eq('id', config.datasetId)
         .single();
 
-      if (error) {
+      if (datasetError) {
         toast.error('Failed to fetch dataset');
         return;
       }
 
-      const metadata = dataset.metadata as DatasetMetadata;
+      const metadata = dataset.metadata as { rows: DatasetMetadata[] };
 
-      if (!metadata?.prompts || !Array.isArray(metadata.prompts)) {
+      if (!metadata?.rows || !Array.isArray(metadata.rows)) {
+        toast.error('No valid prompts found in dataset');
+        return;
+      }
+
+      // Extract prompts from the rows
+      const extractedPrompts = metadata.rows.map(row => row.prompt).filter(Boolean);
+
+      if (extractedPrompts.length === 0) {
         toast.error('No valid prompts found in dataset');
         return;
       }
 
       // Augment all prompts based on fingerprint results
       const augmentedPrompts = await Promise.all(
-        metadata.prompts.map((prompt: string) => 
+        extractedPrompts.map(prompt => 
           augmentPrompt(prompt, fingerprint)
         )
       );
