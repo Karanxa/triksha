@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatMessages } from "../../chat/ChatMessages";
 import { AnalysisProgress } from "./AnalysisProgress";
-import { useDatasetAnalysis } from "../hooks/useDatasetAnalysis";
 import { FingerPrintResult } from "../types";
 import { toast } from "sonner";
 import { augmentPrompt } from "../utils/promptAugmentation";
@@ -16,6 +15,11 @@ interface DatasetAnalysisProps {
     datasetId: string;
   };
   fingerprint: FingerPrintResult;
+}
+
+interface DatasetMetadata {
+  prompts: string[];
+  [key: string]: any;
 }
 
 export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
@@ -38,14 +42,16 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
         return;
       }
 
-      if (!dataset?.metadata?.prompts) {
-        toast.error('No prompts found in dataset');
+      const metadata = dataset.metadata as DatasetMetadata;
+
+      if (!metadata?.prompts || !Array.isArray(metadata.prompts)) {
+        toast.error('No valid prompts found in dataset');
         return;
       }
 
       // Augment all prompts based on fingerprint results
       const augmentedPrompts = await Promise.all(
-        dataset.metadata.prompts.map((prompt: string) => 
+        metadata.prompts.map((prompt: string) => 
           augmentPrompt(prompt, fingerprint)
         )
       );
