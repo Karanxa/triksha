@@ -31,6 +31,22 @@ export interface ModelFingerprintSessionsTable {
     results?: Json | null;
   };
   Update: Partial<Omit<ModelFingerprintSession, 'id'>>;
+  Relationships: [
+    {
+      foreignKeyName: "model_fingerprint_sessions_user_id_fkey";
+      columns: ["user_id"];
+      isOneToOne: false;
+      referencedRelation: "profiles";
+      referencedColumns: ["id"];
+    },
+    {
+      foreignKeyName: "model_fingerprint_sessions_dataset_id_fkey";
+      columns: ["dataset_id"];
+      isOneToOne: false;
+      referencedRelation: "datasets";
+      referencedColumns: ["id"];
+    }
+  ];
 }
 
 export interface ModelFingerprintMessagesTable {
@@ -41,4 +57,13 @@ export interface ModelFingerprintMessagesTable {
     updated_at?: string;
   };
   Update: Partial<Omit<ModelFingerprintMessage, 'id'>>;
+  Relationships: [
+    {
+      foreignKeyName: "model_fingerprint_messages_session_id_fkey";
+      columns: ["session_id"];
+      isOneToOne: false;
+      referencedRelation: "model_fingerprint_sessions";
+      referencedColumns: ["id"];
+    }
+  ];
 }
