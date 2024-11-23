@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { processDatasetPrompts, augmentPrompts } from "@/utils/promptAugmentation";
+import { AnalysisProgress } from "./AnalysisProgress";
+import { ChatMessages } from "../../chat/ChatMessages";
+import { Message } from "../types";
 import { FingerPrintResult } from "../types";
 
 interface DatasetAnalysisProps {
@@ -18,12 +20,7 @@ interface DatasetAnalysisProps {
 export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
   const [progress, setProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<Array<{
-    original: string;
-    augmented: string;
-    response?: string;
-    error?: string;
-  }>>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const analyzeDataset = async () => {
@@ -31,63 +28,136 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
       setProgress(0);
       
       try {
-        // Get user's API key
+        // Get user's profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('api_keys')
           .single();
 
-        if (!profile?.api_keys?.openai) {
+        const apiKeys = profile?.api_keys as Record<string, string>;
+        if (!apiKeys?.openai) {
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
 
+        // Add initial system message
+        setMessages([{
+          role: 'system',
+          content: `Starting dataset analysis for ${config.model}`
+        }]);
+
         // Get original prompts from dataset
-        const originalPrompts = await processDatasetPrompts(config.datasetId);
-        if (originalPrompts.length === 0) {
-          throw new Error('No prompts found in dataset');
+        const { data: dataset } = await supabase
+          .from('datasets')
+          .select('*')
+          .eq('id', config.datasetId)
+          .single();
+
+        if (!dataset?.file_path) {
+          throw new Error('Dataset file not found');
         }
+
+        // Download and process CSV
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from('datasets')
+          .download(dataset.file_path);
+
+        if (downloadError) throw downloadError;
+
+        const text = await fileData.text();
+        const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+        const headers = lines[0].toLowerCase().split(',');
+        const promptIndex = headers.findIndex(header => 
+          header === 'prompts' || header === 'prompt' || header === 'text'
+        );
+
+        if (promptIndex === -1) {
+          throw new Error('No prompt column found in CSV');
+        }
+
+        const originalPrompts = lines.slice(1)
+          .map(line => {
+            const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+            return values[promptIndex]?.replace(/^"|"$/g, '').trim();
+          })
+          .filter(Boolean);
 
         setProgress(20);
 
-        // Augment prompts using OpenAI
-        const augmentedPrompts = await augmentPrompts(originalPrompts, profile.api_keys.openai);
-        setProgress(50);
-
-        // Process each prompt with the target model
-        const allResults = [];
+        // Process each prompt
         for (let i = 0; i < originalPrompts.length; i++) {
+          const originalPrompt = originalPrompts[i];
+          
+          // Add original prompt to chat
+          setMessages(prev => [...prev, {
+            role: 'user',
+            content: `Original prompt: ${originalPrompt}`
+          }]);
+
+          // Get augmented prompt
+          const augmentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKeys.openai}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'gpt-4',
+              messages: [{
+                role: 'system',
+                content: `You are an expert in prompt engineering. Enhance this prompt while maintaining its core intent: ${originalPrompt}`
+              }],
+              temperature: 0.7,
+            }),
+          });
+
+          if (!augmentResponse.ok) {
+            throw new Error(`OpenAI API error: ${await augmentResponse.text()}`);
+          }
+
+          const augmentData = await augmentResponse.json();
+          const augmentedPrompt = augmentData.choices[0].message.content;
+
+          // Add augmented prompt to chat
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: `Enhanced prompt: ${augmentedPrompt}`
+          }]);
+
+          // Test with target model
           try {
-            const response = await supabase.functions.invoke('scan-llm', {
+            const { data: modelResponse, error: modelError } = await supabase.functions.invoke('scan-llm', {
               body: {
-                prompts: [augmentedPrompts[i]],
+                prompts: [augmentedPrompt],
                 provider: config.provider,
                 model: config.model
               }
             });
 
-            allResults.push({
-              original: originalPrompts[i],
-              augmented: augmentedPrompts[i],
-              response: response.data?.results?.[0]?.model_response,
-              error: response.error?.message
-            });
+            if (modelError) throw modelError;
+
+            setMessages(prev => [...prev, {
+              role: 'system',
+              content: `Model response: ${modelResponse.results[0].model_response}`
+            }]);
           } catch (error) {
-            allResults.push({
-              original: originalPrompts[i],
-              augmented: augmentedPrompts[i],
-              error: error instanceof Error ? error.message : 'Unknown error'
-            });
+            setMessages(prev => [...prev, {
+              role: 'system',
+              content: `Error testing prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
+            }]);
           }
 
           // Update progress
-          setProgress(50 + Math.floor((i + 1) / originalPrompts.length * 50));
+          setProgress(20 + Math.floor((i + 1) / originalPrompts.length * 80));
         }
 
-        setResults(allResults);
         toast.success('Dataset analysis complete');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to process dataset';
         toast.error(message);
+        setMessages(prev => [...prev, {
+          role: 'system',
+          content: `Error: ${message}`
+        }]);
       } finally {
         setIsProcessing(false);
         setProgress(100);
@@ -95,56 +165,14 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
     };
 
     analyzeDataset();
-  }, [config]);
+  }, [config, fingerprint]);
 
   return (
     <div className="space-y-4">
-      {isProcessing && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Processing dataset...</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <Progress value={progress} className="w-full" />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {results.length > 0 && (
-        <Card>
-          <CardContent className="py-4">
-            <h3 className="text-lg font-medium mb-4">Analysis Results</h3>
-            <div className="space-y-4">
-              {results.map((result, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-2">
-                  <div>
-                    <h4 className="font-medium">Original Prompt:</h4>
-                    <p className="text-sm text-muted-foreground">{result.original}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium">Augmented Prompt:</h4>
-                    <p className="text-sm text-muted-foreground">{result.augmented}</p>
-                  </div>
-                  {result.response && (
-                    <div>
-                      <h4 className="font-medium">Model Response:</h4>
-                      <p className="text-sm text-muted-foreground">{result.response}</p>
-                    </div>
-                  )}
-                  {result.error && (
-                    <div className="text-red-500 text-sm">
-                      Error: {result.error}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <AnalysisProgress phase="dataset_analysis" progress={progress} />
+      <Card className="p-4">
+        <ChatMessages messages={messages} isLoading={isProcessing} />
+      </Card>
     </div>
   );
 };
