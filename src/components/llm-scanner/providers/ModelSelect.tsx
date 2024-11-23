@@ -1,4 +1,4 @@
-import { Control } from "react-hook-form";
+import { Control, Controller } from "react-hook-form";
 import {
   FormControl,
   FormField,
@@ -13,45 +13,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface ModelSelectProps {
+export interface ModelSelectProps {
+  control: Control<any>;
   name: string;
   label: string;
   placeholder: string;
-  control: Control<any>;
-  provider: string;
-  onModelChange: (model: string) => void;
+  provider?: string;
+  onModelChange?: (model: string) => void;
 }
 
 export const ModelSelect = ({
+  control,
   name,
   label,
   placeholder,
-  control,
   provider,
   onModelChange,
 }: ModelSelectProps) => {
-  const getModelOptions = (provider: string) => {
+  const getModelOptions = () => {
     switch (provider) {
       case 'openai':
         return [
-          { value: 'gpt-4o', label: 'GPT-4 Optimized' },
-          { value: 'gpt-4o-mini', label: 'GPT-4 Mini' },
+          { value: 'gpt-4o', label: 'GPT-4 Opus' },
+          { value: 'gpt-4o-mini', label: 'GPT-4 Opus Mini' },
         ];
       case 'anthropic':
         return [
-          { value: 'claude-2', label: 'Claude 2' },
-          { value: 'claude-instant', label: 'Claude Instant' },
+          { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+          { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
         ];
-      case 'gemini':
+      case 'google':
         return [
-          { value: 'gemini-pro', label: 'Gemini Pro' },
+          { value: 'gemini-1.0-pro', label: 'Gemini Pro' },
+          { value: 'gemini-1.0-ultra', label: 'Gemini Ultra' },
+        ];
+      case 'ollama':
+        return [
+          { value: 'llama2', label: 'Llama 2' },
+          { value: 'mistral', label: 'Mistral' },
+          { value: 'codellama', label: 'Code Llama' },
         ];
       default:
-        return [];
+        return [
+          { value: 'gpt-4o', label: 'GPT-4 Opus' },
+          { value: 'gpt-4o-mini', label: 'GPT-4 Opus Mini' },
+          { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+          { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
+          { value: 'gemini-1.0-pro', label: 'Gemini Pro' },
+          { value: 'gemini-1.0-ultra', label: 'Gemini Ultra' },
+          { value: 'llama2', label: 'Llama 2' },
+          { value: 'mistral', label: 'Mistral' },
+          { value: 'codellama', label: 'Code Llama' },
+        ];
     }
   };
-
-  const models = getModelOptions(provider);
 
   return (
     <FormField
@@ -65,16 +80,18 @@ export const ModelSelect = ({
               value={field.value}
               onValueChange={(value) => {
                 field.onChange(value);
-                onModelChange(value);
+                if (onModelChange) {
+                  onModelChange(value);
+                }
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
               <SelectContent>
-                {models.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
-                    {model.label}
+                {getModelOptions().map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>

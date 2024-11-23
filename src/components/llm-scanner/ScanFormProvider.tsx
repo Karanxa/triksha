@@ -39,18 +39,16 @@ export const ScanFormProvider = ({
       <div className="space-y-2">
         <Label>Provider</Label>
         <CustomEndpointInput
-          value={selectedProvider}
-          onChange={handleProviderChange}
+          customEndpoint={customEndpoint}
+          onCustomEndpointChange={handleCustomEndpointChange}
           inputType={inputType}
           onInputTypeChange={setInputType}
-          endpoint={customEndpoint}
-          onEndpointChange={handleCustomEndpointChange}
         />
       </div>
       {selectedProvider === 'custom' ? (
         <CustomEndpointInput
-          value={customEndpoint}
-          onChange={handleCustomEndpointChange}
+          customEndpoint={customEndpoint}
+          onCustomEndpointChange={handleCustomEndpointChange}
           inputType={inputType}
           onInputTypeChange={setInputType}
         />
