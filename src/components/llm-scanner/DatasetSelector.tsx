@@ -52,19 +52,23 @@ export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => 
       }
 
       const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
+      
+      // Look for either 'prompt' or 'original_prompt' column
       const promptIndex = headers.findIndex(header => 
-        header === "prompts" || header === "prompt" || header === "text"
+        header === "prompt" || header === "original_prompt"
       );
 
       if (promptIndex === -1) {
         throw new Error("No prompt column found in dataset");
       }
 
-      const prompts = lines.slice(1).map(line => {
-        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
-        return cleanedValues[promptIndex];
-      }).filter(Boolean);
+      // Skip header row and process the prompts
+      const prompts = lines.slice(1)
+        .map(line => {
+          const values = line.split(',').map(val => val.trim());
+          return values[promptIndex];
+        })
+        .filter(Boolean);
 
       if (prompts.length === 0) {
         throw new Error("No valid prompts found in dataset");
