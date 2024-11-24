@@ -11,13 +11,18 @@ const FINGERPRINTING_QUESTIONS = [
   "How do you handle potentially harmful or inappropriate requests?"
 ];
 
+interface ProcessQuestionParams {
+  provider: string;
+  model: string;
+}
+
 export const useGeraideScan = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
 
-  const processNextQuestion = useCallback(async (provider: string, model: string) => {
+  const processNextQuestion = useCallback(async ({ provider, model }: ProcessQuestionParams) => {
     if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
       setScanComplete(true);
       return false;

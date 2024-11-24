@@ -39,17 +39,23 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
     setIsStarted(true);
     reset();
-    await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+    await processNextQuestion({
+      provider: selectedProvider,
+      model: selectedModel
+    });
   };
 
   useEffect(() => {
     if (isStarted && !isLoading && currentStep < totalQuestions) {
       const timer = setTimeout(() => {
-        processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+        processNextQuestion({
+          provider: selectedProvider,
+          model: selectedModel
+        });
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, customEndpoint, totalQuestions]);
+  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, totalQuestions]);
 
   useEffect(() => {
     if (scanComplete && onFingerprint) {
@@ -104,7 +110,10 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
       <div className="flex justify-end">
         <Button
-          onClick={() => processNextQuestion(selectedProvider, selectedModel, customEndpoint)}
+          onClick={() => processNextQuestion({
+            provider: selectedProvider,
+            model: selectedModel
+          })}
           disabled={isLoading || currentStep >= totalQuestions}
         >
           {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
