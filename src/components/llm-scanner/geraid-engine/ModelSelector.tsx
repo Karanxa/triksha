@@ -5,6 +5,8 @@ import { ModelSelect } from "../../llm-scanner/providers/ModelSelect";
 import { useForm, FormProvider } from "react-hook-form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CustomEndpoint } from "../types/CustomEndpoint";
+import { DatasetSelector } from "./DatasetSelector";
+import { Button } from "@/components/ui/button";
 
 interface ModelSelectorProps {
   onStart: (config: { provider: string; model: string; datasetId: string; customEndpoint?: CustomEndpoint }) => void;
@@ -12,6 +14,7 @@ interface ModelSelectorProps {
 
 export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
+  const [selectedDataset, setSelectedDataset] = useState("");
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
     apiKey: '',
@@ -31,7 +34,6 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
 
   const handleProviderChange = (value: string) => {
     setSelectedProvider(value);
-    // Reset model when provider changes
     form.reset({ model: "" });
   };
 
@@ -42,9 +44,23 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
     }));
   };
 
+  const handleStart = () => {
+    const model = form.getValues('model');
+    if (!selectedProvider || (!model && selectedProvider !== 'custom') || !selectedDataset) {
+      return;
+    }
+
+    onStart({
+      provider: selectedProvider,
+      model: selectedProvider === 'custom' ? 'custom' : model,
+      datasetId: selectedDataset,
+      customEndpoint: selectedProvider === 'custom' ? customEndpoint : undefined
+    });
+  };
+
   return (
     <FormProvider {...form}>
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="space-y-2">
           <Label>Provider</Label>
           <Select value={selectedProvider} onValueChange={handleProviderChange}>
@@ -79,6 +95,19 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
             onModelChange={(model) => form.setValue('model', model)}
           />
         )}
+
+        <DatasetSelector
+          value={selectedDataset}
+          onValueChange={setSelectedDataset}
+        />
+
+        <Button 
+          onClick={handleStart}
+          className="w-full"
+          disabled={!selectedProvider || (!form.getValues('model') && selectedProvider !== 'custom') || !selectedDataset}
+        >
+          Start Analysis
+        </Button>
       </div>
     </FormProvider>
   );
