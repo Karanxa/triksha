@@ -1,9 +1,22 @@
-import { useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { ChatMessages } from "../../chat/ChatMessages";
-import { useChat } from '../hooks/useChat';
-import { ChatProps } from '../types/chat';
+import { useEffect } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Message } from "../types";
+import { TypingIndicator } from "../../chat/TypingIndicator";
+import { useAutoScroll } from "@/hooks/useAutoScroll";
+import { Json } from "@/integrations/supabase/types/common";
 import { supabase } from "@/integrations/supabase/client";
+
+interface ChatProps {
+  config: {
+    provider: string;
+    model: string;
+    datasetId: string;
+  } | null;
+  onComplete: (results: FingerPrintResult) => void;
+  onProgress?: (progress: number) => void;
+  isPaused: boolean;
+  scanId: string | null;
+}
 
 export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatProps) => {
   const { state, processNextQuestion } = useChat();
@@ -26,7 +39,7 @@ export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatP
         .update({
           results: {
             progress,
-            messages,
+            messages: getJsonSafeMessages(messages),
             currentQuestionIndex,
             fingerprint: fingerprintResults
           }
@@ -42,6 +55,13 @@ export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatP
     const timer = setTimeout(processQuestion, 500);
     return () => clearTimeout(timer);
   }, [config, currentQuestionIndex, isLoading, isPaused, scanId]);
+
+  const getJsonSafeMessages = (msgs: Message[]): Json => {
+    return msgs.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+  };
 
   if (!config) return null;
 
