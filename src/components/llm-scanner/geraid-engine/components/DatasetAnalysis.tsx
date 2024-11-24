@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useDatasetAnalysis } from "../hooks/useDatasetAnalysis";
 import { AnalysisProgress } from "./AnalysisProgress";
 import { FingerPrintResult } from "../types";
+import { TypingIndicator } from "../../chat/TypingIndicator";
 
 export interface DatasetAnalysisProps {
   config: {
@@ -39,11 +40,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
               </div>
             </div>
           ))}
-          {isLoading && (
-            <div className="flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          )}
+          {isLoading && <TypingIndicator />}
         </CardContent>
       </Card>
     </div>
