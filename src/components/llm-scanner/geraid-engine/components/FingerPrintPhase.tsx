@@ -11,15 +11,9 @@ interface FingerPrintPhaseProps {
   };
   onComplete: (results: FingerPrintResult) => void;
   onProgress: (progress: number) => void;
-  isPaused: boolean;
 }
 
-export const FingerPrintPhase = ({ 
-  config, 
-  onComplete, 
-  onProgress,
-  isPaused 
-}: FingerPrintPhaseProps) => {
+export const FingerPrintPhase = ({ config, onComplete, onProgress }: FingerPrintPhaseProps) => {
   const [currentProgress, setCurrentProgress] = useState(0);
 
   const handleProgress = (progress: number) => {
@@ -29,16 +23,11 @@ export const FingerPrintPhase = ({
 
   return (
     <div className="space-y-4">
-      <AnalysisProgress 
-        phase="fingerprinting" 
-        progress={currentProgress} 
-        isPaused={isPaused}
-      />
+      <AnalysisProgress phase="fingerprinting" progress={currentProgress} />
       <Chat 
         config={config} 
         onComplete={onComplete}
         onProgress={handleProgress}
-        isPaused={isPaused}
       />
     </div>
   );
