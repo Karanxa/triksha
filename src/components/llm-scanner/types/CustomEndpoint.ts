@@ -7,5 +7,4 @@ export interface CustomEndpoint {
   httpRequest: string;
   inputType: 'curl' | 'manual' | 'http';
   method: string;
-  rawRequest?: string; // For storing the complete raw HTTP request
 }

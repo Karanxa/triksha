@@ -39,108 +39,6 @@ export async function processCustomEndpointRequest(
   }
 }
 
-function parseHttpRequest(rawRequest: string): {
-  method: string;
-  url: string;
-  headers: Record<string, string>;
-  body?: string;
-} {
-  const lines = rawRequest.split('\n');
-  const [methodLine, ...rest] = lines;
-  const [method, path] = methodLine.split(' ');
-  
-  let headers: Record<string, string> = {};
-  let body = '';
-  let isBody = false;
-  
-  for (const line of rest) {
-    const trimmedLine = line.trim();
-    if (!trimmedLine) {
-      isBody = true;
-      continue;
-    }
-    
-    if (!isBody) {
-      if (trimmedLine.startsWith('Host: ')) {
-        const host = trimmedLine.replace('Host: ', '').trim();
-        // Construct full URL from host and path
-        const protocol = host.includes(':') ? 'http://' : 'https://';
-        headers['Host'] = host;
-        continue;
-      }
-      
-      const colonIndex = trimmedLine.indexOf(':');
-      if (colonIndex > -1) {
-        const key = trimmedLine.slice(0, colonIndex).trim();
-        const value = trimmedLine.slice(colonIndex + 1).trim();
-        headers[key] = value;
-      }
-    } else {
-      body += trimmedLine;
-    }
-  }
-  
-  // Construct full URL
-  const host = headers['Host'];
-  const protocol = host?.includes(':') ? 'http://' : 'https://';
-  const url = `${protocol}${host}${path}`;
-  
-  return { method, url, headers, body };
-}
-
-async function processHttpRequest(
-  prompt: string,
-  config: CustomEndpointConfig,
-  signal: AbortSignal
-): Promise<any> {
-  console.log('Processing HTTP request with config:', config);
-  
-  if (!config.httpRequest) {
-    throw new Error('HTTP request configuration is missing');
-  }
-
-  const { method, url, headers, body } = parseHttpRequest(config.httpRequest);
-  console.log('Parsed HTTP request:', { method, url, headers });
-
-  // Replace placeholder in URL and body
-  const finalUrl = url.replace(config.placeholder || '{PROMPT}', encodeURIComponent(prompt));
-  let finalBody = body;
-  
-  if (body) {
-    finalBody = body.replace(config.placeholder || '{PROMPT}', prompt);
-    // Handle URL encoded form data
-    if (headers['Content-Type']?.includes('application/x-www-form-urlencoded')) {
-      const params = new URLSearchParams(finalBody);
-      finalBody = params.toString();
-    }
-  }
-
-  try {
-    console.log('Making request to:', finalUrl);
-    const response = await fetch(finalUrl, {
-      method,
-      headers,
-      body: ['GET', 'HEAD'].includes(method) ? undefined : finalBody,
-      signal
-    });
-
-    if (!response.ok) {
-      throw new Error(`Custom endpoint returned status ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('Received response:', result);
-    
-    return {
-      model_response: JSON.stringify(result),
-      raw_response: result
-    };
-  } catch (error) {
-    console.error('Error in HTTP request:', error);
-    throw error;
-  }
-}
-
 async function processCurlRequest(
   prompt: string,
   config: CustomEndpointConfig,
@@ -202,6 +100,46 @@ async function processCurlRequest(
     console.error('Error in curl request:', error);
     throw error;
   }
+}
+
+async function processHttpRequest(
+  prompt: string,
+  config: CustomEndpointConfig,
+  signal: AbortSignal
+): Promise<any> {
+  const headers = config.headers ? JSON.parse(config.headers) : {};
+  let body = config.httpRequest;
+
+  // Replace prompt placeholder in URL and body
+  const url = config.url.replace(config.placeholder, encodeURIComponent(prompt));
+  if (body) {
+    body = body.replace(config.placeholder, prompt);
+    try {
+      body = JSON.parse(body);
+    } catch {
+      // If body is not JSON, use as-is
+    }
+  }
+
+  const response = await fetch(url, {
+    method: config.method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers
+    },
+    body: ['GET', 'HEAD'].includes(config.method) ? undefined : JSON.stringify(body),
+    signal
+  });
+
+  if (!response.ok) {
+    throw new Error(`Custom endpoint returned status ${response.status}`);
+  }
+
+  const result = await response.json();
+  return {
+    model_response: JSON.stringify(result),
+    raw_response: result
+  };
 }
 
 async function processManualRequest(

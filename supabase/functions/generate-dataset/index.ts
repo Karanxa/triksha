@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { augmentPrompts } from './promptAugmenter.ts'
 import { testPromptsWithModel } from './modelTester.ts'
-import { GenerateDatasetRequest } from './types.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +21,7 @@ serve(async (req) => {
       provider,
       model,
       fingerprintResults 
-    }: GenerateDatasetRequest = await req.json()
+    } = await req.json()
 
     if (!name || !originalPrompts || !Array.isArray(originalPrompts)) {
       throw new Error('Invalid input: name and originalPrompts array are required')

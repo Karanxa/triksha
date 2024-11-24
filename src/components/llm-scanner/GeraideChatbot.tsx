@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
 import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessages";
+import { ModelSelector } from "./geraid-engine/ModelSelector";
 import { toast } from "sonner";
-import { CustomEndpoint } from "./types/CustomEndpoint";
-import { GeraidConfigForm } from "./geraid-engine/components/GeraidConfigForm";
 
 interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
@@ -13,10 +13,7 @@ interface GeraideChatbotProps {
 export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
-  const [selectedDataset, setSelectedDataset] = useState("");
-  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>();
   const [isStarted, setIsStarted] = useState(false);
-  
   const { 
     messages, 
     isLoading, 
@@ -24,50 +21,28 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     scanComplete,
     processNextQuestion,
     reset,
-    totalQuestions,
-    isPaused,
-    setIsPaused
+    totalQuestions
   } = useGeraideScan();
 
   const startAnalysis = async () => {
-    if ((!selectedProvider || !selectedModel) && selectedProvider !== "custom") {
+    if (!selectedProvider || !selectedModel) {
       toast.error("Please select both a provider and model first");
-      return;
-    }
-
-    if (selectedProvider === "custom" && !customEndpoint?.url) {
-      toast.error("Please configure the custom endpoint first");
-      return;
-    }
-
-    if (!selectedDataset) {
-      toast.error("Please select a dataset first");
       return;
     }
 
     setIsStarted(true);
     reset();
-    await processNextQuestion({
-      provider: selectedProvider,
-      model: selectedModel,
-      datasetId: selectedDataset,
-      customEndpoint
-    });
+    await processNextQuestion(selectedProvider, selectedModel);
   };
 
   useEffect(() => {
-    if (isStarted && !isLoading && currentStep < totalQuestions && !isPaused) {
+    if (isStarted && !isLoading && currentStep < totalQuestions) {
       const timer = setTimeout(() => {
-        processNextQuestion({
-          provider: selectedProvider,
-          model: selectedModel,
-          datasetId: selectedDataset,
-          customEndpoint
-        });
+        processNextQuestion(selectedProvider, selectedModel);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, selectedDataset, customEndpoint, totalQuestions, isPaused]);
+  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, totalQuestions]);
 
   useEffect(() => {
     if (scanComplete && onFingerprint) {
@@ -82,24 +57,35 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     }
   }, [scanComplete, messages, onFingerprint]);
 
-  const handlePauseResume = () => {
-    setIsPaused(!isPaused);
-    toast.success(isPaused ? "Analysis resumed" : "Analysis paused");
-  };
-
   if (!isStarted) {
     return (
-      <GeraidConfigForm
-        selectedProvider={selectedProvider}
-        selectedModel={selectedModel}
-        selectedDataset={selectedDataset}
-        customEndpoint={customEndpoint}
-        onProviderChange={setSelectedProvider}
-        onModelChange={setSelectedModel}
-        onDatasetChange={setSelectedDataset}
-        onCustomEndpointChange={setCustomEndpoint}
-        onStart={startAnalysis}
-      />
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2">Geraide-E Model Analysis</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Select a target model to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
+              </p>
+            </div>
+            
+            <ModelSelector
+              provider={selectedProvider}
+              model={selectedModel}
+              onProviderChange={setSelectedProvider}
+              onModelChange={setSelectedModel}
+            />
+
+            <Button 
+              onClick={startAnalysis}
+              className="w-full"
+              disabled={!selectedProvider || !selectedModel}
+            >
+              Start Analysis
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -107,21 +93,10 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     <div className="space-y-4">
       <GeraideChatMessages messages={messages} isLoading={isLoading} />
 
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end">
         <Button
-          onClick={handlePauseResume}
-          variant="outline"
-        >
-          {isPaused ? "Resume Analysis" : "Pause Analysis"}
-        </Button>
-        <Button
-          onClick={() => processNextQuestion({
-            provider: selectedProvider,
-            model: selectedModel,
-            datasetId: selectedDataset,
-            customEndpoint
-          })}
-          disabled={isLoading || currentStep >= totalQuestions || isPaused}
+          onClick={() => processNextQuestion(selectedProvider, selectedModel)}
+          disabled={isLoading || currentStep >= totalQuestions}
         >
           {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
         </Button>
