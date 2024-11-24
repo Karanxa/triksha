@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message } from '../types';
+import { CustomEndpoint } from '../../types/CustomEndpoint';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -14,6 +15,8 @@ const FINGERPRINTING_QUESTIONS = [
 interface ProcessQuestionParams {
   provider: string;
   model: string;
+  datasetId: string;
+  customEndpoint?: CustomEndpoint;
 }
 
 export const useGeraideScan = () => {
@@ -21,9 +24,10 @@ export const useGeraideScan = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const processNextQuestion = useCallback(async ({ provider, model }: ProcessQuestionParams) => {
-    if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
+  const processNextQuestion = useCallback(async ({ provider, model, datasetId, customEndpoint }: ProcessQuestionParams) => {
+    if (currentStep >= FINGERPRINTING_QUESTIONS.length || isPaused) {
       setScanComplete(true);
       return false;
     }
@@ -36,11 +40,13 @@ export const useGeraideScan = () => {
       // Add the question to messages immediately
       setMessages(prev => [...prev, { role: 'user', content: question }]);
 
-      console.log('Making request to geraide-fingerprint function with:', { provider, model, prompt: question });
+      console.log('Making request to geraide-fingerprint function with:', { provider, model, datasetId, prompt: question });
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider,
           model,
+          datasetId,
+          customEndpoint,
           prompt: question
         }
       });
@@ -70,13 +76,14 @@ export const useGeraideScan = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentStep]);
+  }, [currentStep, isPaused]);
 
   const reset = () => {
     setMessages([]);
     setCurrentStep(0);
     setScanComplete(false);
     setIsLoading(false);
+    setIsPaused(false);
   };
 
   return {
@@ -86,6 +93,8 @@ export const useGeraideScan = () => {
     scanComplete,
     processNextQuestion,
     reset,
-    totalQuestions: FINGERPRINTING_QUESTIONS.length
+    totalQuestions: FINGERPRINTING_QUESTIONS.length,
+    isPaused,
+    setIsPaused
   };
 };
