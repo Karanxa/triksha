@@ -3,14 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
+import { supabase } from "@/integrations/supabase/client";
 
-export const Chat = ({ config, onComplete, onProgress, isPaused }: ChatProps) => {
+export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatProps) => {
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
 
   useEffect(() => {
     const processQuestion = async () => {
-      if (!config || isLoading || isPaused) return;
+      if (!config || isLoading || isPaused || !scanId) return;
       
       const success = await processNextQuestion(config.provider, config.model);
       
@@ -18,6 +19,19 @@ export const Chat = ({ config, onComplete, onProgress, isPaused }: ChatProps) =>
       const totalQuestions = 5; // Total number of fingerprinting questions
       const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
       onProgress?.(progress);
+
+      // Update scan status in database
+      await supabase
+        .from('llm_scans')
+        .update({
+          results: {
+            progress,
+            messages,
+            currentQuestionIndex,
+            fingerprint: fingerprintResults
+          }
+        })
+        .eq('id', scanId);
       
       if (!success && fingerprintResults) {
         onComplete(fingerprintResults);
@@ -27,7 +41,7 @@ export const Chat = ({ config, onComplete, onProgress, isPaused }: ChatProps) =>
     // Start with a small delay to allow UI to render
     const timer = setTimeout(processQuestion, 500);
     return () => clearTimeout(timer);
-  }, [config, currentQuestionIndex, isLoading, isPaused]);
+  }, [config, currentQuestionIndex, isLoading, isPaused, scanId]);
 
   if (!config) return null;
 
