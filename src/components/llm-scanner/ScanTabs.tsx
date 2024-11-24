@@ -20,7 +20,7 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
           value="geraide" 
           className="text-xs md:text-sm whitespace-normal h-auto min-h-[40px] text-center"
         >
-          Geraid-Engine Analysis
+          Geraid Engine Analysis
         </TabsTrigger>
       </TabsList>
       <TabsContent value="basic" className="mt-0">
