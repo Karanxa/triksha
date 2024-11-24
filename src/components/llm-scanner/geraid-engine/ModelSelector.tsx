@@ -44,12 +44,24 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
     }
   };
 
+  const handleStart = () => {
+    if (!selectedProvider || !selectedModel || !selectedDataset) {
+      return;
+    }
+
+    onStart({
+      provider: selectedProvider,
+      model: selectedModel,
+      datasetId: selectedDataset
+    });
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-medium mb-2">Geraid-Engine</h3>
+            <h3 className="text-lg font-medium mb-2">Geraid Engine</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Select a target model and dataset to begin. This will help understand the model's capabilities and test it against your dataset.
             </p>
@@ -117,11 +129,7 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
           </div>
 
           <Button 
-            onClick={() => onStart({
-              provider: selectedProvider,
-              model: selectedModel,
-              datasetId: selectedDataset
-            })}
+            onClick={handleStart}
             className="w-full"
             disabled={!selectedProvider || !selectedModel || !selectedDataset}
           >

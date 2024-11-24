@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
 import { DatasetOption } from "./types";
+import { toast } from "sonner";
 
 interface DatasetSelectorProps {
   value: string;
@@ -17,11 +18,14 @@ export const DatasetSelector = ({ value, onValueChange }: DatasetSelectorProps) 
     queryFn: async () => {
       const { data, error } = await supabase
         .from('datasets')
-        .select('id, name, description')
+        .select('id, name, description, file_path')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as DatasetOption[];
+      if (error) {
+        toast.error("Failed to fetch datasets");
+        throw error;
+      }
+      return data;
     }
   });
 
@@ -62,7 +66,7 @@ export const DatasetSelector = ({ value, onValueChange }: DatasetSelectorProps) 
             </CardContent>
           </Card>
         ))}
-        {datasets?.length === 0 && (
+        {!datasets?.length && (
           <p className="text-center text-muted-foreground py-8">
             No datasets found. Create some in the Datasets section first.
           </p>
