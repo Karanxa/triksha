@@ -49,15 +49,13 @@ export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatP
             training: fingerprintResults.training || '',
             languages: fingerprintResults.languages || '',
             safety: fingerprintResults.safety || ''
-          }
-        };
+          } : null
+        } as unknown as Json;
 
-        // Update scan status in database with type assertion
+        // Update scan status in database
         await supabase
           .from('llm_scans')
-          .update({
-            results: jsonSafeState as unknown as Json
-          })
+          .update({ results: jsonSafeState })
           .eq('id', scanId);
       } catch (error) {
         toast.error("Failed to update scan status");
