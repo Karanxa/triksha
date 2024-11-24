@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ModelSelectorProps {
+export interface ModelSelectorProps {
   provider: string;
   model: string;
   onProviderChange: (value: string) => void;

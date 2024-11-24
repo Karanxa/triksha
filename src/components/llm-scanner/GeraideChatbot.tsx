@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
 import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessages";
 import { ModelSelector } from "./geraid-engine/ModelSelector";
+import { toast } from "sonner";
 
 interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
