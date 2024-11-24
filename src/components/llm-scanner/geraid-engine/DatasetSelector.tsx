@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
 import { DatasetOption } from "./types";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface DatasetSelectorProps {
   value: string;
@@ -18,7 +19,7 @@ export const DatasetSelector = ({ value, onValueChange }: DatasetSelectorProps) 
     queryFn: async () => {
       const { data, error } = await supabase
         .from('datasets')
-        .select('id, name, description, file_path')
+        .select('id, name, description, file_path, metadata')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -28,6 +29,11 @@ export const DatasetSelector = ({ value, onValueChange }: DatasetSelectorProps) 
       return data;
     }
   });
+
+  const getPromptCount = (metadata: any) => {
+    if (!metadata) return 0;
+    return metadata.originalCount || metadata.processedPrompts || 0;
+  };
 
   if (isLoading) {
     return (
@@ -49,8 +55,13 @@ export const DatasetSelector = ({ value, onValueChange }: DatasetSelectorProps) 
           >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">{dataset.name}</h4>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium">{dataset.name}</h4>
+                    <Badge variant="secondary" className="text-xs">
+                      {getPromptCount(dataset.metadata)} prompts
+                    </Badge>
+                  </div>
                   {dataset.description && (
                     <p className="text-sm text-muted-foreground">{dataset.description}</p>
                   )}

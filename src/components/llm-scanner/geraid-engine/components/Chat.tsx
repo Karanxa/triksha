@@ -43,14 +43,20 @@ export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatP
             content: msg.content
           })),
           currentQuestionIndex,
-          fingerprint: fingerprintResults
+          fingerprint: fingerprintResults ? {
+            capabilities: fingerprintResults.capabilities || '',
+            boundaries: fingerprintResults.boundaries || '',
+            training: fingerprintResults.training || '',
+            languages: fingerprintResults.languages || '',
+            safety: fingerprintResults.safety || ''
+          }
         };
 
         // Update scan status in database with type assertion
         await supabase
           .from('llm_scans')
           .update({
-            results: jsonSafeState as Json
+            results: jsonSafeState as unknown as Json
           })
           .eq('id', scanId);
       } catch (error) {
