@@ -22,7 +22,7 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
     placeholder: '{PROMPT}',
     curlCommand: '',
     httpRequest: '',
-    inputType: 'manual',
+    inputType: 'manual' as const,
     method: 'POST'
   });
 
@@ -101,9 +101,9 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
               <CustomEndpointInput
                 customEndpoint={customEndpoint}
                 onCustomEndpointChange={setCustomEndpoint}
-                inputType={customEndpoint.inputType as 'curl' | 'manual' | 'http'}
+                inputType={customEndpoint.inputType}
                 onInputTypeChange={(type) => 
-                  setCustomEndpoint(prev => ({ ...prev, inputType: type }))
+                  setCustomEndpoint(prev => ({ ...prev, inputType: type as 'curl' | 'manual' | 'http' }))
                 }
               />
             ) : selectedProvider && (

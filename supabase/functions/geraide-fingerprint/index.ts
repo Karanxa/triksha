@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, model, prompt } = await req.json();
-    console.log('Fingerprinting request:', { provider, model, prompt });
+    const { provider, model, prompt, customEndpoint } = await req.json();
+    console.log('Fingerprinting request:', { provider, model, prompt, customEndpoint });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -42,15 +42,15 @@ serve(async (req) => {
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
     let response;
-    if (provider === 'openai') {
+    if (provider === 'custom' && customEndpoint) {
+      response = await handleCustomRequest(prompt, customEndpoint);
+    } else if (provider === 'openai') {
       const openaiKey = profile.api_keys.openai;
       if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
-      
       response = await handleOpenAIRequest(prompt, model, openaiKey);
     } else if (provider === 'anthropic') {
       const anthropicKey = profile.api_keys.anthropic;
       if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
-      
       response = await handleAnthropicRequest(prompt, model, anthropicKey);
     } else {
       throw new Error('Unsupported provider');
@@ -71,6 +71,56 @@ serve(async (req) => {
     );
   }
 });
+
+async function handleCustomRequest(prompt: string, customEndpoint: any) {
+  const { url, method, headers: rawHeaders, inputType, httpRequest, curlCommand } = customEndpoint;
+  
+  let requestUrl = url;
+  let requestBody;
+  let headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+
+  // Parse custom headers if provided
+  if (rawHeaders) {
+    try {
+      const parsedHeaders = JSON.parse(rawHeaders);
+      headers = { ...headers, ...parsedHeaders };
+    } catch (error) {
+      console.error('Error parsing custom headers:', error);
+    }
+  }
+
+  if (inputType === 'http') {
+    // Parse HTTP request and replace placeholder
+    requestBody = httpRequest.replace('{PROMPT}', prompt);
+  } else if (inputType === 'curl') {
+    // Parse curl command and replace placeholder
+    requestBody = curlCommand.replace('{PROMPT}', prompt);
+  } else {
+    // Manual configuration
+    requestBody = JSON.stringify({ prompt });
+  }
+
+  console.log('Making custom request:', {
+    url: requestUrl,
+    method,
+    headers,
+    body: requestBody
+  });
+
+  const response = await fetch(requestUrl, {
+    method,
+    headers,
+    body: requestBody
+  });
+
+  if (!response.ok) {
+    throw new Error(`Custom endpoint returned status ${response.status}`);
+  }
+
+  return await response.text();
+}
 
 async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
