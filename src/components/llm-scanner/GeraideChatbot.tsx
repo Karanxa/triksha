@@ -1,17 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
 import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessages";
-import { ModelSelector } from "./geraid-engine/ModelSelector";
 import { toast } from "sonner";
 import { CustomEndpoint } from "./types/CustomEndpoint";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
+import { GeraidConfigForm } from "./geraid-engine/components/GeraidConfigForm";
 
 interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
@@ -35,23 +28,6 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     isPaused,
     setIsPaused
   } = useGeraideScan();
-
-  // Fetch available datasets
-  const { data: datasets, isLoading: isLoadingDatasets } = useQuery({
-    queryKey: ['user-datasets'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('datasets')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        toast.error("Failed to fetch datasets");
-        return [];
-      }
-      return data;
-    }
-  });
 
   const startAnalysis = async () => {
     if ((!selectedProvider || !selectedModel) && selectedProvider !== "custom") {
@@ -113,64 +89,17 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
   if (!isStarted) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium mb-2">Geraide-E Model Analysis</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Select a target model and dataset to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
-              </p>
-            </div>
-            
-            <ModelSelector
-              provider={selectedProvider}
-              model={selectedModel}
-              onProviderChange={setSelectedProvider}
-              onModelChange={setSelectedModel}
-              customEndpoint={customEndpoint}
-              onCustomEndpointChange={setCustomEndpoint}
-            />
-
-            <div className="space-y-2">
-              <Label>Select Dataset</Label>
-              {isLoadingDatasets ? (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (
-                <ScrollArea className="h-[200px]">
-                  <Select value={selectedDataset} onValueChange={setSelectedDataset}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a dataset" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {datasets?.map((dataset) => (
-                        <SelectItem key={dataset.id} value={dataset.id}>
-                          {dataset.name}
-                          {dataset.description && (
-                            <span className="text-sm text-muted-foreground ml-2">
-                              - {dataset.description}
-                            </span>
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </ScrollArea>
-              )}
-            </div>
-
-            <Button 
-              onClick={startAnalysis}
-              className="w-full"
-              disabled={!selectedProvider || (!selectedModel && selectedProvider !== "custom") || !selectedDataset}
-            >
-              Start Analysis
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <GeraidConfigForm
+        selectedProvider={selectedProvider}
+        selectedModel={selectedModel}
+        selectedDataset={selectedDataset}
+        customEndpoint={customEndpoint}
+        onProviderChange={setSelectedProvider}
+        onModelChange={setSelectedModel}
+        onDatasetChange={setSelectedDataset}
+        onCustomEndpointChange={setCustomEndpoint}
+        onStart={startAnalysis}
+      />
     );
   }
 
