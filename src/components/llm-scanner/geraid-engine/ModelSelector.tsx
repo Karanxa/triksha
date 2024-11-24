@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DatasetSelector } from "./DatasetSelector";
 import { ProviderModel, GeraidConfig } from "./types";
+import { CustomEndpointInput } from "../providers/CustomEndpointInput";
 
 interface ModelSelectorProps {
   onStart: (config: GeraidConfig) => void;
@@ -14,6 +15,16 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
+  const [customEndpoint, setCustomEndpoint] = useState({
+    url: '',
+    apiKey: '',
+    headers: '',
+    placeholder: '{PROMPT}',
+    curlCommand: '',
+    httpRequest: '',
+    inputType: 'manual',
+    method: 'POST'
+  });
 
   const getModelsForProvider = (provider: string): ProviderModel[] => {
     switch (provider) {
@@ -41,6 +52,15 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
       default:
         return [];
     }
+  };
+
+  const handleStart = () => {
+    onStart({
+      provider: selectedProvider,
+      model: selectedModel,
+      datasetId: selectedDataset,
+      customEndpoint: selectedProvider === 'custom' ? customEndpoint : undefined
+    });
   };
 
   return (
@@ -72,11 +92,21 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
                   <SelectItem value="anthropic">Anthropic</SelectItem>
                   <SelectItem value="google">Google AI</SelectItem>
                   <SelectItem value="ollama">Ollama</SelectItem>
+                  <SelectItem value="custom">Custom Provider</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedProvider && (
+            {selectedProvider === 'custom' ? (
+              <CustomEndpointInput
+                customEndpoint={customEndpoint}
+                onCustomEndpointChange={setCustomEndpoint}
+                inputType={customEndpoint.inputType as 'curl' | 'manual' | 'http'}
+                onInputTypeChange={(type) => 
+                  setCustomEndpoint(prev => ({ ...prev, inputType: type }))
+                }
+              />
+            ) : selectedProvider && (
               <div className="space-y-2">
                 <Label>Model</Label>
                 <Select 
@@ -104,13 +134,9 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
           </div>
 
           <Button 
-            onClick={() => onStart({
-              provider: selectedProvider,
-              model: selectedModel,
-              datasetId: selectedDataset
-            })}
+            onClick={handleStart}
             className="w-full"
-            disabled={!selectedProvider || !selectedModel || !selectedDataset}
+            disabled={!selectedProvider || (!selectedModel && selectedProvider !== 'custom') || !selectedDataset}
           >
             Start Analysis
           </Button>
