@@ -14,6 +14,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw new Error('No authorization header');
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (userError || !user) throw new Error('Unauthorized');
+
+    // Get user's API keys
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) throw new Error('Failed to fetch user profile');
+    if (!profile?.api_keys?.openai) throw new Error('OpenAI API key not configured in Settings');
+
     const { datasetId, provider, model, fingerprint } = await req.json();
     console.log('Processing dataset:', { datasetId, provider, model });
 
@@ -62,14 +82,13 @@ serve(async (req) => {
 
     // Test augmented prompts with the model
     const modelResponses = [];
-    const openAIKey = Deno.env.get('OPENAI_API_KEY');
     
     for (const prompt of augmentedPrompts) {
       try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${openAIKey}`,
+            'Authorization': `Bearer ${profile.api_keys.openai}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
