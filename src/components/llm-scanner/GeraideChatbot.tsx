@@ -1,61 +1,27 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { ChatMessages } from "./chat/ChatMessages";
-import { Message } from "./geraid-engine/types";
+import { Card, CardContent } from "@/components/ui/card";
+import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
+import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessages";
+import { ModelSelector } from "./geraid-engine/ModelSelector";
 
 interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
 }
 
 export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [isStarted, setIsStarted] = useState(false);
-
-  // Analysis questions
-  const questions = [
-    "What are your core capabilities and primary functions?",
-    "What are your ethical principles and operational boundaries?",
-    "Can you describe your training process or knowledge cutoff date?",
-    "What languages and programming languages do you support?",
-    "How do you handle potentially harmful or inappropriate requests?"
-  ];
-
-  const getModelsForProvider = (provider: string) => {
-    switch (provider) {
-      case "openai":
-        return [
-          { value: "gpt-4o", label: "GPT-4 Opus" },
-          { value: "gpt-4o-mini", label: "GPT-4 Opus Mini" }
-        ];
-      case "anthropic":
-        return [
-          { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
-          { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" }
-        ];
-      case "google":
-        return [
-          { value: "gemini-1.0-pro", label: "Gemini Pro" },
-          { value: "gemini-1.0-ultra", label: "Gemini Ultra" }
-        ];
-      case "ollama":
-        return [
-          { value: "llama2", label: "Llama 2" },
-          { value: "mistral", label: "Mistral" },
-          { value: "codellama", label: "Code Llama" }
-        ];
-      default:
-        return [];
-    }
-  };
+  const { 
+    messages, 
+    isLoading, 
+    currentStep,
+    scanComplete,
+    processNextQuestion,
+    reset,
+    totalQuestions
+  } = useGeraideScan();
 
   const startAnalysis = async () => {
     if (!selectedProvider || !selectedModel) {
@@ -64,76 +30,31 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     }
 
     setIsStarted(true);
-    setMessages([
-      {
-        role: 'system',
-        content: `Starting Geraide-E analysis for ${selectedModel}`
-      }
-    ]);
-    await askNextQuestion();
-  };
-
-  const askNextQuestion = async () => {
-    if (currentStep >= questions.length) {
-      // Analysis complete
-      const analysisResults = analyzeResponses(messages);
-      if (onFingerprint) {
-        onFingerprint(analysisResults);
-      }
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Add the question immediately
-      setMessages(prev => [
-        ...prev,
-        { role: 'user', content: questions[currentStep] }
-      ]);
-
-      const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
-        body: {
-          provider: selectedProvider,
-          model: selectedModel,
-          prompt: questions[currentStep]
-        }
-      });
-
-      if (error) throw error;
-
-      // Add response after a small delay to simulate natural conversation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: data.response }
-      ]);
-
-      setCurrentStep(prev => prev + 1);
-    } catch (error) {
-      console.error('Error in analysis:', error);
-      toast.error("Failed to get model response");
-    } finally {
-      setIsLoading(false);
-    }
+    reset();
+    await processNextQuestion(selectedProvider, selectedModel);
   };
 
   useEffect(() => {
-    if (isStarted && !isLoading && currentStep < questions.length) {
-      const timer = setTimeout(askNextQuestion, 1500);
+    if (isStarted && !isLoading && currentStep < totalQuestions) {
+      const timer = setTimeout(() => {
+        processNextQuestion(selectedProvider, selectedModel);
+      }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isLoading, isStarted]);
+  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, totalQuestions]);
 
-  const analyzeResponses = (messages: Message[]) => {
-    return {
-      capabilities: messages[2]?.content || '',
-      boundaries: messages[4]?.content || '',
-      training: messages[6]?.content || '',
-      languages: messages[8]?.content || '',
-      safety: messages[10]?.content || ''
-    };
-  };
+  useEffect(() => {
+    if (scanComplete && onFingerprint) {
+      const results = {
+        capabilities: messages[2]?.content || '',
+        boundaries: messages[4]?.content || '',
+        training: messages[6]?.content || '',
+        languages: messages[8]?.content || '',
+        safety: messages[10]?.content || ''
+      };
+      onFingerprint(results);
+    }
+  }, [scanComplete, messages, onFingerprint]);
 
   if (!isStarted) {
     return (
@@ -147,49 +68,12 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
               </p>
             </div>
             
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Provider</Label>
-                <Select 
-                  value={selectedProvider} 
-                  onValueChange={(value) => {
-                    setSelectedProvider(value);
-                    setSelectedModel(""); // Reset model when provider changes
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="openai">OpenAI</SelectItem>
-                    <SelectItem value="anthropic">Anthropic</SelectItem>
-                    <SelectItem value="google">Google AI</SelectItem>
-                    <SelectItem value="ollama">Ollama</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedProvider && (
-                <div className="space-y-2">
-                  <Label>Model</Label>
-                  <Select 
-                    value={selectedModel} 
-                    onValueChange={setSelectedModel}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getModelsForProvider(selectedProvider).map((model) => (
-                        <SelectItem key={model.value} value={model.value}>
-                          {model.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
+            <ModelSelector
+              provider={selectedProvider}
+              model={selectedModel}
+              onProviderChange={setSelectedProvider}
+              onModelChange={setSelectedModel}
+            />
 
             <Button 
               onClick={startAnalysis}
@@ -206,21 +90,14 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="text-lg font-medium mb-4">Geraide-E Analysis</h3>
-          <ChatMessages messages={messages} isLoading={isLoading} />
-        </CardContent>
-      </Card>
+      <GeraideChatMessages messages={messages} isLoading={isLoading} />
 
       <div className="flex justify-end">
         <Button
-          onClick={askNextQuestion}
-          disabled={isLoading || currentStep >= questions.length}
+          onClick={() => processNextQuestion(selectedProvider, selectedModel)}
+          disabled={isLoading || currentStep >= totalQuestions}
         >
-          {currentStep >= questions.length
-            ? "Analysis Complete"
-            : "Continue Analysis"}
+          {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
         </Button>
       </div>
     </div>
