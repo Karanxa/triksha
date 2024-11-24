@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -42,31 +43,62 @@ serve(async (req) => {
       throw new Error('No prompt column found in dataset');
     }
 
-    // Process each prompt with the fingerprint
+    // Extract prompts
     const prompts = lines.slice(1).map(line => {
       const values = line.split(',');
       return values[promptIndex]?.trim() || '';
     }).filter(Boolean);
 
-    // Store analysis results
-    const results = {
-      processedPrompts: prompts.length,
-      fingerprint,
-      timestamp: new Date().toISOString(),
-      summary: `Processed ${prompts.length} prompts with model ${model}`
-    };
+    // Augment prompts using fingerprint
+    const augmentedPrompts = prompts.map(prompt => {
+      const context = [
+        fingerprint.capabilities && `Model capabilities: ${fingerprint.capabilities}`,
+        fingerprint.boundaries && `Security boundaries: ${fingerprint.boundaries}`,
+        fingerprint.safety && `Safety measures: ${fingerprint.safety}`
+      ].filter(Boolean).join('\n');
 
-    await supabaseClient
-      .from('datasets')
-      .update({
-        metadata: {
-          lastAnalysis: results
+      return `Given the following model characteristics:\n${context}\n\nOriginal prompt:\n${prompt}`;
+    });
+
+    // Test augmented prompts with the model
+    const modelResponses = [];
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    
+    for (const prompt of augmentedPrompts) {
+      try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openAIKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`OpenAI API error: ${await response.text()}`);
         }
-      })
-      .eq('id', datasetId);
+
+        const data = await response.json();
+        modelResponses.push(data.choices[0].message.content);
+      } catch (error) {
+        console.error('Error testing prompt:', error);
+        modelResponses.push(`Error: ${error.message}`);
+      }
+
+      // Add a small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
 
     return new Response(
-      JSON.stringify(results),
+      JSON.stringify({ 
+        augmentedPrompts,
+        modelResponses
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
