@@ -1,19 +1,28 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CustomEndpointInput } from "../../llm-scanner/providers/CustomEndpointInput";
+import { useState } from "react";
+import { CustomEndpoint } from "../types/CustomEndpoint";
 
 export interface ModelSelectorProps {
   provider: string;
   model: string;
   onProviderChange: (value: string) => void;
   onModelChange: (value: string) => void;
+  customEndpoint?: CustomEndpoint;
+  onCustomEndpointChange?: (endpoint: CustomEndpoint) => void;
 }
 
 export const ModelSelector = ({ 
   provider, 
   model, 
   onProviderChange, 
-  onModelChange 
+  onModelChange,
+  customEndpoint,
+  onCustomEndpointChange
 }: ModelSelectorProps) => {
+  const [showCustomEndpoint, setShowCustomEndpoint] = useState(false);
+
   const getModelsForProvider = (provider: string) => {
     switch (provider) {
       case "openai":
@@ -42,16 +51,19 @@ export const ModelSelector = ({
     }
   };
 
+  const handleProviderChange = (value: string) => {
+    onProviderChange(value);
+    onModelChange("");
+    setShowCustomEndpoint(value === "custom");
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Provider</Label>
         <Select 
           value={provider} 
-          onValueChange={(value) => {
-            onProviderChange(value);
-            onModelChange(""); // Reset model when provider changes
-          }}
+          onValueChange={handleProviderChange}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select provider" />
@@ -61,11 +73,35 @@ export const ModelSelector = ({
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
             <SelectItem value="ollama">Ollama</SelectItem>
+            <SelectItem value="custom">Custom Endpoint</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {provider && (
+      {provider === "custom" && onCustomEndpointChange && (
+        <CustomEndpointInput
+          customEndpoint={customEndpoint || {
+            url: '',
+            apiKey: '',
+            headers: '',
+            placeholder: '{PROMPT}',
+            curlCommand: '',
+            httpRequest: '',
+            inputType: 'manual',
+            method: 'POST'
+          }}
+          onCustomEndpointChange={onCustomEndpointChange}
+          inputType={customEndpoint?.inputType || 'manual'}
+          onInputTypeChange={(type) => 
+            onCustomEndpointChange({
+              ...customEndpoint,
+              inputType: type
+            })
+          }
+        />
+      )}
+
+      {provider && provider !== "custom" && (
         <div className="space-y-2">
           <Label>Model</Label>
           <Select 
