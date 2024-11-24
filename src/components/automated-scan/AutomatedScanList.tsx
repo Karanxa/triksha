@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, Play, Pause } from "lucide-react";
+import { Calendar, Clock, Play, Pause, Square, RefreshCw } from "lucide-react";
 
 interface AutomatedScan {
   id: string;
@@ -15,6 +15,7 @@ interface AutomatedScan {
   is_active: boolean;
   last_run: string | null;
   next_run: string | null;
+  status: 'running' | 'paused' | 'stopped' | 'completed';
 }
 
 interface AutomatedScanListProps {
@@ -34,6 +35,24 @@ export const AutomatedScanList = ({ scans }: AutomatedScanListProps) => {
       toast.success(`Scan ${currentStatus ? 'disabled' : 'enabled'} successfully`);
     } catch (error: any) {
       toast.error("Failed to update scan status: " + error.message);
+    }
+  };
+
+  const handleScanAction = async (scanId: string, action: 'stop' | 'resume') => {
+    try {
+      const { error } = await supabase
+        .from('scheduled_llm_scans')
+        .update({ 
+          status: action === 'stop' ? 'stopped' : 'running',
+          is_active: action === 'resume'
+        })
+        .eq('id', scanId);
+
+      if (error) throw error;
+      
+      toast.success(`Scan ${action === 'stop' ? 'stopped' : 'resumed'} successfully`);
+    } catch (error: any) {
+      toast.error(`Failed to ${action} scan: ${error.message}`);
     }
   };
 
@@ -75,10 +94,31 @@ export const AutomatedScanList = ({ scans }: AutomatedScanListProps) => {
                     <p className="text-sm text-muted-foreground">{scan.description}</p>
                   )}
                 </div>
-                <Switch
-                  checked={scan.is_active}
-                  onCheckedChange={() => toggleScanStatus(scan.id, scan.is_active)}
-                />
+                <div className="flex items-center gap-2">
+                  {scan.status === 'running' ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleScanAction(scan.id, 'stop')}
+                    >
+                      <Square className="h-4 w-4 mr-1" />
+                      Stop
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleScanAction(scan.id, 'resume')}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Resume
+                    </Button>
+                  )}
+                  <Switch
+                    checked={scan.is_active}
+                    onCheckedChange={() => toggleScanStatus(scan.id, scan.is_active)}
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -95,6 +135,9 @@ export const AutomatedScanList = ({ scans }: AutomatedScanListProps) => {
                       <Pause className="h-3 w-3 mr-1" />
                     )}
                     {scan.is_active ? 'Active' : 'Paused'}
+                  </Badge>
+                  <Badge variant={scan.status === 'running' ? "default" : "secondary"}>
+                    {scan.status === 'running' ? 'Running' : scan.status}
                   </Badge>
                 </div>
                 
