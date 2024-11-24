@@ -91,7 +91,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
   return (
     <div className="space-y-4">
       <AnalysisProgress 
-        phase="dataset_analysis" 
+        phase="augmenting"
         progress={progress}
         isPaused={isPaused}
       />
