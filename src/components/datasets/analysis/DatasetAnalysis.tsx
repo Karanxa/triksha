@@ -15,7 +15,7 @@ interface DatasetAnalysisProps {
   };
   fingerprint: FingerPrintResult;
   isPaused: boolean;
-  scanId: string | null;
+  scanId: string | null; // Added scanId to the interface
 }
 
 export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: DatasetAnalysisProps) => {

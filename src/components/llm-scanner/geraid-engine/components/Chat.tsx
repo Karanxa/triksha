@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Message } from "../types";
-import { TypingIndicator } from "../../chat/TypingIndicator";
-import { useAutoScroll } from "@/hooks/useAutoScroll";
-import { Json } from "@/integrations/supabase/types/common";
+import { Card, CardContent } from "@/components/ui/card";
+import { Message, FingerPrintResult } from "../types";
+import { ChatMessages } from "../../chat/ChatMessages";
 import { supabase } from "@/integrations/supabase/client";
+import { useChat } from "../hooks/useChat";
+import { Json } from "@/integrations/supabase/types/common";
 
 interface ChatProps {
   config: {
@@ -33,16 +33,22 @@ export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatP
       const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
       onProgress?.(progress);
 
+      // Convert messages to JSON-safe format
+      const jsonSafeMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
       // Update scan status in database
       await supabase
         .from('llm_scans')
         .update({
           results: {
             progress,
-            messages: getJsonSafeMessages(messages),
+            messages: jsonSafeMessages,
             currentQuestionIndex,
             fingerprint: fingerprintResults
-          }
+          } as Json
         })
         .eq('id', scanId);
       
@@ -55,13 +61,6 @@ export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatP
     const timer = setTimeout(processQuestion, 500);
     return () => clearTimeout(timer);
   }, [config, currentQuestionIndex, isLoading, isPaused, scanId]);
-
-  const getJsonSafeMessages = (msgs: Message[]): Json => {
-    return msgs.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }));
-  };
 
   if (!config) return null;
 

@@ -1,8 +1,14 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ChatState } from '../types/chat';
-import { FingerPrintResult } from '../types';
+import { Message, FingerPrintResult } from '../types';
+
+interface ChatState {
+  messages: Message[];
+  isLoading: boolean;
+  currentQuestionIndex: number;
+  fingerprintResults: FingerPrintResult | null;
+}
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -11,8 +17,6 @@ const FINGERPRINTING_QUESTIONS = [
   "What languages and programming languages do you support?",
   "How do you handle potentially harmful or inappropriate requests?"
 ];
-
-const TYPING_DELAY = 1000; // Simulate typing delay
 
 export const useChat = () => {
   const [state, setState] = useState<ChatState>({
@@ -34,7 +38,6 @@ export const useChat = () => {
 
     const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
 
-    // Add the question to messages immediately
     setState(prev => ({
       ...prev,
       messages: [...prev.messages, { role: 'user', content: question }]
@@ -52,7 +55,7 @@ export const useChat = () => {
       if (error) throw error;
 
       // Add response after a delay to simulate natural conversation
-      await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const results: FingerPrintResult = state.fingerprintResults || {
         capabilities: '',
@@ -69,7 +72,7 @@ export const useChat = () => {
         : question.toLowerCase().includes('languages') ? 'languages'
         : 'safety';
 
-      results[questionKey] = data.response;
+      results[questionKey as keyof FingerPrintResult] = data.response;
 
       setState(prev => ({
         ...prev,
@@ -86,7 +89,7 @@ export const useChat = () => {
       setState(prev => ({ ...prev, isLoading: false }));
       return false;
     }
-  }, [state.currentQuestionIndex, state.fingerprintResults]);
+  }, [state.currentQuestionIndex, state.fingerprintResults, state.messages]);
 
   return {
     state,
