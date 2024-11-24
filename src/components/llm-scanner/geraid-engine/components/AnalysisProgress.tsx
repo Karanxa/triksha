@@ -4,10 +4,13 @@ import { Progress } from "@/components/ui/progress";
 interface AnalysisProgressProps {
   phase: 'fingerprinting' | 'dataset_analysis';
   progress: number;
+  isPaused?: boolean;
 }
 
-export const AnalysisProgress = ({ phase, progress }: AnalysisProgressProps) => {
+export const AnalysisProgress = ({ phase, progress, isPaused }: AnalysisProgressProps) => {
   const getPhaseLabel = () => {
+    if (isPaused) return "Scan paused";
+    
     switch (phase) {
       case 'fingerprinting':
         return 'Fingerprinting model...';
@@ -26,7 +29,10 @@ export const AnalysisProgress = ({ phase, progress }: AnalysisProgressProps) => 
             <span>{getPhaseLabel()}</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="w-full" />
+          <Progress 
+            value={progress} 
+            className={`w-full ${isPaused ? "opacity-50" : ""}`} 
+          />
         </div>
       </CardContent>
     </Card>
