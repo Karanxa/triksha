@@ -4,7 +4,7 @@ import { Message, FingerPrintResult } from "../types";
 import { ChatMessages } from "../../chat/ChatMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { useChat } from "../hooks/useChat";
-import { Json } from "@/integrations/supabase/types/common";
+import { Json } from "@/integrations/supabase/types";
 
 interface ChatProps {
   config: {
@@ -33,22 +33,22 @@ export const Chat = ({ config, onComplete, onProgress, isPaused, scanId }: ChatP
       const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
       onProgress?.(progress);
 
-      // Convert messages to JSON-safe format
-      const jsonSafeMessages = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // Convert state to JSON-safe format
+      const jsonSafeState = {
+        progress,
+        messages: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        })),
+        currentQuestionIndex,
+        fingerprint: fingerprintResults
+      } as Json;
 
       // Update scan status in database
       await supabase
         .from('llm_scans')
         .update({
-          results: {
-            progress,
-            messages: jsonSafeMessages,
-            currentQuestionIndex,
-            fingerprint: fingerprintResults
-          } as Json
+          results: jsonSafeState
         })
         .eq('id', scanId);
       
