@@ -1,53 +1,100 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { FingerPrintResult } from '../types';
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { AnalysisProgress } from "./AnalysisProgress";
+import { ChatMessages } from "../../chat/ChatMessages";
+import { Message } from "../types";
+import { FingerPrintResult } from "../types";
 
-export interface DatasetAnalysisProps {
+interface DatasetAnalysisProps {
   config: {
+    datasetId: string;
     provider: string;
     model: string;
-    datasetId: string;
   };
   fingerprint: FingerPrintResult;
   isPaused: boolean;
-  scanId: string | null;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: DatasetAnalysisProps) => {
+export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<any>(null);
 
   useEffect(() => {
-    if (!isPaused) {
-      const timer = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(timer);
-            return 100;
+    const analyzeDataset = async () => {
+      if (isPaused) return;
+      
+      setIsLoading(true);
+      try {
+        // Initial message
+        setMessages([
+          {
+            role: 'system',
+            content: `Starting dataset analysis for ${config.model} using fingerprint results`
           }
-          return prev + 1;
+        ]);
+
+        // Process dataset with fingerprint results
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+          body: {
+            datasetId: config.datasetId,
+            provider: config.provider,
+            model: config.model,
+            fingerprint
+          }
         });
-      }, 100);
-      return () => clearInterval(timer);
+
+        if (error) throw error;
+
+        // Update messages and progress as prompts are processed
+        let currentProgress = 0;
+        const updateInterval = setInterval(() => {
+          if (currentProgress < 100 && !isPaused) {
+            currentProgress += 10;
+            setProgress(currentProgress);
+          } else {
+            clearInterval(updateInterval);
+          }
+        }, 1000);
+
+        // Add analysis results
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `Analysis complete. Processed ${analysisData.processedPrompts} prompts with fingerprint-based augmentation.`
+          }
+        ]);
+
+        setResults(analysisData);
+      } catch (error) {
+        console.error('Dataset analysis error:', error);
+        toast.error('Failed to analyze dataset: ' + (error as Error).message);
+      } finally {
+        setIsLoading(false);
+        setProgress(100);
+      }
+    };
+
+    if (!isPaused) {
+      analyzeDataset();
     }
-  }, [isPaused]);
+  }, [config, fingerprint, isPaused]);
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <h3 className="text-lg font-medium mb-4">Dataset Analysis</h3>
-        <div className="space-y-4">
-          <Progress value={progress} className="w-full" />
-          <div className="grid gap-4">
-            {Object.entries(fingerprint).map(([key, value]) => (
-              <div key={key} className="space-y-2">
-                <h4 className="font-medium capitalize">{key}</h4>
-                <p className="text-sm text-muted-foreground">{value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <AnalysisProgress 
+        phase="dataset_analysis" 
+        progress={progress}
+        isPaused={isPaused}
+      />
+      <Card className="p-4">
+        <ChatMessages messages={messages} isLoading={isLoading} />
+      </Card>
+    </div>
   );
 };

@@ -12,7 +12,7 @@ interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
 }
 
-export const GeraidChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
+export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -67,7 +67,7 @@ export const GeraidChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     setMessages([
       {
         role: 'system',
-        content: `Starting Geraid-E analysis for ${selectedModel}`
+        content: `Starting Geraide-E analysis for ${selectedModel}`
       }
     ]);
     await askNextQuestion();
@@ -141,7 +141,7 @@ export const GeraidChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
         <CardContent className="p-6">
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2">Geraid-E Model Analysis</h3>
+              <h3 className="text-lg font-medium mb-2">Geraide-E Model Analysis</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Select a target model to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
               </p>

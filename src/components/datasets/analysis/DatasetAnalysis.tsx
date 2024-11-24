@@ -14,11 +14,9 @@ interface DatasetAnalysisProps {
     model: string;
   };
   fingerprint: FingerPrintResult;
-  isPaused: boolean;
-  scanId: string | null; // Added scanId to the interface
 }
 
-export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: DatasetAnalysisProps) => {
+export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<'augmenting' | 'testing'>('augmenting');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -26,8 +24,6 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: Datas
 
   useEffect(() => {
     const analyzeDataset = async () => {
-      if (isPaused || !scanId) return;
-      
       setIsLoading(true);
       try {
         // Get user's profile for API keys
@@ -53,8 +49,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: Datas
             datasetId: config.datasetId,
             provider: config.provider,
             model: config.model,
-            fingerprint,
-            scanId
+            fingerprint
           }
         });
 
@@ -81,7 +76,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: Datas
     };
 
     analyzeDataset();
-  }, [config, fingerprint, isPaused, scanId]);
+  }, [config, fingerprint]);
 
   return (
     <div className="space-y-4">

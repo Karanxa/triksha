@@ -3,9 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DatasetSelector } from "./DatasetSelector";
-import { GeraidConfig } from "./types";
+import { ProviderModel, GeraidConfig } from "./types";
 
 interface ModelSelectorProps {
   onStart: (config: GeraidConfig) => void;
@@ -16,7 +15,7 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
 
-  const getModelsForProvider = (provider: string): { value: string; label: string }[] => {
+  const getModelsForProvider = (provider: string): ProviderModel[] => {
     switch (provider) {
       case "openai":
         return [
@@ -44,24 +43,12 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
     }
   };
 
-  const handleStart = () => {
-    if (!selectedProvider || !selectedModel || !selectedDataset) {
-      return;
-    }
-
-    onStart({
-      provider: selectedProvider,
-      model: selectedModel,
-      datasetId: selectedDataset
-    });
-  };
-
   return (
     <Card>
       <CardContent className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-medium mb-2">Geraid Engine</h3>
+            <h3 className="text-lg font-medium mb-2">Geraid-Engine</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Select a target model and dataset to begin. This will help understand the model's capabilities and test it against your dataset.
             </p>
@@ -110,26 +97,18 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Dataset</Label>
-              <Tabs defaultValue="select" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="select">Select Dataset</TabsTrigger>
-                  <TabsTrigger value="upload" disabled>Upload CSV</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="select" className="mt-4">
-                  <DatasetSelector 
-                    value={selectedDataset}
-                    onValueChange={setSelectedDataset}
-                  />
-                </TabsContent>
-              </Tabs>
-            </div>
+            <DatasetSelector 
+              value={selectedDataset}
+              onValueChange={setSelectedDataset}
+            />
           </div>
 
           <Button 
-            onClick={handleStart}
+            onClick={() => onStart({
+              provider: selectedProvider,
+              model: selectedModel,
+              datasetId: selectedDataset
+            })}
             className="w-full"
             disabled={!selectedProvider || !selectedModel || !selectedDataset}
           >
