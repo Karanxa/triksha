@@ -6,7 +6,12 @@ import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessa
 import { ModelSelector } from "./geraid-engine/ModelSelector";
 import { toast } from "sonner";
 import { CustomEndpoint } from "./types/CustomEndpoint";
-import { DatasetSelector } from "./geraid-engine/DatasetSelector";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2 } from "lucide-react";
 
 interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
@@ -18,6 +23,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   const [selectedDataset, setSelectedDataset] = useState("");
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>();
   const [isStarted, setIsStarted] = useState(false);
+  
   const { 
     messages, 
     isLoading, 
@@ -29,6 +35,23 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     isPaused,
     setIsPaused
   } = useGeraideScan();
+
+  // Fetch available datasets
+  const { data: datasets, isLoading: isLoadingDatasets } = useQuery({
+    queryKey: ['user-datasets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('datasets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast.error("Failed to fetch datasets");
+        return [];
+      }
+      return data;
+    }
+  });
 
   const startAnalysis = async () => {
     if ((!selectedProvider || !selectedModel) && selectedProvider !== "custom") {
@@ -109,10 +132,34 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
               onCustomEndpointChange={setCustomEndpoint}
             />
 
-            <DatasetSelector
-              value={selectedDataset}
-              onValueChange={setSelectedDataset}
-            />
+            <div className="space-y-2">
+              <Label>Select Dataset</Label>
+              {isLoadingDatasets ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                <ScrollArea className="h-[200px]">
+                  <Select value={selectedDataset} onValueChange={setSelectedDataset}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a dataset" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {datasets?.map((dataset) => (
+                        <SelectItem key={dataset.id} value={dataset.id}>
+                          {dataset.name}
+                          {dataset.description && (
+                            <span className="text-sm text-muted-foreground ml-2">
+                              - {dataset.description}
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ScrollArea>
+              )}
+            </div>
 
             <Button 
               onClick={startAnalysis}
