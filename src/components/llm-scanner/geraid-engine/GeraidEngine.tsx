@@ -6,6 +6,7 @@ import { DatasetAnalysis } from "./components/DatasetAnalysis";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -89,7 +90,19 @@ export const GeraidEngine = () => {
   const renderPhase = () => {
     switch (phase) {
       case "not_started":
-        return <InitialPhase onStart={handleStart} />;
+        return (
+          <Card className="bg-card/50 border-muted/20">
+            <CardContent className="p-6 space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-2">Configure Analysis</h3>
+                <p className="text-sm text-muted-foreground">
+                  Select a model and dataset to begin the analysis process.
+                </p>
+              </div>
+              <InitialPhase onStart={handleStart} />
+            </CardContent>
+          </Card>
+        );
       
       case "fingerprinting":
         return config ? (
