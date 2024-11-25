@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Message } from '../types';
+import { Message, CustomEndpoint } from '../types';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -17,7 +17,11 @@ export const useGeraideScan = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
 
-  const processNextQuestion = useCallback(async (provider: string, model: string) => {
+  const processNextQuestion = useCallback(async (
+    provider: string, 
+    model: string,
+    customEndpoint?: CustomEndpoint
+  ) => {
     if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
       setScanComplete(true);
       return false;
@@ -31,12 +35,13 @@ export const useGeraideScan = () => {
       // Add the question to messages immediately
       setMessages(prev => [...prev, { role: 'user', content: question }]);
 
-      console.log('Making request to geraide-fingerprint function with:', { provider, model, prompt: question });
+      console.log('Making request to geraide-fingerprint function with:', { provider, model, prompt: question, customEndpoint });
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider,
           model,
-          prompt: question
+          prompt: question,
+          customEndpoint
         }
       });
 

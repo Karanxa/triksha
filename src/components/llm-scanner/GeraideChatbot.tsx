@@ -5,6 +5,7 @@ import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
 import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessages";
 import { ModelSelector } from "./geraid-engine/ModelSelector";
 import { toast } from "sonner";
+import { CustomEndpoint } from "./types/CustomEndpoint";
 
 interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
@@ -13,6 +14,15 @@ interface GeraideChatbotProps {
 export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
+  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
+    url: '',
+    apiKey: '',
+    headers: '',
+    placeholder: '{PROMPT}',
+    curlCommand: '',
+    inputType: 'curl',
+    method: 'POST'
+  });
   const [isStarted, setIsStarted] = useState(false);
   const { 
     messages, 
@@ -25,24 +35,29 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   } = useGeraideScan();
 
   const startAnalysis = async () => {
-    if (!selectedProvider || !selectedModel) {
-      toast.error("Please select both a provider and model first");
+    if (!selectedProvider) {
+      toast.error("Please select a provider first");
+      return;
+    }
+
+    if (selectedProvider === 'custom' && !customEndpoint.curlCommand && customEndpoint.inputType === 'curl') {
+      toast.error("Please enter a cURL command for the custom endpoint");
       return;
     }
 
     setIsStarted(true);
     reset();
-    await processNextQuestion(selectedProvider, selectedModel);
+    await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
   };
 
   useEffect(() => {
     if (isStarted && !isLoading && currentStep < totalQuestions) {
       const timer = setTimeout(() => {
-        processNextQuestion(selectedProvider, selectedModel);
+        processNextQuestion(selectedProvider, selectedModel, customEndpoint);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, totalQuestions]);
+  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, customEndpoint, totalQuestions]);
 
   useEffect(() => {
     if (scanComplete && onFingerprint) {
@@ -74,12 +89,14 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
               model={selectedModel}
               onProviderChange={setSelectedProvider}
               onModelChange={setSelectedModel}
+              customEndpoint={customEndpoint}
+              onCustomEndpointChange={(endpoint) => setCustomEndpoint(prev => ({ ...prev, ...endpoint }))}
             />
 
             <Button 
               onClick={startAnalysis}
               className="w-full"
-              disabled={!selectedProvider || !selectedModel}
+              disabled={!selectedProvider || (!selectedModel && selectedProvider !== 'custom')}
             >
               Start Analysis
             </Button>
@@ -95,7 +112,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
       <div className="flex justify-end">
         <Button
-          onClick={() => processNextQuestion(selectedProvider, selectedModel)}
+          onClick={() => processNextQuestion(selectedProvider, selectedModel, customEndpoint)}
           disabled={isLoading || currentStep >= totalQuestions}
         >
           {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
