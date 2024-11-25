@@ -16,7 +16,7 @@ import Login from "@/pages/Login";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="geraid-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="geraid-theme" forcedTheme="dark">
       <ErrorBoundary>
         <Router>
           <Routes>
