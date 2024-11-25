@@ -1,6 +1,5 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { HttpRequestInput } from "./HttpRequestInput";
 import { ManualInput } from "./ManualInput";
 import { CurlInput } from "./CurlInput";
 import { CustomEndpoint } from "../types/CustomEndpoint";
@@ -8,8 +7,8 @@ import { CustomEndpoint } from "../types/CustomEndpoint";
 export interface CustomEndpointInputProps {
   customEndpoint: CustomEndpoint;
   onCustomEndpointChange: (endpoint: Partial<CustomEndpoint>) => void;
-  inputType: 'curl' | 'manual' | 'http';
-  onInputTypeChange: (type: 'curl' | 'manual' | 'http') => void;
+  inputType: 'curl' | 'manual';
+  onInputTypeChange: (type: 'curl' | 'manual') => void;
 }
 
 export const CustomEndpointInput = ({
@@ -24,14 +23,13 @@ export const CustomEndpointInput = ({
         <Label>Input Method</Label>
         <RadioGroup
           value={inputType}
-          onValueChange={(value: 'curl' | 'manual' | 'http') => {
+          onValueChange={(value: 'curl' | 'manual') => {
             onInputTypeChange(value);
             // Reset relevant fields when changing input type
             onCustomEndpointChange({
               ...customEndpoint,
               inputType: value,
               curlCommand: value === 'curl' ? customEndpoint.curlCommand : '',
-              httpRequest: value === 'http' ? customEndpoint.httpRequest : '',
               url: value === 'manual' ? customEndpoint.url : '',
               apiKey: value === 'manual' ? customEndpoint.apiKey : '',
               headers: value === 'manual' ? customEndpoint.headers : '',
@@ -39,10 +37,6 @@ export const CustomEndpointInput = ({
           }}
           className="flex flex-col space-y-2"
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="http" id="http" />
-            <Label htmlFor="http">HTTP Request</Label>
-          </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="curl" id="curl" />
             <Label htmlFor="curl">cURL Command</Label>
@@ -53,15 +47,6 @@ export const CustomEndpointInput = ({
           </div>
         </RadioGroup>
       </div>
-
-      {inputType === 'http' && (
-        <HttpRequestInput
-          httpRequest={customEndpoint.httpRequest || ''}
-          placeholder={customEndpoint.placeholder || '{PROMPT}'}
-          onHttpRequestChange={(value) => onCustomEndpointChange({ ...customEndpoint, httpRequest: value })}
-          onPlaceholderChange={(value) => onCustomEndpointChange({ ...customEndpoint, placeholder: value })}
-        />
-      )}
 
       {inputType === 'curl' && (
         <CurlInput
