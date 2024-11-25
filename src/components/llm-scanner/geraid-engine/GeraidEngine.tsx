@@ -13,12 +13,6 @@ export const GeraidEngine = () => {
     provider: string;
     model: string;
     datasetId: string;
-    customEndpoint?: {
-      url: string;
-      apiKey: string;
-      headers: string;
-      method: string;
-    };
   } | null>(null);
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
   const [fingerprintProgress, setFingerprintProgress] = useState(0);
