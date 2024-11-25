@@ -52,7 +52,8 @@ export const ScanFormProvider = ({
               <SelectItem value="openai">OpenAI</SelectItem>
               <SelectItem value="anthropic">Anthropic</SelectItem>
               <SelectItem value="google">Google AI</SelectItem>
-              <SelectItem value="ollama">Ollama (Custom Endpoint)</SelectItem>
+              <SelectItem value="ollama">Ollama</SelectItem>
+              <SelectItem value="custom">Custom Endpoint</SelectItem>
             </SelectContent>
           </Select>
         </div>
