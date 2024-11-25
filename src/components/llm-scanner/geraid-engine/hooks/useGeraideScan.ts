@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { toast } from 'sonner';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -16,6 +17,41 @@ export const useGeraideScan = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
+  const [endpointValidated, setEndpointValidated] = useState(false);
+
+  const validateCustomEndpoint = async (provider: string, model: string, customEndpoint?: CustomEndpoint) => {
+    if (provider !== 'custom' || !customEndpoint) return true;
+    
+    setIsLoading(true);
+    try {
+      console.log('Validating custom endpoint...');
+      const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
+        body: {
+          provider,
+          model,
+          prompt: 'Test message to validate endpoint',
+          customEndpoint
+        }
+      });
+
+      if (error) throw error;
+      
+      if (!data?.response) {
+        throw new Error('No response received from endpoint');
+      }
+
+      console.log('Custom endpoint validated successfully');
+      setEndpointValidated(true);
+      toast.success('Custom endpoint validated successfully');
+      return true;
+    } catch (error) {
+      console.error('Custom endpoint validation failed:', error);
+      toast.error(`Failed to validate custom endpoint: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const processNextQuestion = useCallback(async (
     provider: string, 
@@ -27,15 +63,26 @@ export const useGeraideScan = () => {
       return false;
     }
 
+    // For custom endpoints, validate first if not already validated
+    if (provider === 'custom' && !endpointValidated) {
+      const isValid = await validateCustomEndpoint(provider, model, customEndpoint);
+      if (!isValid) return false;
+    }
+
     setIsLoading(true);
     const question = FINGERPRINTING_QUESTIONS[currentStep];
-    console.log(`Processing question ${currentStep + 1}/${FINGERPRINTING_QUESTIONS.length}:`, question);
-
+    
     try {
       // Add the question to messages immediately
       setMessages(prev => [...prev, { role: 'user', content: question }]);
 
-      console.log('Making request to geraide-fingerprint function with:', { provider, model, prompt: question, customEndpoint });
+      console.log('Making request to geraide-fingerprint function with:', { 
+        provider, 
+        model, 
+        prompt: question,
+        customEndpoint 
+      });
+
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider,
@@ -45,12 +92,7 @@ export const useGeraideScan = () => {
         }
       });
 
-      if (error) {
-        console.error('Error from geraide-fingerprint:', error);
-        throw error;
-      }
-
-      console.log('Received response:', data);
+      if (error) throw error;
 
       if (!data?.response) {
         throw new Error('No response received from the model');
@@ -63,19 +105,21 @@ export const useGeraideScan = () => {
       setCurrentStep(prev => prev + 1);
       
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error in fingerprinting:', error);
+      toast.error(`Failed to process question: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [currentStep]);
+  }, [currentStep, endpointValidated]);
 
   const reset = () => {
     setMessages([]);
     setCurrentStep(0);
     setScanComplete(false);
     setIsLoading(false);
+    setEndpointValidated(false);
   };
 
   return {
