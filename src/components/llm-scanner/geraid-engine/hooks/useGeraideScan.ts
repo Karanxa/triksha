@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Message, CustomEndpoint } from '../types';
+import { Message } from '../types';
+import { CustomEndpoint } from '../../types/CustomEndpoint';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -65,7 +65,6 @@ export const useGeraideScan = () => {
       return true;
     } catch (error: any) {
       console.error('Error in fingerprinting:', error);
-      toast.error(`Failed to process question: ${error.message}`);
       return false;
     } finally {
       setIsLoading(false);
