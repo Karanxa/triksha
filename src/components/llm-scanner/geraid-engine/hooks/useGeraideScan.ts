@@ -29,7 +29,7 @@ export const useGeraideScan = () => {
         body: {
           provider,
           model,
-          prompt: 'Test message to validate endpoint',
+          prompt: 'Test validation message',
           customEndpoint
         }
       });
@@ -66,7 +66,10 @@ export const useGeraideScan = () => {
     // For custom endpoints, validate first if not already validated
     if (provider === 'custom' && !endpointValidated) {
       const isValid = await validateCustomEndpoint(provider, model, customEndpoint);
-      if (!isValid) return false;
+      if (!isValid) {
+        toast.error('Please check your custom endpoint configuration and try again');
+        return false;
+      }
     }
 
     setIsLoading(true);
@@ -75,13 +78,6 @@ export const useGeraideScan = () => {
     try {
       // Add the question to messages immediately
       setMessages(prev => [...prev, { role: 'user', content: question }]);
-
-      console.log('Making request to geraide-fingerprint function with:', { 
-        provider, 
-        model, 
-        prompt: question,
-        customEndpoint 
-      });
 
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
