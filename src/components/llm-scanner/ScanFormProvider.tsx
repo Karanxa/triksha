@@ -19,7 +19,7 @@ export const ScanFormProvider = ({
   onCustomEndpointChange,
 }: ScanFormProviderProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
-  const [inputType, setInputType] = useState<'curl' | 'manual' | 'http'>("manual");
+  const [inputType, setInputType] = useState<'curl' | 'manual'>('manual');
   const form = useForm({
     defaultValues: {
       model: "",

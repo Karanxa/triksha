@@ -1,22 +1,31 @@
 import { ModelSelector } from "../ModelSelector";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CustomEndpoint } from "../../types/CustomEndpoint";
 
 interface InitialPhaseProps {
-  onStart: (config: { provider: string; model: string; datasetId: string }) => void;
+  onStart: (config: { provider: string; model: string; datasetId: string; customEndpoint?: CustomEndpoint }) => void;
 }
 
 export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
+  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
+    url: '',
+    apiKey: '',
+    headers: '',
+    placeholder: '{PROMPT}',
+    curlCommand: '',
+    inputType: 'manual',
+    method: 'POST'
+  });
 
   const { data: datasets, isLoading: isLoadingDatasets } = useQuery({
     queryKey: ['user-datasets'],
@@ -43,36 +52,22 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
     onStart({
       provider,
       model,
-      datasetId: selectedDataset
+      datasetId: selectedDataset,
+      customEndpoint: provider === 'custom' ? customEndpoint : undefined
     });
   };
 
   return (
     <div className="space-y-4">
       <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Provider</Label>
-          <Select value={provider} onValueChange={setProvider}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select provider" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
-              <SelectItem value="google">Google AI</SelectItem>
-              <SelectItem value="ollama">Ollama</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {provider && (
-          <ModelSelector
-            provider={provider}
-            model={model}
-            onProviderChange={setProvider}
-            onModelChange={setModel}
-          />
-        )}
+        <ModelSelector
+          provider={provider}
+          model={model}
+          onProviderChange={setProvider}
+          onModelChange={setModel}
+          customEndpoint={customEndpoint}
+          onCustomEndpointChange={(endpoint) => setCustomEndpoint(prev => ({ ...prev, ...endpoint }))}
+        />
 
         <div className="space-y-2">
           <Label>Dataset</Label>
@@ -101,7 +96,7 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
       <Button 
         onClick={handleStart}
         className="w-full"
-        disabled={!provider || !model || !selectedDataset}
+        disabled={!provider || (!model && provider !== 'custom') || !selectedDataset}
       >
         Start Analysis
       </Button>

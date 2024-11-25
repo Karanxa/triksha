@@ -1,19 +1,28 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CustomEndpointInput } from "../providers/CustomEndpointInput";
+import { useState } from "react";
+import { CustomEndpoint } from "../types/CustomEndpoint";
 
 export interface ModelSelectorProps {
   provider: string;
   model: string;
   onProviderChange: (value: string) => void;
   onModelChange: (value: string) => void;
+  customEndpoint?: CustomEndpoint;
+  onCustomEndpointChange?: (endpoint: Partial<CustomEndpoint>) => void;
 }
 
 export const ModelSelector = ({ 
   provider, 
   model, 
   onProviderChange, 
-  onModelChange 
+  onModelChange,
+  customEndpoint,
+  onCustomEndpointChange
 }: ModelSelectorProps) => {
+  const [inputType, setInputType] = useState<'curl' | 'manual'>('manual');
+
   const getModelsForProvider = (provider: string) => {
     switch (provider) {
       case "openai":
@@ -61,11 +70,29 @@ export const ModelSelector = ({
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
             <SelectItem value="ollama">Ollama</SelectItem>
+            <SelectItem value="custom">Custom Endpoint</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {provider && (
+      {provider === 'custom' && onCustomEndpointChange && (
+        <CustomEndpointInput
+          customEndpoint={customEndpoint || {
+            url: '',
+            apiKey: '',
+            headers: '',
+            placeholder: '{PROMPT}',
+            curlCommand: '',
+            inputType: 'manual',
+            method: 'POST'
+          }}
+          onCustomEndpointChange={onCustomEndpointChange}
+          inputType={inputType}
+          onInputTypeChange={setInputType}
+        />
+      )}
+
+      {provider && provider !== 'custom' && (
         <div className="space-y-2">
           <Label>Model</Label>
           <Select 
