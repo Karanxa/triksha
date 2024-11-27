@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { handleRequest } from "./utils/requestHandler.ts";
-import { validateEndpoint } from "./utils/validation.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +14,7 @@ serve(async (req) => {
 
   try {
     const { provider, model, prompt, customEndpoint } = await req.json();
-    console.log('Fingerprinting request:', { provider, model, prompt });
+    console.log('Fingerprinting request:', { provider, model, prompt, customEndpoint });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -32,21 +31,7 @@ serve(async (req) => {
 
     if (userError || !user) throw new Error('Invalid user token');
 
-    // For validation requests, only check if the endpoint is accessible
-    if (prompt === 'Test validation message') {
-      if (provider === 'custom' && customEndpoint) {
-        const isValid = await validateEndpoint(customEndpoint);
-        if (!isValid) {
-          throw new Error('Failed to validate custom endpoint');
-        }
-        return new Response(
-          JSON.stringify({ response: 'Endpoint validated successfully' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // Get user's API keys for non-custom providers
+    // Get user's API keys
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('api_keys')
@@ -56,14 +41,25 @@ serve(async (req) => {
     if (profileError) throw new Error('Failed to fetch user profile');
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
-    // Process the request
-    const response = await handleRequest(provider, model, prompt, customEndpoint);
+    let response;
+    if (provider === 'custom' && customEndpoint) {
+      response = await handleCustomRequest(prompt, customEndpoint);
+    } else if (provider === 'openai') {
+      const openaiKey = profile.api_keys.openai;
+      if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
+      response = await handleOpenAIRequest(prompt, model, openaiKey);
+    } else if (provider === 'anthropic') {
+      const anthropicKey = profile.api_keys.anthropic;
+      if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
+      response = await handleAnthropicRequest(prompt, model, anthropicKey);
+    } else {
+      throw new Error('Unsupported provider');
+    }
 
     return new Response(
       JSON.stringify({ response }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('Error in geraide-fingerprint function:', error);
     return new Response(
@@ -75,3 +71,100 @@ serve(async (req) => {
     );
   }
 });
+
+async function handleCustomRequest(prompt: string, customEndpoint: any) {
+  const { url, method, headers: rawHeaders, inputType, httpRequest, curlCommand } = customEndpoint;
+  
+  let requestUrl = url;
+  let requestBody;
+  let headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+
+  // Parse custom headers if provided
+  if (rawHeaders) {
+    try {
+      const parsedHeaders = JSON.parse(rawHeaders);
+      headers = { ...headers, ...parsedHeaders };
+    } catch (error) {
+      console.error('Error parsing custom headers:', error);
+    }
+  }
+
+  if (inputType === 'http') {
+    // Parse HTTP request and replace placeholder
+    requestBody = httpRequest.replace('{PROMPT}', prompt);
+  } else if (inputType === 'curl') {
+    // Parse curl command and replace placeholder
+    requestBody = curlCommand.replace('{PROMPT}', prompt);
+  } else {
+    // Manual configuration
+    requestBody = JSON.stringify({ prompt });
+  }
+
+  console.log('Making custom request:', {
+    url: requestUrl,
+    method,
+    headers,
+    body: requestBody
+  });
+
+  const response = await fetch(requestUrl, {
+    method,
+    headers,
+    body: requestBody
+  });
+
+  if (!response.ok) {
+    throw new Error(`Custom endpoint returned status ${response.status}`);
+  }
+
+  return await response.text();
+}
+
+async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model === 'gpt-4o' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`OpenAI API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function handleAnthropicRequest(prompt: string, model: string, apiKey: string) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1024,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Anthropic API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+}
