@@ -54,12 +54,14 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   };
 
   useEffect(() => {
-    if (isStarted && !isLoading && currentStep < totalQuestions && messages[messages.length - 1]?.role === 'assistant') {
-      const timer = setTimeout(() => {
-        processNextQuestion(selectedProvider, selectedModel, customEndpoint);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+    const processNextStep = async () => {
+      if (isStarted && !isLoading && currentStep < totalQuestions && messages[messages.length - 1]?.role === 'assistant') {
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Add delay between messages
+        await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+      }
+    };
+
+    processNextStep();
   }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, customEndpoint, totalQuestions, messages, processNextQuestion]);
 
   useEffect(() => {
@@ -116,7 +118,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
       <div className="flex justify-end">
         <Button
           onClick={() => processNextQuestion(selectedProvider, selectedModel, customEndpoint)}
-          disabled={isLoading || currentStep >= totalQuestions || !messages[messages.length - 1]?.role === 'assistant'}
+          disabled={isLoading || currentStep >= totalQuestions || messages[messages.length - 1]?.role !== 'assistant'}
         >
           {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
         </Button>
