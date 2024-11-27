@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { toast } from 'sonner';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -16,6 +17,7 @@ export const useGeraideScan = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
+  const [hasValidResponse, setHasValidResponse] = useState(false);
 
   const processNextQuestion = useCallback(async (
     provider: string, 
@@ -47,14 +49,23 @@ export const useGeraideScan = () => {
 
       if (error) {
         console.error('Error from geraide-fingerprint:', error);
-        throw error;
+        toast.error(`Failed to get response: ${error.message}`);
+        setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }]);
+        return false;
       }
 
       console.log('Received response:', data);
 
       if (!data?.response) {
-        throw new Error('No response received from the model');
+        const errorMsg = 'No response received from the model';
+        console.error(errorMsg);
+        toast.error(errorMsg);
+        setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errorMsg}` }]);
+        return false;
       }
+
+      // Set hasValidResponse to true only when we get a valid response
+      setHasValidResponse(true);
 
       // Add response after a delay to simulate natural conversation
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -65,6 +76,8 @@ export const useGeraideScan = () => {
       return true;
     } catch (error: any) {
       console.error('Error in fingerprinting:', error);
+      toast.error(`Error: ${error.message}`);
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }]);
       return false;
     } finally {
       setIsLoading(false);
@@ -76,6 +89,7 @@ export const useGeraideScan = () => {
     setCurrentStep(0);
     setScanComplete(false);
     setIsLoading(false);
+    setHasValidResponse(false);
   };
 
   return {
@@ -83,6 +97,7 @@ export const useGeraideScan = () => {
     isLoading,
     currentStep,
     scanComplete,
+    hasValidResponse,
     processNextQuestion,
     reset,
     totalQuestions: FINGERPRINTING_QUESTIONS.length
