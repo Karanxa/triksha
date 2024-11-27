@@ -17,7 +17,6 @@ export const useGeraideScan = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
-  const [hasValidResponse, setHasValidResponse] = useState(false);
 
   const processNextQuestion = useCallback(async (
     provider: string, 
@@ -64,9 +63,6 @@ export const useGeraideScan = () => {
         return false;
       }
 
-      // Set hasValidResponse to true only when we get a valid response
-      setHasValidResponse(true);
-
       // Add response after a delay to simulate natural conversation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -89,7 +85,6 @@ export const useGeraideScan = () => {
     setCurrentStep(0);
     setScanComplete(false);
     setIsLoading(false);
-    setHasValidResponse(false);
   };
 
   return {
@@ -97,7 +92,6 @@ export const useGeraideScan = () => {
     isLoading,
     currentStep,
     scanComplete,
-    hasValidResponse,
     processNextQuestion,
     reset,
     totalQuestions: FINGERPRINTING_QUESTIONS.length

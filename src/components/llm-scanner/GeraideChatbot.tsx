@@ -29,7 +29,6 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     isLoading, 
     currentStep,
     scanComplete,
-    hasValidResponse,
     processNextQuestion,
     reset,
     totalQuestions
@@ -55,22 +54,22 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   };
 
   useEffect(() => {
-    if (isStarted && !isLoading && currentStep < totalQuestions && hasValidResponse) {
+    if (isStarted && !isLoading && currentStep < totalQuestions && messages[messages.length - 1]?.role === 'assistant') {
       const timer = setTimeout(() => {
         processNextQuestion(selectedProvider, selectedModel, customEndpoint);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, customEndpoint, totalQuestions, hasValidResponse, processNextQuestion]);
+  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, customEndpoint, totalQuestions, messages, processNextQuestion]);
 
   useEffect(() => {
     if (scanComplete && onFingerprint) {
       const results = {
-        capabilities: messages[2]?.content || '',
-        boundaries: messages[4]?.content || '',
-        training: messages[6]?.content || '',
-        languages: messages[8]?.content || '',
-        safety: messages[10]?.content || ''
+        capabilities: messages[1]?.content || '',
+        boundaries: messages[3]?.content || '',
+        training: messages[5]?.content || '',
+        languages: messages[7]?.content || '',
+        safety: messages[9]?.content || ''
       };
       onFingerprint(results);
     }
@@ -117,7 +116,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
       <div className="flex justify-end">
         <Button
           onClick={() => processNextQuestion(selectedProvider, selectedModel, customEndpoint)}
-          disabled={isLoading || currentStep >= totalQuestions || !hasValidResponse}
+          disabled={isLoading || currentStep >= totalQuestions || !messages[messages.length - 1]?.role === 'assistant'}
         >
           {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
         </Button>
