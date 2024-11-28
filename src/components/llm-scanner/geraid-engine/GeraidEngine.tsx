@@ -8,10 +8,8 @@ import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@supabase/auth-helpers-react";
 
 export const GeraidEngine = () => {
-  const session = useSession();
   const [phase, setPhase] = useState<Phase>("not_started");
   const [config, setConfig] = useState<{
     provider: string;
@@ -25,11 +23,6 @@ export const GeraidEngine = () => {
 
   const handleStart = async (newConfig: typeof config) => {
     try {
-      if (!session?.user?.id) {
-        toast.error("Please log in to start analysis");
-        return;
-      }
-
       setConfig(newConfig);
       
       if (!newConfig) {
@@ -43,8 +36,7 @@ export const GeraidEngine = () => {
           provider: newConfig.provider,
           model: newConfig.model,
           messages: [],
-          is_vulnerable: null,
-          user_id: session.user.id
+          is_vulnerable: null
         })
         .select()
         .single();
