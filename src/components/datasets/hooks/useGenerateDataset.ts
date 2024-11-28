@@ -72,6 +72,20 @@ export const useGenerateDataset = ({
         throw new Error('Please add your OpenAI API key in the Settings page')
       }
 
+      // Get fingerprint results for non-manual methods
+      if (method !== 'manual' && !fingerprintResults) {
+        const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
+          body: {
+            provider: targetModel.split('-')[0],
+            model: targetModel.split('-')[1],
+            prompt: "Tell me about your capabilities and limitations"
+          }
+        })
+
+        if (fingerprintError) throw fingerprintError
+        setFingerprintResults(fingerprintData)
+      }
+
       // Generate dataset variations using OpenAI
       const systemPrompt = method === 'manual' 
         ? `You are an expert in generating diverse, high-quality prompt variations. Create ${numSamples} unique variations of the following prompt while maintaining its core intent and purpose. Each variation should be different but achieve the same goal.`
@@ -137,7 +151,8 @@ export const useGenerateDataset = ({
             recipe: method === 'recipe' ? recipe : null,
             targetModel: method !== 'manual' ? targetModel : null,
             adversarialConfig: method === 'adversarial' ? adversarialConfig : null,
-            promptCount: variations.length
+            promptCount: variations.length,
+            fingerprintResults: method !== 'manual' ? fingerprintResults : null
           }
         })
 
