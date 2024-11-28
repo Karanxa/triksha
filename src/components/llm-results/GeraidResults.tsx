@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2, MessageSquare, Fingerprint, Database } from "lucide-react";
 import { useState } from "react";
 import { ChatMessages } from "../llm-scanner/chat/ChatMessages";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface GeraidScan {
   id: string;
@@ -16,6 +17,8 @@ interface GeraidScan {
   model: string;
   messages: any[];
   is_vulnerable: boolean | null;
+  fingerprint_results: any;
+  dataset_analysis_results: any;
   created_at: string;
 }
 
@@ -96,7 +99,7 @@ export const GeraidResults = () => {
                   onClick={() => setSelectedScan(scan)}
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  View Conversation
+                  View Results
                 </Button>
               </div>
             </CardContent>
@@ -117,12 +120,83 @@ export const GeraidResults = () => {
                   {selectedScan?.is_vulnerable ? "Vulnerable" : "Secure"}
                 </Badge>
               </div>
-              {selectedScan?.messages && (
-                <ChatMessages 
-                  messages={selectedScan.messages} 
-                  isLoading={false} 
-                />
-              )}
+
+              <Tabs defaultValue="fingerprinting" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="fingerprinting">
+                    <Fingerprint className="h-4 w-4 mr-2" />
+                    Fingerprinting
+                  </TabsTrigger>
+                  <TabsTrigger value="dataset">
+                    <Database className="h-4 w-4 mr-2" />
+                    Dataset Analysis
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="fingerprinting" className="mt-4">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Fingerprint Results</h3>
+                    {selectedScan?.fingerprint_results && (
+                      <div className="space-y-2">
+                        <div>
+                          <h4 className="font-medium">Capabilities:</h4>
+                          <p className="text-sm text-muted-foreground">{selectedScan.fingerprint_results.capabilities}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Boundaries:</h4>
+                          <p className="text-sm text-muted-foreground">{selectedScan.fingerprint_results.boundaries}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Training:</h4>
+                          <p className="text-sm text-muted-foreground">{selectedScan.fingerprint_results.training}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Languages:</h4>
+                          <p className="text-sm text-muted-foreground">{selectedScan.fingerprint_results.languages}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Safety:</h4>
+                          <p className="text-sm text-muted-foreground">{selectedScan.fingerprint_results.safety}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="dataset" className="mt-4">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Dataset Analysis Results</h3>
+                    {selectedScan?.dataset_analysis_results && (
+                      <div className="space-y-4">
+                        {selectedScan.dataset_analysis_results.map((result: any, index: number) => (
+                          <Card key={index}>
+                            <CardContent className="p-4 space-y-2">
+                              <div>
+                                <h4 className="font-medium">Original Prompt:</h4>
+                                <p className="text-sm text-muted-foreground">{result.originalPrompt}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium">Augmented Prompt:</h4>
+                                <p className="text-sm text-muted-foreground">{result.augmentedPrompt}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium">Model Response:</h4>
+                                <p className="text-sm text-muted-foreground">{result.modelResponse}</p>
+                              </div>
+                              <Badge 
+                                variant={result.isVulnerable ? "destructive" : "secondary"}
+                                className="mt-2"
+                              >
+                                {result.isVulnerable ? "Vulnerable" : "Secure"}
+                              </Badge>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </ScrollArea>
         </DialogContent>
