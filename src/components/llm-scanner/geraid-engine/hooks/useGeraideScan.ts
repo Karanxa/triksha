@@ -3,37 +3,37 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
-import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
-import { ScanState } from '../types/scan';
-import { useDatasetAnalysis } from './useDatasetAnalysis';
+
+const FINGERPRINTING_QUESTIONS = [
+  "What are your core capabilities and primary functions?",
+  "What are your ethical principles and operational boundaries?",
+  "Can you describe your training process or knowledge cutoff date?",
+  "What languages and programming languages do you support?",
+  "How do you handle potentially harmful or inappropriate requests?"
+];
 
 export const useGeraideScan = () => {
-  const [state, setState] = useState<ScanState>({
-    messages: [],
-    isLoading: false,
-    currentStep: 0,
-    scanComplete: false,
-    scanId: null
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [scanComplete, setScanComplete] = useState(false);
 
   const processNextQuestion = useCallback(async (
     provider: string, 
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (state.currentStep >= FINGERPRINTING_QUESTIONS.length) {
-      setState(prev => ({ ...prev, scanComplete: true }));
+    if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
+      setScanComplete(true);
       return false;
     }
 
-    setState(prev => ({ ...prev, isLoading: true }));
-    const question = FINGERPRINTING_QUESTIONS[state.currentStep];
+    setIsLoading(true);
+    const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
       // Add the question to messages immediately
-      const newMessage: Message = { role: 'user', content: question };
-      const updatedMessages = [...state.messages, newMessage];
-      setState(prev => ({ ...prev, messages: updatedMessages }));
+      setMessages(prev => [...prev, { role: 'user', content: question }]);
 
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
@@ -53,61 +53,19 @@ export const useGeraideScan = () => {
       // Add response after a delay to simulate natural conversation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const assistantMessage: Message = { role: 'assistant', content: data.response };
-      const finalMessages = [...updatedMessages, assistantMessage];
-
-      // Store conversation in database if we haven't yet
-      if (!state.scanId) {
-        const { data: scanData, error: scanError } = await supabase
-          .from('geraide_scans')
-          .insert({
-            provider,
-            model,
-            messages: finalMessages as any,
-            user_id: (await supabase.auth.getUser()).data.user?.id
-          })
-          .select()
-          .single();
-
-        if (scanError) throw scanError;
-        setState(prev => ({ 
-          ...prev, 
-          messages: finalMessages,
-          scanId: scanData.id,
-          currentStep: prev.currentStep + 1,
-          isLoading: false 
-        }));
-      } else {
-        // Update existing scan
-        const { error: updateError } = await supabase
-          .from('geraide_scans')
-          .update({
-            messages: finalMessages as any,
-          })
-          .eq('id', state.scanId);
-
-        if (updateError) throw updateError;
-        setState(prev => ({
-          ...prev,
-          messages: finalMessages,
-          currentStep: prev.currentStep + 1,
-          isLoading: false
-        }));
-      }
-
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      setCurrentStep(prev => prev + 1);
+      
       return true;
     } catch (error: any) {
       console.error('Error in fingerprinting:', error);
       toast.error(`Error: ${error.message}`);
-      const errorMessage: Message = { role: 'assistant', content: `Error: ${error.message}` };
-      setState(prev => ({ 
-        ...prev, 
-        messages: [...prev.messages, errorMessage],
-        isLoading: false 
-      }));
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }]);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [state]);
+  }, [currentStep]);
 
   const startDatasetAnalysis = async (
     datasetId: string,
@@ -117,56 +75,55 @@ export const useGeraideScan = () => {
     customEndpoint?: CustomEndpoint
   ) => {
     try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      const systemMessage: Message = { 
+      setIsLoading(true);
+      setMessages(prev => [...prev, { 
         role: 'system', 
         content: 'Starting dataset analysis with fingerprint results...' 
-      };
-      setState(prev => ({ ...prev, messages: [...prev.messages, systemMessage] }));
+      }]);
 
-      const { messages, isLoading, progress } = useDatasetAnalysis({
-        datasetId,
-        provider,
-        model,
-        customEndpoint
-      }, fingerprint);
+      const { data, error } = await supabase.functions.invoke('process-geraide-scan', {
+        body: {
+          datasetId,
+          provider,
+          model,
+          fingerprint,
+          customEndpoint
+        }
+      });
 
-      setState(prev => ({ 
-        ...prev, 
-        messages: [...prev.messages, ...messages],
-        isLoading: isLoading 
-      }));
+      if (error) throw error;
+
+      // Add analysis results to chat
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: 'Dataset analysis complete. Results:' },
+        { role: 'assistant', content: JSON.stringify(data.results, null, 2) }
+      ]);
 
     } catch (error: any) {
       console.error('Dataset analysis error:', error);
       toast.error(`Dataset analysis failed: ${error.message}`);
-      const errorMessage: Message = { 
+      setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: `Dataset analysis failed: ${error.message}` 
-      };
-      setState(prev => ({ 
-        ...prev, 
-        messages: [...prev.messages, errorMessage],
-        isLoading: false 
-      }));
+      }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const reset = () => {
-    setState({
-      messages: [],
-      currentStep: 0,
-      scanComplete: false,
-      isLoading: false,
-      scanId: null
-    });
+    setMessages([]);
+    setCurrentStep(0);
+    setScanComplete(false);
+    setIsLoading(false);
   };
 
   return {
-    messages: state.messages,
-    isLoading: state.isLoading,
-    currentStep: state.currentStep,
-    scanComplete: state.scanComplete,
+    messages,
+    isLoading,
+    currentStep,
+    scanComplete,
     processNextQuestion,
     startDatasetAnalysis,
     reset,

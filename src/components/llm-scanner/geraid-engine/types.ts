@@ -38,17 +38,4 @@ export interface FingerPrintResult {
   safety: string;
 }
 
-export interface ChatState {
-  messages: Message[];
-  isLoading: boolean;
-  currentQuestionIndex: number;
-  fingerprintResults: FingerPrintResult | null;
-  scanId: string | null;
-}
-
-export interface ProcessQuestionResult {
-  success: boolean;
-  scanId: string;
-}
-
 export type Phase = 'not_started' | 'fingerprinting' | 'dataset_analysis' | 'completed';
