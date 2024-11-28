@@ -16,7 +16,7 @@ interface DatasetAnalysisProps {
   };
   fingerprint: FingerPrintResult;
   isPaused: boolean;
-  isStopped: boolean;  // Added this property to match the usage
+  isStopped: boolean;
   lastPausedStep?: {
     phase: string;
     progress?: number;
@@ -94,7 +94,7 @@ export const DatasetAnalysis = ({
           ]);
           
           // Save the final state to the database
-          await supabase.from('geraid_scans').insert({
+          await supabase.from('geraide_scans').insert({
             user_id: user.id,
             provider: config.provider,
             model: config.model,
