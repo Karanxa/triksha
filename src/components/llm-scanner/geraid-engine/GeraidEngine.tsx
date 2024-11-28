@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types/common";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -83,8 +82,8 @@ export const GeraidEngine = () => {
           user_id: user.id,
           provider: config.provider,
           model: config.model,
-          messages: [...currentMessages, { role: 'system', content: 'Scan stopped manually by user' }] as unknown as Json,
-          fingerprint_results: fingerprintResults as unknown as Json,
+          messages: [...currentMessages, { role: 'system', content: 'Scan stopped manually by user' }],
+          fingerprint_results: fingerprintResults,
           is_vulnerable: null // Since scan was stopped, we can't determine vulnerability
         });
         

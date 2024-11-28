@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useDatasetAnalysis } from "../hooks/useDatasetAnalysis";
 import { AnalysisProgress } from "./AnalysisProgress";
 import { FingerPrintResult } from "../types";
 import { TypingIndicator } from "../../chat/TypingIndicator";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface DatasetAnalysisProps {
   config: {
@@ -19,6 +21,7 @@ export interface DatasetAnalysisProps {
   };
   fingerprint: FingerPrintResult;
   isPaused: boolean;
+  isStopped: boolean;
   lastPausedStep?: {
     phase: string;
     step?: number;
@@ -30,14 +33,41 @@ export const DatasetAnalysis = ({
   config, 
   fingerprint, 
   isPaused,
+  isStopped,
   lastPausedStep 
 }: DatasetAnalysisProps) => {
+  const [apiKey, setApiKey] = useState<string>("");
   const { messages, isLoading, progress, results } = useDatasetAnalysis(
     config, 
     fingerprint, 
     isPaused,
     lastPausedStep?.phase === 'dataset_analysis' ? lastPausedStep.progress : undefined
   );
+
+  useEffect(() => {
+    const fetchApiKey = async () => {
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('api_keys')
+          .single();
+
+        if (error) throw error;
+
+        if (!profile?.api_keys?.openai) {
+          toast.error("OpenAI API key not found. Please add it in the Keys tab.");
+          return;
+        }
+
+        setApiKey(profile.api_keys.openai);
+      } catch (error) {
+        console.error('Error fetching API key:', error);
+        toast.error("Failed to fetch API key");
+      }
+    };
+
+    fetchApiKey();
+  }, []);
 
   // Show toast when analysis is complete
   if (results && !isLoading && progress === 100) {
@@ -73,7 +103,7 @@ export const DatasetAnalysis = ({
                 </div>
               </div>
             ))}
-            {isLoading && !isPaused && <TypingIndicator />}
+            {isLoading && !isPaused && !isStopped && <TypingIndicator />}
           </div>
         </CardContent>
       </Card>
