@@ -26,7 +26,6 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     method: 'POST'
   });
   const [isStarted, setIsStarted] = useState(false);
-  
   const { 
     messages, 
     isLoading, 
@@ -39,52 +38,34 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   } = useGeraideScan();
 
   const startAnalysis = async () => {
-    try {
-      if (!selectedProvider) {
-        toast.error("Please select a provider first");
-        return;
-      }
+    if (!selectedProvider) {
+      toast.error("Please select a provider first");
+      return;
+    }
 
-      if (!selectedDataset) {
-        toast.error("Please select a dataset");
-        return;
-      }
+    if (!selectedDataset) {
+      toast.error("Please select a dataset");
+      return;
+    }
 
-      if (selectedProvider === 'custom' && !customEndpoint.curlCommand && customEndpoint.inputType === 'curl') {
-        toast.error("Please enter a cURL command for the custom endpoint");
-        return;
-      }
+    if (selectedProvider === 'custom' && !customEndpoint.curlCommand && customEndpoint.inputType === 'curl') {
+      toast.error("Please enter a cURL command for the custom endpoint");
+      return;
+    }
 
-      setIsStarted(true);
-      reset();
-      
-      console.log('Starting analysis with:', { selectedProvider, selectedModel, customEndpoint });
-      const success = await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
-      
-      if (!success) {
-        console.error('Failed to process question');
-        setIsStarted(false);
-        toast.error("Failed to start analysis");
-      }
-    } catch (error) {
-      console.error('Error starting analysis:', error);
+    setIsStarted(true);
+    reset();
+    const success = await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+    if (!success) {
       setIsStarted(false);
-      toast.error("Failed to start analysis: " + (error instanceof Error ? error.message : "Unknown error"));
     }
   };
 
   useEffect(() => {
     const processNextStep = async () => {
       if (isStarted && !isLoading && currentStep < totalQuestions && messages[messages.length - 1]?.role === 'assistant') {
-        try {
-          console.log('Processing next step:', { currentStep, totalQuestions });
-          await new Promise(resolve => setTimeout(resolve, 1500)); // Add delay between messages
-          await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
-        } catch (error) {
-          console.error('Error processing next step:', error);
-          toast.error("Error during analysis: " + (error instanceof Error ? error.message : "Unknown error"));
-          setIsStarted(false);
-        }
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Add delay between messages
+        await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
       }
     };
 
@@ -93,26 +74,20 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
   useEffect(() => {
     if (scanComplete && onFingerprint) {
-      try {
-        console.log('Scan complete, processing results');
-        const results = {
-          capabilities: messages[1]?.content || '',
-          boundaries: messages[3]?.content || '',
-          training: messages[5]?.content || '',
-          languages: messages[7]?.content || '',
-          safety: messages[9]?.content || ''
-        };
-        
-        // Start dataset analysis phase
-        startDatasetAnalysis(selectedDataset, results, selectedProvider, selectedModel, customEndpoint);
-        
-        onFingerprint(results);
-      } catch (error) {
-        console.error('Error processing scan results:', error);
-        toast.error("Error processing results: " + (error instanceof Error ? error.message : "Unknown error"));
-      }
+      const results = {
+        capabilities: messages[1]?.content || '',
+        boundaries: messages[3]?.content || '',
+        training: messages[5]?.content || '',
+        languages: messages[7]?.content || '',
+        safety: messages[9]?.content || ''
+      };
+      
+      // Start dataset analysis phase
+      startDatasetAnalysis(selectedDataset, results, selectedProvider, selectedModel, customEndpoint);
+      
+      onFingerprint(results);
     }
-  }, [scanComplete, messages, onFingerprint, selectedDataset, selectedProvider, selectedModel, customEndpoint, startDatasetAnalysis]);
+  }, [scanComplete, messages, onFingerprint, selectedDataset]);
 
   if (!isStarted) {
     return (
