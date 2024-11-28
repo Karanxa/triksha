@@ -35,6 +35,7 @@ export const DatasetAnalysis = ({
   // Process a single prompt
   const processPrompt = async (prompt: string) => {
     try {
+      setIsLoading(true);
       const { data: response } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider: config.provider,
@@ -57,37 +58,35 @@ export const DatasetAnalysis = ({
       console.error('Error processing prompt:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to process prompt');
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Main analysis function
+  // Fetch initial analysis data
   useEffect(() => {
-    const analyzeDataset = async () => {
-      if (isPaused || isStopped) return;
-      
-      setIsLoading(true);
-      try {
-        // Get user's profile for API keys
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('api_keys')
-          .single();
+    const fetchAnalysisData = async () => {
+      if (!analysisData && !isPaused && !isStopped) {
+        try {
+          setIsLoading(true);
+          
+          // Get user's profile for API keys
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('api_keys')
+            .single();
 
-        const apiKeys = profile?.api_keys as Record<string, string>;
-        if (!apiKeys?.openai) {
-          throw new Error('OpenAI API key not found. Please add it in Settings.');
-        }
+          const apiKeys = profile?.api_keys as Record<string, string>;
+          if (!apiKeys?.openai) {
+            throw new Error('OpenAI API key not found. Please add it in Settings.');
+          }
 
-        // Initial system message if starting fresh
-        if (messages.length === 0) {
+          // Initial system message
           setMessages([{
             role: 'system',
             content: `Starting dataset analysis for ${config.model}`
           }]);
-        }
 
-        // Get analysis data if not already fetched
-        if (!analysisData) {
           const { data, error } = await supabase.functions.invoke('process-geraid-scan', {
             body: {
               datasetId: config.datasetId,
@@ -101,28 +100,40 @@ export const DatasetAnalysis = ({
           if (error) throw error;
           setAnalysisData(data);
           setPhase('testing');
+        } catch (error) {
+          console.error('Dataset analysis error:', error);
+          toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
+        } finally {
+          setIsLoading(false);
         }
-
-        // Process next prompt if available
-        if (analysisData && currentQuestionIndex < analysisData.results.length) {
-          const result = analysisData.results[currentQuestionIndex];
-          await processPrompt(result.augmentedPrompt);
-          setCurrentQuestionIndex(prev => prev + 1);
-          setProgress((currentQuestionIndex + 1) / analysisData.results.length * 100);
-        }
-
-      } catch (error) {
-        console.error('Dataset analysis error:', error);
-        toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
-      } finally {
-        setIsLoading(false);
       }
     };
 
-    if (!isPaused && !isStopped && (!analysisData || currentQuestionIndex < analysisData.results?.length)) {
-      analyzeDataset();
-    }
-  }, [config, fingerprint, isPaused, isStopped, currentQuestionIndex, analysisData, messages.length]);
+    fetchAnalysisData();
+  }, [config, fingerprint, isPaused, isStopped, scanId, analysisData]);
+
+  // Process prompts sequentially
+  useEffect(() => {
+    const processNextPrompt = async () => {
+      if (
+        !isLoading && 
+        !isPaused && 
+        !isStopped && 
+        analysisData?.results && 
+        currentQuestionIndex < analysisData.results.length
+      ) {
+        const result = analysisData.results[currentQuestionIndex];
+        const response = await processPrompt(result.augmentedPrompt);
+        
+        if (response) {
+          setCurrentQuestionIndex(prev => prev + 1);
+          setProgress((currentQuestionIndex + 1) / analysisData.results.length * 100);
+        }
+      }
+    };
+
+    processNextPrompt();
+  }, [currentQuestionIndex, analysisData, isLoading, isPaused, isStopped]);
 
   return (
     <div className="space-y-4">
