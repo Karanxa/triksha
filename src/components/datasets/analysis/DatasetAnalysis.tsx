@@ -6,6 +6,7 @@ import { AnalysisProgress } from "./AnalysisProgress";
 import { ModelInteraction } from "./ModelInteraction";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
 import { useDatasetProcessing } from "./hooks/useDatasetProcessing";
+import { ProfileApiKeys } from "@/components/datasets/analysis/types";
 
 interface DatasetAnalysisProps {
   config: {
