@@ -34,6 +34,7 @@ export const DatasetAnalysis = ({
 
   // Process a single prompt
   const processPrompt = async (prompt: string) => {
+    console.log('Processing prompt:', prompt);
     try {
       const { data: response } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
@@ -45,6 +46,7 @@ export const DatasetAnalysis = ({
       });
 
       if (!response) throw new Error('No response received');
+      console.log('Received response:', response);
 
       setMessages(prev => [
         ...prev,
@@ -66,8 +68,8 @@ export const DatasetAnalysis = ({
       if (!analysisData && !isPaused && !isStopped) {
         try {
           setIsLoading(true);
+          console.log('Fetching initial analysis data...');
           
-          // Get user's profile for API keys
           const { data: profile } = await supabase
             .from('profiles')
             .select('api_keys')
@@ -78,7 +80,6 @@ export const DatasetAnalysis = ({
             throw new Error('OpenAI API key not found. Please add it in Settings.');
           }
 
-          // Initial system message
           setMessages([{
             role: 'system',
             content: `Starting dataset analysis for ${config.model}`
@@ -95,12 +96,13 @@ export const DatasetAnalysis = ({
           });
 
           if (error) throw error;
+          console.log('Analysis data received:', data);
           setAnalysisData(data);
           setPhase('testing');
+          setIsLoading(false);
         } catch (error) {
           console.error('Dataset analysis error:', error);
           toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
-        } finally {
           setIsLoading(false);
         }
       }
@@ -111,34 +113,34 @@ export const DatasetAnalysis = ({
 
   // Process prompts sequentially
   useEffect(() => {
-    let isMounted = true;
+    if (!analysisData?.results || isPaused || isStopped || isLoading) {
+      return;
+    }
 
     const processNextPrompt = async () => {
-      if (
-        !isLoading && 
-        !isPaused && 
-        !isStopped && 
-        analysisData?.results && 
-        currentQuestionIndex < analysisData.results.length
-      ) {
-        setIsLoading(true);
-        const result = analysisData.results[currentQuestionIndex];
-        const response = await processPrompt(result.augmentedPrompt);
-        
-        if (response && isMounted) {
-          setCurrentQuestionIndex(prev => prev + 1);
-          setProgress((currentQuestionIndex + 1) / analysisData.results.length * 100);
-          setIsLoading(false);
-        }
+      if (currentQuestionIndex >= analysisData.results.length) {
+        console.log('All prompts processed');
+        return;
       }
+
+      console.log(`Processing prompt ${currentQuestionIndex + 1}/${analysisData.results.length}`);
+      setIsLoading(true);
+
+      const result = analysisData.results[currentQuestionIndex];
+      const response = await processPrompt(result.augmentedPrompt);
+      
+      if (response) {
+        const newProgress = ((currentQuestionIndex + 1) / analysisData.results.length) * 100;
+        console.log(`Progress: ${newProgress}%`);
+        setProgress(newProgress);
+        setCurrentQuestionIndex(prev => prev + 1);
+      }
+      
+      setIsLoading(false);
     };
 
     processNextPrompt();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentQuestionIndex, analysisData, isPaused, isStopped]);
+  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading, config.provider, config.model, scanId]);
 
   return (
     <div className="space-y-4">
