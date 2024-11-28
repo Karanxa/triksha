@@ -26,13 +26,13 @@ export const GeraidEngine = () => {
 
   const handleStart = async (newConfig: typeof config) => {
     try {
-      setConfig(newConfig);
-      
       if (!newConfig) {
         throw new Error("Invalid configuration");
       }
 
-      // Create initial scan record with default user ID
+      setConfig(newConfig);
+      
+      // Create initial scan record
       const { data: scan, error: scanError } = await supabase
         .from('geraide_scans')
         .insert({
@@ -40,19 +40,24 @@ export const GeraidEngine = () => {
           model: newConfig.model,
           messages: [],
           is_vulnerable: null,
-          user_id: DEFAULT_USER_ID // Add the default user ID here
+          user_id: DEFAULT_USER_ID
         })
         .select()
         .single();
 
-      if (scanError) throw scanError;
+      if (scanError) {
+        console.error('Error creating scan:', scanError);
+        throw scanError;
+      }
+
       setScanId(scan.id);
-      
       setPhase("fingerprinting");
       setIsPaused(false);
+      toast.success("Analysis started successfully");
+      
     } catch (error) {
       console.error('Failed to start analysis:', error);
-      toast.error("Failed to start analysis");
+      toast.error("Failed to start analysis: " + (error instanceof Error ? error.message : "Unknown error"));
       setPhase("not_started");
     }
   };
@@ -66,7 +71,7 @@ export const GeraidEngine = () => {
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            fingerprint_results: results as any
+            fingerprint_results: results
           })
           .eq('id', scanId);
 
