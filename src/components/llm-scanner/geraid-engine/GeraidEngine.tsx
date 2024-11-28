@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -18,10 +19,27 @@ export const GeraidEngine = () => {
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
   const [fingerprintProgress, setFingerprintProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [scanId, setScanId] = useState<string | null>(null);
 
   const handleStart = async (newConfig: typeof config) => {
     try {
       setConfig(newConfig);
+      
+      // Create initial scan record
+      const { data: scan, error: scanError } = await supabase
+        .from('geraide_scans')
+        .insert({
+          provider: newConfig?.provider,
+          model: newConfig?.model,
+          messages: [],
+          is_vulnerable: null
+        })
+        .select()
+        .single();
+
+      if (scanError) throw scanError;
+      setScanId(scan.id);
+      
       setPhase("fingerprinting");
       setIsPaused(false);
     } catch (error) {
@@ -30,9 +48,22 @@ export const GeraidEngine = () => {
     }
   };
 
-  const handleFingerprintComplete = (results: FingerPrintResult) => {
+  const handleFingerprintComplete = async (results: FingerPrintResult) => {
     try {
       setFingerprintResults(results);
+      
+      // Update scan with fingerprint results
+      if (scanId) {
+        const { error: updateError } = await supabase
+          .from('geraide_scans')
+          .update({
+            fingerprint_results: results
+          })
+          .eq('id', scanId);
+
+        if (updateError) throw updateError;
+      }
+      
       setPhase("dataset_analysis");
     } catch (error) {
       toast.error("Failed to complete fingerprinting");
@@ -49,13 +80,31 @@ export const GeraidEngine = () => {
     toast.success(isPaused ? "Scan resumed" : "Scan paused");
   };
 
-  const handleStop = () => {
-    setPhase("not_started");
-    setConfig(null);
-    setFingerprintResults(null);
-    setFingerprintProgress(0);
-    setIsPaused(false);
-    toast.success("Scan stopped");
+  const handleStop = async () => {
+    try {
+      if (scanId) {
+        // Update scan status when stopping
+        const { error: updateError } = await supabase
+          .from('geraide_scans')
+          .update({
+            is_vulnerable: null,
+            dataset_analysis_results: null
+          })
+          .eq('id', scanId);
+
+        if (updateError) throw updateError;
+      }
+      
+      setPhase("not_started");
+      setConfig(null);
+      setFingerprintResults(null);
+      setFingerprintProgress(0);
+      setIsPaused(false);
+      setScanId(null);
+      toast.success("Scan stopped");
+    } catch (error) {
+      toast.error("Failed to stop scan");
+    }
   };
 
   const renderControls = () => {
@@ -111,6 +160,7 @@ export const GeraidEngine = () => {
             onComplete={handleFingerprintComplete}
             onProgress={handleFingerprintProgress}
             isPaused={isPaused}
+            scanId={scanId}
           />
         ) : null;
       
@@ -120,6 +170,7 @@ export const GeraidEngine = () => {
             config={config}
             fingerprint={fingerprintResults}
             isPaused={isPaused}
+            scanId={scanId}
           />
         ) : null;
       

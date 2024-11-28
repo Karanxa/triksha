@@ -17,9 +17,10 @@ export interface DatasetAnalysisProps {
   };
   fingerprint: FingerPrintResult;
   isPaused?: boolean;
+  scanId: string | null;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
+export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: DatasetAnalysisProps) => {
   const { messages, isLoading, progress, startAnalysis } = useDatasetAnalysis(
     {
       provider: config.provider,
@@ -34,6 +35,31 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
     }, 
     fingerprint
   );
+
+  useEffect(() => {
+    const updateScanResults = async () => {
+      if (scanId && messages.length > 0) {
+        const { error: updateError } = await supabase
+          .from('geraide_scans')
+          .update({
+            messages,
+            dataset_analysis_results: {
+              progress,
+              messages
+            }
+          })
+          .eq('id', scanId);
+
+        if (updateError) {
+          console.error('Failed to update scan results:', updateError);
+        }
+      }
+    };
+
+    if (!isPaused) {
+      updateScanResults();
+    }
+  }, [messages, progress, scanId, isPaused]);
 
   useEffect(() => {
     const fetchDatasetPrompts = async () => {
