@@ -16,7 +16,6 @@ export const GeraidEngine = () => {
     datasetId: string;
   } | null>(null);
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
-  const [fingerprintProgress, setFingerprintProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
@@ -27,7 +26,7 @@ export const GeraidEngine = () => {
       setPhase("fingerprinting");
       setIsPaused(false);
       setIsStopped(false);
-      setFingerprintProgress(0);
+      toast.success("Starting model analysis...");
     } catch (error) {
       toast.error("Failed to start analysis");
       setPhase("not_started");
@@ -38,15 +37,11 @@ export const GeraidEngine = () => {
     try {
       setFingerprintResults(results);
       setPhase("dataset_analysis");
-      setFingerprintProgress(100);
+      toast.success("Fingerprinting complete, starting dataset analysis...");
     } catch (error) {
       toast.error("Failed to complete fingerprinting");
       setPhase("not_started");
     }
-  };
-
-  const handleFingerprintProgress = (progress: number) => {
-    setFingerprintProgress(progress);
   };
 
   const handlePauseResume = () => {
@@ -59,7 +54,6 @@ export const GeraidEngine = () => {
     setPhase("not_started");
     setConfig(null);
     setFingerprintResults(null);
-    setFingerprintProgress(0);
     setIsPaused(false);
     toast.success("Scan stopped");
   };
@@ -94,80 +88,39 @@ export const GeraidEngine = () => {
     );
   };
 
-  const renderPhase = () => {
-    switch (phase) {
-      case "not_started":
-        return (
-          <Card className="bg-card/50 border-muted/20">
-            <CardContent className="p-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-medium mb-2">Configure Analysis</h3>
-                <p className="text-sm text-muted-foreground">
-                  Select a model and dataset to begin the analysis process.
-                </p>
-              </div>
-              <InitialPhase onStart={handleStart} />
-            </CardContent>
-          </Card>
-        );
-      
-      case "fingerprinting":
-        return config ? (
-          <FingerPrintPhase
-            config={config}
-            onComplete={handleFingerprintComplete}
-            onProgress={handleFingerprintProgress}
-            isPaused={isPaused}
-            isStopped={isStopped}
-            scanId={scanId}
-            onScanIdUpdate={setScanId}
-          />
-        ) : null;
-      
-      case "dataset_analysis":
-        return config && fingerprintResults ? (
-          <DatasetAnalysis 
-            config={config}
-            fingerprint={fingerprintResults}
-            isPaused={isPaused}
-            isStopped={isStopped}
-            scanId={scanId}
-          />
-        ) : null;
-      
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {phase !== "not_started" && (
-        <div className="flex justify-center gap-2 mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePauseResume}
-            disabled={isStopped}
-          >
-            {isPaused ? (
-              <PlayCircle className="h-4 w-4 mr-2" />
-            ) : (
-              <PauseCircle className="h-4 w-4 mr-2" />
-            )}
-            {isPaused ? "Resume" : "Pause"}
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleStop}
-          >
-            <StopCircle className="h-4 w-4 mr-2" />
-            Stop
-          </Button>
-        </div>
-      )}
-      {renderPhase()}
+      {renderControls()}
+      {phase === "not_started" ? (
+        <Card className="bg-card/50 border-muted/20">
+          <CardContent className="p-6 space-y-6">
+            <div>
+              <h3 className="text-lg font-medium mb-2">Configure Analysis</h3>
+              <p className="text-sm text-muted-foreground">
+                Select a model and dataset to begin the analysis process.
+              </p>
+            </div>
+            <InitialPhase onStart={handleStart} />
+          </CardContent>
+        </Card>
+      ) : phase === "fingerprinting" && config ? (
+        <FingerPrintPhase
+          config={config}
+          onComplete={handleFingerprintComplete}
+          isPaused={isPaused}
+          isStopped={isStopped}
+          scanId={scanId}
+          onScanIdUpdate={setScanId}
+        />
+      ) : phase === "dataset_analysis" && config && fingerprintResults ? (
+        <DatasetAnalysis 
+          config={config}
+          fingerprint={fingerprintResults}
+          isPaused={isPaused}
+          isStopped={isStopped}
+          scanId={scanId}
+        />
+      ) : null}
     </div>
   );
 };

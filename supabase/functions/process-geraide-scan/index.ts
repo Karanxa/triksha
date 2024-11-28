@@ -16,7 +16,7 @@ serve(async (req) => {
       throw new Error('No valid prompts provided');
     }
 
-    // Process each prompt
+    // Process each prompt with the fingerprint context
     const results = prompts.map(prompt => {
       try {
         // Augment prompt with fingerprint context

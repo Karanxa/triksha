@@ -92,13 +92,10 @@ async function handleCustomRequest(prompt: string, customEndpoint: any) {
   }
 
   if (inputType === 'http') {
-    // Parse HTTP request and replace placeholder
     requestBody = httpRequest.replace('{PROMPT}', prompt);
   } else if (inputType === 'curl') {
-    // Parse curl command and replace placeholder
     requestBody = curlCommand.replace('{PROMPT}', prompt);
   } else {
-    // Manual configuration
     requestBody = JSON.stringify({ prompt });
   }
 
