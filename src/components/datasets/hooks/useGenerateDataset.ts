@@ -1,6 +1,7 @@
 import { Session } from "@supabase/supabase-js"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { ApiKeys } from "@/integrations/supabase/types/common"
 
 interface UseGenerateDatasetProps {
   session: Session | null
@@ -44,6 +45,16 @@ export const useGenerateDataset = ({
   setFingerprintResults,
 }: UseGenerateDatasetProps) => {
   const handleGenerate = async () => {
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to generate datasets")
+      return
+    }
+
+    if (!name) {
+      toast.error("Please provide a name for the dataset")
+      return
+    }
+
     setIsGenerating(true)
 
     try {
@@ -51,24 +62,14 @@ export const useGenerateDataset = ({
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('api_keys')
-        .eq('id', session?.user?.id)
+        .eq('id', session.user.id)
         .single()
 
       if (profileError) throw new Error('Failed to fetch API key')
-      if (!profile?.api_keys?.openai) throw new Error('Please add your OpenAI API key in the Settings page')
-
-      // Get fingerprint results for non-manual methods
-      if (method !== 'manual' && !fingerprintResults) {
-        const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
-          body: {
-            provider: targetModel.split('-')[0],
-            model: targetModel.split('-')[1],
-            prompt: "Tell me about your capabilities and limitations"
-          }
-        })
-
-        if (fingerprintError) throw fingerprintError
-        setFingerprintResults(fingerprintData)
+      
+      const apiKeys = profile?.api_keys as ApiKeys
+      if (!apiKeys?.openai) {
+        throw new Error('Please add your OpenAI API key in the Settings page')
       }
 
       // Generate dataset variations using OpenAI
@@ -81,7 +82,7 @@ export const useGenerateDataset = ({
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${profile.api_keys.openai}`,
+          'Authorization': `Bearer ${apiKeys.openai}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -111,7 +112,7 @@ export const useGenerateDataset = ({
       const csvContent = 'prompt\n' + variations.map(v => `"${v.replace(/"/g, '""')}"`).join('\n')
 
       // Upload to storage
-      const filePath = `${session?.user?.id}/${Date.now()}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`
+      const filePath = `${session.user.id}/${Date.now()}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`
       
       const { error: uploadError } = await supabase.storage
         .from('datasets')
@@ -128,7 +129,7 @@ export const useGenerateDataset = ({
         .insert({
           name,
           description,
-          user_id: session?.user?.id,
+          user_id: session.user.id,
           file_path: filePath,
           category: method,
           metadata: {
@@ -155,7 +156,7 @@ export const useGenerateDataset = ({
 
     } catch (error: any) {
       console.error('Error generating dataset:', error)
-      throw error
+      toast.error(error.message || "Failed to generate dataset")
     } finally {
       setIsGenerating(false)
     }
