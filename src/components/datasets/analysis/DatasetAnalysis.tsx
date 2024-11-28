@@ -143,12 +143,12 @@ export const DatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           }]);
           
-          const scanData: GeraideScanInsert = {
+          const scanData = {
             user_id: user.id,
             provider: config.provider,
             model: config.model,
             name: `Dataset Analysis - ${dataset.name}`,
-            messages,
+            results: messages,
             fingerprint_results: fingerprint,
             dataset_analysis_results: analysisData,
             is_vulnerable: null,
