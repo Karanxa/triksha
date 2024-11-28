@@ -5,15 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CustomEndpoint } from "../../types/CustomEndpoint";
 import { CSVUpload } from "./CSVUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@supabase/auth-helpers-react";
 
 interface InitialPhaseProps {
-  onStart: (config: { provider: string; model: string; datasetId: string; customEndpoint?: CustomEndpoint }) => void;
+  onStart: (config: { provider: string; model: string; datasetId: string }) => void;
 }
 
 export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
@@ -22,15 +20,6 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
   const [model, setModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
   const [datasetSource, setDatasetSource] = useState<"select" | "upload">("select");
-  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
-    url: '',
-    apiKey: '',
-    headers: '',
-    placeholder: '{PROMPT}',
-    curlCommand: '',
-    inputType: 'manual',
-    method: 'POST'
-  });
 
   const { data: datasets, isLoading: isLoadingDatasets } = useQuery({
     queryKey: ['user-datasets'],
@@ -92,11 +81,20 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
       return;
     }
 
+    if (!provider) {
+      toast.error("Please select a provider");
+      return;
+    }
+
+    if (!model && provider !== 'custom') {
+      toast.error("Please select a model");
+      return;
+    }
+
     onStart({
       provider,
       model,
       datasetId: selectedDataset,
-      customEndpoint: provider === 'custom' ? customEndpoint : undefined
     });
   };
 
@@ -108,8 +106,6 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
           model={model}
           onProviderChange={setProvider}
           onModelChange={setModel}
-          customEndpoint={customEndpoint}
-          onCustomEndpointChange={(endpoint) => setCustomEndpoint(prev => ({ ...prev, ...endpoint }))}
         />
 
         <div className="space-y-2">
@@ -121,25 +117,18 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
             </TabsList>
 
             <TabsContent value="select">
-              {isLoadingDatasets ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Loading datasets...</span>
-                </div>
-              ) : (
-                <Select value={selectedDataset} onValueChange={setSelectedDataset}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a dataset" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {datasets?.map((dataset) => (
-                      <SelectItem key={dataset.id} value={dataset.id}>
-                        {dataset.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <Select value={selectedDataset} onValueChange={setSelectedDataset}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a dataset" />
+                </SelectTrigger>
+                <SelectContent>
+                  {datasets?.map((dataset) => (
+                    <SelectItem key={dataset.id} value={dataset.id}>
+                      {dataset.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </TabsContent>
 
             <TabsContent value="upload">

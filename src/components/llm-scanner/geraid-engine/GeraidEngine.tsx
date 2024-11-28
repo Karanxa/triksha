@@ -29,6 +29,10 @@ export const GeraidEngine = () => {
         throw new Error("User not authenticated");
       }
 
+      if (!newConfig) {
+        throw new Error("Invalid configuration");
+      }
+
       setConfig(newConfig);
       setPhase("fingerprinting");
       setIsPaused(false);
@@ -37,8 +41,8 @@ export const GeraidEngine = () => {
       const { data: scan, error } = await supabase
         .from('geraide_scans')
         .insert({
-          provider: newConfig?.provider,
-          model: newConfig?.model,
+          provider: newConfig.provider,
+          model: newConfig.model,
           messages: [],
           fingerprint_results: null,
           dataset_analysis_results: null,
@@ -51,6 +55,7 @@ export const GeraidEngine = () => {
       setScanId(scan.id);
 
     } catch (error) {
+      console.error('Failed to start analysis:', error);
       toast.error("Failed to start analysis");
       setPhase("not_started");
     }
@@ -73,6 +78,7 @@ export const GeraidEngine = () => {
         if (error) throw error;
       }
     } catch (error) {
+      console.error('Failed to complete fingerprinting:', error);
       toast.error("Failed to complete fingerprinting");
       setPhase("not_started");
     }
@@ -96,6 +102,7 @@ export const GeraidEngine = () => {
         if (error) throw error;
       }
     } catch (error) {
+      console.error('Failed to save analysis results:', error);
       toast.error("Failed to save analysis results");
     }
   };
