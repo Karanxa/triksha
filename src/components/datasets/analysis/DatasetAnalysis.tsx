@@ -18,6 +18,16 @@ interface DatasetAnalysisProps {
   scanId: string | null;
 }
 
+// Define the shape of the API keys object
+interface ProfileApiKeys {
+  openai?: string;
+  anthropic?: string;
+  gemini?: string;
+  huggingface?: string;
+  github?: string;
+  ollama_endpoint?: string;
+}
+
 export const DatasetAnalysis = ({ 
   config, 
   fingerprint, 
@@ -72,13 +82,14 @@ export const DatasetAnalysis = ({
         try {
           setIsLoading(true);
           
-          // First get the user's OpenAI API key
+          // First get the user's OpenAI API key with proper typing
           const { data: profile } = await supabase
             .from('profiles')
             .select('api_keys')
             .single();
 
-          if (!profile?.api_keys?.openai) {
+          const apiKeys = profile?.api_keys as ProfileApiKeys;
+          if (!apiKeys?.openai) {
             throw new Error('OpenAI API key not found. Please add it in Settings.');
           }
 
