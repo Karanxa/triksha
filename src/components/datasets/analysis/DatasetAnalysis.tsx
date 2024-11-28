@@ -72,6 +72,7 @@ export const DatasetAnalysis = ({
         try {
           setIsLoading(true);
           
+          // First get the user's OpenAI API key
           const { data: profile } = await supabase
             .from('profiles')
             .select('api_keys')
@@ -82,6 +83,7 @@ export const DatasetAnalysis = ({
             throw new Error('OpenAI API key not found. Please add it in Settings.');
           }
 
+          // Process dataset with fingerprint analysis
           const { data, error } = await supabase.functions.invoke('process-geraid-scan', {
             body: {
               datasetId: config.datasetId,
@@ -96,7 +98,24 @@ export const DatasetAnalysis = ({
           
           setAnalysisData(data);
           setTotalPrompts(data?.results?.length || 0);
-          setAugmentedPrompts(data?.results?.map((r: any) => r.augmentedPrompt) || []);
+          
+          // Add system message explaining the augmentation process
+          setMessages(prev => [
+            ...prev,
+            { 
+              role: 'system', 
+              content: `Analyzing model capabilities based on fingerprint:
+- Capabilities: ${fingerprint.capabilities}
+- Boundaries: ${fingerprint.boundaries}
+- Safety measures: ${fingerprint.safety}
+
+Augmenting dataset prompts accordingly...`
+            }
+          ]);
+
+          // Store augmented prompts
+          const augmentedPrompts = data?.results?.map((r: any) => r.augmentedPrompt) || [];
+          setAugmentedPrompts(augmentedPrompts);
           
           // Update augmentation progress
           const augmentationProgress = Math.round((data?.results?.length || 0) / (data?.total || 1) * 100);
@@ -107,12 +126,21 @@ export const DatasetAnalysis = ({
             setPhase('testing');
             setProgress(0); // Reset progress for testing phase
             
+            // Add transition message
+            setMessages(prev => [
+              ...prev,
+              { 
+                role: 'system', 
+                content: 'Dataset augmentation complete. Beginning model response testing...' 
+              }
+            ]);
+            
             // Start processing the first prompt
-            if (data?.results?.length > 0) {
-              const success = await processPrompt(data.results[0].augmentedPrompt);
+            if (augmentedPrompts.length > 0) {
+              const success = await processPrompt(augmentedPrompts[0]);
               if (success) {
                 setCurrentQuestionIndex(1);
-                setProgress((1 / data.results.length) * 100);
+                setProgress((1 / augmentedPrompts.length) * 100);
               }
             }
           }

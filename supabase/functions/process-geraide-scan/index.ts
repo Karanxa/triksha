@@ -54,24 +54,9 @@ Original prompt: ${prompt}
 Enhanced prompt considering the model's specific characteristics:
 ${prompt}`;
 
-        // Process with model using geraide-fingerprint function
-        const { data: response, error: modelError } = await supabaseClient.functions.invoke('geraide-fingerprint', {
-          body: {
-            provider,
-            model,
-            prompt: augmentedPrompt,
-            customEndpoint
-          }
-        });
-
-        if (modelError) throw modelError;
-
-        console.log('Model response received:', response);
-
         results.push({
           originalPrompt: prompt,
-          augmentedPrompt,
-          modelResponse: response.response
+          augmentedPrompt
         });
 
         processedCount++;
@@ -88,9 +73,6 @@ ${prompt}`;
           error: error.message
         });
       }
-
-      // Add small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     return new Response(
