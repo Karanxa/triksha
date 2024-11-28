@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@supabase/auth-helpers-react";
+import { useSession } from "@supabase/auth-helpers-react";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -21,11 +21,11 @@ export const GeraidEngine = () => {
   const [fingerprintProgress, setFingerprintProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
-  const auth = useAuth();
+  const session = useSession();
 
   const handleStart = async (newConfig: typeof config) => {
     try {
-      if (!auth?.user?.id) {
+      if (!session?.user?.id) {
         throw new Error("User not authenticated");
       }
 
@@ -42,7 +42,7 @@ export const GeraidEngine = () => {
           messages: [],
           fingerprint_results: null,
           dataset_analysis_results: null,
-          user_id: auth.user.id
+          user_id: session.user.id
         })
         .select()
         .single();

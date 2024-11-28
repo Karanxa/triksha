@@ -1,5 +1,22 @@
-import { FingerPrintResult } from './types';
-import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { CustomEndpoint } from '@/components/llm-scanner/types/CustomEndpoint';
+
+export interface Message {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+export interface ProviderModel {
+  value: string;
+  label: string;
+}
+
+export interface DatasetOption {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export type Phase = 'not_started' | 'fingerprinting' | 'dataset_analysis' | 'completed';
 
 export interface FingerPrintPhaseProps {
   config: {
@@ -26,12 +43,19 @@ export interface DatasetAnalysisProps {
   onComplete?: (results: any) => void;
 }
 
+export interface ChatState {
+  messages: Message[];
+  isLoading: boolean;
+  currentQuestionIndex: number;
+  fingerprintResults: FingerPrintResult | null;
+}
+
 // Make FingerPrintResult compatible with Json type
 export interface FingerPrintResult {
   [key: string]: string | null | undefined;
-  capabilities?: string;
-  boundaries?: string;
-  training?: string;
-  languages?: string;
-  safety?: string;
+  capabilities: string;
+  boundaries: string;
+  training: string;
+  languages: string;
+  safety: string;
 }
