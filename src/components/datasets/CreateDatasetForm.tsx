@@ -1,18 +1,14 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { AdversarialConfig } from "./AdversarialConfig"
 import { useSession } from "@supabase/auth-helpers-react"
 import { DatasetFormInputs } from "./DatasetFormInputs"
-import DatasetFileUpload from "./DatasetFileUpload"
 import { useGenerateDataset } from "./hooks/useGenerateDataset"
-import { useFileUpload } from "./hooks/useFileUpload"
 
 export const CreateDatasetForm = () => {
-  const { toast } = useToast()
   const session = useSession()
   const [isGenerating, setIsGenerating] = useState(false)
   const [name, setName] = useState("")
@@ -49,16 +45,7 @@ export const CreateDatasetForm = () => {
     setNumSamples,
     setRecipe,
     setTargetModel,
-    setFingerprintResults,
-    toast
-  })
-
-  const { handleFileUpload } = useFileUpload({
-    session,
-    setName,
-    setDescription,
-    setMethod,
-    toast
+    setFingerprintResults
   })
 
   return (
@@ -66,48 +53,42 @@ export const CreateDatasetForm = () => {
       <CardHeader>
         <CardTitle>Generate Dataset</CardTitle>
         <CardDescription>
-          Generate adversarial datasets using manual input, EasyJailbreak recipes, or upload your own CSV file
+          Generate adversarial datasets using manual input, EasyJailbreak recipes, or advanced adversarial techniques
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {method === "upload" ? (
-          <DatasetFileUpload onFileUpload={handleFileUpload} />
-        ) : (
-          <>
-            <DatasetFormInputs
-              name={name}
-              setName={setName}
-              description={description}
-              setDescription={setDescription}
-              basePrompt={basePrompt}
-              setBasePrompt={setBasePrompt}
-              numSamples={numSamples}
-              setNumSamples={setNumSamples}
-              method={method}
-              setMethod={setMethod}
-              recipe={recipe}
-              setRecipe={setRecipe}
-              targetModel={targetModel}
-              setTargetModel={setTargetModel}
-            />
+        <DatasetFormInputs
+          name={name}
+          setName={setName}
+          description={description}
+          setDescription={setDescription}
+          basePrompt={basePrompt}
+          setBasePrompt={setBasePrompt}
+          numSamples={numSamples}
+          setNumSamples={setNumSamples}
+          method={method}
+          setMethod={setMethod}
+          recipe={recipe}
+          setRecipe={setRecipe}
+          targetModel={targetModel}
+          setTargetModel={setTargetModel}
+        />
 
-            {method === "adversarial" && (
-              <AdversarialConfig 
-                config={adversarialConfig}
-                onChange={setAdversarialConfig}
-              />
-            )}
-
-            <Button 
-              onClick={handleGenerate} 
-              className="w-full"
-              disabled={isGenerating}
-            >
-              {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Generate Dataset
-            </Button>
-          </>
+        {method === "adversarial" && (
+          <AdversarialConfig 
+            config={adversarialConfig}
+            onChange={setAdversarialConfig}
+          />
         )}
+
+        <Button 
+          onClick={handleGenerate} 
+          className="w-full"
+          disabled={isGenerating}
+        >
+          {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Generate Dataset
+        </Button>
       </CardContent>
     </Card>
   )
