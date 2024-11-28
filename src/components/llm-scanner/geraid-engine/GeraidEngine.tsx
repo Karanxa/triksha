@@ -9,6 +9,9 @@ import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 
+// Default user ID for development - this is a UUID that will be used when no user is logged in
+const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
   const [config, setConfig] = useState<{
@@ -29,14 +32,15 @@ export const GeraidEngine = () => {
         throw new Error("Invalid configuration");
       }
 
-      // Create initial scan record
+      // Create initial scan record with default user ID
       const { data: scan, error: scanError } = await supabase
         .from('geraide_scans')
         .insert({
           provider: newConfig.provider,
           model: newConfig.model,
           messages: [],
-          is_vulnerable: null
+          is_vulnerable: null,
+          user_id: DEFAULT_USER_ID // Add the default user ID here
         })
         .select()
         .single();
