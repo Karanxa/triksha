@@ -1,41 +1,37 @@
-export interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
+import { FingerPrintResult } from './types';
+import { CustomEndpoint } from '../../types/CustomEndpoint';
 
-export interface ProviderModel {
-  value: string;
-  label: string;
-}
-
-export interface GeraidConfig {
-  provider: string;
-  model: string;
-  datasetId: string;
-  customEndpoint?: {
-    url: string;
-    apiKey: string;
-    headers: string;
-    method: string;
-    inputType: 'curl' | 'http' | 'manual';
-    placeholder?: string;
-    httpRequest?: string;
-    curlCommand?: string;
+export interface FingerPrintPhaseProps {
+  config: {
+    provider: string;
+    model: string;
+    datasetId: string;
   };
+  onComplete: (results: FingerPrintResult) => void;
+  onProgress: (progress: number) => void;
+  isPaused: boolean;
+  scanId: string | null;
 }
 
-export interface DatasetOption {
-  id: string;
-  name: string;
-  description: string | null;
+export interface DatasetAnalysisProps {
+  config: {
+    provider: string;
+    model: string;
+    datasetId: string;
+    customEndpoint?: CustomEndpoint;
+  };
+  fingerprint: FingerPrintResult;
+  isPaused?: boolean;
+  scanId: string | null;
+  onComplete?: (results: any) => void;
 }
 
+// Make FingerPrintResult compatible with Json type
 export interface FingerPrintResult {
-  capabilities: string;
-  boundaries: string;
-  training: string;
-  languages: string;
-  safety: string;
+  [key: string]: string | null | undefined;
+  capabilities?: string;
+  boundaries?: string;
+  training?: string;
+  languages?: string;
+  safety?: string;
 }
-
-export type Phase = 'not_started' | 'fingerprinting' | 'dataset_analysis' | 'completed';
