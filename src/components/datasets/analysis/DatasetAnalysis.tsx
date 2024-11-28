@@ -14,9 +14,12 @@ interface DatasetAnalysisProps {
     model: string;
   };
   fingerprint: FingerPrintResult;
+  isPaused?: boolean;
+  scanId: string | null;
+  onComplete?: (results: any) => void;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
+export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId, onComplete }: DatasetAnalysisProps) => {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<'augmenting' | 'testing'>('augmenting');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,6 +27,8 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
 
   useEffect(() => {
     const analyzeDataset = async () => {
+      if (isPaused) return;
+      
       setIsLoading(true);
       try {
         // Get user's profile for API keys
@@ -49,7 +54,8 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
             datasetId: config.datasetId,
             provider: config.provider,
             model: config.model,
-            fingerprint
+            fingerprint,
+            scanId
           }
         });
 
@@ -66,6 +72,10 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
           ]);
         });
 
+        if (onComplete) {
+          onComplete(analysisData.results);
+        }
+
       } catch (error) {
         console.error('Dataset analysis error:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
@@ -76,7 +86,7 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
     };
 
     analyzeDataset();
-  }, [config, fingerprint]);
+  }, [config, fingerprint, isPaused, scanId, onComplete]);
 
   return (
     <div className="space-y-4">

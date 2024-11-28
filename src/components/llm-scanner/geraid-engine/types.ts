@@ -50,7 +50,6 @@ export interface ChatState {
   fingerprintResults: FingerPrintResult | null;
 }
 
-// Make FingerPrintResult compatible with Json type
 export interface FingerPrintResult {
   [key: string]: string | null | undefined;
   capabilities: string;
