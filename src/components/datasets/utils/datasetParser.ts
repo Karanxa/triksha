@@ -1,6 +1,15 @@
 export const parseCSVContent = (text: string) => {
   const lines = text.trim().split('\n')
-  const headers = lines[0].split(',').map(header => header.trim().replace(/^"|"$/g, ''))
+  const headers = lines[0].toLowerCase().split(',').map(header => header.trim().replace(/^"|"$/g, ''))
+  
+  // Find the prompt column index
+  const promptIndex = headers.findIndex(header => 
+    header === 'prompt' || header === 'prompts' || header === 'text'
+  );
+  
+  if (promptIndex === -1) {
+    throw new Error('CSV must have a "prompt" column');
+  }
   
   const data = lines.slice(1).map(line => {
     let values = []

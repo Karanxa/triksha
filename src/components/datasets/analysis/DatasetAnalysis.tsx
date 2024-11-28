@@ -6,7 +6,7 @@ import { AnalysisProgress } from "./AnalysisProgress";
 import { ModelInteraction } from "./ModelInteraction";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
 import { useDatasetProcessing } from "./hooks/useDatasetProcessing";
-import { ProfileApiKeys } from "@/components/datasets/analysis/types";
+import { ApiKeys } from "@/integrations/supabase/types/common";
 
 interface DatasetAnalysisProps {
   config: {
@@ -56,7 +56,7 @@ export const DatasetAnalysis = ({
             .select('api_keys')
             .single();
 
-          const apiKeys = profile?.api_keys as ProfileApiKeys;
+          const apiKeys = profile?.api_keys as ApiKeys;
           if (!apiKeys?.openai) {
             throw new Error('OpenAI API key not found. Please add it in Settings.');
           }
