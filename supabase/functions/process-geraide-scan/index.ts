@@ -21,7 +21,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get auth user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) throw new Error('Missing authorization header');
 
@@ -31,11 +30,9 @@ serve(async (req) => {
 
     if (authError || !user) throw new Error('Unauthorized');
 
-    // Get request data
     const { datasetId, provider, model, fingerprint } = await req.json();
     console.log('Processing dataset:', { datasetId, provider, model });
 
-    // Get user's API key
     const { data: profile } = await supabaseClient
       .from('profiles')
       .select('api_keys')
@@ -43,7 +40,7 @@ serve(async (req) => {
       .single();
 
     if (!profile?.api_keys?.openai) {
-      throw new Error('OpenAI API key not found. Please add it in the Keys tab.');
+      throw new Error('OpenAI API key not found. Please add it in Settings.');
     }
 
     // Get dataset content
@@ -63,9 +60,6 @@ serve(async (req) => {
     const text = await fileData.text();
     const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
     
-    if (lines.length === 0) throw new Error('Dataset is empty');
-
-    // Find prompt column
     const headers = lines[0].toLowerCase().split(',');
     const promptIndex = headers.findIndex(header => 
       header === 'prompts' || header === 'prompt' || header === 'text' || header === 'original_prompt'
@@ -73,7 +67,6 @@ serve(async (req) => {
 
     if (promptIndex === -1) throw new Error('No prompt column found in dataset');
 
-    // Extract and process prompts
     const prompts = lines.slice(1)
       .map(line => {
         const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
@@ -137,7 +130,7 @@ serve(async (req) => {
         success: false
       }),
       { 
-        status: 200, // Send 200 even for errors to handle them gracefully in frontend
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );

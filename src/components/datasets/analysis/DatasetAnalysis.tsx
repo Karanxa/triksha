@@ -46,7 +46,6 @@ export const DatasetAnalysis = ({
       
       setIsLoading(true);
       try {
-        // Get user's profile for API keys
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
@@ -106,7 +105,7 @@ export const DatasetAnalysis = ({
           content: `Starting dataset analysis for ${config.model} with ${prompts.length} prompts identified`
         }]);
 
-        // Process dataset with fingerprint results
+        // Process dataset with fingerprint results and test with target model
         const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
           body: {
             datasetId: config.datasetId,
@@ -125,8 +124,8 @@ export const DatasetAnalysis = ({
         analysisData.results.forEach((result: any) => {
           setMessages(prev => [
             ...prev,
-            { role: 'user', content: result.augmentedPrompt },
-            { role: 'assistant', content: result.modelResponse }
+            { role: 'user', content: `Original Prompt: ${result.originalPrompt}\nAugmented Prompt: ${result.augmentedPrompt}` },
+            { role: 'assistant', content: `Model Response: ${result.modelResponse}` }
           ]);
         });
 
@@ -136,7 +135,6 @@ export const DatasetAnalysis = ({
             { role: 'system', content: 'Scan stopped manually by user' }
           ]);
           
-          // Save the final state to the database
           await supabase.from('geraide_scans').insert({
             user_id: user.id,
             provider: config.provider,
@@ -144,7 +142,7 @@ export const DatasetAnalysis = ({
             messages: messages as unknown as Json,
             fingerprint_results: fingerprint as unknown as Json,
             dataset_analysis_results: analysisData as Json,
-            is_vulnerable: null // Since scan was stopped, we can't determine vulnerability
+            is_vulnerable: null
           });
         }
 
