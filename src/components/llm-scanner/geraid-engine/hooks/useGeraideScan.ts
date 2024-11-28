@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
-import { Json } from '@/integrations/supabase/types/common';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
 import { ScanState } from '../types/scan';
 import { processDatasetAnalysis } from './useDatasetAnalysis';
@@ -22,8 +21,8 @@ export const useGeraideScan = () => {
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
-      setScanComplete(true);
+    if (state.currentStep >= FINGERPRINTING_QUESTIONS.length) {
+      setState(prev => ({ ...prev, scanComplete: true }));
       return false;
     }
 
@@ -64,7 +63,7 @@ export const useGeraideScan = () => {
           .insert({
             provider,
             model,
-            messages: finalMessages as unknown as Json,
+            messages: finalMessages as any,
             user_id: (await supabase.auth.getUser()).data.user?.id
           })
           .select()
@@ -83,7 +82,7 @@ export const useGeraideScan = () => {
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            messages: finalMessages as unknown as Json,
+            messages: finalMessages as any,
           })
           .eq('id', state.scanId);
 
