@@ -17,25 +17,18 @@ export const Chat = ({
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
 
   useEffect(() => {
-    let isMounted = true;
-
     const processQuestion = async () => {
-      // Only process if not loading, not paused, not stopped, and we have config
       if (!config || isLoading || isPaused || isStopped) return;
 
       try {
         const result = await processNextQuestion(config.provider, config.model, scanId);
-        
-        // Only update state if component is still mounted
-        if (!isMounted) return;
         
         if (result && 'success' in result) {
           if (result.success && result.scanId) {
             onScanIdUpdate(result.scanId);
           }
           
-          // Calculate and report progress
-          const totalQuestions = 5; // Total number of fingerprinting questions
+          const totalQuestions = 5;
           const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
           onProgress?.(progress);
           
@@ -49,10 +42,6 @@ export const Chat = ({
     };
 
     processQuestion();
-
-    return () => {
-      isMounted = false;
-    };
   }, [config, currentQuestionIndex, isLoading, isPaused, isStopped, scanId]);
 
   return (

@@ -31,7 +31,6 @@ export const DatasetAnalysis = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [analysisData, setAnalysisData] = useState<any>(null);
-  const [processingComplete, setProcessingComplete] = useState(false);
 
   // Process a single prompt and wait for response
   const processPrompt = async (prompt: string): Promise<boolean> => {
@@ -81,11 +80,6 @@ export const DatasetAnalysis = ({
             throw new Error('OpenAI API key not found. Please add it in Settings.');
           }
 
-          setMessages([{
-            role: 'system',
-            content: `Starting dataset analysis for ${config.model}`
-          }]);
-
           const { data, error } = await supabase.functions.invoke('process-geraid-scan', {
             body: {
               datasetId: config.datasetId,
@@ -99,6 +93,15 @@ export const DatasetAnalysis = ({
           if (error) throw error;
           setAnalysisData(data);
           setPhase('testing');
+          
+          // Start processing the first prompt
+          if (data?.results?.length > 0) {
+            const success = await processPrompt(data.results[0].augmentedPrompt);
+            if (success) {
+              setCurrentQuestionIndex(1);
+              setProgress((1 / data.results.length) * 100);
+            }
+          }
         } catch (error) {
           console.error('Dataset analysis error:', error);
           toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
@@ -109,21 +112,16 @@ export const DatasetAnalysis = ({
     };
 
     fetchAnalysisData();
-  }, [config, fingerprint, isPaused, isStopped, scanId, analysisData]);
+  }, [config, fingerprint, isPaused, isStopped, scanId]);
 
-  // Process next prompt only when previous is complete
+  // Process next prompt when previous is complete
   useEffect(() => {
     const processNextPrompt = async () => {
-      // Only proceed if we have data, aren't paused/stopped/loading, and haven't completed processing
       if (!analysisData?.results || 
           isPaused || 
           isStopped || 
           isLoading || 
-          processingComplete || 
           currentQuestionIndex >= analysisData.results.length) {
-        if (currentQuestionIndex >= analysisData.results.length && !processingComplete) {
-          setProcessingComplete(true);
-        }
         return;
       }
 
@@ -140,7 +138,7 @@ export const DatasetAnalysis = ({
     if (!isLoading) {
       processNextPrompt();
     }
-  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading, processingComplete]);
+  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading]);
 
   return (
     <div className="space-y-4">

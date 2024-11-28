@@ -19,15 +19,10 @@ export const useChat = () => {
     model: string,
     scanId: string | null
   ): Promise<ProcessQuestionResult | false> => {
-    if (state.currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
-      setState(prev => ({ ...prev, scanComplete: true }));
-      return false;
-    }
-
-    setState(prev => ({ ...prev, isLoading: true }));
-    const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
-
     try {
+      setState(prev => ({ ...prev, isLoading: true }));
+      const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
+
       // Add the question to messages immediately
       const newMessage: Message = { role: 'user', content: question };
       const updatedMessages = [...state.messages, newMessage];
@@ -42,18 +37,12 @@ export const useChat = () => {
       });
 
       if (error) throw error;
+      if (!data?.response) throw new Error('No response received from the model');
 
-      if (!data?.response) {
-        throw new Error('No response received from the model');
-      }
-
-      // Add response after a delay to simulate natural conversation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const assistantMessage: Message = { role: 'assistant', content: data.response };
       const finalMessages = [...updatedMessages, assistantMessage];
 
-      // Store conversation in database if we haven't yet
+      // Store or update conversation in database
       if (!scanId) {
         const { data: scanData, error: scanError } = await supabase
           .from('geraide_scans')
@@ -67,6 +56,7 @@ export const useChat = () => {
           .single();
 
         if (scanError) throw scanError;
+        
         setState(prev => ({ 
           ...prev, 
           messages: finalMessages,
@@ -74,9 +64,9 @@ export const useChat = () => {
           currentQuestionIndex: prev.currentQuestionIndex + 1,
           isLoading: false 
         }));
+        
         return { success: true, scanId: scanData.id };
       } else {
-        // Update existing scan
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
@@ -85,26 +75,26 @@ export const useChat = () => {
           .eq('id', scanId);
 
         if (updateError) throw updateError;
+        
         setState(prev => ({
           ...prev,
           messages: finalMessages,
           currentQuestionIndex: prev.currentQuestionIndex + 1,
           isLoading: false
         }));
+        
         return { success: true, scanId };
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error in fingerprinting:', error);
-      toast.error(`Error: ${error.message}`);
-      const errorMessage: Message = { role: 'assistant', content: `Error: ${error.message}` };
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setState(prev => ({ 
         ...prev, 
-        messages: [...prev.messages, errorMessage],
         isLoading: false 
       }));
       return false;
     }
-  }, [state]);
+  }, [state.messages, state.currentQuestionIndex]);
 
   return {
     state,
