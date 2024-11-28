@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Chat } from "./Chat";
 import { AnalysisProgress } from "./AnalysisProgress";
 import { FingerPrintResult } from "../types";
-import { supabase } from "@/integrations/supabase/client";
 
 interface FingerPrintPhaseProps {
   config: {

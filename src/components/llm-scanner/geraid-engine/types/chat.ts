@@ -1,6 +1,7 @@
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  [key: string]: any; // Add index signature for Json compatibility
 }
 
 export interface ChatState {
@@ -29,7 +30,7 @@ export interface ChatProps {
 }
 
 export interface FingerPrintResult {
-  [key: string]: any;
+  [key: string]: any; // Add index signature for Json compatibility
   capabilities: string;
   boundaries: string;
   training: string;

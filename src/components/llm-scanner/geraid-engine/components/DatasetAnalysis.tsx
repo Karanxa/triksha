@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CustomEndpoint } from "../../types/CustomEndpoint";
+import { Message } from "../types/chat";
 
 export interface DatasetAnalysisProps {
   config: {

@@ -166,7 +166,7 @@ export const GeraidEngine = () => {
           <FingerPrintPhase
             config={config}
             onComplete={handleFingerprintComplete}
-            onProgress={handleFingerprintProgress}
+            onProgress={setFingerprintProgress}
             isPaused={isPaused}
             scanId={scanId}
           />
