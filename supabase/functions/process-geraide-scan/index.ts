@@ -54,7 +54,7 @@ Original prompt: ${prompt}
 Enhanced prompt considering the model's specific characteristics:
 ${prompt}`;
 
-        // Process with model
+        // Process with model using geraide-fingerprint function
         const { data: response, error: modelError } = await supabaseClient.functions.invoke('geraide-fingerprint', {
           body: {
             provider,
@@ -65,6 +65,8 @@ ${prompt}`;
         });
 
         if (modelError) throw modelError;
+
+        console.log('Model response received:', response);
 
         results.push({
           originalPrompt: prompt,
