@@ -1,70 +1,84 @@
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Message, FingerPrintResult } from "../types";
+import { supabase } from '@/integrations/supabase/client';
+import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { Json } from '@/integrations/supabase/types/common';
 
-export const useDatasetAnalysis = (
-  config: { provider: string; model: string; datasetId: string },
-  fingerprint: FingerPrintResult
-) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<any>(null);
+interface ProcessDatasetAnalysisProps {
+  datasetId: string;
+  provider: string;
+  model: string;
+  fingerprint: any;
+  customEndpoint?: CustomEndpoint;
+  scanId: string | null;
+  supabase: any;
+}
 
-  const startAnalysis = async (prompts: string[]) => {
-    setIsLoading(true);
+export const processDatasetAnalysis = async ({
+  datasetId,
+  provider,
+  model,
+  fingerprint,
+  customEndpoint,
+  scanId,
+  supabase
+}: ProcessDatasetAnalysisProps) => {
+  const { data, error } = await supabase.functions.invoke('process-geraide-scan', {
+    body: {
+      datasetId,
+      provider,
+      model,
+      fingerprint,
+      customEndpoint
+    }
+  });
+
+  if (error) throw error;
+
+  // Process each augmented prompt with the model
+  const processedResults = [];
+  for (const result of data.results) {
     try {
-      // Initial message
-      setMessages([
-        {
-          role: 'system',
-          content: `Starting dataset analysis for ${config.model} using fingerprint results`
-        }
-      ]);
-
-      // Process dataset with fingerprint results
-      const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+      const { data: modelResponse, error: modelError } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
-          datasetId: config.datasetId,
-          provider: config.provider,
-          model: config.model,
-          fingerprint,
-          prompts
+          provider,
+          model,
+          prompt: result.augmentedPrompt,
+          customEndpoint
         }
       });
 
-      if (error) throw error;
+      if (modelError) throw modelError;
 
-      // Update messages and progress as prompts are processed
-      let currentProgress = 0;
-      const updateInterval = setInterval(() => {
-        if (currentProgress < 100) {
-          currentProgress += 10;
-          setProgress(currentProgress);
-        } else {
-          clearInterval(updateInterval);
-        }
-      }, 1000);
+      processedResults.push({
+        originalPrompt: result.originalPrompt,
+        augmentedPrompt: result.augmentedPrompt,
+        modelResponse: modelResponse.response
+      });
 
-      // Add analysis results
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: `Analysis complete. Processed ${prompts.length} prompts with fingerprint-based augmentation.`
-        }
-      ]);
-
-      setResults(analysisData);
+      // Add small delay between requests
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
-      console.error('Dataset analysis error:', error);
-      toast.error('Failed to analyze dataset: ' + (error as Error).message);
-    } finally {
-      setIsLoading(false);
-      setProgress(100);
+      console.error('Error processing prompt:', error);
+      processedResults.push({
+        originalPrompt: result.originalPrompt,
+        augmentedPrompt: result.augmentedPrompt,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
-  };
+  }
 
-  return { messages, isLoading, progress, results, startAnalysis };
+  // Update scan with results if we have a scanId
+  if (scanId) {
+    const { error: updateError } = await supabase
+      .from('geraide_scans')
+      .update({
+        fingerprint_results: fingerprint,
+        dataset_analysis_results: processedResults,
+        is_vulnerable: processedResults.some(r => r.modelResponse?.includes('vulnerable')),
+      })
+      .eq('id', scanId);
+
+    if (updateError) throw updateError;
+  }
+
+  return processedResults;
 };
