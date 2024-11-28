@@ -3,12 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Message } from "@/components/llm-scanner/geraid-engine/types";
 import { AnalysisProgress } from "./AnalysisProgress";
-import { ModelInteraction } from "./ModelInteraction";
+import { AnalysisChat } from "./AnalysisChat";
+import { PromptList } from "./PromptList";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
-import { ApiKeys } from "@/integrations/supabase/types/common";
-import { Json } from "@/integrations/supabase/types/common";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface DatasetAnalysisProps {
   config: {
@@ -54,7 +51,7 @@ export const DatasetAnalysis = ({
           .select('api_keys')
           .single();
 
-        const apiKeys = profile?.api_keys as ApiKeys;
+        const apiKeys = profile?.api_keys;
         if (!apiKeys?.openai) {
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
@@ -77,8 +74,6 @@ export const DatasetAnalysis = ({
 
         const text = await fileData.text();
         const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-        
-        // Find prompt column
         const headers = lines[0].toLowerCase().split(',');
         const promptIndex = headers.findIndex(header => 
           header === 'prompts' || header === 'prompt' || header === 'text' || header === 'original_prompt'
@@ -88,7 +83,6 @@ export const DatasetAnalysis = ({
           throw new Error('No prompt column found in dataset');
         }
 
-        // Extract prompts
         const prompts = lines.slice(1)
           .map(line => {
             const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
@@ -98,8 +92,6 @@ export const DatasetAnalysis = ({
           .filter(Boolean);
 
         setOriginalPrompts(prompts);
-        
-        // Initial system message
         setMessages([{
           role: 'system',
           content: `Starting dataset analysis for ${config.model} with ${prompts.length} prompts identified`
@@ -126,11 +118,11 @@ export const DatasetAnalysis = ({
             ...prev,
             { 
               role: 'system', 
-              content: `Processing prompt ${result.originalPrompt}`
+              content: `Processing prompt: ${result.originalPrompt}`
             },
             { 
               role: 'assistant', 
-              content: `Augmented to: ${result.augmentedPrompt}`
+              content: `Augmented prompt: ${result.augmentedPrompt}`
             },
             { 
               role: 'user', 
@@ -144,10 +136,10 @@ export const DatasetAnalysis = ({
         });
 
         if (isStopped) {
-          setMessages(prev => [
-            ...prev,
-            { role: 'system', content: 'Scan stopped manually by user' }
-          ]);
+          setMessages(prev => [...prev, { 
+            role: 'system', 
+            content: 'Scan stopped manually by user' 
+          }]);
           
           await supabase.from('geraide_scans').insert({
             user_id: user.id,
@@ -177,25 +169,8 @@ export const DatasetAnalysis = ({
   return (
     <div className="space-y-4">
       <AnalysisProgress progress={progress} phase={phase} isPaused={isPaused} />
-      
-      {originalPrompts.length > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <h3 className="text-lg font-medium mb-4">Original Dataset Prompts ({originalPrompts.length})</h3>
-            <ScrollArea className="h-[200px]">
-              <div className="space-y-2">
-                {originalPrompts.map((prompt, index) => (
-                  <div key={index} className="p-2 bg-muted rounded-md">
-                    <p className="text-sm">{prompt}</p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
-      
-      <ModelInteraction messages={messages} isLoading={isLoading && !isPaused && !isStopped} />
+      <PromptList prompts={originalPrompts} />
+      <AnalysisChat messages={messages} isLoading={isLoading && !isPaused && !isStopped} />
     </div>
   );
 };

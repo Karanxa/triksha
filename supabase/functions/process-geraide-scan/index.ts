@@ -59,7 +59,6 @@ serve(async (req) => {
 
     const text = await fileData.text();
     const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-    
     const headers = lines[0].toLowerCase().split(',');
     const promptIndex = headers.findIndex(header => 
       header === 'prompts' || header === 'prompt' || header === 'text' || header === 'original_prompt'

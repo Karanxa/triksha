@@ -31,7 +31,7 @@ Return only the enhanced prompt without explanations.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4-0125-preview',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
