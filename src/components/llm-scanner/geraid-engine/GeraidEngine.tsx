@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types/common";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -25,6 +26,7 @@ export const GeraidEngine = () => {
     step?: number;
     progress?: number;
   } | null>(null);
+  const [currentMessages, setCurrentMessages] = useState<any[]>([]);
 
   const handleStart = async (newConfig: typeof config) => {
     try {
@@ -72,16 +74,13 @@ export const GeraidEngine = () => {
     setIsStopped(true);
     
     // Save the conversation with a stop message
-    if (config) {
+    if (config && fingerprintResults) {
       try {
         await supabase.from('geraide_scans').insert({
           provider: config.provider,
           model: config.model,
-          messages: [
-            ...messages,
-            { role: 'system', content: 'Scan stopped manually by user' }
-          ],
-          fingerprint_results: fingerprintResults,
+          messages: [...currentMessages, { role: 'system', content: 'Scan stopped manually by user' }] as unknown as Json,
+          fingerprint_results: fingerprintResults as unknown as Json,
           is_vulnerable: null // Since scan was stopped, we can't determine vulnerability
         });
         

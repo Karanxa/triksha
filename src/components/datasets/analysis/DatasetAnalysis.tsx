@@ -6,6 +6,7 @@ import { AnalysisProgress } from "./AnalysisProgress";
 import { ModelInteraction } from "./ModelInteraction";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
 import { ApiKeys } from "@/integrations/supabase/types/common";
+import { Json } from "@/integrations/supabase/types/common";
 
 interface DatasetAnalysisProps {
   config: {
@@ -65,7 +66,7 @@ export const DatasetAnalysis = ({
             datasetId: config.datasetId,
             provider: config.provider,
             model: config.model,
-            fingerprint,
+            fingerprint: fingerprint as unknown as Json,
             startFromProgress: lastPausedStep?.progress || 0
           }
         });
@@ -93,12 +94,9 @@ export const DatasetAnalysis = ({
           await supabase.from('geraide_scans').insert({
             provider: config.provider,
             model: config.model,
-            messages: [
-              ...messages,
-              { role: 'system', content: 'Scan stopped manually by user' }
-            ],
-            fingerprint_results: fingerprint,
-            dataset_analysis_results: analysisData,
+            messages: messages as unknown as Json,
+            fingerprint_results: fingerprint as unknown as Json,
+            dataset_analysis_results: analysisData as Json,
             is_vulnerable: null // Since scan was stopped, we can't determine vulnerability
           });
         }
@@ -115,7 +113,7 @@ export const DatasetAnalysis = ({
     if (!isPaused && !isStopped) {
       analyzeDataset();
     }
-  }, [config, fingerprint, isPaused, isStopped, lastPausedStep]);
+  }, [config, fingerprint, isPaused, isStopped, lastPausedStep, messages, progress]);
 
   return (
     <div className="space-y-4">
