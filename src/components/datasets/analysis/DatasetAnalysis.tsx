@@ -35,7 +35,6 @@ export const DatasetAnalysis = ({
   // Process a single prompt
   const processPrompt = async (prompt: string) => {
     try {
-      setIsLoading(true);
       const { data: response } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider: config.provider,
@@ -58,8 +57,6 @@ export const DatasetAnalysis = ({
       console.error('Error processing prompt:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to process prompt');
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -114,6 +111,8 @@ export const DatasetAnalysis = ({
 
   // Process prompts sequentially
   useEffect(() => {
+    let isMounted = true;
+
     const processNextPrompt = async () => {
       if (
         !isLoading && 
@@ -122,18 +121,24 @@ export const DatasetAnalysis = ({
         analysisData?.results && 
         currentQuestionIndex < analysisData.results.length
       ) {
+        setIsLoading(true);
         const result = analysisData.results[currentQuestionIndex];
         const response = await processPrompt(result.augmentedPrompt);
         
-        if (response) {
+        if (response && isMounted) {
           setCurrentQuestionIndex(prev => prev + 1);
           setProgress((currentQuestionIndex + 1) / analysisData.results.length * 100);
+          setIsLoading(false);
         }
       }
     };
 
     processNextPrompt();
-  }, [currentQuestionIndex, analysisData, isLoading, isPaused, isStopped]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentQuestionIndex, analysisData, isPaused, isStopped]);
 
   return (
     <div className="space-y-4">
