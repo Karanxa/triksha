@@ -50,7 +50,9 @@ export const DatasetAnalysis = ({
       if (!analysisData && !isPaused && !isStopped) {
         try {
           setIsLoading(true);
+          console.log('Starting dataset analysis for ID:', config.datasetId);
           
+          // Get user's API key
           const { data: profile } = await supabase
             .from('profiles')
             .select('api_keys')
@@ -60,6 +62,65 @@ export const DatasetAnalysis = ({
           if (!apiKeys?.openai) {
             throw new Error('OpenAI API key not found. Please add it in Settings.');
           }
+
+          // First get the dataset
+          const { data: dataset, error: datasetError } = await supabase
+            .from('datasets')
+            .select('*')
+            .eq('id', config.datasetId)
+            .single();
+
+          if (datasetError) {
+            console.error('Error fetching dataset:', datasetError);
+            throw new Error(`Failed to fetch dataset: ${datasetError.message}`);
+          }
+
+          console.log('Found dataset:', dataset);
+
+          // Download the file from storage
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('datasets')
+            .download(dataset.file_path);
+
+          if (downloadError) {
+            console.error('Error downloading dataset file:', downloadError);
+            throw new Error(`Failed to download dataset file: ${downloadError.message}`);
+          }
+
+          // Parse CSV content
+          const text = await fileData.text();
+          const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+          
+          if (lines.length === 0) {
+            throw new Error('Dataset file is empty');
+          }
+
+          // Find the prompt column
+          const headers = lines[0].toLowerCase().split(',');
+          const promptIndex = headers.findIndex(header => 
+            header === 'prompt' || header === 'prompts' || header === 'text'
+          );
+
+          if (promptIndex === -1) {
+            throw new Error('No prompt column found in dataset');
+          }
+
+          console.log('Found prompt column at index:', promptIndex);
+
+          // Extract prompts
+          const prompts = lines.slice(1)
+            .map(line => {
+              const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+              const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
+              return cleanedValues[promptIndex];
+            })
+            .filter(Boolean);
+
+          if (prompts.length === 0) {
+            throw new Error('No valid prompts found in dataset');
+          }
+
+          console.log(`Successfully extracted ${prompts.length} prompts`);
 
           setMessages([{
             role: 'system',
@@ -77,19 +138,20 @@ export const DatasetAnalysis = ({
                 capabilities: fingerprint.capabilities || '',
                 boundaries: fingerprint.boundaries || ''
               },
-              scanId
+              scanId,
+              prompts
             }
           });
 
           if (error) throw error;
           
           setAnalysisData(data);
-          setTotalPrompts(data?.results?.length || 0);
+          setTotalPrompts(prompts.length);
           
-          const augmentedPrompts = data?.results?.map((r: any) => r.augmentedPrompt) || [];
+          const augmentedPrompts = data?.results?.map((r: any) => r.augmentedPrompt) || prompts;
           setAugmentedPrompts(augmentedPrompts);
           
-          const augmentationProgress = Math.round((data?.results?.length || 0) / (data?.total || 1) * 100);
+          const augmentationProgress = Math.round((augmentedPrompts.length || 0) / (prompts.length || 1) * 100);
           setProgress(augmentationProgress);
           
           if (augmentationProgress === 100) {
