@@ -1,7 +1,6 @@
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
-  [key: string]: any; // Add index signature for Json compatibility
 }
 
 export interface ChatState {
@@ -26,11 +25,10 @@ export interface ChatProps {
   onComplete: (results: FingerPrintResult) => void;
   onProgress?: (progress: number) => void;
   isPaused?: boolean;
-  scanId?: string | null;
+  scanId: string | null;
 }
 
 export interface FingerPrintResult {
-  [key: string]: any; // Add index signature for Json compatibility
   capabilities: string;
   boundaries: string;
   training: string;

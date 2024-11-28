@@ -7,7 +7,6 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CustomEndpoint } from "../../types/CustomEndpoint";
-import { Message } from "../types/chat";
 
 export interface DatasetAnalysisProps {
   config: {
@@ -18,10 +17,9 @@ export interface DatasetAnalysisProps {
   };
   fingerprint: FingerPrintResult;
   isPaused?: boolean;
-  scanId: string | null;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: DatasetAnalysisProps) => {
+export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
   const { messages, isLoading, progress, startAnalysis } = useDatasetAnalysis(
     {
       provider: config.provider,
@@ -36,31 +34,6 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: Datas
     }, 
     fingerprint
   );
-
-  useEffect(() => {
-    const updateScanResults = async () => {
-      if (scanId && messages.length > 0) {
-        const { error: updateError } = await supabase
-          .from('geraide_scans')
-          .update({
-            messages: messages as any,
-            dataset_analysis_results: {
-              progress,
-              messages: messages as any
-            } as any
-          })
-          .eq('id', scanId);
-
-        if (updateError) {
-          console.error('Failed to update scan results:', updateError);
-        }
-      }
-    };
-
-    if (!isPaused) {
-      updateScanResults();
-    }
-  }, [messages, progress, scanId, isPaused]);
 
   useEffect(() => {
     const fetchDatasetPrompts = async () => {

@@ -1,16 +1,10 @@
 import { useState } from "react";
 import { Phase, FingerPrintResult } from "./types";
-import { InitialPhase } from "./components/InitialPhase";
-import { FingerPrintPhase } from "./components/FingerPrintPhase";
-import { DatasetAnalysis } from "./components/DatasetAnalysis";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-
-// Default user ID for development - this is a UUID that will be used when no user is logged in
-const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000000';
+import { useSession } from "@supabase/auth-helpers-react";
+import { ScanControls } from "./components/ScanControls";
+import { ScanPhases } from "./components/ScanPhases";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -20,69 +14,89 @@ export const GeraidEngine = () => {
     datasetId: string;
   } | null>(null);
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
-  const [fingerprintProgress, setFingerprintProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
+  const session = useSession();
 
   const handleStart = async (newConfig: typeof config) => {
     try {
+      if (!session?.user?.id) {
+        throw new Error("User not authenticated");
+      }
+
       if (!newConfig) {
         throw new Error("Invalid configuration");
       }
 
       setConfig(newConfig);
-      
+      setPhase("fingerprinting");
+      setIsPaused(false);
+
       // Create initial scan record
-      const { data: scan, error: scanError } = await supabase
+      const { data: scan, error } = await supabase
         .from('geraide_scans')
         .insert({
           provider: newConfig.provider,
           model: newConfig.model,
           messages: [],
-          is_vulnerable: null,
-          user_id: DEFAULT_USER_ID
+          fingerprint_results: null,
+          dataset_analysis_results: null,
+          user_id: session.user.id
         })
         .select()
         .single();
 
-      if (scanError) {
-        console.error('Error creating scan:', scanError);
-        throw scanError;
-      }
-
+      if (error) throw error;
       setScanId(scan.id);
-      setPhase("fingerprinting");
-      setIsPaused(false);
       toast.success("Analysis started successfully");
-      
+
     } catch (error) {
       console.error('Failed to start analysis:', error);
-      toast.error("Failed to start analysis: " + (error instanceof Error ? error.message : "Unknown error"));
+      toast.error("Failed to start analysis");
       setPhase("not_started");
+      setConfig(null);
     }
   };
 
   const handleFingerprintComplete = async (results: FingerPrintResult) => {
     try {
       setFingerprintResults(results);
-      
-      // Update scan with fingerprint results
+      setPhase("dataset_analysis");
+
       if (scanId) {
-        const { error: updateError } = await supabase
+        const { error } = await supabase
           .from('geraide_scans')
           .update({
             fingerprint_results: results
           })
           .eq('id', scanId);
 
-        if (updateError) throw updateError;
+        if (error) throw error;
       }
-      
-      setPhase("dataset_analysis");
     } catch (error) {
       console.error('Failed to complete fingerprinting:', error);
       toast.error("Failed to complete fingerprinting");
       setPhase("not_started");
+    }
+  };
+
+  const handleDatasetAnalysisComplete = async (results: any) => {
+    try {
+      if (scanId) {
+        const { error } = await supabase
+          .from('geraide_scans')
+          .update({
+            dataset_analysis_results: results,
+            is_vulnerable: results.some((r: any) => r.isVulnerable)
+          })
+          .eq('id', scanId);
+
+        if (error) throw error;
+        toast.success("Analysis completed successfully");
+      }
+    } catch (error) {
+      console.error('Failed to save analysis results:', error);
+      toast.error("Failed to save analysis results");
     }
   };
 
@@ -91,110 +105,34 @@ export const GeraidEngine = () => {
     toast.success(isPaused ? "Scan resumed" : "Scan paused");
   };
 
-  const handleStop = async () => {
-    try {
-      if (scanId) {
-        // Update scan status when stopping
-        const { error: updateError } = await supabase
-          .from('geraide_scans')
-          .update({
-            is_vulnerable: null,
-            dataset_analysis_results: null
-          })
-          .eq('id', scanId);
-
-        if (updateError) throw updateError;
-      }
-      
-      setPhase("not_started");
-      setConfig(null);
-      setFingerprintResults(null);
-      setFingerprintProgress(0);
-      setIsPaused(false);
-      setScanId(null);
-      toast.success("Scan stopped");
-    } catch (error) {
-      console.error('Failed to stop scan:', error);
-      toast.error("Failed to stop scan");
-    }
-  };
-
-  const renderControls = () => {
-    if (phase === "not_started") return null;
-
-    return (
-      <div className="flex justify-center gap-2 mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handlePauseResume}
-        >
-          {isPaused ? (
-            <PlayCircle className="h-4 w-4 mr-2" />
-          ) : (
-            <PauseCircle className="h-4 w-4 mr-2" />
-          )}
-          {isPaused ? "Resume" : "Pause"}
-        </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={handleStop}
-        >
-          <StopCircle className="h-4 w-4 mr-2" />
-          Stop
-        </Button>
-      </div>
-    );
-  };
-
-  const renderPhase = () => {
-    switch (phase) {
-      case "not_started":
-        return (
-          <Card className="bg-card/50 border-muted/20">
-            <CardContent className="p-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-medium mb-2">Configure Analysis</h3>
-                <p className="text-sm text-muted-foreground">
-                  Select a model and dataset to begin the analysis process.
-                </p>
-              </div>
-              <InitialPhase onStart={handleStart} />
-            </CardContent>
-          </Card>
-        );
-      
-      case "fingerprinting":
-        return config ? (
-          <FingerPrintPhase
-            config={config}
-            onComplete={handleFingerprintComplete}
-            onProgress={setFingerprintProgress}
-            isPaused={isPaused}
-            scanId={scanId}
-          />
-        ) : null;
-      
-      case "dataset_analysis":
-        return config && fingerprintResults ? (
-          <DatasetAnalysis 
-            config={config}
-            fingerprint={fingerprintResults}
-            isPaused={isPaused}
-            scanId={scanId}
-          />
-        ) : null;
-      
-      default:
-        return null;
-    }
+  const handleStop = () => {
+    setPhase("not_started");
+    setConfig(null);
+    setFingerprintResults(null);
+    setIsPaused(false);
+    setScanId(null);
+    toast.success("Scan stopped");
   };
 
   return (
     <div className="space-y-6">
-      {renderControls()}
-      {renderPhase()}
+      <ScanControls
+        phase={phase}
+        isPaused={isPaused}
+        onPauseResume={handlePauseResume}
+        onStop={handleStop}
+      />
+      <ScanPhases
+        phase={phase}
+        config={config}
+        fingerprintResults={fingerprintResults}
+        isPaused={isPaused}
+        scanId={scanId}
+        onStart={handleStart}
+        onFingerprintComplete={handleFingerprintComplete}
+        onFingerprintProgress={(progress) => console.log('Fingerprint progress:', progress)}
+        onDatasetAnalysisComplete={handleDatasetAnalysisComplete}
+      />
     </div>
   );
 };

@@ -6,28 +6,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CustomEndpoint } from "../../types/CustomEndpoint";
 import { CSVUpload } from "./CSVUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface InitialPhaseProps {
-  onStart: (config: { provider: string; model: string; datasetId: string; customEndpoint?: CustomEndpoint }) => void;
+  onStart: (config: { provider: string; model: string; datasetId: string }) => void;
 }
 
 export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
+  const session = useSession();
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
   const [datasetSource, setDatasetSource] = useState<"select" | "upload">("select");
-  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
-    url: '',
-    apiKey: '',
-    headers: '',
-    placeholder: '{PROMPT}',
-    curlCommand: '',
-    inputType: 'manual',
-    method: 'POST'
-  });
 
   const { data: datasets, isLoading: isLoadingDatasets } = useQuery({
     queryKey: ['user-datasets'],
@@ -45,14 +37,57 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
     }
   });
 
+  const handleCSVUpload = async (prompts: string[]) => {
+    if (!session?.user?.id) {
+      toast.error("Please log in to upload datasets");
+      return;
+    }
+
+    try {
+      const content = prompts.join('\n');
+      const file = new Blob([content], { type: 'text/plain' });
+      const filePath = `${session.user.id}/${Date.now()}-dataset.txt`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('datasets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data, error: dbError } = await supabase
+        .from('datasets')
+        .insert({
+          name: 'Uploaded Dataset',
+          description: `Dataset uploaded from CSV with ${prompts.length} prompts`,
+          file_path: filePath,
+          user_id: session.user.id
+        })
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      setSelectedDataset(data.id);
+      toast.success("Dataset uploaded successfully");
+    } catch (error) {
+      console.error('Error uploading dataset:', error);
+      toast.error("Failed to upload dataset: " + (error as Error).message);
+    }
+  };
+
   const handleStart = () => {
     if (!selectedDataset) {
       toast.error("Please select a dataset");
       return;
     }
 
-    if (!provider || (!model && provider !== 'custom')) {
-      toast.error("Please select a provider and model");
+    if (!provider) {
+      toast.error("Please select a provider");
+      return;
+    }
+
+    if (!model && provider !== 'custom') {
+      toast.error("Please select a model");
       return;
     }
 
@@ -60,7 +95,6 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
       provider,
       model,
       datasetId: selectedDataset,
-      customEndpoint: provider === 'custom' ? customEndpoint : undefined
     });
   };
 
@@ -72,8 +106,6 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
           model={model}
           onProviderChange={setProvider}
           onModelChange={setModel}
-          customEndpoint={customEndpoint}
-          onCustomEndpointChange={(endpoint) => setCustomEndpoint(prev => ({ ...prev, ...endpoint }))}
         />
 
         <div className="space-y-2">
@@ -100,28 +132,7 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
             </TabsContent>
 
             <TabsContent value="upload">
-              <CSVUpload onFileUpload={async (prompts) => {
-                try {
-                  // Create a new dataset from the uploaded prompts
-                  const { data, error } = await supabase
-                    .from('datasets')
-                    .insert({
-                      name: `Uploaded Dataset ${new Date().toISOString()}`,
-                      user_id: '00000000-0000-0000-0000-000000000000',
-                      description: `Dataset uploaded with ${prompts.length} prompts`
-                    })
-                    .select()
-                    .single();
-
-                  if (error) throw error;
-                  
-                  setSelectedDataset(data.id);
-                  toast.success("Dataset uploaded successfully");
-                } catch (error) {
-                  console.error('Error uploading dataset:', error);
-                  toast.error("Failed to upload dataset");
-                }
-              }} />
+              <CSVUpload onFileUpload={handleCSVUpload} />
             </TabsContent>
           </Tabs>
         </div>

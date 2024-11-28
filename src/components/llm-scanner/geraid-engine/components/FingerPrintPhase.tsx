@@ -26,11 +26,11 @@ export const FingerPrintPhase = ({
   onComplete, 
   onProgress,
   isPaused,
-  scanId
+  scanId 
 }: FingerPrintPhaseProps) => {
   const [currentProgress, setCurrentProgress] = useState(0);
 
-  const handleProgress = async (progress: number) => {
+  const handleProgress = (progress: number) => {
     if (!isPaused) {
       setCurrentProgress(progress);
       onProgress(progress);
