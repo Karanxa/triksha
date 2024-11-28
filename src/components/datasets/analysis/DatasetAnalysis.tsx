@@ -7,7 +7,7 @@ import { AnalysisChat } from "./AnalysisChat";
 import { PromptList } from "./PromptList";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
 import { ApiKeys } from "@/integrations/supabase/types/common";
-import { GeraideScanInsert } from "@/integrations/supabase/types/tables";
+import { Json } from "@/integrations/supabase/types/common";
 
 interface DatasetAnalysisProps {
   config: {
@@ -148,9 +148,9 @@ export const DatasetAnalysis = ({
             provider: config.provider,
             model: config.model,
             name: `Dataset Analysis - ${dataset.name}`,
-            results: messages,
-            fingerprint_results: fingerprint,
-            dataset_analysis_results: analysisData,
+            messages: messages as Json,
+            fingerprint_results: fingerprint as unknown as Json,
+            dataset_analysis_results: analysisData as Json,
             is_vulnerable: null,
             status: 'completed'
           };
