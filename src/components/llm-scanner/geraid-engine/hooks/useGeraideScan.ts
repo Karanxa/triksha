@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { Json } from '@/integrations/supabase/types/common';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -34,7 +35,8 @@ export const useGeraideScan = () => {
 
     try {
       // Add the question to messages immediately
-      const updatedMessages = [...messages, { role: 'user', content: question }];
+      const newMessage: Message = { role: 'user', content: question };
+      const updatedMessages = [...messages, newMessage];
       setMessages(updatedMessages);
 
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
@@ -55,7 +57,8 @@ export const useGeraideScan = () => {
       // Add response after a delay to simulate natural conversation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const finalMessages = [...updatedMessages, { role: 'assistant', content: data.response }];
+      const assistantMessage: Message = { role: 'assistant', content: data.response };
+      const finalMessages = [...updatedMessages, assistantMessage];
       setMessages(finalMessages);
 
       // Store conversation in database if we haven't yet
@@ -65,7 +68,8 @@ export const useGeraideScan = () => {
           .insert({
             provider,
             model,
-            messages: finalMessages,
+            messages: finalMessages as unknown as Json,
+            user_id: (await supabase.auth.getUser()).data.user?.id
           })
           .select()
           .single();
@@ -77,7 +81,7 @@ export const useGeraideScan = () => {
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            messages: finalMessages,
+            messages: finalMessages as unknown as Json,
           })
           .eq('id', scanId);
 
@@ -89,7 +93,8 @@ export const useGeraideScan = () => {
     } catch (error: any) {
       console.error('Error in fingerprinting:', error);
       toast.error(`Error: ${error.message}`);
-      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }]);
+      const errorMessage: Message = { role: 'assistant', content: `Error: ${error.message}` };
+      setMessages(prev => [...prev, errorMessage]);
       return false;
     } finally {
       setIsLoading(false);
@@ -105,11 +110,11 @@ export const useGeraideScan = () => {
   ) => {
     try {
       setIsLoading(true);
-      const analysisMessage = { 
-        role: 'system' as const, 
+      const systemMessage: Message = { 
+        role: 'system', 
         content: 'Starting dataset analysis with fingerprint results...' 
       };
-      setMessages(prev => [...prev, analysisMessage]);
+      setMessages(prev => [...prev, systemMessage]);
 
       const { data, error } = await supabase.functions.invoke('process-geraide-scan', {
         body: {
@@ -124,12 +129,12 @@ export const useGeraideScan = () => {
       if (error) throw error;
 
       // Add analysis results to chat
-      const resultMessages = [
-        { role: 'assistant' as const, content: 'Dataset analysis complete. Results:' },
-        { role: 'assistant' as const, content: JSON.stringify(data.results, null, 2) }
+      const resultMessages: Message[] = [
+        { role: 'assistant', content: 'Dataset analysis complete. Results:' },
+        { role: 'assistant', content: JSON.stringify(data.results, null, 2) }
       ];
 
-      const updatedMessages = [...messages, analysisMessage, ...resultMessages];
+      const updatedMessages = [...messages, systemMessage, ...resultMessages];
       setMessages(updatedMessages);
 
       // Update scan with results and vulnerability status
@@ -137,7 +142,7 @@ export const useGeraideScan = () => {
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            messages: updatedMessages,
+            messages: updatedMessages as unknown as Json,
             fingerprint_results: fingerprint,
             dataset_analysis_results: data.results,
             is_vulnerable: data.results?.is_vulnerable || false,
@@ -150,10 +155,11 @@ export const useGeraideScan = () => {
     } catch (error: any) {
       console.error('Dataset analysis error:', error);
       toast.error(`Dataset analysis failed: ${error.message}`);
-      setMessages(prev => [...prev, { 
+      const errorMessage: Message = { 
         role: 'assistant', 
         content: `Dataset analysis failed: ${error.message}` 
-      }]);
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
