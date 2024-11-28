@@ -5,7 +5,7 @@ import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
 import { ScanState } from '../types/scan';
-import { processDatasetAnalysis } from './useDatasetAnalysis';
+import { useDatasetAnalysis } from './useDatasetAnalysis';
 
 export const useGeraideScan = () => {
   const [state, setState] = useState<ScanState>({
@@ -124,25 +124,17 @@ export const useGeraideScan = () => {
       };
       setState(prev => ({ ...prev, messages: [...prev.messages, systemMessage] }));
 
-      const results = await processDatasetAnalysis({
+      const { messages, isLoading, progress } = useDatasetAnalysis({
         datasetId,
         provider,
         model,
-        fingerprint,
-        customEndpoint,
-        scanId: state.scanId,
-        supabase
-      });
+        customEndpoint
+      }, fingerprint);
 
-      // Add completion message
-      const completionMessage: Message = { 
-        role: 'system', 
-        content: `Analysis complete. Processed ${results.length} prompts with fingerprint-based augmentation.` 
-      };
       setState(prev => ({ 
         ...prev, 
-        messages: [...prev.messages, completionMessage],
-        isLoading: false 
+        messages: [...prev.messages, ...messages],
+        isLoading: isLoading 
       }));
 
     } catch (error: any) {

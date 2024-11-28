@@ -4,22 +4,31 @@ import { Message } from '../types';
 import { toast } from 'sonner';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
 
-interface UseDatasetAnalysisProps {
-  config: {
-    provider: string;
-    model: string;
-    datasetId: string;
-    customEndpoint?: CustomEndpoint;
-  };
-  fingerprint: any;
+interface UseDatasetAnalysisConfig {
+  provider: string;
+  model: string;
+  datasetId: string;
+  customEndpoint?: CustomEndpoint;
 }
 
-export const useDatasetAnalysis = ({ config, fingerprint }: UseDatasetAnalysisProps) => {
+interface UseDatasetAnalysisResult {
+  messages: Message[];
+  isLoading: boolean;
+  progress: number;
+  results: any[];
+  startAnalysis: (prompts: string[]) => Promise<void>;
+}
+
+export const useDatasetAnalysis = (
+  config: UseDatasetAnalysisConfig, 
+  fingerprint: any
+): UseDatasetAnalysisResult => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<any[]>([]);
 
-  const processDataset = async () => {
+  const startAnalysis = async (prompts: string[]) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('process-geraide-scan', {
@@ -78,11 +87,10 @@ export const useDatasetAnalysis = ({ config, fingerprint }: UseDatasetAnalysisPr
         }
       }
 
-      return processedResults;
+      setResults(processedResults);
     } catch (error) {
       console.error('Dataset analysis error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
-      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +100,7 @@ export const useDatasetAnalysis = ({ config, fingerprint }: UseDatasetAnalysisPr
     messages,
     isLoading,
     progress,
-    processDataset
+    results,
+    startAnalysis
   };
 };

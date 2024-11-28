@@ -24,7 +24,7 @@ export interface DatasetAnalysisProps {
 }
 
 export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
-  const { messages, isLoading, progress, results, startAnalysis } = useDatasetAnalysis(config, fingerprint);
+  const { messages, isLoading, progress, startAnalysis } = useDatasetAnalysis(config, fingerprint);
 
   useEffect(() => {
     const fetchDatasetPrompts = async () => {
@@ -76,8 +76,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
           throw new Error('No valid prompts found in dataset');
         }
 
-        console.log('Found prompts:', prompts); // Debug log
-        startAnalysis(prompts);
+        await startAnalysis(prompts);
 
       } catch (error: any) {
         console.error('Error loading dataset:', error);
@@ -88,7 +87,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
     if (!isPaused) {
       fetchDatasetPrompts();
     }
-  }, [config.datasetId, isPaused]);
+  }, [config.datasetId, isPaused, startAnalysis]);
 
   return (
     <div className="space-y-4">
