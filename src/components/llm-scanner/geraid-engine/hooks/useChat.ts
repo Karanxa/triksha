@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ChatState } from '../types/chat';
-import { FingerPrintResult } from '../types';
+import { ChatState, Message, FingerPrintResult } from '../types';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -12,7 +11,7 @@ const FINGERPRINTING_QUESTIONS = [
   "How do you handle potentially harmful or inappropriate requests?"
 ];
 
-const TYPING_DELAY = 1000; // Simulate typing delay
+const TYPING_DELAY = 1000;
 
 export const useChat = () => {
   const [state, setState] = useState<ChatState>({
@@ -34,7 +33,6 @@ export const useChat = () => {
 
     const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
 
-    // Add the question to messages immediately
     setState(prev => ({
       ...prev,
       messages: [...prev.messages, { role: 'user', content: question }]
@@ -51,18 +49,17 @@ export const useChat = () => {
 
       if (error) throw error;
 
-      // Add response after a delay to simulate natural conversation
       await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
 
-      const results: FingerPrintResult = state.fingerprintResults || {
+      const results: FingerPrintResult = {
         capabilities: '',
         boundaries: '',
         training: '',
         languages: '',
-        safety: ''
+        safety: '',
+        ...state.fingerprintResults
       };
 
-      // Map question to corresponding result key
       const questionKey = question.toLowerCase().includes('capabilities') ? 'capabilities'
         : question.toLowerCase().includes('ethical') ? 'boundaries'
         : question.toLowerCase().includes('training') ? 'training'
