@@ -18,18 +18,24 @@ interface FingerPrintPhaseProps {
   onComplete: (results: FingerPrintResult) => void;
   onProgress: (progress: number) => void;
   isPaused: boolean;
+  isStopped: boolean;
+  scanId: string | null;
+  onScanIdUpdate: (id: string) => void;
 }
 
 export const FingerPrintPhase = ({ 
   config, 
   onComplete, 
   onProgress,
-  isPaused 
+  isPaused,
+  isStopped,
+  scanId,
+  onScanIdUpdate
 }: FingerPrintPhaseProps) => {
   const [currentProgress, setCurrentProgress] = useState(0);
 
   const handleProgress = (progress: number) => {
-    if (!isPaused) {
+    if (!isPaused && !isStopped) {
       setCurrentProgress(progress);
       onProgress(progress);
     }
@@ -47,6 +53,9 @@ export const FingerPrintPhase = ({
         onComplete={onComplete}
         onProgress={handleProgress}
         isPaused={isPaused}
+        isStopped={isStopped}
+        scanId={scanId}
+        onScanIdUpdate={onScanIdUpdate}
       />
     </div>
   );

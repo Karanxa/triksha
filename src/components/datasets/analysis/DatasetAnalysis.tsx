@@ -5,7 +5,6 @@ import { Message } from "@/components/llm-scanner/geraid-engine/types";
 import { AnalysisProgress } from "./AnalysisProgress";
 import { ModelInteraction } from "./ModelInteraction";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
-import { ApiKeys } from "@/integrations/supabase/types/common";
 
 interface DatasetAnalysisProps {
   config: {
@@ -14,9 +13,18 @@ interface DatasetAnalysisProps {
     model: string;
   };
   fingerprint: FingerPrintResult;
+  isPaused: boolean;
+  isStopped: boolean;
+  scanId: string | null;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
+export const DatasetAnalysis = ({ 
+  config, 
+  fingerprint, 
+  isPaused,
+  isStopped,
+  scanId 
+}: DatasetAnalysisProps) => {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<'augmenting' | 'testing'>('augmenting');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,6 +32,8 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
 
   useEffect(() => {
     const analyzeDataset = async () => {
+      if (isPaused || isStopped) return;
+      
       setIsLoading(true);
       try {
         // Get user's profile for API keys
@@ -32,7 +42,7 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
           .select('api_keys')
           .single();
 
-        const apiKeys = profile?.api_keys as ApiKeys;
+        const apiKeys = profile?.api_keys;
         if (!apiKeys?.openai) {
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
@@ -44,12 +54,13 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
         }]);
 
         // Process dataset with fingerprint results
-        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraid-scan', {
           body: {
             datasetId: config.datasetId,
             provider: config.provider,
             model: config.model,
-            fingerprint
+            fingerprint,
+            scanId
           }
         });
 
@@ -75,8 +86,10 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
       }
     };
 
-    analyzeDataset();
-  }, [config, fingerprint]);
+    if (!isPaused && !isStopped) {
+      analyzeDataset();
+    }
+  }, [config, fingerprint, isPaused, isStopped]);
 
   return (
     <div className="space-y-4">

@@ -4,15 +4,26 @@ import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
 
-export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
+export const Chat = ({ 
+  config, 
+  onComplete, 
+  onProgress,
+  isPaused,
+  isStopped,
+  scanId,
+  onScanIdUpdate
+}: ChatProps) => {
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
 
   useEffect(() => {
     const processQuestion = async () => {
-      if (!config || isLoading) return;
+      if (!config || isLoading || isPaused || isStopped) return;
       
-      const success = await processNextQuestion(config.provider, config.model);
+      const success = await processNextQuestion(config.provider, config.model, scanId);
+      if (success && typeof success === 'object' && 'scanId' in success) {
+        onScanIdUpdate(success.scanId);
+      }
       
       // Calculate and report progress
       const totalQuestions = 5; // Total number of fingerprinting questions
@@ -27,7 +38,7 @@ export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
     // Start with a small delay to allow UI to render
     const timer = setTimeout(processQuestion, 500);
     return () => clearTimeout(timer);
-  }, [config, currentQuestionIndex, isLoading]);
+  }, [config, currentQuestionIndex, isLoading, isPaused, isStopped]);
 
   if (!config) return null;
 
