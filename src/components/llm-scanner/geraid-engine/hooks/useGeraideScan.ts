@@ -128,24 +128,60 @@ export const useGeraideScan = () => {
 
       if (error) throw error;
 
-      // Add analysis results to chat
-      const resultMessages: Message[] = [
-        { role: 'assistant', content: 'Dataset analysis complete. Results:' },
-        { role: 'assistant', content: JSON.stringify(data.results, null, 2) }
-      ];
+      // Process each augmented prompt with the model
+      const processedResults = [];
+      for (const result of data.results) {
+        try {
+          const { data: modelResponse, error: modelError } = await supabase.functions.invoke('geraide-fingerprint', {
+            body: {
+              provider,
+              model,
+              prompt: result.augmentedPrompt,
+              customEndpoint
+            }
+          });
 
-      const updatedMessages = [...messages, systemMessage, ...resultMessages];
-      setMessages(updatedMessages);
+          if (modelError) throw modelError;
 
-      // Update scan with results and vulnerability status
+          processedResults.push({
+            originalPrompt: result.originalPrompt,
+            augmentedPrompt: result.augmentedPrompt,
+            modelResponse: modelResponse.response
+          });
+
+          // Add the interaction to messages
+          const promptMessage: Message = { role: 'user', content: result.augmentedPrompt };
+          const responseMessage: Message = { role: 'assistant', content: modelResponse.response };
+          setMessages(prev => [...prev, promptMessage, responseMessage]);
+
+          // Add small delay between requests
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error('Error processing prompt:', error);
+          processedResults.push({
+            originalPrompt: result.originalPrompt,
+            augmentedPrompt: result.augmentedPrompt,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+
+      // Add completion message
+      const completionMessage: Message = { 
+        role: 'system', 
+        content: `Analysis complete. Processed ${processedResults.length} prompts with fingerprint-based augmentation.` 
+      };
+      setMessages(prev => [...prev, completionMessage]);
+
+      // Update scan with results
       if (scanId) {
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            messages: updatedMessages as unknown as Json,
+            messages: messages as unknown as Json,
             fingerprint_results: fingerprint,
-            dataset_analysis_results: data.results,
-            is_vulnerable: data.results?.is_vulnerable || false,
+            dataset_analysis_results: processedResults,
+            is_vulnerable: processedResults.some(r => r.modelResponse?.includes('vulnerable')),
           })
           .eq('id', scanId);
 
