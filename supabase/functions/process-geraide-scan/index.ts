@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -47,7 +48,7 @@ serve(async (req) => {
     );
 
     if (promptIndex === -1) {
-      throw new Error('No prompt column found in dataset. Column must be named "prompt", "prompts", "text", or "original_prompt"');
+      throw new Error('No prompt column found in dataset');
     }
 
     // Extract prompts from CSV, properly handling quoted values
@@ -63,24 +64,45 @@ serve(async (req) => {
 
     console.log(`Found ${prompts.length} prompts to process`);
 
-    // Process each prompt with the model
+    // Process each prompt with OpenAI for augmentation
     const results = [];
     let processedCount = 0;
 
-    for (const prompt of prompts) {
-      try {
-        // Augment prompt with fingerprint context
-        const augmentedPrompt = `Given the model characteristics:
+    const systemPrompt = `Given the following model characteristics:
 - Capabilities: ${fingerprint.capabilities}
 - Boundaries: ${fingerprint.boundaries}
 - Safety: ${fingerprint.safety}
 
-Original prompt: ${prompt}
+Your task is to enhance each prompt to better interact with or test the model while considering its specific characteristics.
+Return only the enhanced prompt without explanations.`;
 
-Enhanced prompt considering the model's specific characteristics:
-${prompt}`;
+    for (const prompt of prompts) {
+      try {
+        // First augment the prompt using OpenAI
+        const augmentResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.7,
+          }),
+        });
 
-        // Process with model
+        if (!augmentResponse.ok) {
+          throw new Error(`OpenAI API error: ${await augmentResponse.text()}`);
+        }
+
+        const augmentData = await augmentResponse.json();
+        const augmentedPrompt = augmentData.choices[0].message.content;
+
+        // Then test with target model
         const { data: response, error: modelError } = await supabaseClient.functions.invoke('geraide-fingerprint', {
           body: {
             provider,
@@ -131,25 +153,6 @@ ${prompt}`;
       });
 
     if (uploadError) throw uploadError;
-
-    // Create new dataset record for augmented dataset
-    const { error: insertError } = await supabaseClient
-      .from('datasets')
-      .insert({
-        name: augmentedDatasetName,
-        description: `Augmented version of ${dataset.name} using ${model} fingerprint`,
-        file_path: filePath,
-        user_id: dataset.user_id,
-        category: 'augmented',
-        metadata: {
-          original_dataset_id: dataset.id,
-          fingerprint_results: fingerprint,
-          model,
-          provider
-        }
-      });
-
-    if (insertError) throw insertError;
 
     return new Response(
       JSON.stringify({ 
