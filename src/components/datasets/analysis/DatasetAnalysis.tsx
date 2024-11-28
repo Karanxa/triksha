@@ -78,10 +78,20 @@ export const DatasetAnalysis = ({
             .select('api_keys')
             .single();
 
-          const apiKeys = profile?.api_keys as Record<string, string>;
-          if (!apiKeys?.openai) {
+          if (!profile?.api_keys?.openai) {
             throw new Error('OpenAI API key not found. Please add it in Settings.');
           }
+
+          // Add initial system message with fingerprint analysis
+          setMessages([{
+            role: 'system',
+            content: `Starting model analysis with fingerprint results:
+- Capabilities: ${fingerprint.capabilities || 'Not detected'}
+- Boundaries: ${fingerprint.boundaries || 'Not detected'}
+- Safety measures: ${fingerprint.safety || 'Not detected'}
+
+Beginning dataset augmentation based on model characteristics...`
+          }]);
 
           // Process dataset with fingerprint analysis
           const { data, error } = await supabase.functions.invoke('process-geraid-scan', {
@@ -89,7 +99,11 @@ export const DatasetAnalysis = ({
               datasetId: config.datasetId,
               provider: config.provider,
               model: config.model,
-              fingerprint,
+              fingerprint: {
+                capabilities: fingerprint.capabilities || '',
+                boundaries: fingerprint.boundaries || '',
+                safety: fingerprint.safety || ''
+              },
               scanId
             }
           });
@@ -99,20 +113,6 @@ export const DatasetAnalysis = ({
           setAnalysisData(data);
           setTotalPrompts(data?.results?.length || 0);
           
-          // Add system message explaining the augmentation process
-          setMessages(prev => [
-            ...prev,
-            { 
-              role: 'system', 
-              content: `Analyzing model capabilities based on fingerprint:
-- Capabilities: ${fingerprint.capabilities}
-- Boundaries: ${fingerprint.boundaries}
-- Safety measures: ${fingerprint.safety}
-
-Augmenting dataset prompts accordingly...`
-            }
-          ]);
-
           // Store augmented prompts
           const augmentedPrompts = data?.results?.map((r: any) => r.augmentedPrompt) || [];
           setAugmentedPrompts(augmentedPrompts);
@@ -123,10 +123,6 @@ Augmenting dataset prompts accordingly...`
           
           // Only move to testing phase when augmentation is complete
           if (augmentationProgress === 100) {
-            setPhase('testing');
-            setProgress(0); // Reset progress for testing phase
-            
-            // Add transition message
             setMessages(prev => [
               ...prev,
               { 
@@ -134,6 +130,9 @@ Augmenting dataset prompts accordingly...`
                 content: 'Dataset augmentation complete. Beginning model response testing...' 
               }
             ]);
+            
+            setPhase('testing');
+            setProgress(0); // Reset progress for testing phase
             
             // Start processing the first prompt
             if (augmentedPrompts.length > 0) {

@@ -35,9 +35,26 @@ serve(async (req) => {
     // Parse CSV content
     const text = await fileData.text();
     const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-    const prompts = lines.slice(1); // Skip header row
+    
+    // Find the prompt column in headers
+    const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
+    const promptIndex = headers.findIndex(header => 
+      header === 'prompts' || header === 'prompt' || header === 'text' || header === 'original_prompt'
+    );
 
-    // Process each prompt with the model
+    if (promptIndex === -1) {
+      throw new Error('No prompt column found in dataset');
+    }
+
+    // Extract and process prompts
+    const prompts = lines.slice(1).map(line => {
+      const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
+      return values[promptIndex];
+    }).filter(Boolean);
+
+    console.log(`Found ${prompts.length} prompts in dataset`);
+
+    // Process each prompt
     const results = [];
     let processedCount = 0;
 
