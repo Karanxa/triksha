@@ -31,6 +31,7 @@ export const DatasetAnalysis = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [totalPrompts, setTotalPrompts] = useState(0);
 
   // Process a single prompt and wait for response
   const processPrompt = async (prompt: string): Promise<boolean> => {
@@ -93,6 +94,7 @@ export const DatasetAnalysis = ({
           if (error) throw error;
           setAnalysisData(data);
           setPhase('testing');
+          setTotalPrompts(data?.results?.length || 0);
           
           // Start processing the first prompt
           if (data?.results?.length > 0) {
@@ -129,16 +131,16 @@ export const DatasetAnalysis = ({
       const success = await processPrompt(result.augmentedPrompt);
       
       if (success) {
-        const newProgress = ((currentQuestionIndex + 1) / analysisData.results.length) * 100;
-        setProgress(newProgress);
+        const newProgress = ((currentQuestionIndex + 1) / totalPrompts) * 100;
+        setProgress(Math.min(newProgress, 100));
         setCurrentQuestionIndex(prev => prev + 1);
       }
     };
 
-    if (!isLoading) {
+    if (!isLoading && currentQuestionIndex < totalPrompts) {
       processNextPrompt();
     }
-  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading]);
+  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading, totalPrompts]);
 
   return (
     <div className="space-y-4">

@@ -27,6 +27,7 @@ export const GeraidEngine = () => {
       setPhase("fingerprinting");
       setIsPaused(false);
       setIsStopped(false);
+      setFingerprintProgress(0);
     } catch (error) {
       toast.error("Failed to start analysis");
       setPhase("not_started");
@@ -37,6 +38,7 @@ export const GeraidEngine = () => {
     try {
       setFingerprintResults(results);
       setPhase("dataset_analysis");
+      setFingerprintProgress(100);
     } catch (error) {
       toast.error("Failed to complete fingerprinting");
       setPhase("not_started");
@@ -140,7 +142,31 @@ export const GeraidEngine = () => {
 
   return (
     <div className="space-y-6">
-      {renderControls()}
+      {phase !== "not_started" && (
+        <div className="flex justify-center gap-2 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePauseResume}
+            disabled={isStopped}
+          >
+            {isPaused ? (
+              <PlayCircle className="h-4 w-4 mr-2" />
+            ) : (
+              <PauseCircle className="h-4 w-4 mr-2" />
+            )}
+            {isPaused ? "Resume" : "Pause"}
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleStop}
+          >
+            <StopCircle className="h-4 w-4 mr-2" />
+            Stop
+          </Button>
+        </div>
+      )}
       {renderPhase()}
     </div>
   );
