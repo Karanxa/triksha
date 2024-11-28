@@ -22,7 +22,7 @@ export const Chat = ({
       
       const result = await processNextQuestion(config.provider, config.model, scanId);
       
-      if (result?.success && result?.scanId) {
+      if (result && 'success' in result && result.success && result.scanId) {
         onScanIdUpdate(result.scanId);
       }
       
@@ -31,7 +31,7 @@ export const Chat = ({
       const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
       onProgress?.(progress);
       
-      if (!result?.success && fingerprintResults) {
+      if (result && 'success' in result && !result.success && fingerprintResults) {
         onComplete(fingerprintResults);
       }
     };

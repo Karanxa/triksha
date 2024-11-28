@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Message, ChatState } from '../types';
-import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { Message, ChatState, ProcessQuestionResult } from '../types';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
 
 export const useChat = () => {
@@ -18,7 +17,7 @@ export const useChat = () => {
     provider: string, 
     model: string,
     scanId: string | null
-  ) => {
+  ): Promise<ProcessQuestionResult | false> => {
     if (state.currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
       setState(prev => ({ ...prev, scanComplete: true }));
       return false;
@@ -102,7 +101,7 @@ export const useChat = () => {
         messages: [...prev.messages, errorMessage],
         isLoading: false 
       }));
-      return { success: false, scanId };
+      return false;
     }
   }, [state]);
 
