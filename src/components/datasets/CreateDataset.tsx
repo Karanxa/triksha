@@ -29,8 +29,11 @@ export const CreateDataset = () => {
 
     setIsGenerating(true)
     try {
+      console.log('Starting dataset generation with:', formData)
+      
       // First, perform fingerprinting if needed
       if (formData.method !== 'manual') {
+        console.log('Starting fingerprinting for model:', formData.targetModel)
         const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
           body: {
             provider: formData.targetModel.split('-')[0],
@@ -43,10 +46,13 @@ export const CreateDataset = () => {
           console.error('Fingerprint error:', fingerprintError)
           throw new Error(`Fingerprinting failed: ${fingerprintError.message}`)
         }
+
+        console.log('Fingerprint results:', fingerprintData)
         setFingerprintResults(fingerprintData)
       }
 
       // Generate dataset with fingerprint results
+      console.log('Generating dataset...')
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
         body: {
           name: formData.name,
@@ -70,6 +76,7 @@ export const CreateDataset = () => {
         throw new Error('No response received from the server')
       }
 
+      console.log('Dataset generated successfully:', data)
       toast({
         title: "Success",
         description: "Dataset generated successfully"
