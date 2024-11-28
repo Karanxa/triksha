@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message, ChatState, ProcessQuestionResult } from '../types';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
+import { Json } from '@/integrations/supabase/types';
 
 export const useChat = () => {
   const [state, setState] = useState<ChatState>({
@@ -59,7 +60,7 @@ export const useChat = () => {
           .insert({
             provider,
             model,
-            messages: finalMessages,
+            messages: finalMessages as unknown as Json,
             user_id: (await supabase.auth.getUser()).data.user?.id
           })
           .select()
@@ -79,7 +80,7 @@ export const useChat = () => {
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            messages: finalMessages,
+            messages: finalMessages as unknown as Json,
           })
           .eq('id', scanId);
 
