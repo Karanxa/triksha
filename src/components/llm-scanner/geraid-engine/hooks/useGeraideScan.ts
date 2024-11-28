@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
-import { ScanState } from '../types/scan';
+import { ScanState } from '../types/scan-state';
+import { convertMessagesToJson } from '../utils/messageUtils';
 
 export const useGeraideScan = () => {
   const [state, setState] = useState<ScanState>({
@@ -31,7 +32,6 @@ export const useGeraideScan = () => {
     try {
       console.log('Processing question:', { provider, model, question });
       
-      // Add the question to messages immediately
       const newMessage: Message = { role: 'user', content: question };
       const updatedMessages = [...state.messages, newMessage];
       setState(prev => ({ ...prev, messages: updatedMessages }));
@@ -54,22 +54,18 @@ export const useGeraideScan = () => {
         throw new Error('No response received from the model');
       }
 
-      console.log('Received response:', data.response);
-
-      // Add response after a delay to simulate natural conversation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const assistantMessage: Message = { role: 'assistant', content: data.response };
       const finalMessages = [...updatedMessages, assistantMessage];
 
-      // Store conversation in database if we haven't yet
       if (!state.scanId) {
         const { data: scanData, error: scanError } = await supabase
           .from('geraide_scans')
           .insert({
             provider,
             model,
-            messages: finalMessages,
+            messages: convertMessagesToJson(finalMessages),
             user_id: (await supabase.auth.getUser()).data.user?.id
           })
           .select()
@@ -80,8 +76,6 @@ export const useGeraideScan = () => {
           throw scanError;
         }
 
-        console.log('Created new scan:', scanData);
-        
         setState(prev => ({ 
           ...prev, 
           messages: finalMessages,
@@ -90,11 +84,10 @@ export const useGeraideScan = () => {
           isLoading: false 
         }));
       } else {
-        // Update existing scan
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            messages: finalMessages,
+            messages: convertMessagesToJson(finalMessages),
           })
           .eq('id', state.scanId);
 
@@ -115,7 +108,10 @@ export const useGeraideScan = () => {
     } catch (error) {
       console.error('Error in fingerprinting:', error);
       toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      const errorMessage: Message = { role: 'assistant', content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` };
+      const errorMessage: Message = { 
+        role: 'assistant', 
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      };
       setState(prev => ({ 
         ...prev, 
         messages: [...prev.messages, errorMessage],
@@ -133,8 +129,6 @@ export const useGeraideScan = () => {
     customEndpoint?: CustomEndpoint
   ) => {
     try {
-      console.log('Starting dataset analysis:', { datasetId, provider, model });
-      
       setState(prev => ({ ...prev, isLoading: true }));
       
       const systemMessage: Message = { 
@@ -155,8 +149,6 @@ export const useGeraideScan = () => {
       });
 
       if (error) throw error;
-
-      console.log('Dataset analysis complete:', data);
 
       setState(prev => ({ 
         ...prev, 
