@@ -147,10 +147,12 @@ export const DatasetAnalysis = ({
             user_id: user.id,
             provider: config.provider,
             model: config.model,
+            name: `Dataset Analysis - ${dataset.name}`,
             messages,
             fingerprint_results: fingerprint,
             dataset_analysis_results: analysisData,
-            is_vulnerable: null
+            is_vulnerable: null,
+            status: 'completed'
           };
 
           await supabase.from('geraide_scans').insert(scanData);
