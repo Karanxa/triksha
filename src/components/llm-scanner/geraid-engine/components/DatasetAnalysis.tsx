@@ -9,9 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface DatasetAnalysisProps {
   config: {
+    datasetId: string;
     provider: string;
     model: string;
-    datasetId: string;
     customEndpoint?: {
       url: string;
       apiKey: string;
@@ -47,19 +47,17 @@ export const DatasetAnalysis = ({
   useEffect(() => {
     const fetchApiKey = async () => {
       try {
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('api_keys')
           .single();
 
-        if (error) throw error;
-
-        if (!profile?.api_keys?.openai) {
+        if (!profile?.api_keys || typeof profile.api_keys !== 'object' || !('openai' in profile.api_keys)) {
           toast.error("OpenAI API key not found. Please add it in the Keys tab.");
           return;
         }
 
-        setApiKey(profile.api_keys.openai);
+        setApiKey(profile.api_keys.openai as string);
       } catch (error) {
         console.error('Error fetching API key:', error);
         toast.error("Failed to fetch API key");
@@ -81,6 +79,7 @@ export const DatasetAnalysis = ({
         progress={progress}
         isPaused={isPaused}
       />
+      
       <Card>
         <CardContent className="p-4">
           <h3 className="text-lg font-medium mb-4">Dataset Analysis</h3>
