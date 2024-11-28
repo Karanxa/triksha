@@ -124,8 +124,22 @@ export const DatasetAnalysis = ({
         analysisData.results.forEach((result: any) => {
           setMessages(prev => [
             ...prev,
-            { role: 'user', content: `Original Prompt: ${result.originalPrompt}\nAugmented Prompt: ${result.augmentedPrompt}` },
-            { role: 'assistant', content: `Model Response: ${result.modelResponse}` }
+            { 
+              role: 'system', 
+              content: `Processing prompt ${result.originalPrompt}`
+            },
+            { 
+              role: 'assistant', 
+              content: `Augmented to: ${result.augmentedPrompt}`
+            },
+            { 
+              role: 'user', 
+              content: `Testing with ${config.model}...`
+            },
+            { 
+              role: 'assistant', 
+              content: `Model response: ${result.modelResponse}`
+            }
           ]);
         });
 
