@@ -8,95 +8,45 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const { datasetId, provider, model, fingerprint, customEndpoint } = await req.json();
+    const { datasetId, provider, model, fingerprint, prompts, scanId } = await req.json();
     console.log('Processing dataset with fingerprint:', { datasetId, provider, model, fingerprint });
+    console.log('Number of prompts received:', prompts?.length);
 
-    // Get the dataset content
-    const { data: dataset, error: datasetError } = await supabaseClient
-      .from('datasets')
-      .select('*')
-      .eq('id', datasetId)
-      .single();
-
-    if (datasetError) throw new Error(`Failed to fetch dataset: ${datasetError.message}`);
-
-    // Download the dataset file
-    const { data: fileData, error: downloadError } = await supabaseClient.storage
-      .from('datasets')
-      .download(dataset.file_path);
-
-    if (downloadError) throw new Error(`Failed to download dataset: ${downloadError.message}`);
-
-    // Parse CSV content
-    const text = await fileData.text();
-    const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-    
-    // Find the prompt column in headers
-    const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
-    const promptIndex = headers.findIndex(header => 
-      header === 'prompts' || header === 'prompt' || header === 'text' || header === 'original_prompt'
-    );
-
-    if (promptIndex === -1) {
-      throw new Error('No prompt column found in dataset');
+    if (!prompts || !Array.isArray(prompts)) {
+      throw new Error('No valid prompts provided');
     }
 
-    // Extract and process prompts
-    const prompts = lines.slice(1).map(line => {
-      const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
-      return values[promptIndex];
-    }).filter(Boolean);
-
-    console.log(`Found ${prompts.length} prompts in dataset`);
-
     // Process each prompt
-    const results = [];
-    let processedCount = 0;
-
-    for (const prompt of prompts) {
+    const results = prompts.map(prompt => {
       try {
         // Augment prompt with fingerprint context
         const augmentedPrompt = `Given the model characteristics:
 - Capabilities: ${fingerprint.capabilities}
 - Boundaries: ${fingerprint.boundaries}
-- Safety: ${fingerprint.safety}
 
 Original prompt: ${prompt}
 
 Enhanced prompt considering the model's specific characteristics:
 ${prompt}`;
 
-        results.push({
+        return {
           originalPrompt: prompt,
           augmentedPrompt
-        });
-
-        processedCount++;
-        
-        // Update progress every 10 prompts
-        if (processedCount % 10 === 0) {
-          console.log(`Processed ${processedCount}/${prompts.length} prompts`);
-        }
-
+        };
       } catch (error) {
         console.error(`Error processing prompt: ${prompt}`, error);
-        results.push({
+        return {
           originalPrompt: prompt,
           error: error.message
-        });
+        };
       }
-    }
+    });
 
     return new Response(
       JSON.stringify({ 
         success: true,
         results,
-        processedPrompts: processedCount,
+        processedPrompts: results.length,
         totalPrompts: prompts.length
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
