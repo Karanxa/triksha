@@ -32,6 +32,7 @@ export const DatasetAnalysis = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [totalPrompts, setTotalPrompts] = useState(0);
+  const [augmentedPrompts, setAugmentedPrompts] = useState<string[]>([]);
 
   // Process a single prompt and wait for response
   const processPrompt = async (prompt: string): Promise<boolean> => {
@@ -64,9 +65,9 @@ export const DatasetAnalysis = ({
     }
   };
 
-  // Initial data fetch
+  // Initial data fetch and augmentation
   useEffect(() => {
-    const fetchAnalysisData = async () => {
+    const augmentDataset = async () => {
       if (!analysisData && !isPaused && !isStopped) {
         try {
           setIsLoading(true);
@@ -92,16 +93,27 @@ export const DatasetAnalysis = ({
           });
 
           if (error) throw error;
-          setAnalysisData(data);
-          setPhase('testing');
-          setTotalPrompts(data?.results?.length || 0);
           
-          // Start processing the first prompt
-          if (data?.results?.length > 0) {
-            const success = await processPrompt(data.results[0].augmentedPrompt);
-            if (success) {
-              setCurrentQuestionIndex(1);
-              setProgress((1 / data.results.length) * 100);
+          setAnalysisData(data);
+          setTotalPrompts(data?.results?.length || 0);
+          setAugmentedPrompts(data?.results?.map((r: any) => r.augmentedPrompt) || []);
+          
+          // Update augmentation progress
+          const augmentationProgress = Math.round((data?.results?.length || 0) / (data?.total || 1) * 100);
+          setProgress(augmentationProgress);
+          
+          // Only move to testing phase when augmentation is complete
+          if (augmentationProgress === 100) {
+            setPhase('testing');
+            setProgress(0); // Reset progress for testing phase
+            
+            // Start processing the first prompt
+            if (data?.results?.length > 0) {
+              const success = await processPrompt(data.results[0].augmentedPrompt);
+              if (success) {
+                setCurrentQuestionIndex(1);
+                setProgress((1 / data.results.length) * 100);
+              }
             }
           }
         } catch (error) {
@@ -113,22 +125,23 @@ export const DatasetAnalysis = ({
       }
     };
 
-    fetchAnalysisData();
+    augmentDataset();
   }, [config, fingerprint, isPaused, isStopped, scanId]);
 
   // Process next prompt when previous is complete
   useEffect(() => {
     const processNextPrompt = async () => {
-      if (!analysisData?.results || 
+      if (!augmentedPrompts.length || 
           isPaused || 
           isStopped || 
           isLoading || 
-          currentQuestionIndex >= analysisData.results.length) {
+          currentQuestionIndex >= augmentedPrompts.length ||
+          phase !== 'testing') {
         return;
       }
 
-      const result = analysisData.results[currentQuestionIndex];
-      const success = await processPrompt(result.augmentedPrompt);
+      const prompt = augmentedPrompts[currentQuestionIndex];
+      const success = await processPrompt(prompt);
       
       if (success) {
         const newProgress = ((currentQuestionIndex + 1) / totalPrompts) * 100;
@@ -140,7 +153,7 @@ export const DatasetAnalysis = ({
     if (!isLoading && currentQuestionIndex < totalPrompts) {
       processNextPrompt();
     }
-  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading, totalPrompts]);
+  }, [currentQuestionIndex, augmentedPrompts, isPaused, isStopped, isLoading, totalPrompts, phase]);
 
   return (
     <div className="space-y-4">
