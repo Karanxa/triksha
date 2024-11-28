@@ -10,12 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CustomEndpoint } from "../../types/CustomEndpoint";
 import { CSVUpload } from "./CSVUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface InitialPhaseProps {
   onStart: (config: { provider: string; model: string; datasetId: string; customEndpoint?: CustomEndpoint }) => void;
 }
 
 export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
+  const session = useSession();
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
@@ -47,10 +49,15 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
   });
 
   const handleCSVUpload = async (prompts: string[]) => {
+    if (!session?.user?.id) {
+      toast.error("Please log in to upload datasets");
+      return;
+    }
+
     try {
       const content = prompts.join('\n');
       const file = new Blob([content], { type: 'text/plain' });
-      const filePath = `${Date.now()}-dataset.txt`;
+      const filePath = `${session.user.id}/${Date.now()}-dataset.txt`;
 
       const { error: uploadError } = await supabase.storage
         .from('datasets')
@@ -63,7 +70,8 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
         .insert({
           name: 'Uploaded Dataset',
           description: `Dataset uploaded from CSV with ${prompts.length} prompts`,
-          file_path: filePath
+          file_path: filePath,
+          user_id: session.user.id
         })
         .select()
         .single();
