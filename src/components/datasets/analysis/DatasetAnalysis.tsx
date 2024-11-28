@@ -29,7 +29,38 @@ export const DatasetAnalysis = ({
   const [phase, setPhase] = useState<'augmenting' | 'testing'>('augmenting');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [analysisData, setAnalysisData] = useState<any>(null);
 
+  // Process a single prompt
+  const processPrompt = async (prompt: string) => {
+    try {
+      const { data: response } = await supabase.functions.invoke('geraide-fingerprint', {
+        body: {
+          provider: config.provider,
+          model: config.model,
+          prompt,
+          scanId
+        }
+      });
+
+      if (!response) throw new Error('No response received');
+
+      setMessages(prev => [
+        ...prev,
+        { role: 'user', content: prompt },
+        { role: 'assistant', content: response.response }
+      ]);
+
+      return response;
+    } catch (error) {
+      console.error('Error processing prompt:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to process prompt');
+      return null;
+    }
+  };
+
+  // Main analysis function
   useEffect(() => {
     const analyzeDataset = async () => {
       if (isPaused || isStopped) return;
@@ -47,49 +78,51 @@ export const DatasetAnalysis = ({
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
 
-        // Initial system message
-        setMessages([{
-          role: 'system',
-          content: `Starting dataset analysis for ${config.model}`
-        }]);
+        // Initial system message if starting fresh
+        if (messages.length === 0) {
+          setMessages([{
+            role: 'system',
+            content: `Starting dataset analysis for ${config.model}`
+          }]);
+        }
 
-        // Process dataset with fingerprint results
-        const { data: analysisData, error } = await supabase.functions.invoke('process-geraid-scan', {
-          body: {
-            datasetId: config.datasetId,
-            provider: config.provider,
-            model: config.model,
-            fingerprint,
-            scanId
-          }
-        });
+        // Get analysis data if not already fetched
+        if (!analysisData) {
+          const { data, error } = await supabase.functions.invoke('process-geraid-scan', {
+            body: {
+              datasetId: config.datasetId,
+              provider: config.provider,
+              model: config.model,
+              fingerprint,
+              scanId
+            }
+          });
 
-        if (error) throw error;
+          if (error) throw error;
+          setAnalysisData(data);
+          setPhase('testing');
+        }
 
-        // Update messages and progress as prompts are processed
-        setPhase('testing');
-        
-        analysisData.results.forEach((result: any) => {
-          setMessages(prev => [
-            ...prev,
-            { role: 'user', content: result.augmentedPrompt },
-            { role: 'assistant', content: result.modelResponse }
-          ]);
-        });
+        // Process next prompt if available
+        if (analysisData && currentQuestionIndex < analysisData.results.length) {
+          const result = analysisData.results[currentQuestionIndex];
+          await processPrompt(result.augmentedPrompt);
+          setCurrentQuestionIndex(prev => prev + 1);
+          setProgress((currentQuestionIndex + 1) / analysisData.results.length * 100);
+        }
 
       } catch (error) {
         console.error('Dataset analysis error:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
       } finally {
         setIsLoading(false);
-        setProgress(100);
       }
     };
 
-    if (!isPaused && !isStopped) {
+    if (!isPaused && !isStopped && (!analysisData || currentQuestionIndex < analysisData.results?.length)) {
       analyzeDataset();
     }
-  }, [config, fingerprint, isPaused, isStopped]);
+  }, [config, fingerprint, isPaused, isStopped, currentQuestionIndex, analysisData, messages.length]);
 
   return (
     <div className="space-y-4">
