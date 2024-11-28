@@ -2,8 +2,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { augmentPrompts } from './promptAugmenter.ts'
 import { testPromptsWithModel } from './modelTester.ts'
-import { generateRecipePrompts } from './recipeGenerator.ts'
-import { generateAdversarialPrompts } from './adversarialGenerator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,18 +17,14 @@ serve(async (req) => {
     const { 
       name, 
       description, 
-      basePrompt,
-      numSamples,
-      method,
-      recipe,
-      targetModel,
-      adversarialConfig,
-      fingerprintResults,
-      userId
+      originalPrompts, 
+      provider,
+      model,
+      fingerprintResults 
     } = await req.json()
 
-    if (!name || !userId) {
-      throw new Error('Invalid input: name and userId are required')
+    if (!name || !originalPrompts || !Array.isArray(originalPrompts)) {
+      throw new Error('Invalid input: name and originalPrompts array are required')
     }
 
     const supabase = createClient(
@@ -38,39 +32,40 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Generate prompts based on method
-    let originalPrompts: string[] = []
-    
-    if (method === 'manual' && basePrompt) {
-      originalPrompts = Array(numSamples).fill(basePrompt)
-    } else if (method === 'recipe') {
-      originalPrompts = await generateRecipePrompts({ recipe, targetModel, numSamples })
-    } else if (method === 'adversarial') {
-      originalPrompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
-    }
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) throw new Error('No authorization header')
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
+
+    if (userError || !user) throw userError || new Error('User not found')
 
     // Get user's API key
     const { data: profile } = await supabase
       .from('profiles')
       .select('api_keys')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
     if (!profile?.api_keys?.openai) {
       throw new Error('OpenAI API key not found')
     }
 
-    // Augment prompts using fingerprint results if available
-    const augmentedPrompts = fingerprintResults 
-      ? await augmentPrompts(originalPrompts, fingerprintResults, profile.api_keys.openai)
-      : originalPrompts
+    // Step 1: Augment prompts using fingerprint results
+    const augmentedPrompts = await augmentPrompts(
+      originalPrompts,
+      fingerprintResults,
+      profile.api_keys.openai
+    )
 
-    // Test prompts with target model
+    // Step 2: Test augmented prompts with target model
     const testResults = await testPromptsWithModel(
       augmentedPrompts,
-      targetModel.split('-')[0],
-      targetModel.split('-')[1],
-      profile.api_keys.openai
+      provider,
+      model,
+      profile.api_keys[provider] || profile.api_keys.openai
     )
 
     // Create CSV content
@@ -83,7 +78,7 @@ serve(async (req) => {
 
     // Upload to storage
     const timestamp = new Date().getTime()
-    const filePath = `${userId}/${timestamp}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`
+    const filePath = `${user.id}/${timestamp}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`
 
     const { error: uploadError } = await supabase.storage
       .from('datasets')
@@ -100,9 +95,9 @@ serve(async (req) => {
       .insert({
         name,
         description,
-        user_id: userId,
+        user_id: user.id,
         file_path: filePath,
-        category: method,
+        category: 'augmented',
         metadata: {
           fingerprintResults,
           originalCount: originalPrompts.length,

@@ -1,8 +1,8 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Message } from '../geraid-engine/types';
+import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { MessageBubble, ChatContainer } from './iMessageStyle';
 import { TypingIndicator } from './TypingIndicator';
-import { useAutoScroll } from '@/hooks/useAutoScroll';
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -14,8 +14,8 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
 
   return (
     <ChatContainer>
-      <ScrollArea className="h-full pr-4">
-        <div className="space-y-2" ref={scrollRef}>
+      <ScrollArea className="h-full pr-4" ref={scrollRef}>
+        <div className="space-y-2">
           {messages.map((message, index) => (
             <MessageBubble
               key={index}
