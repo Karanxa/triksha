@@ -35,20 +35,6 @@ export const FingerPrintPhase = ({
     if (!isPaused) {
       setCurrentProgress(progress);
       onProgress(progress);
-
-      // Update messages in the database
-      if (scanId) {
-        const { error: updateError } = await supabase
-          .from('geraide_scans')
-          .update({
-            messages: []  // You'll need to pass the actual messages here
-          })
-          .eq('id', scanId);
-
-        if (updateError) {
-          console.error('Failed to update scan messages:', updateError);
-        }
-      }
     }
   };
 

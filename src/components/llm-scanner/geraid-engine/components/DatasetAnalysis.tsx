@@ -42,11 +42,11 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused, scanId }: Datas
         const { error: updateError } = await supabase
           .from('geraide_scans')
           .update({
-            messages,
+            messages: messages as any,
             dataset_analysis_results: {
               progress,
-              messages
-            }
+              messages: messages as any
+            } as any
           })
           .eq('id', scanId);
 

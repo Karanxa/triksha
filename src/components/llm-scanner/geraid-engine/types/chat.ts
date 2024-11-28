@@ -25,9 +25,11 @@ export interface ChatProps {
   onComplete: (results: FingerPrintResult) => void;
   onProgress?: (progress: number) => void;
   isPaused?: boolean;
+  scanId?: string | null;
 }
 
 export interface FingerPrintResult {
+  [key: string]: any;
   capabilities: string;
   boundaries: string;
   training: string;
