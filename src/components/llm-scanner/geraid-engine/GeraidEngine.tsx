@@ -2,12 +2,11 @@ import { useState } from "react";
 import { Phase, FingerPrintResult } from "./types";
 import { InitialPhase } from "./components/InitialPhase";
 import { FingerPrintPhase } from "./components/FingerPrintPhase";
-import { DatasetAnalysis } from "./components/DatasetAnalysis";
+import { DatasetAnalysis } from "../../datasets/analysis/DatasetAnalysis";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 
 export const GeraidEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
@@ -19,6 +18,7 @@ export const GeraidEngine = () => {
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
   const [fingerprintProgress, setFingerprintProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isStopped, setIsStopped] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
 
   const handleStart = async (newConfig: typeof config) => {
@@ -26,6 +26,7 @@ export const GeraidEngine = () => {
       setConfig(newConfig);
       setPhase("fingerprinting");
       setIsPaused(false);
+      setIsStopped(false);
     } catch (error) {
       toast.error("Failed to start analysis");
       setPhase("not_started");
@@ -52,33 +53,12 @@ export const GeraidEngine = () => {
   };
 
   const handleStop = async () => {
-    if (scanId) {
-      // Add final message about manual stop
-      const { data: currentScan } = await supabase
-        .from('geraid_scans')
-        .select('messages')
-        .eq('id', scanId)
-        .single();
-
-      if (currentScan?.messages) {
-        const updatedMessages = [
-          ...currentScan.messages,
-          { role: 'system', content: 'Scan stopped manually by user' }
-        ];
-
-        await supabase
-          .from('geraid_scans')
-          .update({ messages: updatedMessages })
-          .eq('id', scanId);
-      }
-    }
-
+    setIsStopped(true);
     setPhase("not_started");
     setConfig(null);
     setFingerprintResults(null);
     setFingerprintProgress(0);
     setIsPaused(false);
-    setScanId(null);
     toast.success("Scan stopped");
   };
 
@@ -91,6 +71,7 @@ export const GeraidEngine = () => {
           variant="outline"
           size="sm"
           onClick={handlePauseResume}
+          disabled={isStopped}
         >
           {isPaused ? (
             <PlayCircle className="h-4 w-4 mr-2" />
@@ -135,7 +116,7 @@ export const GeraidEngine = () => {
             onComplete={handleFingerprintComplete}
             onProgress={handleFingerprintProgress}
             isPaused={isPaused}
-            isStopped={phase === "not_started"}
+            isStopped={isStopped}
             scanId={scanId}
             onScanIdUpdate={setScanId}
           />
@@ -147,7 +128,7 @@ export const GeraidEngine = () => {
             config={config}
             fingerprint={fingerprintResults}
             isPaused={isPaused}
-            isStopped={phase === "not_started"}
+            isStopped={isStopped}
             scanId={scanId}
           />
         ) : null;

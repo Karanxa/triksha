@@ -1,18 +1,9 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ChatState } from '../types/chat';
-import { FingerPrintResult } from '../types';
-
-const FINGERPRINTING_QUESTIONS = [
-  "What are your core capabilities and primary functions?",
-  "What are your ethical principles and operational boundaries?",
-  "Can you describe your training process or knowledge cutoff date?",
-  "What languages and programming languages do you support?",
-  "How do you handle potentially harmful or inappropriate requests?"
-];
-
-const TYPING_DELAY = 1000;
+import { Message, ChatState } from '../types';
+import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
 
 export const useChat = () => {
   const [state, setState] = useState<ChatState>({
@@ -23,25 +14,25 @@ export const useChat = () => {
     scanId: null
   });
 
-  const processNextQuestion = useCallback(async (provider: string, model: string) => {
+  const processNextQuestion = useCallback(async (
+    provider: string, 
+    model: string,
+    scanId: string | null
+  ) => {
     if (state.currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
+      setState(prev => ({ ...prev, scanComplete: true }));
       return false;
     }
 
-    setState(prev => ({
-      ...prev,
-      isLoading: true
-    }));
-
+    setState(prev => ({ ...prev, isLoading: true }));
     const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
 
     try {
       // Add the question to messages immediately
-      const newMessage = { role: 'user', content: question };
+      const newMessage: Message = { role: 'user', content: question };
       const updatedMessages = [...state.messages, newMessage];
       setState(prev => ({ ...prev, messages: updatedMessages }));
 
-      // Get response from model
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider,
@@ -57,13 +48,13 @@ export const useChat = () => {
       }
 
       // Add response after a delay to simulate natural conversation
-      await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const assistantMessage = { role: 'assistant', content: data.response };
+      const assistantMessage: Message = { role: 'assistant', content: data.response };
       const finalMessages = [...updatedMessages, assistantMessage];
 
       // Store conversation in database if we haven't yet
-      if (!state.scanId) {
+      if (!scanId) {
         const { data: scanData, error: scanError } = await supabase
           .from('geraide_scans')
           .insert({
@@ -83,6 +74,7 @@ export const useChat = () => {
           currentQuestionIndex: prev.currentQuestionIndex + 1,
           isLoading: false 
         }));
+        return { success: true, scanId: scanData.id };
       } else {
         // Update existing scan
         const { error: updateError } = await supabase
@@ -90,7 +82,7 @@ export const useChat = () => {
           .update({
             messages: finalMessages,
           })
-          .eq('id', state.scanId);
+          .eq('id', scanId);
 
         if (updateError) throw updateError;
         setState(prev => ({
@@ -99,19 +91,18 @@ export const useChat = () => {
           currentQuestionIndex: prev.currentQuestionIndex + 1,
           isLoading: false
         }));
+        return { success: true, scanId };
       }
-
-      return true;
     } catch (error: any) {
       console.error('Error in fingerprinting:', error);
       toast.error(`Error: ${error.message}`);
-      const errorMessage = { role: 'assistant', content: `Error: ${error.message}` };
+      const errorMessage: Message = { role: 'assistant', content: `Error: ${error.message}` };
       setState(prev => ({ 
         ...prev, 
         messages: [...prev.messages, errorMessage],
         isLoading: false 
       }));
-      return false;
+      return { success: false, scanId };
     }
   }, [state]);
 

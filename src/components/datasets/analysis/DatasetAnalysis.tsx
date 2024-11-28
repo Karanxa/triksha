@@ -42,7 +42,7 @@ export const DatasetAnalysis = ({
           .select('api_keys')
           .single();
 
-        const apiKeys = profile?.api_keys;
+        const apiKeys = profile?.api_keys as Record<string, string>;
         if (!apiKeys?.openai) {
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
@@ -93,7 +93,7 @@ export const DatasetAnalysis = ({
 
   return (
     <div className="space-y-4">
-      <AnalysisProgress progress={progress} phase={phase} />
+      <AnalysisProgress progress={progress} phase={phase} isPaused={isPaused} />
       <ModelInteraction messages={messages} isLoading={isLoading} />
     </div>
   );

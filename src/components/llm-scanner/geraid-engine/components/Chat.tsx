@@ -20,9 +20,10 @@ export const Chat = ({
     const processQuestion = async () => {
       if (!config || isLoading || isPaused || isStopped) return;
       
-      const success = await processNextQuestion(config.provider, config.model, scanId);
-      if (success && typeof success === 'object' && 'scanId' in success) {
-        onScanIdUpdate(success.scanId);
+      const result = await processNextQuestion(config.provider, config.model, scanId);
+      
+      if (result?.success && result?.scanId) {
+        onScanIdUpdate(result.scanId);
       }
       
       // Calculate and report progress
@@ -30,7 +31,7 @@ export const Chat = ({
       const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
       onProgress?.(progress);
       
-      if (!success && fingerprintResults) {
+      if (!result?.success && fingerprintResults) {
         onComplete(fingerprintResults);
       }
     };
@@ -39,8 +40,6 @@ export const Chat = ({
     const timer = setTimeout(processQuestion, 500);
     return () => clearTimeout(timer);
   }, [config, currentQuestionIndex, isLoading, isPaused, isStopped]);
-
-  if (!config) return null;
 
   return (
     <Card>
