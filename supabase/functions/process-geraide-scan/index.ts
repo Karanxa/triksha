@@ -14,7 +14,7 @@ serve(async (req) => {
     );
 
     const { datasetId, provider, model, fingerprint, customEndpoint } = await req.json();
-    console.log('Processing dataset with fingerprint:', { datasetId, provider, model, fingerprint });
+    console.log('Processing dataset:', { datasetId, provider, model });
 
     // Get the dataset content
     const { data: dataset, error: datasetError } = await supabaseClient
@@ -35,7 +35,33 @@ serve(async (req) => {
     // Parse CSV content
     const text = await fileData.text();
     const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-    const prompts = lines.slice(1); // Skip header row
+    
+    if (lines.length === 0) {
+      throw new Error('Dataset is empty');
+    }
+
+    // Find the prompt column
+    const headers = lines[0].toLowerCase().split(',').map(header => header.trim());
+    const promptIndex = headers.findIndex(header => 
+      header === 'prompts' || header === 'prompt' || header === 'text' || header === 'original_prompt'
+    );
+
+    if (promptIndex === -1) {
+      throw new Error('No prompt column found in dataset. Column must be named "prompt", "prompts", "text", or "original_prompt"');
+    }
+
+    // Extract prompts from CSV, properly handling quoted values
+    const prompts = lines.slice(1).map(line => {
+      const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+      const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
+      return cleanedValues[promptIndex];
+    }).filter(Boolean);
+
+    if (prompts.length === 0) {
+      throw new Error('No valid prompts found in dataset');
+    }
+
+    console.log(`Found ${prompts.length} prompts to process`);
 
     // Process each prompt with the model
     const results = [];
@@ -73,11 +99,7 @@ ${prompt}`;
         });
 
         processedCount++;
-        
-        // Update progress every 10 prompts
-        if (processedCount % 10 === 0) {
-          console.log(`Processed ${processedCount}/${prompts.length} prompts`);
-        }
+        console.log(`Processed ${processedCount}/${prompts.length} prompts`);
 
       } catch (error) {
         console.error(`Error processing prompt: ${prompt}`, error);
@@ -90,6 +112,44 @@ ${prompt}`;
       // Add small delay between requests
       await new Promise(resolve => setTimeout(resolve, 500));
     }
+
+    // Save the augmented dataset
+    const augmentedDatasetName = `${dataset.name}_augmented`;
+    const csvContent = 'original_prompt,augmented_prompt,model_response\n' +
+      results.map(r => 
+        `"${r.originalPrompt.replace(/"/g, '""')}","${(r.augmentedPrompt || '').replace(/"/g, '""')}","${(r.modelResponse || r.error || '').replace(/"/g, '""')}"`
+      ).join('\n');
+
+    const timestamp = new Date().getTime();
+    const filePath = `augmented/${timestamp}_${augmentedDatasetName.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`;
+
+    const { error: uploadError } = await supabaseClient.storage
+      .from('datasets')
+      .upload(filePath, csvContent, {
+        contentType: 'text/csv',
+        upsert: true
+      });
+
+    if (uploadError) throw uploadError;
+
+    // Create new dataset record for augmented dataset
+    const { error: insertError } = await supabaseClient
+      .from('datasets')
+      .insert({
+        name: augmentedDatasetName,
+        description: `Augmented version of ${dataset.name} using ${model} fingerprint`,
+        file_path: filePath,
+        user_id: dataset.user_id,
+        category: 'augmented',
+        metadata: {
+          original_dataset_id: dataset.id,
+          fingerprint_results: fingerprint,
+          model,
+          provider
+        }
+      });
+
+    if (insertError) throw insertError;
 
     return new Response(
       JSON.stringify({ 

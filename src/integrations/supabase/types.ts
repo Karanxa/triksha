@@ -245,6 +245,53 @@ export type Database = {
           },
         ]
       }
+      geraide_scans: {
+        Row: {
+          created_at: string
+          dataset_analysis_results: Json | null
+          fingerprint_results: Json | null
+          id: string
+          is_vulnerable: boolean | null
+          messages: Json
+          model: string
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dataset_analysis_results?: Json | null
+          fingerprint_results?: Json | null
+          id?: string
+          is_vulnerable?: boolean | null
+          messages?: Json
+          model: string
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dataset_analysis_results?: Json | null
+          fingerprint_results?: Json | null
+          id?: string
+          is_vulnerable?: boolean | null
+          messages?: Json
+          model?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "geraide_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_settings: {
         Row: {
           created_at: string
