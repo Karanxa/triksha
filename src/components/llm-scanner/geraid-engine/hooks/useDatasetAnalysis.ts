@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Message } from '../types';
 import { toast } from 'sonner';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { augmentPrompt } from '../utils/promptAugmentation';
 
 interface UseDatasetAnalysisConfig {
   provider: string;
@@ -31,66 +32,114 @@ export const useDatasetAnalysis = (
   const startAnalysis = async (prompts: string[]) => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('process-geraide-scan', {
-        body: {
-          datasetId: config.datasetId,
-          provider: config.provider,
-          model: config.model,
-          fingerprint,
-          customEndpoint: config.customEndpoint
-        }
-      });
+      // First augment all prompts based on fingerprint results
+      const augmentedPrompts = await Promise.all(
+        prompts.map(async (prompt) => {
+          try {
+            return await augmentPrompt(prompt, fingerprint);
+          } catch (error) {
+            console.error('Error augmenting prompt:', error);
+            return prompt; // Fall back to original prompt if augmentation fails
+          }
+        })
+      );
 
-      if (error) throw error;
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'system', 
+          content: `Successfully augmented ${augmentedPrompts.length} prompts based on model fingerprint analysis.` 
+        }
+      ]);
 
       // Process each augmented prompt with the model
       const processedResults = [];
-      for (const result of data.results) {
+      for (let i = 0; i < augmentedPrompts.length; i++) {
         try {
-          const { data: modelResponse, error: modelError } = await supabase.functions.invoke('geraide-fingerprint', {
+          const augmentedPrompt = augmentedPrompts[i];
+          
+          // Add prompt to messages
+          setMessages(prev => [
+            ...prev,
+            { role: 'user', content: augmentedPrompt }
+          ]);
+
+          const { data: response, error } = await supabase.functions.invoke('geraide-fingerprint', {
             body: {
               provider: config.provider,
               model: config.model,
-              prompt: result.augmentedPrompt,
+              prompt: augmentedPrompt,
               customEndpoint: config.customEndpoint
             }
           });
 
-          if (modelError) throw modelError;
+          if (error) throw error;
+
+          // Add model response to messages
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content: response.response }
+          ]);
 
           processedResults.push({
-            originalPrompt: result.originalPrompt,
-            augmentedPrompt: result.augmentedPrompt,
-            modelResponse: modelResponse.response
+            originalPrompt: prompts[i],
+            augmentedPrompt,
+            modelResponse: response.response
           });
 
           // Update progress
-          const currentProgress = (processedResults.length / data.results.length) * 100;
+          const currentProgress = ((i + 1) / augmentedPrompts.length) * 100;
           setProgress(currentProgress);
-
-          // Update messages
-          setMessages(prev => [
-            ...prev,
-            { role: 'user', content: result.augmentedPrompt },
-            { role: 'assistant', content: modelResponse.response }
-          ]);
 
           // Add small delay between requests
           await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
           console.error('Error processing prompt:', error);
-          processedResults.push({
-            originalPrompt: result.originalPrompt,
-            augmentedPrompt: result.augmentedPrompt,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
+          setMessages(prev => [
+            ...prev,
+            { 
+              role: 'system', 
+              content: `Error processing prompt: ${error instanceof Error ? error.message : 'Unknown error'}` 
+            }
+          ]);
         }
       }
 
       setResults(processedResults);
+
+      // Save augmented dataset
+      const csvContent = 'original_prompt,augmented_prompt\n' + 
+        processedResults.map(r => 
+          `"${r.originalPrompt.replace(/"/g, '""')}","${r.augmentedPrompt.replace(/"/g, '""')}"`
+        ).join('\n');
+
+      const file = new Blob([csvContent], { type: 'text/csv' });
+      const filePath = `${config.datasetId}/augmented_${Date.now()}.csv`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('datasets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'system', 
+          content: 'Analysis complete. Augmented dataset has been saved.' 
+        }
+      ]);
+
     } catch (error) {
       console.error('Dataset analysis error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'system', 
+          content: `Error during analysis: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }

@@ -25,12 +25,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
       provider: config.provider,
       model: config.model,
       datasetId: config.datasetId,
-      customEndpoint: config.customEndpoint ? {
-        ...config.customEndpoint,
-        placeholder: config.customEndpoint.placeholder || '{PROMPT}',
-        curlCommand: config.customEndpoint.curlCommand || '',
-        inputType: config.customEndpoint.inputType || 'manual'
-      } : undefined
+      customEndpoint: config.customEndpoint
     }, 
     fingerprint
   );
@@ -85,6 +80,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
           throw new Error('No valid prompts found in dataset');
         }
 
+        console.log('Starting analysis with prompts:', prompts);
         await startAnalysis(prompts);
 
       } catch (error: any) {
