@@ -7,6 +7,7 @@ import { AdversarialConfig } from "./AdversarialConfig"
 import { useSession } from "@supabase/auth-helpers-react"
 import { DatasetFormInputs } from "./DatasetFormInputs"
 import { useGenerateDataset } from "./hooks/useGenerateDataset"
+import { toast } from "sonner"
 
 export const CreateDatasetForm = () => {
   const session = useSession()
@@ -48,6 +49,25 @@ export const CreateDatasetForm = () => {
     setFingerprintResults
   })
 
+  const onGenerateClick = async () => {
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to generate datasets")
+      return
+    }
+
+    if (!name) {
+      toast.error("Please provide a name for the dataset")
+      return
+    }
+
+    try {
+      await handleGenerate()
+    } catch (error) {
+      console.error('Error generating dataset:', error)
+      toast.error(error.message || "Failed to generate dataset")
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -82,7 +102,7 @@ export const CreateDatasetForm = () => {
         )}
 
         <Button 
-          onClick={handleGenerate} 
+          onClick={onGenerateClick} 
           className="w-full"
           disabled={isGenerating}
         >

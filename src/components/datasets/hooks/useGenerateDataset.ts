@@ -44,16 +44,6 @@ export const useGenerateDataset = ({
   setFingerprintResults,
 }: UseGenerateDatasetProps) => {
   const handleGenerate = async () => {
-    if (!session?.user?.id) {
-      toast.error("You must be logged in to generate datasets")
-      return
-    }
-
-    if (!name) {
-      toast.error("Please provide a name for the dataset")
-      return
-    }
-
     setIsGenerating(true)
 
     try {
@@ -83,7 +73,7 @@ export const useGenerateDataset = ({
           targetModel,
           adversarialConfig: method === "adversarial" ? adversarialConfig : undefined,
           fingerprintResults,
-          userId: session.user.id
+          userId: session?.user?.id
         }
       })
 
@@ -102,7 +92,7 @@ export const useGenerateDataset = ({
 
     } catch (error: any) {
       console.error('Error generating dataset:', error)
-      toast.error(error.message || "Failed to generate dataset")
+      throw error
     } finally {
       setIsGenerating(false)
     }
