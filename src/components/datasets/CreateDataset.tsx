@@ -30,7 +30,7 @@ export const CreateDataset = () => {
   })
 
   const handleFileUpload = async (data: { prompts: string[]; name?: string }) => {
-    if (!session?.user?.id) {
+    if (!session) {
       toast({
         variant: "destructive",
         title: "Authentication required",
@@ -84,7 +84,7 @@ export const CreateDataset = () => {
   }
 
   const handleGenerate = async () => {
-    if (!session?.user?.id) {
+    if (!session) {
       toast({
         variant: "destructive",
         title: "Authentication required",
@@ -157,6 +157,19 @@ export const CreateDataset = () => {
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  if (!session) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Authentication Required</CardTitle>
+          <CardDescription>
+            Please log in to generate datasets
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    )
   }
 
   return (
