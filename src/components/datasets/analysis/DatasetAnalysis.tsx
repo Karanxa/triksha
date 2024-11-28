@@ -7,6 +7,7 @@ import { AnalysisChat } from "./AnalysisChat";
 import { PromptList } from "./PromptList";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
 import { ApiKeys } from "@/integrations/supabase/types/common";
+import { GeraideScanInsert } from "@/integrations/supabase/types/tables";
 
 interface DatasetAnalysisProps {
   config: {
@@ -142,15 +143,17 @@ export const DatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           }]);
           
-          await supabase.from('geraide_scans').insert({
+          const scanData: GeraideScanInsert = {
             user_id: user.id,
             provider: config.provider,
             model: config.model,
-            messages: messages,
+            messages,
             fingerprint_results: fingerprint,
             dataset_analysis_results: analysisData,
             is_vulnerable: null
-          });
+          };
+
+          await supabase.from('geraide_scans').insert(scanData);
         }
 
       } catch (error) {
