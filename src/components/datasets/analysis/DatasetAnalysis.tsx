@@ -44,6 +44,9 @@ export const DatasetAnalysis = ({
       setIsLoading(true);
       try {
         // Get user's profile for API keys
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('api_keys')
@@ -92,6 +95,7 @@ export const DatasetAnalysis = ({
           
           // Save the final state to the database
           await supabase.from('geraide_scans').insert({
+            user_id: user.id,
             provider: config.provider,
             model: config.model,
             messages: messages as unknown as Json,

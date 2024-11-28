@@ -76,7 +76,11 @@ export const GeraidEngine = () => {
     // Save the conversation with a stop message
     if (config && fingerprintResults) {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
         await supabase.from('geraide_scans').insert({
+          user_id: user.id,
           provider: config.provider,
           model: config.model,
           messages: [...currentMessages, { role: 'system', content: 'Scan stopped manually by user' }] as unknown as Json,
