@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Phase, FingerPrintResult } from "./types";
 import { InitialPhase } from "./components/InitialPhase";
 import { FingerPrintPhase } from "./components/FingerPrintPhase";
-import { DatasetAnalysis } from "./components/DatasetAnalysis";
+import { DatasetAnalysis } from "../../datasets/analysis/DatasetAnalysis";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
@@ -66,7 +66,7 @@ export const GeraidEngine = () => {
         const { error } = await supabase
           .from('geraide_scans')
           .update({
-            fingerprint_results: results as any // Type assertion needed due to Json type limitations
+            fingerprint_results: results as any
           })
           .eq('id', scanId);
 
