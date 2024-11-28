@@ -31,10 +31,12 @@ export const DatasetAnalysis = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [processingComplete, setProcessingComplete] = useState(false);
 
   // Process a single prompt and wait for response
   const processPrompt = async (prompt: string): Promise<boolean> => {
     try {
+      setIsLoading(true);
       const { data: response } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider: config.provider,
@@ -57,6 +59,8 @@ export const DatasetAnalysis = ({
       console.error('Error processing prompt:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to process prompt');
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -107,16 +111,22 @@ export const DatasetAnalysis = ({
     fetchAnalysisData();
   }, [config, fingerprint, isPaused, isStopped, scanId, analysisData]);
 
-  // Sequential prompt processing
+  // Process next prompt only when previous is complete
   useEffect(() => {
     const processNextPrompt = async () => {
-      // Only proceed if we have data and aren't paused/stopped/loading
-      if (!analysisData?.results || isPaused || isStopped || isLoading || 
+      // Only proceed if we have data, aren't paused/stopped/loading, and haven't completed processing
+      if (!analysisData?.results || 
+          isPaused || 
+          isStopped || 
+          isLoading || 
+          processingComplete || 
           currentQuestionIndex >= analysisData.results.length) {
+        if (currentQuestionIndex >= analysisData.results.length && !processingComplete) {
+          setProcessingComplete(true);
+        }
         return;
       }
 
-      setIsLoading(true);
       const result = analysisData.results[currentQuestionIndex];
       const success = await processPrompt(result.augmentedPrompt);
       
@@ -125,12 +135,12 @@ export const DatasetAnalysis = ({
         setProgress(newProgress);
         setCurrentQuestionIndex(prev => prev + 1);
       }
-      
-      setIsLoading(false);
     };
 
-    processNextPrompt();
-  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading]);
+    if (!isLoading) {
+      processNextPrompt();
+    }
+  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading, processingComplete]);
 
   return (
     <div className="space-y-4">
