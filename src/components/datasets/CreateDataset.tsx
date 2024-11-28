@@ -39,7 +39,10 @@ export const CreateDataset = () => {
           }
         })
 
-        if (fingerprintError) throw fingerprintError
+        if (fingerprintError) {
+          console.error('Fingerprint error:', fingerprintError)
+          throw new Error(`Fingerprinting failed: ${fingerprintError.message}`)
+        }
         setFingerprintResults(fingerprintData)
       }
 
@@ -58,7 +61,14 @@ export const CreateDataset = () => {
         }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Dataset generation error:', error)
+        throw new Error(`Dataset generation failed: ${error.message}`)
+      }
+
+      if (!data) {
+        throw new Error('No response received from the server')
+      }
 
       toast({
         title: "Success",
@@ -69,7 +79,7 @@ export const CreateDataset = () => {
       toast({
         variant: "destructive",
         title: "Generation failed",
-        description: error.message
+        description: error.message || 'An unexpected error occurred'
       })
     } finally {
       setIsGenerating(false)
