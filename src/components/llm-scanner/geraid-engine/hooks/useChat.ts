@@ -32,7 +32,8 @@ export const useChat = () => {
         body: {
           provider,
           model,
-          prompt: question
+          prompt: question,
+          scanId
         }
       });
 
@@ -56,12 +57,19 @@ export const useChat = () => {
           .single();
 
         if (scanError) throw scanError;
+
+        // Update fingerprint results based on the current question
+        const updatedFingerprint = {
+          ...state.fingerprintResults,
+          [Object.keys(FINGERPRINTING_QUESTIONS)[state.currentQuestionIndex]]: data.response
+        };
         
         setState(prev => ({ 
           ...prev, 
           messages: finalMessages,
           scanId: scanData.id,
           currentQuestionIndex: prev.currentQuestionIndex + 1,
+          fingerprintResults: updatedFingerprint,
           isLoading: false 
         }));
         
@@ -75,11 +83,18 @@ export const useChat = () => {
           .eq('id', scanId);
 
         if (updateError) throw updateError;
+
+        // Update fingerprint results based on the current question
+        const updatedFingerprint = {
+          ...state.fingerprintResults,
+          [Object.keys(FINGERPRINTING_QUESTIONS)[state.currentQuestionIndex]]: data.response
+        };
         
         setState(prev => ({
           ...prev,
           messages: finalMessages,
           currentQuestionIndex: prev.currentQuestionIndex + 1,
+          fingerprintResults: updatedFingerprint,
           isLoading: false
         }));
         
@@ -94,7 +109,7 @@ export const useChat = () => {
       }));
       return false;
     }
-  }, [state.messages, state.currentQuestionIndex]);
+  }, [state.messages, state.currentQuestionIndex, state.fingerprintResults]);
 
   return {
     state,

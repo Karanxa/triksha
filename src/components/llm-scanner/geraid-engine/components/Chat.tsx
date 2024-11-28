@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
+import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
 
 export const Chat = ({ 
   config, 
@@ -18,7 +19,10 @@ export const Chat = ({
 
   useEffect(() => {
     const processQuestion = async () => {
-      if (!config || isLoading || isPaused || isStopped) return;
+      if (!config || isLoading || isPaused || isStopped || 
+          currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
+        return;
+      }
 
       try {
         const result = await processNextQuestion(config.provider, config.model, scanId);
@@ -28,11 +32,10 @@ export const Chat = ({
             onScanIdUpdate(result.scanId);
           }
           
-          const totalQuestions = 5;
-          const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
+          const progress = Math.round((currentQuestionIndex / FINGERPRINTING_QUESTIONS.length) * 100);
           onProgress?.(progress);
           
-          if (!result.success && fingerprintResults) {
+          if (currentQuestionIndex === FINGERPRINTING_QUESTIONS.length - 1 && fingerprintResults) {
             onComplete(fingerprintResults);
           }
         }
