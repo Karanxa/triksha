@@ -1,6 +1,6 @@
-import { useState } from "react"
 import { Session } from "@supabase/supabase-js"
 import { supabase } from "@/integrations/supabase/client"
+import { toast } from "sonner"
 
 interface UseGenerateDatasetProps {
   session: Session | null
@@ -21,7 +21,6 @@ interface UseGenerateDatasetProps {
   setRecipe: (value: string) => void
   setTargetModel: (value: string) => void
   setFingerprintResults: (value: any) => void
-  toast: any
 }
 
 export const useGenerateDataset = ({
@@ -43,17 +42,23 @@ export const useGenerateDataset = ({
   setRecipe,
   setTargetModel,
   setFingerprintResults,
-  toast
 }: UseGenerateDatasetProps) => {
   const handleGenerate = async () => {
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to generate datasets")
+      return
+    }
+
     if (!name) {
       toast.error("Please provide a name for the dataset")
       return
     }
 
     setIsGenerating(true)
+
     try {
-      if (method !== 'manual') {
+      // Get fingerprint results for non-manual methods
+      if (method !== 'manual' && !fingerprintResults) {
         const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
           body: {
             provider: targetModel.split('-')[0],
@@ -66,6 +71,7 @@ export const useGenerateDataset = ({
         setFingerprintResults(fingerprintData)
       }
 
+      // Generate dataset using Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
         body: {
           name,
@@ -76,7 +82,8 @@ export const useGenerateDataset = ({
           recipe,
           targetModel,
           adversarialConfig: method === "adversarial" ? adversarialConfig : undefined,
-          fingerprintResults
+          fingerprintResults,
+          userId: session.user.id
         }
       })
 
@@ -92,6 +99,7 @@ export const useGenerateDataset = ({
       setRecipe("")
       setTargetModel("")
       setFingerprintResults(null)
+
     } catch (error: any) {
       console.error('Error generating dataset:', error)
       toast.error(error.message || "Failed to generate dataset")
