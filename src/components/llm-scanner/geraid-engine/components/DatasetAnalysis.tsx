@@ -6,25 +6,34 @@ import { TypingIndicator } from "../../chat/TypingIndicator";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CustomEndpoint } from "../../types/CustomEndpoint";
 
 export interface DatasetAnalysisProps {
   config: {
     provider: string;
     model: string;
     datasetId: string;
-    customEndpoint?: {
-      url: string;
-      apiKey: string;
-      headers: string;
-      method: string;
-    };
+    customEndpoint?: CustomEndpoint;
   };
   fingerprint: FingerPrintResult;
   isPaused?: boolean;
 }
 
 export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
-  const { messages, isLoading, progress, startAnalysis } = useDatasetAnalysis(config, fingerprint);
+  const { messages, isLoading, progress, startAnalysis } = useDatasetAnalysis(
+    {
+      provider: config.provider,
+      model: config.model,
+      datasetId: config.datasetId,
+      customEndpoint: config.customEndpoint ? {
+        ...config.customEndpoint,
+        placeholder: config.customEndpoint.placeholder || '{PROMPT}',
+        curlCommand: config.customEndpoint.curlCommand || '',
+        inputType: config.customEndpoint.inputType || 'manual'
+      } : undefined
+    }, 
+    fingerprint
+  );
 
   useEffect(() => {
     const fetchDatasetPrompts = async () => {
