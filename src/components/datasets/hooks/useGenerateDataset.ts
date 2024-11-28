@@ -1,6 +1,6 @@
 import { Session } from "@supabase/supabase-js"
 import { supabase } from "@/integrations/supabase/client"
-import { toast } from "sonner"
+import { toast } from "@/hooks/use-toast"
 
 interface UseGenerateDatasetProps {
   session: Session | null
@@ -21,6 +21,7 @@ interface UseGenerateDatasetProps {
   setRecipe: (value: string) => void
   setTargetModel: (value: string) => void
   setFingerprintResults: (value: any) => void
+  toast: any
 }
 
 export const useGenerateDataset = ({
@@ -42,15 +43,24 @@ export const useGenerateDataset = ({
   setRecipe,
   setTargetModel,
   setFingerprintResults,
+  toast
 }: UseGenerateDatasetProps) => {
   const handleGenerate = async () => {
     if (!session?.user?.id) {
-      toast.error("You must be logged in to generate datasets")
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "You must be logged in to generate datasets"
+      })
       return
     }
 
     if (!name) {
-      toast.error("Please provide a name for the dataset")
+      toast({
+        variant: "destructive",
+        title: "Name required",
+        description: "Please provide a name for the dataset"
+      })
       return
     }
 
@@ -89,7 +99,10 @@ export const useGenerateDataset = ({
 
       if (error) throw error
 
-      toast.success("Dataset generated successfully")
+      toast({
+        title: "Success",
+        description: "Dataset generated successfully"
+      })
 
       // Reset form
       setName("")
@@ -102,7 +115,11 @@ export const useGenerateDataset = ({
 
     } catch (error: any) {
       console.error('Error generating dataset:', error)
-      toast.error(error.message || "Failed to generate dataset")
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to generate dataset"
+      })
     } finally {
       setIsGenerating(false)
     }
