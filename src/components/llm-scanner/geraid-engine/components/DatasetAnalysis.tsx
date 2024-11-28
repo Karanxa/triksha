@@ -18,11 +18,26 @@ export interface DatasetAnalysisProps {
     };
   };
   fingerprint: FingerPrintResult;
-  isPaused?: boolean;
+  isPaused: boolean;
+  lastPausedStep?: {
+    phase: string;
+    step?: number;
+    progress?: number;
+  } | null;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
-  const { messages, isLoading, progress, results } = useDatasetAnalysis(config, fingerprint);
+export const DatasetAnalysis = ({ 
+  config, 
+  fingerprint, 
+  isPaused,
+  lastPausedStep 
+}: DatasetAnalysisProps) => {
+  const { messages, isLoading, progress, results } = useDatasetAnalysis(
+    config, 
+    fingerprint, 
+    isPaused,
+    lastPausedStep?.phase === 'dataset_analysis' ? lastPausedStep.progress : undefined
+  );
 
   // Show toast when analysis is complete
   if (results && !isLoading && progress === 100) {
@@ -58,7 +73,7 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
                 </div>
               </div>
             ))}
-            {isLoading && <TypingIndicator />}
+            {isLoading && !isPaused && <TypingIndicator />}
           </div>
         </CardContent>
       </Card>

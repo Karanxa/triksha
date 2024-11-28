@@ -4,13 +4,24 @@ import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
 
-export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
+export const Chat = ({ 
+  config, 
+  onComplete, 
+  onProgress, 
+  isPaused,
+  startFromStep = 0
+}: ChatProps) => {
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
 
   useEffect(() => {
     const processQuestion = async () => {
-      if (!config || isLoading) return;
+      if (!config || isLoading || isPaused) return;
+      
+      // If we're resuming from a paused state, skip already processed questions
+      if (currentQuestionIndex < startFromStep) {
+        return;
+      }
       
       const success = await processNextQuestion(config.provider, config.model);
       
@@ -27,7 +38,7 @@ export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
     // Start with a small delay to allow UI to render
     const timer = setTimeout(processQuestion, 500);
     return () => clearTimeout(timer);
-  }, [config, currentQuestionIndex, isLoading]);
+  }, [config, currentQuestionIndex, isLoading, isPaused]);
 
   if (!config) return null;
 
@@ -35,7 +46,7 @@ export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
     <Card>
       <CardContent className="p-4">
         <h3 className="text-lg font-medium mb-4">Model Analysis</h3>
-        <ChatMessages messages={messages} isLoading={isLoading} />
+        <ChatMessages messages={messages} isLoading={isLoading && !isPaused} />
       </CardContent>
     </Card>
   );

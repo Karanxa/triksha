@@ -5,24 +5,30 @@ import { Message, FingerPrintResult } from "../types";
 
 export const useDatasetAnalysis = (
   config: { provider: string; model: string; datasetId: string },
-  fingerprint: FingerPrintResult
+  fingerprint: FingerPrintResult,
+  isPaused: boolean,
+  startFromProgress?: number
 ) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(startFromProgress || 0);
   const [results, setResults] = useState<any>(null);
 
   useEffect(() => {
     const analyzeDataset = async () => {
+      if (isPaused) return;
+      
       setIsLoading(true);
       try {
-        // Initial message
-        setMessages([
-          {
-            role: 'system',
-            content: `Starting dataset analysis for ${config.model} using fingerprint results`
-          }
-        ]);
+        // Initial message if starting fresh
+        if (!startFromProgress) {
+          setMessages([
+            {
+              role: 'system',
+              content: `Starting dataset analysis for ${config.model} using fingerprint results`
+            }
+          ]);
+        }
 
         // Process dataset with fingerprint results
         const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
@@ -30,16 +36,17 @@ export const useDatasetAnalysis = (
             datasetId: config.datasetId,
             provider: config.provider,
             model: config.model,
-            fingerprint
+            fingerprint,
+            startFromProgress: startFromProgress || 0
           }
         });
 
         if (error) throw error;
 
         // Update messages and progress as prompts are processed
-        let currentProgress = 0;
+        let currentProgress = startFromProgress || 0;
         const updateInterval = setInterval(() => {
-          if (currentProgress < 100) {
+          if (!isPaused && currentProgress < 100) {
             currentProgress += 10;
             setProgress(currentProgress);
           } else {
@@ -61,13 +68,17 @@ export const useDatasetAnalysis = (
         console.error('Dataset analysis error:', error);
         toast.error('Failed to analyze dataset: ' + (error as Error).message);
       } finally {
-        setIsLoading(false);
-        setProgress(100);
+        if (!isPaused) {
+          setIsLoading(false);
+          setProgress(100);
+        }
       }
     };
 
-    analyzeDataset();
-  }, [config, fingerprint]);
+    if (!isPaused) {
+      analyzeDataset();
+    }
+  }, [config, fingerprint, isPaused, startFromProgress]);
 
   return { messages, isLoading, progress, results };
 };

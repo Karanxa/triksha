@@ -18,12 +18,18 @@ export const GeraidEngine = () => {
   const [fingerprintResults, setFingerprintResults] = useState<FingerPrintResult | null>(null);
   const [fingerprintProgress, setFingerprintProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [lastPausedStep, setLastPausedStep] = useState<{
+    phase: Phase;
+    step?: number;
+    progress?: number;
+  } | null>(null);
 
   const handleStart = async (newConfig: typeof config) => {
     try {
       setConfig(newConfig);
       setPhase("fingerprinting");
       setIsPaused(false);
+      setLastPausedStep(null);
     } catch (error) {
       toast.error("Failed to start analysis");
       setPhase("not_started");
@@ -45,8 +51,20 @@ export const GeraidEngine = () => {
   };
 
   const handlePauseResume = () => {
-    setIsPaused(!isPaused);
-    toast.success(isPaused ? "Scan resumed" : "Scan paused");
+    if (isPaused) {
+      // Resume from last paused state
+      setIsPaused(false);
+      toast.success("Scan resumed");
+    } else {
+      // Save current state before pausing
+      setLastPausedStep({
+        phase,
+        step: phase === "fingerprinting" ? fingerprintProgress : undefined,
+        progress: fingerprintProgress
+      });
+      setIsPaused(true);
+      toast.success("Scan paused");
+    }
   };
 
   const handleStop = () => {
@@ -55,6 +73,7 @@ export const GeraidEngine = () => {
     setFingerprintResults(null);
     setFingerprintProgress(0);
     setIsPaused(false);
+    setLastPausedStep(null);
     toast.success("Scan stopped");
   };
 
@@ -111,6 +130,7 @@ export const GeraidEngine = () => {
             onComplete={handleFingerprintComplete}
             onProgress={handleFingerprintProgress}
             isPaused={isPaused}
+            lastPausedStep={lastPausedStep}
           />
         ) : null;
       
@@ -120,6 +140,7 @@ export const GeraidEngine = () => {
             config={config}
             fingerprint={fingerprintResults}
             isPaused={isPaused}
+            lastPausedStep={lastPausedStep}
           />
         ) : null;
       
