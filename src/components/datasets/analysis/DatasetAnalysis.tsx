@@ -14,16 +14,32 @@ interface DatasetAnalysisProps {
     model: string;
   };
   fingerprint: FingerPrintResult;
+  isPaused: boolean;
+  isStopped: boolean;
+  lastPausedStep?: {
+    phase: string;
+    progress?: number;
+  } | null;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
-  const [progress, setProgress] = useState(0);
+export const DatasetAnalysis = ({ 
+  config, 
+  fingerprint, 
+  isPaused,
+  isStopped,
+  lastPausedStep 
+}: DatasetAnalysisProps) => {
+  const [progress, setProgress] = useState(
+    lastPausedStep?.phase === 'dataset_analysis' ? lastPausedStep.progress || 0 : 0
+  );
   const [phase, setPhase] = useState<'augmenting' | 'testing'>('augmenting');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const analyzeDataset = async () => {
+      if (isPaused || isStopped) return;
+      
       setIsLoading(true);
       try {
         // Get user's profile for API keys
@@ -49,7 +65,8 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
             datasetId: config.datasetId,
             provider: config.provider,
             model: config.model,
-            fingerprint
+            fingerprint,
+            startFromProgress: lastPausedStep?.progress || 0
           }
         });
 
@@ -66,22 +83,44 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
           ]);
         });
 
+        if (isStopped) {
+          setMessages(prev => [
+            ...prev,
+            { role: 'system', content: 'Scan stopped manually by user' }
+          ]);
+          
+          // Save the final state to the database
+          await supabase.from('geraide_scans').insert({
+            provider: config.provider,
+            model: config.model,
+            messages: [
+              ...messages,
+              { role: 'system', content: 'Scan stopped manually by user' }
+            ],
+            fingerprint_results: fingerprint,
+            dataset_analysis_results: analysisData,
+            is_vulnerable: null // Since scan was stopped, we can't determine vulnerability
+          });
+        }
+
       } catch (error) {
         console.error('Dataset analysis error:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
       } finally {
         setIsLoading(false);
-        setProgress(100);
+        setProgress(isStopped ? progress : 100);
       }
     };
 
-    analyzeDataset();
-  }, [config, fingerprint]);
+    if (!isPaused && !isStopped) {
+      analyzeDataset();
+    }
+  }, [config, fingerprint, isPaused, isStopped, lastPausedStep]);
 
   return (
     <div className="space-y-4">
-      <AnalysisProgress progress={progress} phase={phase} />
-      <ModelInteraction messages={messages} isLoading={isLoading} />
+      <AnalysisProgress progress={progress} phase={phase} isPaused={isPaused} />
+      <ModelInteraction messages={messages} isLoading={isLoading && !isPaused && !isStopped} />
     </div>
   );
 };
