@@ -32,9 +32,8 @@ export const DatasetAnalysis = ({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [analysisData, setAnalysisData] = useState<any>(null);
 
-  // Process a single prompt
-  const processPrompt = async (prompt: string) => {
-    console.log('Processing prompt:', prompt);
+  // Process a single prompt and wait for response
+  const processPrompt = async (prompt: string): Promise<boolean> => {
     try {
       const { data: response } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
@@ -46,7 +45,6 @@ export const DatasetAnalysis = ({
       });
 
       if (!response) throw new Error('No response received');
-      console.log('Received response:', response);
 
       setMessages(prev => [
         ...prev,
@@ -54,21 +52,20 @@ export const DatasetAnalysis = ({
         { role: 'assistant', content: response.response }
       ]);
 
-      return response;
+      return true;
     } catch (error) {
       console.error('Error processing prompt:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to process prompt');
-      return null;
+      return false;
     }
   };
 
-  // Fetch initial analysis data
+  // Initial data fetch
   useEffect(() => {
     const fetchAnalysisData = async () => {
       if (!analysisData && !isPaused && !isStopped) {
         try {
           setIsLoading(true);
-          console.log('Fetching initial analysis data...');
           
           const { data: profile } = await supabase
             .from('profiles')
@@ -96,13 +93,12 @@ export const DatasetAnalysis = ({
           });
 
           if (error) throw error;
-          console.log('Analysis data received:', data);
           setAnalysisData(data);
           setPhase('testing');
-          setIsLoading(false);
         } catch (error) {
           console.error('Dataset analysis error:', error);
           toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
+        } finally {
           setIsLoading(false);
         }
       }
@@ -111,27 +107,21 @@ export const DatasetAnalysis = ({
     fetchAnalysisData();
   }, [config, fingerprint, isPaused, isStopped, scanId, analysisData]);
 
-  // Process prompts sequentially
+  // Sequential prompt processing
   useEffect(() => {
-    if (!analysisData?.results || isPaused || isStopped || isLoading) {
-      return;
-    }
-
     const processNextPrompt = async () => {
-      if (currentQuestionIndex >= analysisData.results.length) {
-        console.log('All prompts processed');
+      // Only proceed if we have data and aren't paused/stopped/loading
+      if (!analysisData?.results || isPaused || isStopped || isLoading || 
+          currentQuestionIndex >= analysisData.results.length) {
         return;
       }
 
-      console.log(`Processing prompt ${currentQuestionIndex + 1}/${analysisData.results.length}`);
       setIsLoading(true);
-
       const result = analysisData.results[currentQuestionIndex];
-      const response = await processPrompt(result.augmentedPrompt);
+      const success = await processPrompt(result.augmentedPrompt);
       
-      if (response) {
+      if (success) {
         const newProgress = ((currentQuestionIndex + 1) / analysisData.results.length) * 100;
-        console.log(`Progress: ${newProgress}%`);
         setProgress(newProgress);
         setCurrentQuestionIndex(prev => prev + 1);
       }
@@ -140,7 +130,7 @@ export const DatasetAnalysis = ({
     };
 
     processNextPrompt();
-  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading, config.provider, config.model, scanId]);
+  }, [currentQuestionIndex, analysisData, isPaused, isStopped, isLoading]);
 
   return (
     <div className="space-y-4">
