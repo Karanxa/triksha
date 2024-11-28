@@ -8,6 +8,7 @@ export interface ChatState {
   isLoading: boolean;
   currentQuestionIndex: number;
   fingerprintResults: FingerPrintResult | null;
+  scanId: string | null;
 }
 
 export interface ChatProps {
