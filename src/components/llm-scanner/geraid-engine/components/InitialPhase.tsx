@@ -92,6 +92,11 @@ export const InitialPhase = ({ onStart }: InitialPhaseProps) => {
       return;
     }
 
+    if (!provider || (!model && provider !== 'custom')) {
+      toast.error("Please select a provider and model");
+      return;
+    }
+
     onStart({
       provider,
       model,
