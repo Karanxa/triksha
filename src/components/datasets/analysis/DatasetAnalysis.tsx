@@ -143,12 +143,17 @@ export const DatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           }]);
           
+          const messagesJson = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })) as unknown as Json;
+
           const scanData = {
             user_id: user.id,
             provider: config.provider,
             model: config.model,
             name: `Dataset Analysis - ${dataset.name}`,
-            messages: messages as Json,
+            messages: messagesJson,
             fingerprint_results: fingerprint as unknown as Json,
             dataset_analysis_results: analysisData as Json,
             is_vulnerable: null,
