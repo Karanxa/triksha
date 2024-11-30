@@ -14,21 +14,18 @@ export const DatasetAnalysis = ({
   const { 
     messages, 
     isLoading, 
-    originalPrompts, 
     progress,
-    phase 
-  } = useDatasetAnalysis({
+    results 
+  } = useDatasetAnalysis(
     config,
     fingerprint,
     isPaused,
-    isStopped,
-    lastPausedStep
-  });
+    lastPausedStep?.phase === 'dataset_analysis' ? lastPausedStep.progress : undefined
+  );
 
   return (
     <div className="space-y-4">
-      <AnalysisProgress progress={progress} phase={phase} isPaused={isPaused} />
-      <PromptList prompts={originalPrompts} />
+      <AnalysisProgress progress={progress} isPaused={isPaused} />
       <AnalysisChat messages={messages} isLoading={isLoading && !isPaused && !isStopped} />
     </div>
   );

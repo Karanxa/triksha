@@ -190,7 +190,7 @@ export const GeraidEngine = () => {
 
   return (
     <div className="container py-6 max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Geraide Engine</h1>
+      <h1 className="text-2xl font-bold">Contextual Scan Engine</h1>
       {renderPhase()}
     </div>
   );

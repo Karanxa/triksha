@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Message } from "@/components/llm-scanner/geraid-engine/types";
-import { AnalysisResult, AnalysisState } from "./types";
+import { Message } from "@/components/llm-scanner/contextual-engine/types";
 import { Json } from "@/integrations/supabase/types/common";
 
 export const useDatasetAnalysis = (
@@ -33,7 +32,7 @@ export const useDatasetAnalysis = (
         }
 
         // Process dataset with fingerprint results
-        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+        const { data: analysisData, error } = await supabase.functions.invoke('process-contextual-scan', {
           body: {
             datasetId: config.datasetId,
             provider: config.provider,
@@ -72,29 +71,23 @@ export const useDatasetAnalysis = (
           const { data: { user } } = await supabase.auth.getUser();
           if (!user) throw new Error('User not authenticated');
 
-          // Add final message
-          setMessages(prev => [
-            ...prev,
-            {
-              role: 'system',
-              content: 'Scan stopped manually by user'
-            }
-          ]);
-          
-          // Convert data to proper JSON format for Supabase
+          const messagesJson = messages as unknown as Json;
+          const fingerprintJson = fingerprint as unknown as Json;
+          const analysisResultsJson = analysisData as unknown as Json;
+
           const insertData = {
             user_id: user.id,
             provider: config.provider,
             model: config.model,
-            messages: messages as Json,
-            fingerprint_results: fingerprint as Json,
-            dataset_analysis_results: state.analysisResults as Json,
+            messages: messagesJson,
+            fingerprint_results: fingerprintJson,
+            dataset_analysis_results: analysisResultsJson,
             is_vulnerable: null
           };
 
           await supabase
             .from('contextual_scans')
-            .insert(insertData);
+            .insert([insertData]);
 
         } catch (error) {
           console.error('Error saving scan results:', error);
@@ -115,7 +108,12 @@ export const useDatasetAnalysis = (
     if (!isPaused) {
       analyzeDataset();
     }
-  }, [config, fingerprint, isPaused, startFromProgress]);
+  }, [config, fingerprint, isPaused, startFromProgress, messages]);
 
-  return { messages, isLoading, progress, results };
+  return { 
+    messages, 
+    isLoading, 
+    progress, 
+    results 
+  };
 };
