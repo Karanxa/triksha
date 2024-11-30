@@ -28,7 +28,7 @@ export const Chat = ({
 
       try {
         processingRef.current = true;
-        console.log('Processing question:', currentQuestionIndex);
+        console.log('Processing question:', currentQuestionIndex + 1, 'of', FINGERPRINTING_QUESTIONS.length);
         
         const result = await processNextQuestion(config.provider, config.model, scanId);
         
@@ -51,7 +51,9 @@ export const Chat = ({
       }
     };
 
-    processQuestion();
+    // Add a small delay before processing the next question
+    const timeoutId = setTimeout(processQuestion, 1000);
+    return () => clearTimeout(timeoutId);
   }, [config, currentQuestionIndex, isLoading, isPaused, isStopped, scanId]);
 
   return (
