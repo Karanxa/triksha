@@ -17,19 +17,19 @@ export const useContextualScan = (): UseContextualScanReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
-  const [lastResponseReceived, setLastResponseReceived] = useState(true);
+  const [canProcessNext, setCanProcessNext] = useState(true);
 
   const processNextQuestion = useCallback(async (
     provider: string, 
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (!lastResponseReceived || isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
+    if (!canProcessNext || isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
       return false;
     }
 
     setIsLoading(true);
-    setLastResponseReceived(false);
+    setCanProcessNext(false);
     const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
@@ -65,7 +65,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
       
       // Update state after successful response
       setCurrentStep(prev => prev + 1);
-      setLastResponseReceived(true);
+      setCanProcessNext(true);
 
       // Check if we've completed all questions
       if (currentStep + 1 >= FINGERPRINTING_QUESTIONS.length) {
@@ -81,12 +81,12 @@ export const useContextualScan = (): UseContextualScanReturn => {
         content: `Error: ${error.message}`,
         timestamp: new Date().toISOString()
       }]);
-      setLastResponseReceived(true);
+      setCanProcessNext(true);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [currentStep, isLoading, lastResponseReceived]);
+  }, [currentStep, isLoading, canProcessNext]);
 
   const startDatasetAnalysis = async (
     datasetId: string,
@@ -95,7 +95,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (!lastResponseReceived) return;
+    if (!canProcessNext) return;
 
     try {
       setIsLoading(true);
@@ -149,7 +149,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
     setCurrentStep(0);
     setScanComplete(false);
     setIsLoading(false);
-    setLastResponseReceived(true);
+    setCanProcessNext(true);
   };
 
   return {
@@ -161,6 +161,6 @@ export const useContextualScan = (): UseContextualScanReturn => {
     startDatasetAnalysis,
     reset,
     totalQuestions: FINGERPRINTING_QUESTIONS.length,
-    canProcessNext: lastResponseReceived && !isLoading
+    canProcessNext
   };
 };

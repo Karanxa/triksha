@@ -62,6 +62,12 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
 
   useEffect(() => {
     const processNextStep = async () => {
+      // Only process next step if:
+      // 1. Analysis has started
+      // 2. Not currently loading
+      // 3. Not at the end
+      // 4. Have received previous response
+      // 5. Can process next question
       if (
         isStarted && 
         !isLoading && 
@@ -70,7 +76,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
         messages[messages.length - 1]?.role === 'assistant' &&
         canProcessNext
       ) {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
       }
     };
