@@ -67,7 +67,7 @@ export const useDatasetAnalysis = ({
         if (!dataset) throw new Error('Dataset not found');
 
         // Process dataset
-        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraid-scan', {
           body: {
             datasetId: config.datasetId,
             provider: config.provider,
@@ -78,7 +78,7 @@ export const useDatasetAnalysis = ({
         });
 
         if (error) {
-          console.error('Error from process-geraide-scan:', error);
+          console.error('Error from process-geraid-scan:', error);
           throw error;
         }
 
@@ -105,7 +105,7 @@ export const useDatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           });
           
-          await supabase.from('geraide_scans').insert([{
+          await supabase.from('geraid_scans').insert([{
             user_id: user.id,
             provider: config.provider,
             model: config.model,
