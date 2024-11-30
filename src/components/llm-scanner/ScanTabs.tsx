@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScanForm } from "./ScanForm";
-import { ContextualEngine } from "./contextual-engine/ContextualEngine";
+import { ContextualEngine } from "./contextual-engine/components/ContextualEngine";
 
 interface ScanTabsProps {
   initialTab?: string;
@@ -17,7 +17,7 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
           Custom Scan
         </TabsTrigger>
         <TabsTrigger 
-          value="geraide" 
+          value="contextual" 
           className="text-xs md:text-sm whitespace-normal h-auto min-h-[40px] text-center"
         >
           Contextual Analysis
@@ -26,7 +26,7 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
       <TabsContent value="basic" className="mt-0">
         <ScanForm />
       </TabsContent>
-      <TabsContent value="geraide" className="mt-0">
+      <TabsContent value="contextual" className="mt-0">
         <ContextualEngine />
       </TabsContent>
     </Tabs>

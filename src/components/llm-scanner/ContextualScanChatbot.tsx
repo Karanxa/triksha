@@ -1,18 +1,18 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
-import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessages";
-import { ModelSelector } from "./geraid-engine/ModelSelector";
+import { useContextualScan } from "./contextual-engine/hooks/useContextualScan";
+import { ContextualChatMessages } from "./contextual-engine/components/ContextualChatMessages";
+import { ModelSelector } from "./contextual-engine/components/ModelSelector";
 import { toast } from "sonner";
 import { CustomEndpoint } from "./types/CustomEndpoint";
-import { DatasetSelector } from "./geraid-engine/DatasetSelector";
+import { DatasetSelector } from "./contextual-engine/components/DatasetSelector";
 
-interface GeraideChatbotProps {
+interface ContextualChatbotProps {
   onFingerprint?: (results: any) => void;
 }
 
-export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
+export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
@@ -35,7 +35,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     reset,
     totalQuestions,
     startDatasetAnalysis
-  } = useGeraideScan();
+  } = useContextualScan();
 
   const startAnalysis = async () => {
     if (!selectedProvider) {
@@ -95,7 +95,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
         <CardContent className="p-6">
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2">Geraide-E Model Analysis</h3>
+              <h3 className="text-lg font-medium mb-2">Contextual Model Analysis</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Select a target model and dataset to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
               </p>
@@ -130,7 +130,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
   return (
     <div className="space-y-4">
-      <GeraideChatMessages messages={messages} isLoading={isLoading} />
+      <ContextualChatMessages messages={messages} isLoading={isLoading} />
 
       <div className="flex justify-end">
         <Button
