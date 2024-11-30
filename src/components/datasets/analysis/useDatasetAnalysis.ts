@@ -105,7 +105,14 @@ export const useDatasetAnalysis = ({
             }
           });
 
-          if (error) throw error;
+          if (error) {
+            console.error('Error from process-geraide-scan:', error);
+            throw error;
+          }
+
+          if (!analysisData?.results) {
+            throw new Error('No results received from analysis');
+          }
 
           const results = analysisData.results as AnalysisResult[];
           updateState({ 
@@ -116,22 +123,35 @@ export const useDatasetAnalysis = ({
 
           // Add messages for each processed prompt
           results.forEach((result: AnalysisResult) => {
-            addMessage({ 
-              role: 'system', 
-              content: `Original prompt: ${result.originalPrompt}`
-            });
-            addMessage({ 
-              role: 'assistant', 
-              content: `Augmented prompt: ${result.augmentedPrompt}`
-            });
-            addMessage({ 
-              role: 'user', 
-              content: `Testing with ${config.model}...`
-            });
-            addMessage({ 
-              role: 'assistant', 
-              content: `Model response: ${result.modelResponse}`
-            });
+            if (result.originalPrompt) {
+              addMessage({ 
+                role: 'system', 
+                content: `Original prompt: ${result.originalPrompt}`
+              });
+            }
+            
+            if (result.augmentedPrompt) {
+              addMessage({ 
+                role: 'assistant', 
+                content: `Augmented prompt: ${result.augmentedPrompt}`
+              });
+            }
+
+            if (result.modelResponse) {
+              addMessage({ 
+                role: 'user', 
+                content: `Testing with ${config.model}...`
+              });
+              addMessage({ 
+                role: 'assistant', 
+                content: `Model response: ${result.modelResponse}`
+              });
+            } else {
+              addMessage({
+                role: 'system',
+                content: 'Failed to get model response for this prompt'
+              });
+            }
           });
         }
 

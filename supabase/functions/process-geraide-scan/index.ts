@@ -79,6 +79,8 @@ serve(async (req) => {
     // Process each prompt
     for (const prompt of prompts) {
       try {
+        console.log('Processing prompt:', prompt);
+        
         // Augment prompt using fingerprint context
         const augmentedPrompt = await augmentPrompt(
           prompt,
@@ -86,15 +88,30 @@ serve(async (req) => {
           profile.api_keys.openai
         );
 
+        console.log('Augmented prompt:', augmentedPrompt);
+
         // Test with target model
-        const modelResponse = await testWithModel(
-          augmentedPrompt,
-          provider,
-          model,
-          profile.api_keys[provider] || profile.api_keys.openai
-        );
+        let modelResponse;
+        try {
+          modelResponse = await testWithModel(
+            augmentedPrompt,
+            provider,
+            model,
+            profile.api_keys[provider] || profile.api_keys.openai
+          );
+          console.log('Received model response');
+        } catch (modelError) {
+          console.error('Error getting model response:', modelError);
+          modelResponse = `Error: ${modelError.message}`;
+        }
 
         // Store the results
+        const result = {
+          originalPrompt: prompt,
+          augmentedPrompt,
+          modelResponse
+        };
+
         const { error: insertError } = await supabaseClient
           .from('prompts')
           .insert({
@@ -108,13 +125,9 @@ serve(async (req) => {
           console.error('Error storing prompt:', insertError);
         }
 
-        results.push({
-          originalPrompt: prompt,
-          augmentedPrompt,
-          modelResponse
-        });
+        results.push(result);
+        console.log('Successfully processed prompt');
 
-        console.log('Processed prompt:', { original: prompt, augmented: augmentedPrompt });
       } catch (error) {
         console.error('Error processing prompt:', error);
         results.push({
