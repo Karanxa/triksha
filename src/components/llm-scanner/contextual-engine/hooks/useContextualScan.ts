@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Message, UseContextualScanReturn } from '../types/chat';
+import { Message } from '../types';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
 
 const FINGERPRINTING_QUESTIONS = [
@@ -12,27 +12,34 @@ const FINGERPRINTING_QUESTIONS = [
   "How do you handle potentially harmful or inappropriate requests?"
 ];
 
-export const useContextualScan = (): UseContextualScanReturn => {
+export const useContextualScan = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
-  const [canProcessNext, setCanProcessNext] = useState(true);
 
   const processNextQuestion = useCallback(async (
     provider: string, 
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (!canProcessNext || isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
+    if (isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
       return false;
     }
 
     setIsLoading(true);
-    setCanProcessNext(false);
     const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
+      // Check if this question has already been asked
+      const questionExists = messages.some(
+        msg => msg.role === 'user' && msg.content === question
+      );
+      
+      if (questionExists) {
+        return false;
+      }
+
       // Add the question to messages
       const newMessage: Message = { 
         role: 'user', 
@@ -65,7 +72,6 @@ export const useContextualScan = (): UseContextualScanReturn => {
       
       // Update state after successful response
       setCurrentStep(prev => prev + 1);
-      setCanProcessNext(true);
 
       // Check if we've completed all questions
       if (currentStep + 1 >= FINGERPRINTING_QUESTIONS.length) {
@@ -81,12 +87,11 @@ export const useContextualScan = (): UseContextualScanReturn => {
         content: `Error: ${error.message}`,
         timestamp: new Date().toISOString()
       }]);
-      setCanProcessNext(true);
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [currentStep, isLoading, canProcessNext]);
+  }, [currentStep, isLoading, messages]);
 
   const startDatasetAnalysis = async (
     datasetId: string,
@@ -95,8 +100,6 @@ export const useContextualScan = (): UseContextualScanReturn => {
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (!canProcessNext) return;
-
     try {
       setIsLoading(true);
       setMessages(prev => [...prev, { 
@@ -149,7 +152,6 @@ export const useContextualScan = (): UseContextualScanReturn => {
     setCurrentStep(0);
     setScanComplete(false);
     setIsLoading(false);
-    setCanProcessNext(true);
   };
 
   return {
@@ -160,7 +162,6 @@ export const useContextualScan = (): UseContextualScanReturn => {
     processNextQuestion,
     startDatasetAnalysis,
     reset,
-    totalQuestions: FINGERPRINTING_QUESTIONS.length,
-    canProcessNext
+    totalQuestions: FINGERPRINTING_QUESTIONS.length
   };
 };
