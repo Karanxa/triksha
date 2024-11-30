@@ -71,64 +71,9 @@ serve(async (req) => {
   }
 });
 
-async function handleCustomRequest(prompt: string, customEndpoint: any) {
-  const { url, method, headers: rawHeaders, inputType, httpRequest, curlCommand } = customEndpoint;
-  
-  let requestUrl = url;
-  let requestBody;
-  let headers: Record<string, string> = {
-    'Content-Type': 'application/json'
-  };
-
-  if (rawHeaders) {
-    try {
-      const parsedHeaders = JSON.parse(rawHeaders);
-      headers = { ...headers, ...parsedHeaders };
-    } catch (error) {
-      console.error('Error parsing custom headers:', error);
-    }
-  }
-
-  if (inputType === 'http') {
-    requestBody = httpRequest.replace('{PROMPT}', prompt);
-  } else if (inputType === 'curl') {
-    requestBody = curlCommand.replace('{PROMPT}', prompt);
-  } else {
-    requestBody = JSON.stringify({ prompt });
-  }
-
-  console.log('Making custom request:', {
-    url: requestUrl,
-    method,
-    headers,
-    body: requestBody
-  });
-
-  const response = await fetch(requestUrl, {
-    method,
-    headers,
-    body: requestBody
-  });
-
-  if (!response.ok) {
-    throw new Error(`Custom endpoint returned status ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.response || data;
-}
-
 async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {
   console.log('Making OpenAI request with model:', model);
   
-  const modelMap: { [key: string]: string } = {
-    'gpt-4o': 'gpt-4-0125-preview',
-    'gpt-4o-mini': 'gpt-3.5-turbo-0125',
-  };
-
-  const apiModel = modelMap[model] || 'gpt-3.5-turbo-0125';
-  console.log('Using API model:', apiModel);
-
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -136,7 +81,7 @@ async function handleOpenAIRequest(prompt: string, model: string, apiKey: string
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: apiModel,
+      model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     }),
@@ -174,4 +119,22 @@ async function handleAnthropicRequest(prompt: string, model: string, apiKey: str
 
   const data = await response.json();
   return data.content[0].text;
+}
+
+async function handleCustomRequest(prompt: string, customEndpoint: any) {
+  const response = await fetch(customEndpoint.url, {
+    method: customEndpoint.method || 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {})
+    },
+    body: JSON.stringify({ prompt })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Custom endpoint returned status ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.response || data;
 }
