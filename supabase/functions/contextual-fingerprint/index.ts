@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     const { provider, model, prompt, customEndpoint } = await req.json();
-    console.log('Fingerprinting request:', { provider, model, prompt, customEndpoint });
+    console.log('Fingerprinting request:', { provider, model, prompt });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -56,12 +56,14 @@ serve(async (req) => {
       throw new Error('Unsupported provider');
     }
 
+    console.log('Got response from model:', response);
+
     return new Response(
       JSON.stringify({ response }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in geraide-fingerprint function:', error);
+    console.error('Error in contextual-fingerprint function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -123,12 +125,15 @@ async function handleCustomRequest(prompt: string, customEndpoint: any) {
 }
 
 async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {
+  console.log('Making OpenAI request with model:', model);
+  
   const modelMap: { [key: string]: string } = {
     'gpt-4o': 'gpt-4-0125-preview',
     'gpt-4o-mini': 'gpt-3.5-turbo-0125',
   };
 
   const apiModel = modelMap[model] || 'gpt-3.5-turbo-0125';
+  console.log('Using API model:', apiModel);
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -144,8 +149,9 @@ async function handleOpenAIRequest(prompt: string, model: string, apiKey: string
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenAI API error: ${error}`);
+    const errorText = await response.text();
+    console.error('OpenAI API error:', errorText);
+    throw new Error(`OpenAI API error: ${errorText}`);
   }
 
   const data = await response.json();

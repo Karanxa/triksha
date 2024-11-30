@@ -33,11 +33,19 @@ export const useContextualScan = () => {
 
     try {
       // Add user question with timestamp
-      setMessages(prev => [...prev, { 
+      const userMessage: Message = { 
         role: 'user', 
         content: question,
         timestamp: new Date().toISOString()
-      }]);
+      };
+      setMessages(prev => [...prev, userMessage]);
+
+      console.log('Sending request to contextual-fingerprint:', {
+        provider,
+        model,
+        prompt: question,
+        customEndpoint
+      });
 
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
@@ -48,31 +56,38 @@ export const useContextualScan = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from contextual-fingerprint:', error);
+        throw error;
+      }
 
       if (!data?.response) {
+        console.error('No response received:', data);
         throw new Error('No response received from the model');
       }
 
-      // Add model response with timestamp after a small delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setMessages(prev => [...prev, { 
+      console.log('Received response:', data.response);
+
+      // Add model response with timestamp
+      const assistantMessage: Message = { 
         role: 'assistant', 
         content: data.response,
         timestamp: new Date().toISOString()
-      }]);
+      };
       
+      setMessages(prev => [...prev, assistantMessage]);
       setCurrentStep(prev => prev + 1);
       return true;
     } catch (error: any) {
       console.error('Error in fingerprinting:', error);
       toast.error(`Error: ${error.message}`);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
+      
+      const errorMessage: Message = { 
+        role: 'system', 
         content: `Error: ${error.message}`,
         timestamp: new Date().toISOString()
-      }]);
+      };
+      setMessages(prev => [...prev, errorMessage]);
       return false;
     } finally {
       setIsLoading(false);
