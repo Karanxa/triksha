@@ -3,33 +3,49 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
+import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
 
-export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
+export const Chat = ({ 
+  config, 
+  onComplete, 
+  onProgress,
+  isPaused,
+  isStopped,
+  scanId,
+  onScanIdUpdate
+}: ChatProps) => {
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
 
   useEffect(() => {
     const processQuestion = async () => {
-      if (!config || isLoading) return;
-      
-      const success = await processNextQuestion(config.provider, config.model);
-      
-      // Calculate and report progress
-      const totalQuestions = 5; // Total number of fingerprinting questions
-      const progress = Math.round((currentQuestionIndex / totalQuestions) * 100);
-      onProgress?.(progress);
-      
-      if (!success && fingerprintResults) {
-        onComplete(fingerprintResults);
+      if (!config || isLoading || isPaused || isStopped || 
+          currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
+        return;
+      }
+
+      try {
+        const result = await processNextQuestion(config.provider, config.model, scanId);
+        
+        if (result && 'success' in result) {
+          if (result.success && result.scanId) {
+            onScanIdUpdate(result.scanId);
+          }
+          
+          const progress = Math.round((currentQuestionIndex / FINGERPRINTING_QUESTIONS.length) * 100);
+          onProgress?.(progress);
+          
+          if (currentQuestionIndex === FINGERPRINTING_QUESTIONS.length - 1 && fingerprintResults) {
+            onComplete(fingerprintResults);
+          }
+        }
+      } catch (error) {
+        console.error('Error processing question:', error);
       }
     };
 
-    // Start with a small delay to allow UI to render
-    const timer = setTimeout(processQuestion, 500);
-    return () => clearTimeout(timer);
-  }, [config, currentQuestionIndex, isLoading]);
-
-  if (!config) return null;
+    processQuestion();
+  }, [config, currentQuestionIndex, isLoading, isPaused, isStopped, scanId]);
 
   return (
     <Card>

@@ -1,73 +1,155 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Message, FingerPrintResult } from "../types";
+import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Message } from '../types';
+import { toast } from 'sonner';
+import { CustomEndpoint } from '../../types/CustomEndpoint';
+import { augmentPrompt } from '../utils/promptAugmentation';
+
+interface UseDatasetAnalysisConfig {
+  provider: string;
+  model: string;
+  datasetId: string;
+  customEndpoint?: CustomEndpoint;
+}
+
+interface UseDatasetAnalysisResult {
+  messages: Message[];
+  isLoading: boolean;
+  progress: number;
+  results: any[];
+  startAnalysis: (prompts: string[]) => Promise<void>;
+}
 
 export const useDatasetAnalysis = (
-  config: { provider: string; model: string; datasetId: string },
-  fingerprint: FingerPrintResult
-) => {
+  config: UseDatasetAnalysisConfig, 
+  fingerprint: any
+): UseDatasetAnalysisResult => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<any[]>([]);
 
-  useEffect(() => {
-    const analyzeDataset = async () => {
-      setIsLoading(true);
-      try {
-        // Initial message
-        setMessages([
-          {
-            role: 'system',
-            content: `Starting dataset analysis for ${config.model} using fingerprint results`
+  const startAnalysis = async (prompts: string[]) => {
+    setIsLoading(true);
+    try {
+      // First augment all prompts based on fingerprint results
+      const augmentedPrompts = await Promise.all(
+        prompts.map(async (prompt) => {
+          try {
+            return await augmentPrompt(prompt, fingerprint);
+          } catch (error) {
+            console.error('Error augmenting prompt:', error);
+            return prompt; // Fall back to original prompt if augmentation fails
           }
-        ]);
+        })
+      );
 
-        // Process dataset with fingerprint results
-        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
-          body: {
-            datasetId: config.datasetId,
-            provider: config.provider,
-            model: config.model,
-            fingerprint
-          }
-        });
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'system', 
+          content: `Successfully augmented ${augmentedPrompts.length} prompts based on model fingerprint analysis.` 
+        }
+      ]);
 
-        if (error) throw error;
+      // Process each augmented prompt with the model
+      const processedResults = [];
+      for (let i = 0; i < augmentedPrompts.length; i++) {
+        try {
+          const augmentedPrompt = augmentedPrompts[i];
+          
+          // Add prompt to messages
+          setMessages(prev => [
+            ...prev,
+            { role: 'user', content: augmentedPrompt }
+          ]);
 
-        // Update messages and progress as prompts are processed
-        let currentProgress = 0;
-        const updateInterval = setInterval(() => {
-          if (currentProgress < 100) {
-            currentProgress += 10;
-            setProgress(currentProgress);
-          } else {
-            clearInterval(updateInterval);
-          }
-        }, 1000);
+          const { data: response, error } = await supabase.functions.invoke('geraide-fingerprint', {
+            body: {
+              provider: config.provider,
+              model: config.model,
+              prompt: augmentedPrompt,
+              customEndpoint: config.customEndpoint
+            }
+          });
 
-        // Add analysis results
-        setMessages(prev => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `Analysis complete. Processed ${analysisData.processedPrompts} prompts with fingerprint-based augmentation.`
-          }
-        ]);
+          if (error) throw error;
 
-        setResults(analysisData);
-      } catch (error) {
-        console.error('Dataset analysis error:', error);
-        toast.error('Failed to analyze dataset: ' + (error as Error).message);
-      } finally {
-        setIsLoading(false);
-        setProgress(100);
+          // Add model response to messages
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content: response.response }
+          ]);
+
+          processedResults.push({
+            originalPrompt: prompts[i],
+            augmentedPrompt,
+            modelResponse: response.response
+          });
+
+          // Update progress
+          const currentProgress = ((i + 1) / augmentedPrompts.length) * 100;
+          setProgress(currentProgress);
+
+          // Add small delay between requests
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error('Error processing prompt:', error);
+          setMessages(prev => [
+            ...prev,
+            { 
+              role: 'system', 
+              content: `Error processing prompt: ${error instanceof Error ? error.message : 'Unknown error'}` 
+            }
+          ]);
+        }
       }
-    };
 
-    analyzeDataset();
-  }, [config, fingerprint]);
+      setResults(processedResults);
 
-  return { messages, isLoading, progress, results };
+      // Save augmented dataset
+      const csvContent = 'original_prompt,augmented_prompt\n' + 
+        processedResults.map(r => 
+          `"${r.originalPrompt.replace(/"/g, '""')}","${r.augmentedPrompt.replace(/"/g, '""')}"`
+        ).join('\n');
+
+      const file = new Blob([csvContent], { type: 'text/csv' });
+      const filePath = `${config.datasetId}/augmented_${Date.now()}.csv`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('datasets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'system', 
+          content: 'Analysis complete. Augmented dataset has been saved.' 
+        }
+      ]);
+
+    } catch (error) {
+      console.error('Dataset analysis error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'system', 
+          content: `Error during analysis: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    messages,
+    isLoading,
+    progress,
+    results,
+    startAnalysis
+  };
 };

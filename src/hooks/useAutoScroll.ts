@@ -5,13 +5,18 @@ export const useAutoScroll = (dependencies: any[]) => {
 
   useEffect(() => {
     if (scrollRef.current) {
-      // Add a small delay to ensure content is rendered
+      const scrollElement = scrollRef.current;
+      const scrollHeight = scrollElement.scrollHeight;
+      
+      // Smooth scroll to bottom
+      scrollElement.scrollTo({
+        top: scrollHeight,
+        behavior: 'smooth'
+      });
+      
+      // Fallback for cases where smooth scroll might not work
       setTimeout(() => {
-        scrollRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'end',
-          inline: 'nearest'
-        });
+        scrollElement.scrollTop = scrollElement.scrollHeight;
       }, 100);
     }
   }, dependencies);

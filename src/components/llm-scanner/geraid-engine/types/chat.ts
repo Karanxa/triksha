@@ -8,6 +8,7 @@ export interface ChatState {
   isLoading: boolean;
   currentQuestionIndex: number;
   fingerprintResults: FingerPrintResult | null;
+  scanId: string | null;
 }
 
 export interface ChatProps {
@@ -25,6 +26,9 @@ export interface ChatProps {
   onComplete: (results: FingerPrintResult) => void;
   onProgress?: (progress: number) => void;
   isPaused?: boolean;
+  isStopped?: boolean;
+  scanId: string | null;
+  onScanIdUpdate: (id: string) => void;
 }
 
 export interface FingerPrintResult {
