@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
@@ -26,6 +26,8 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
     method: 'POST'
   });
   const [isStarted, setIsStarted] = useState(false);
+  const processingRef = useRef(false);
+  
   const { 
     messages, 
     isLoading, 
@@ -63,9 +65,17 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
 
   useEffect(() => {
     const processNextStep = async () => {
-      if (isStarted && !isLoading && currentStep < totalQuestions && messages[messages.length - 1]?.role === 'assistant') {
+      // Prevent concurrent processing
+      if (processingRef.current || !isStarted || isLoading || currentStep >= totalQuestions) {
+        return;
+      }
+
+      // Only proceed if the last message was from the assistant
+      if (messages.length > 0 && messages[messages.length - 1]?.role === 'assistant') {
+        processingRef.current = true;
         await new Promise(resolve => setTimeout(resolve, 1500)); // Add delay between messages
         await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+        processingRef.current = false;
       }
     };
 
@@ -87,7 +97,7 @@ export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
       
       onFingerprint(results);
     }
-  }, [scanComplete, messages, onFingerprint, selectedDataset]);
+  }, [scanComplete, messages, onFingerprint, selectedDataset, selectedProvider, selectedModel, customEndpoint]);
 
   if (!isStarted) {
     return (
