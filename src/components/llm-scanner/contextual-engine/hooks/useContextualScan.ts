@@ -17,24 +17,24 @@ export const useContextualScan = (): UseContextualScanReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [scanComplete, setScanComplete] = useState(false);
-  const [processingQuestion, setProcessingQuestion] = useState(false);
+  const [lastResponseReceived, setLastResponseReceived] = useState(true);
 
   const processNextQuestion = useCallback(async (
     provider: string, 
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (currentStep >= FINGERPRINTING_QUESTIONS.length || processingQuestion) {
-      setScanComplete(true);
+    // Don't proceed if we're still waiting for the last response
+    if (!lastResponseReceived || isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
       return false;
     }
 
-    setProcessingQuestion(true);
     setIsLoading(true);
+    setLastResponseReceived(false);
     const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
-      // Add the question to messages immediately
+      // Add the question to messages
       setMessages(prev => [...prev, { 
         role: 'user', 
         content: question,
@@ -65,15 +65,21 @@ export const useContextualScan = (): UseContextualScanReturn => {
 
       console.log('Received response:', data.response);
 
-      // Add response to messages
+      // Add response to messages and update state
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: data.response,
         timestamp: new Date().toISOString()
       }]);
 
-      // Move to next question
+      // Mark that we've received the response and can proceed
+      setLastResponseReceived(true);
       setCurrentStep(prev => prev + 1);
+
+      // Check if we've completed all questions
+      if (currentStep + 1 >= FINGERPRINTING_QUESTIONS.length) {
+        setScanComplete(true);
+      }
       
       return true;
     } catch (error: any) {
@@ -84,12 +90,12 @@ export const useContextualScan = (): UseContextualScanReturn => {
         content: `Error: ${error.message}`,
         timestamp: new Date().toISOString()
       }]);
+      setLastResponseReceived(true); // Reset the flag even on error
       return false;
     } finally {
       setIsLoading(false);
-      setProcessingQuestion(false);
     }
-  }, [currentStep, processingQuestion]);
+  }, [currentStep, isLoading, lastResponseReceived]);
 
   const startDatasetAnalysis = async (
     datasetId: string,
@@ -98,6 +104,11 @@ export const useContextualScan = (): UseContextualScanReturn => {
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
+    if (!lastResponseReceived) {
+      toast.error('Please wait for the current response before starting dataset analysis');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setMessages(prev => [...prev, { 
@@ -159,7 +170,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
     setCurrentStep(0);
     setScanComplete(false);
     setIsLoading(false);
-    setProcessingQuestion(false);
+    setLastResponseReceived(true);
   };
 
   return {
