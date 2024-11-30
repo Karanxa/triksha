@@ -31,12 +31,15 @@ export const useChat = () => {
 
       // Add the question to messages immediately
       const newMessage: Message = { role: 'user', content: question };
-      const updatedMessages = [...state.messages, newMessage];
-      setState(prev => ({ ...prev, messages: updatedMessages }));
+      setState(prev => ({ 
+        ...prev, 
+        messages: [...prev.messages, newMessage]
+      }));
 
       // Add delay to prevent rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      console.log('Making request to geraide-fingerprint function');
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider,
@@ -46,85 +49,43 @@ export const useChat = () => {
         }
       });
 
-      if (error) throw error;
-      if (!data?.response) throw new Error('No response received from the model');
+      if (error) {
+        console.error('Function invocation error:', error);
+        throw error;
+      }
 
-      console.log('Received model response:', data.response);
+      console.log('Received response from function:', data);
+      if (!data?.response) {
+        console.error('No response received from the model');
+        throw new Error('No response received from the model');
+      }
 
       const assistantMessage: Message = { role: 'assistant', content: data.response };
-      const finalMessages = [...updatedMessages, assistantMessage];
+      
+      // Update state with the new message
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, assistantMessage],
+        currentQuestionIndex: prev.currentQuestionIndex + 1,
+        fingerprintResults: {
+          ...prev.fingerprintResults,
+          [Object.keys(FINGERPRINTING_QUESTIONS)[prev.currentQuestionIndex]]: data.response
+        },
+        isLoading: false,
+        scanId: scanId || prev.scanId
+      }));
 
-      // Store or update conversation in database
-      if (!scanId) {
-        const { data: scanData, error: scanError } = await supabase
-          .from('contextual_scans')
-          .insert({
-            provider,
-            model,
-            messages: finalMessages as unknown as Json,
-            user_id: (await supabase.auth.getUser()).data.user?.id
-          })
-          .select()
-          .single();
-
-        if (scanError) throw scanError;
-
-        // Update fingerprint results based on the current question
-        const updatedFingerprint = {
-          ...state.fingerprintResults,
-          [Object.keys(FINGERPRINTING_QUESTIONS)[state.currentQuestionIndex]]: data.response
-        };
-        
-        setState(prev => ({ 
-          ...prev, 
-          messages: finalMessages,
-          scanId: scanData.id,
-          currentQuestionIndex: prev.currentQuestionIndex + 1,
-          fingerprintResults: updatedFingerprint,
-          isLoading: false 
-        }));
-        
-        return { success: true, scanId: scanData.id };
-      } else {
-        const { error: updateError } = await supabase
-          .from('contextual_scans')
-          .update({
-            messages: finalMessages as unknown as Json,
-          })
-          .eq('id', scanId);
-
-        if (updateError) throw updateError;
-
-        // Update fingerprint results based on the current question
-        const updatedFingerprint = {
-          ...state.fingerprintResults,
-          [Object.keys(FINGERPRINTING_QUESTIONS)[state.currentQuestionIndex]]: data.response
-        };
-        
-        setState(prev => ({
-          ...prev,
-          messages: finalMessages,
-          currentQuestionIndex: prev.currentQuestionIndex + 1,
-          fingerprintResults: updatedFingerprint,
-          isLoading: false
-        }));
-        
-        return { success: true, scanId };
-      }
+      return { success: true, scanId: scanId || state.scanId };
     } catch (error) {
       console.error('Error in fingerprinting:', error);
       toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false 
-      }));
+      setState(prev => ({ ...prev, isLoading: false }));
       return false;
     }
-  }, [state.messages, state.currentQuestionIndex, state.fingerprintResults]);
+  }, [state.currentQuestionIndex, state.isLoading, state.messages, state.fingerprintResults, state.scanId]);
 
   return {
     state,
-    processNextQuestion,
-    FINGERPRINTING_QUESTIONS
+    processNextQuestion
   };
 };

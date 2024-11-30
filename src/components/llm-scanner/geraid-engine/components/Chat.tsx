@@ -32,6 +32,7 @@ export const Chat = ({
         console.log('Processing question:', currentQuestionIndex + 1, 'of', FINGERPRINTING_QUESTIONS.length);
         
         const result = await processNextQuestion(config.provider, config.model, scanId);
+        console.log('Received result:', result);
         
         if (result && 'success' in result) {
           if (result.success && result.scanId) {

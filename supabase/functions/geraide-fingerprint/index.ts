@@ -16,12 +16,10 @@ serve(async (req) => {
     const { provider, model, prompt, scanId } = await req.json();
     console.log('Processing fingerprint request:', { provider, model, prompt, scanId });
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) throw new Error('No authorization header');
 
@@ -31,7 +29,6 @@ serve(async (req) => {
 
     if (userError || !user) throw new Error('Invalid user token');
 
-    // Get user's API keys
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('api_keys')
@@ -101,7 +98,6 @@ serve(async (req) => {
       throw new Error('Unsupported provider');
     }
 
-    // Update scan with response if scanId is provided
     if (scanId) {
       console.log('Updating scan with response:', { scanId, modelResponse });
       const { error: updateError } = await supabase
