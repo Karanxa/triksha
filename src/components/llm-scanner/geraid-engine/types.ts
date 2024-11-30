@@ -1,7 +1,6 @@
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
-  timestamp?: string;
 }
 
 export interface ProviderModel {
@@ -9,7 +8,7 @@ export interface ProviderModel {
   label: string;
 }
 
-export interface ContextualConfig {
+export interface GeraidConfig {
   provider: string;
   model: string;
   datasetId: string;

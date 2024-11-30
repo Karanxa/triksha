@@ -1,5 +1,5 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Message } from '../contextual-engine/types';
+import { Message } from '../geraid-engine/types';
 import { useAutoScroll } from '@/hooks/useAutoScroll';
 import { MessageBubble, ChatContainer } from './iMessageStyle';
 import { TypingIndicator } from './TypingIndicator';

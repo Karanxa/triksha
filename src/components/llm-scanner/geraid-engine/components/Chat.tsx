@@ -2,45 +2,15 @@ import { useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
+import { ChatProps } from '../types/chat';
 
-export interface ChatProps {
-  config: {
-    provider: string;
-    model: string;
-    datasetId: string;
-    customEndpoint?: {
-      url: string;
-      apiKey: string;
-      headers: string;
-      method: string;
-    };
-  };
-  onComplete: (results: any) => void;
-  onProgress?: (progress: number) => void;
-  isPaused: boolean;
-  isStopped: boolean;
-  lastStep?: number;
-}
-
-export const Chat = ({ 
-  config, 
-  onComplete, 
-  onProgress, 
-  isPaused,
-  isStopped,
-  lastStep = 0
-}: ChatProps) => {
+export const Chat = ({ config, onComplete, onProgress }: ChatProps) => {
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
 
   useEffect(() => {
     const processQuestion = async () => {
-      if (!config || isLoading || isPaused || isStopped) return;
-      
-      // If we're resuming from a paused state, skip already processed questions
-      if (currentQuestionIndex < lastStep) {
-        return;
-      }
+      if (!config || isLoading) return;
       
       const success = await processNextQuestion(config.provider, config.model);
       
@@ -57,7 +27,7 @@ export const Chat = ({
     // Start with a small delay to allow UI to render
     const timer = setTimeout(processQuestion, 500);
     return () => clearTimeout(timer);
-  }, [config, currentQuestionIndex, isLoading, isPaused, isStopped]);
+  }, [config, currentQuestionIndex, isLoading]);
 
   if (!config) return null;
 
@@ -65,7 +35,7 @@ export const Chat = ({
     <Card>
       <CardContent className="p-4">
         <h3 className="text-lg font-medium mb-4">Model Analysis</h3>
-        <ChatMessages messages={messages} isLoading={isLoading && !isPaused && !isStopped} />
+        <ChatMessages messages={messages} isLoading={isLoading} />
       </CardContent>
     </Card>
   );

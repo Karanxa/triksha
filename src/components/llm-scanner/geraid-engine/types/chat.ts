@@ -1,7 +1,6 @@
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
-  timestamp?: string;
 }
 
 export interface ChatState {
@@ -34,16 +33,4 @@ export interface FingerPrintResult {
   training: string;
   languages: string;
   safety: string;
-}
-
-export interface UseContextualScanReturn {
-  messages: Message[];
-  isLoading: boolean;
-  currentStep: number;
-  scanComplete: boolean;
-  processNextQuestion: (provider: string, model: string, customEndpoint?: any) => Promise<boolean>;
-  startDatasetAnalysis: (datasetId: string, fingerprint: any, provider: string, model: string, customEndpoint?: any) => Promise<void>;
-  reset: () => void;
-  totalQuestions: number;
-  canProcessNext: boolean;
 }

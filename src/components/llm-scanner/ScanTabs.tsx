@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScanForm } from "./ScanForm";
-import { ContextualEngine } from "./contextual-engine/components/ContextualEngine";
+import { GeraidEngine } from "./geraid-engine/GeraidEngine";
 
 interface ScanTabsProps {
   initialTab?: string;
@@ -17,17 +17,17 @@ export const ScanTabs = ({ initialTab = "basic" }: ScanTabsProps) => {
           Custom Scan
         </TabsTrigger>
         <TabsTrigger 
-          value="contextual" 
+          value="geraide" 
           className="text-xs md:text-sm whitespace-normal h-auto min-h-[40px] text-center"
         >
-          Contextual Analysis
+          Geraid-Engine Analysis
         </TabsTrigger>
       </TabsList>
       <TabsContent value="basic" className="mt-0">
         <ScanForm />
       </TabsContent>
-      <TabsContent value="contextual" className="mt-0">
-        <ContextualEngine />
+      <TabsContent value="geraide" className="mt-0">
+        <GeraidEngine />
       </TabsContent>
     </Tabs>
   );

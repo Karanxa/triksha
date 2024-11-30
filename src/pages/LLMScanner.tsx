@@ -16,7 +16,7 @@ const LLMScanner = () => {
     },
     {
       id: "geraide",
-      title: "Contextual Scan",
+      title: "Geraide",
       description: "Advanced LLM testing with automated analysis and reporting",
       icon: Zap
     }

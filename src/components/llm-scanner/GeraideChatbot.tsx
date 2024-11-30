@@ -1,18 +1,18 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useContextualScan } from "./contextual-engine/hooks/useContextualScan";
-import { ContextualChatMessages } from "./contextual-engine/components/ContextualChatMessages";
-import { ModelSelector } from "./contextual-engine/ModelSelector";
+import { useGeraideScan } from "./geraid-engine/hooks/useGeraideScan";
+import { GeraideChatMessages } from "./geraid-engine/components/GeraideChatMessages";
+import { ModelSelector } from "./geraid-engine/ModelSelector";
 import { toast } from "sonner";
 import { CustomEndpoint } from "./types/CustomEndpoint";
-import { DatasetSelector } from "./DatasetSelector";
+import { DatasetSelector } from "./geraid-engine/DatasetSelector";
 
-interface ContextualChatbotProps {
+interface GeraideChatbotProps {
   onFingerprint?: (results: any) => void;
 }
 
-export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => {
+export const GeraideChatbot = ({ onFingerprint }: GeraideChatbotProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
@@ -26,8 +26,6 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     method: 'POST'
   });
   const [isStarted, setIsStarted] = useState(false);
-  const processingRef = useRef(false);
-  
   const { 
     messages, 
     isLoading, 
@@ -37,7 +35,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     reset,
     totalQuestions,
     startDatasetAnalysis
-  } = useContextualScan();
+  } = useGeraideScan();
 
   const startAnalysis = async () => {
     if (!selectedProvider) {
@@ -56,39 +54,23 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     }
 
     setIsStarted(true);
-    processingRef.current = false;
     reset();
-    await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+    const success = await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+    if (!success) {
+      setIsStarted(false);
+    }
   };
 
   useEffect(() => {
     const processNextStep = async () => {
-      if (
-        isStarted && 
-        !isLoading && 
-        currentStep < totalQuestions &&
-        !processingRef.current &&
-        (messages.length === 0 || messages[messages.length - 1]?.role === 'assistant')
-      ) {
-        processingRef.current = true;
+      if (isStarted && !isLoading && currentStep < totalQuestions && messages[messages.length - 1]?.role === 'assistant') {
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Add delay between messages
         await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
-        processingRef.current = false;
       }
     };
 
-    const timeoutId = setTimeout(processNextStep, 1000);
-    return () => clearTimeout(timeoutId);
-  }, [
-    isStarted,
-    isLoading,
-    currentStep,
-    messages,
-    totalQuestions,
-    selectedProvider,
-    selectedModel,
-    customEndpoint,
-    processNextQuestion
-  ]);
+    processNextStep();
+  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, customEndpoint, totalQuestions, messages, processNextQuestion]);
 
   useEffect(() => {
     if (scanComplete && onFingerprint) {
@@ -100,7 +82,9 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
         safety: messages[9]?.content || ''
       };
       
+      // Start dataset analysis phase
       startDatasetAnalysis(selectedDataset, results, selectedProvider, selectedModel, customEndpoint);
+      
       onFingerprint(results);
     }
   }, [scanComplete, messages, onFingerprint, selectedDataset]);
@@ -111,7 +95,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
         <CardContent className="p-6">
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium mb-2">Contextual Model Analysis</h3>
+              <h3 className="text-lg font-medium mb-2">Geraide-E Model Analysis</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Select a target model and dataset to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
               </p>
@@ -146,12 +130,12 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
 
   return (
     <div className="space-y-4">
-      <ContextualChatMessages messages={messages} isLoading={isLoading} />
-      
+      <GeraideChatMessages messages={messages} isLoading={isLoading} />
+
       <div className="flex justify-end">
         <Button
           onClick={() => processNextQuestion(selectedProvider, selectedModel, customEndpoint)}
-          disabled={isLoading || currentStep >= totalQuestions}
+          disabled={isLoading || currentStep >= totalQuestions || messages[messages.length - 1]?.role !== 'assistant'}
         >
           {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
         </Button>
