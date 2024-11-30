@@ -94,20 +94,6 @@ serve(async (req) => {
           profile.api_keys[provider] || profile.api_keys.openai
         );
 
-        // Store the results
-        const { error: insertError } = await supabaseClient
-          .from('prompts')
-          .insert({
-            user_id: user.id,
-            original_text: prompt,
-            augmented_text: augmentedPrompt,
-            provider
-          });
-
-        if (insertError) {
-          console.error('Error storing prompt:', insertError);
-        }
-
         results.push({
           originalPrompt: prompt,
           augmentedPrompt,
