@@ -57,20 +57,11 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
 
     setIsStarted(true);
     reset();
-    const success = await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
-    if (!success) {
-      setIsStarted(false);
-    }
+    await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
   };
 
   useEffect(() => {
     const processNextStep = async () => {
-      // Only proceed if:
-      // 1. Scan is started
-      // 2. Not currently loading
-      // 3. Not at the end
-      // 4. Last message was from assistant
-      // 5. Can process next (last response was received)
       if (
         isStarted && 
         !isLoading && 
@@ -79,7 +70,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
         messages[messages.length - 1]?.role === 'assistant' &&
         canProcessNext
       ) {
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Add delay between messages
+        await new Promise(resolve => setTimeout(resolve, 1500));
         await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
       }
     };
@@ -89,12 +80,12 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     currentStep, 
     isLoading, 
     isStarted, 
-    messages, 
+    messages,
     canProcessNext,
     selectedProvider, 
     selectedModel, 
-    customEndpoint, 
-    totalQuestions, 
+    customEndpoint,
+    totalQuestions,
     processNextQuestion
   ]);
 
@@ -108,9 +99,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
         safety: messages[9]?.content || ''
       };
       
-      // Start dataset analysis phase
       startDatasetAnalysis(selectedDataset, results, selectedProvider, selectedModel, customEndpoint);
-      
       onFingerprint(results);
     }
   }, [scanComplete, messages, onFingerprint, selectedDataset]);
@@ -157,7 +146,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
   return (
     <div className="space-y-4">
       <ContextualChatMessages messages={messages} isLoading={isLoading} />
-
+      
       <div className="flex justify-end">
         <Button
           onClick={() => processNextQuestion(selectedProvider, selectedModel, customEndpoint)}

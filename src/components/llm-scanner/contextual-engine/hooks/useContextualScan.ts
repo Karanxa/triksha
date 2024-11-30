@@ -24,9 +24,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    // Don't proceed if we're still waiting for the last response
     if (!lastResponseReceived || isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
-      console.log('Cannot process next question:', { lastResponseReceived, isLoading, currentStep });
       return false;
     }
 
@@ -35,14 +33,13 @@ export const useContextualScan = (): UseContextualScanReturn => {
     const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
-      console.log('Processing question:', question);
-      
       // Add the question to messages
-      setMessages(prev => [...prev, { 
+      const newMessage: Message = { 
         role: 'user', 
         content: question,
         timestamp: new Date().toISOString()
-      }]);
+      };
+      setMessages(prev => [...prev, newMessage]);
 
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
@@ -54,23 +51,21 @@ export const useContextualScan = (): UseContextualScanReturn => {
       });
 
       if (error) throw error;
-
       if (!data?.response) {
         throw new Error('No response received from the model');
       }
 
-      console.log('Received response:', data.response);
-
-      // Add response to messages and update state
-      setMessages(prev => [...prev, { 
+      // Add response to messages
+      const responseMessage: Message = { 
         role: 'assistant', 
         content: data.response,
         timestamp: new Date().toISOString()
-      }]);
-
-      // Mark that we've received the response and can proceed
-      setLastResponseReceived(true);
+      };
+      setMessages(prev => [...prev, responseMessage]);
+      
+      // Update state after successful response
       setCurrentStep(prev => prev + 1);
+      setLastResponseReceived(true);
 
       // Check if we've completed all questions
       if (currentStep + 1 >= FINGERPRINTING_QUESTIONS.length) {
@@ -86,7 +81,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
         content: `Error: ${error.message}`,
         timestamp: new Date().toISOString()
       }]);
-      setLastResponseReceived(true); // Reset the flag even on error
+      setLastResponseReceived(true);
       return false;
     } finally {
       setIsLoading(false);
@@ -100,10 +95,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (!lastResponseReceived) {
-      toast.error('Please wait for the current response before starting dataset analysis');
-      return;
-    }
+    if (!lastResponseReceived) return;
 
     try {
       setIsLoading(true);
@@ -112,13 +104,6 @@ export const useContextualScan = (): UseContextualScanReturn => {
         content: 'Starting dataset analysis with fingerprint results...',
         timestamp: new Date().toISOString()
       }]);
-
-      console.log('Starting dataset analysis:', {
-        datasetId,
-        provider,
-        model,
-        fingerprint
-      });
 
       const { data, error } = await supabase.functions.invoke('process-contextual-scan', {
         body: {
@@ -131,8 +116,6 @@ export const useContextualScan = (): UseContextualScanReturn => {
       });
 
       if (error) throw error;
-
-      console.log('Dataset analysis complete:', data);
 
       setMessages(prev => [
         ...prev,
