@@ -1,140 +1,121 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AnalysisState, DatasetAnalysisProps, AnalysisResult } from "./types";
-import { Message } from "@/components/llm-scanner/contextual-scan/types";
-import { ApiKeys } from "@/integrations/supabase/types/common";
-import { verifyModelResponse } from "./utils/modelResponseVerifier";
-import { addResultMessages } from "./utils/messageHandler";
+import { Message } from "@/components/llm-scanner/geraid-engine/types";
+import { AnalysisResult, AnalysisState } from "./types";
+import { Json } from "@/integrations/supabase/types/common";
 
-export const useDatasetAnalysis = ({
-  config, 
-  fingerprint,
-  isPaused,
-  isStopped,
-  lastPausedStep
-}: DatasetAnalysisProps) => {
-  const [state, setState] = useState<AnalysisState>({
-    messages: [],
-    isLoading: false,
-    originalPrompts: [],
-    analysisResults: null,
-    phase: 'augmenting',
-    progress: lastPausedStep?.phase === 'dataset_analysis' ? lastPausedStep.progress || 0 : 0
-  });
-
-  const updateState = (updates: Partial<AnalysisState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  };
-
-  const addMessage = (message: Message) => {
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, message]
-    }));
-  };
+export const useDatasetAnalysis = (
+  config: { provider: string; model: string; datasetId: string },
+  fingerprint: any,
+  isPaused: boolean,
+  startFromProgress?: number
+) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(startFromProgress || 0);
+  const [results, setResults] = useState<any>(null);
 
   useEffect(() => {
     const analyzeDataset = async () => {
-      if (isPaused || isStopped) {
-        updateState({ isLoading: false });
-        return;
-      }
+      if (isPaused) return;
       
-      updateState({ isLoading: true });
+      setIsLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('User not authenticated');
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('api_keys')
-          .single();
-
-        const apiKeys = profile?.api_keys as ApiKeys;
-        if (!apiKeys?.openai) {
-          throw new Error('OpenAI API key not found. Please add it in Settings.');
+        // Initial message if starting fresh
+        if (!startFromProgress) {
+          setMessages([
+            {
+              role: 'system',
+              content: `Starting dataset analysis for ${config.model} using fingerprint results`
+            }
+          ]);
         }
 
-        const { data: dataset } = await supabase
-          .from('datasets')
-          .select('*')
-          .eq('id', config.datasetId)
-          .single();
-
-        if (!dataset) throw new Error('Dataset not found');
-
-        const { data: analysisData, error } = await supabase.functions.invoke('process-contextual-scan', {
+        // Process dataset with fingerprint results
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
           body: {
             datasetId: config.datasetId,
             provider: config.provider,
             model: config.model,
             fingerprint,
-            startFromProgress: lastPausedStep?.progress || 0
+            startFromProgress: startFromProgress || 0
           }
         });
 
-        if (error) {
-          console.error('Error from process-contextual-scan:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        if (!verifyModelResponse(analysisData)) {
-          throw new Error('Invalid response format from analysis');
-        }
+        // Update messages and progress as prompts are processed
+        let currentProgress = startFromProgress || 0;
+        const updateInterval = setInterval(() => {
+          if (!isPaused && currentProgress < 100) {
+            currentProgress += 10;
+            setProgress(currentProgress);
+          } else {
+            clearInterval(updateInterval);
+          }
+        }, 1000);
 
-        const results = analysisData.results as AnalysisResult[];
-        updateState({ 
-          analysisResults: results,
-          phase: 'testing',
-          progress: 100
-        });
+        // Add analysis results
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `Analysis complete. Processed ${analysisData.processedPrompts} prompts with fingerprint-based augmentation.`
+          }
+        ]);
 
-        results.forEach(result => {
-          addResultMessages(result, config, addMessage);
-        });
+        setResults(analysisData);
 
-        if (isStopped) {
-          addMessage({ 
-            role: 'system', 
-            content: 'Scan stopped manually by user' 
-          });
+        // Save results to database
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) throw new Error('User not authenticated');
+
+          // Add final message
+          setMessages(prev => [
+            ...prev,
+            {
+              role: 'system',
+              content: 'Scan stopped manually by user'
+            }
+          ]);
           
+          // Convert data to proper JSON format for Supabase
           const insertData = {
             user_id: user.id,
             provider: config.provider,
             model: config.model,
-            messages: state.messages,
-            fingerprint_results: fingerprint,
-            dataset_analysis_results: state.analysisResults,
+            messages: messages as Json,
+            fingerprint_results: fingerprint as Json,
+            dataset_analysis_results: state.analysisResults as Json,
             is_vulnerable: null
           };
 
           await supabase
             .from('contextual_scans')
             .insert(insertData);
+
+        } catch (error) {
+          console.error('Error saving scan results:', error);
+          toast.error('Failed to save scan results');
         }
 
       } catch (error) {
         console.error('Dataset analysis error:', error);
-        toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
-        
-        addMessage({
-          role: 'system',
-          content: `Error: ${error instanceof Error ? error.message : 'Failed to analyze dataset'}`
-        });
+        toast.error('Failed to analyze dataset: ' + (error as Error).message);
       } finally {
-        updateState({ 
-          isLoading: false,
-          progress: isStopped ? state.progress : 100
-        });
+        if (!isPaused) {
+          setIsLoading(false);
+          setProgress(100);
+        }
       }
     };
 
-    if (!isPaused && !isStopped) {
+    if (!isPaused) {
       analyzeDataset();
     }
-  }, [config, fingerprint, isPaused, isStopped, lastPausedStep]);
+  }, [config, fingerprint, isPaused, startFromProgress]);
 
-  return state;
+  return { messages, isLoading, progress, results };
 };
