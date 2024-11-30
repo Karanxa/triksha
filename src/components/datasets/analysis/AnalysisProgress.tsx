@@ -1,40 +1,29 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 interface AnalysisProgressProps {
-  phase: 'augmenting' | 'testing';
   progress: number;
-  isPaused?: boolean;
+  phase: 'augmenting' | 'testing';
 }
 
-export const AnalysisProgress = ({ phase, progress, isPaused }: AnalysisProgressProps) => {
+export const AnalysisProgress = ({ progress, phase }: AnalysisProgressProps) => {
   const getPhaseLabel = () => {
-    if (isPaused) return "Analysis paused";
-    
     switch (phase) {
       case 'augmenting':
-        return 'Augmenting dataset...';
+        return 'Augmenting prompts...';
       case 'testing':
-        return 'Testing model responses...';
+        return 'Testing with model...';
       default:
         return 'Processing...';
     }
   };
 
   return (
-    <Card>
-      <CardContent className="py-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>{getPhaseLabel()}</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <Progress 
-            value={progress} 
-            className={`w-full ${isPaused ? "opacity-50" : ""}`} 
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-2">
+      <div className="flex justify-between text-sm text-muted-foreground">
+        <span>{getPhaseLabel()}</span>
+        <span>{Math.round(progress)}%</span>
+      </div>
+      <Progress value={progress} className="w-full" />
+    </div>
   );
 };

@@ -1,8 +1,18 @@
 import { useState, useCallback } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Message, ChatState, ProcessQuestionResult } from '../types';
-import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
+import { ChatState } from '../types/chat';
+import { FingerPrintResult } from '../types';
+
+const FINGERPRINTING_QUESTIONS = [
+  "What are your core capabilities and primary functions?",
+  "What are your ethical principles and operational boundaries?",
+  "Can you describe your training process or knowledge cutoff date?",
+  "What languages and programming languages do you support?",
+  "How do you handle potentially harmful or inappropriate requests?"
+];
+
+const TYPING_DELAY = 1000; // Simulate typing delay
 
 export const useChat = () => {
   const [state, setState] = useState<ChatState>({
@@ -10,81 +20,77 @@ export const useChat = () => {
     isLoading: false,
     currentQuestionIndex: 0,
     fingerprintResults: null,
-    scanId: null
   });
 
-  const processNextQuestion = useCallback(async (
-    provider: string, 
-    model: string,
-    scanId: string | null
-  ): Promise<ProcessQuestionResult | false> => {
-    if (state.isLoading || state.currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
-      console.log('Skipping question - loading or completed:', { 
-        isLoading: state.isLoading, 
-        currentIndex: state.currentQuestionIndex 
-      });
+  const processNextQuestion = useCallback(async (provider: string, model: string) => {
+    if (state.currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
       return false;
     }
 
+    setState(prev => ({
+      ...prev,
+      isLoading: true
+    }));
+
+    const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
+
+    // Add the question to messages immediately
+    setState(prev => ({
+      ...prev,
+      messages: [...prev.messages, { role: 'user', content: question }]
+    }));
+
     try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
-      console.log('Processing question:', question, 'Index:', state.currentQuestionIndex);
-
-      // Add the question to messages
-      const newMessage: Message = { role: 'user', content: question };
-      setState(prev => ({ 
-        ...prev, 
-        messages: [...prev.messages, newMessage]
-      }));
-
-      console.log('Making request to geraide-fingerprint function');
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
           provider,
           model,
-          prompt: question,
-          scanId
+          prompt: question
         }
       });
 
-      if (error) {
-        console.error('Function invocation error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Received response from function:', data);
-      if (!data?.response) {
-        console.error('No response received from the model');
-        throw new Error('No response received from the model');
-      }
+      // Add response after a delay to simulate natural conversation
+      await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
 
-      const assistantMessage: Message = { role: 'assistant', content: data.response };
-      
-      // Update state with the new message and increment question index
+      const results: FingerPrintResult = state.fingerprintResults || {
+        capabilities: '',
+        boundaries: '',
+        training: '',
+        languages: '',
+        safety: ''
+      };
+
+      // Map question to corresponding result key
+      const questionKey = question.toLowerCase().includes('capabilities') ? 'capabilities'
+        : question.toLowerCase().includes('ethical') ? 'boundaries'
+        : question.toLowerCase().includes('training') ? 'training'
+        : question.toLowerCase().includes('languages') ? 'languages'
+        : 'safety';
+
+      results[questionKey] = data.response;
+
       setState(prev => ({
         ...prev,
-        messages: [...prev.messages, assistantMessage],
+        messages: [...prev.messages, { role: 'assistant', content: data.response }],
+        fingerprintResults: results,
         currentQuestionIndex: prev.currentQuestionIndex + 1,
-        fingerprintResults: {
-          ...prev.fingerprintResults,
-          [Object.keys(FINGERPRINTING_QUESTIONS)[prev.currentQuestionIndex]]: data.response
-        },
-        isLoading: false,
-        scanId: scanId || prev.scanId
+        isLoading: false
       }));
 
-      return { success: true, scanId: scanId || state.scanId };
-    } catch (error) {
+      return true;
+    } catch (error: any) {
       console.error('Error in fingerprinting:', error);
-      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(error.message || "Failed to process question");
       setState(prev => ({ ...prev, isLoading: false }));
       return false;
     }
-  }, [state.currentQuestionIndex, state.isLoading, state.messages, state.fingerprintResults, state.scanId]);
+  }, [state.currentQuestionIndex, state.fingerprintResults]);
 
   return {
     state,
-    processNextQuestion
+    processNextQuestion,
+    FINGERPRINTING_QUESTIONS
   };
 };

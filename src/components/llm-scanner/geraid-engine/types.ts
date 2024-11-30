@@ -12,16 +12,6 @@ export interface GeraidConfig {
   provider: string;
   model: string;
   datasetId: string;
-  customEndpoint?: {
-    url: string;
-    apiKey: string;
-    headers: string;
-    method: string;
-    inputType: 'curl' | 'http' | 'manual';
-    placeholder?: string;
-    httpRequest?: string;
-    curlCommand?: string;
-  };
 }
 
 export interface DatasetOption {
@@ -36,19 +26,6 @@ export interface FingerPrintResult {
   training: string;
   languages: string;
   safety: string;
-}
-
-export interface ChatState {
-  messages: Message[];
-  isLoading: boolean;
-  currentQuestionIndex: number;
-  fingerprintResults: FingerPrintResult | null;
-  scanId: string | null;
-}
-
-export interface ProcessQuestionResult {
-  success: boolean;
-  scanId: string;
 }
 
 export type Phase = 'not_started' | 'fingerprinting' | 'dataset_analysis' | 'completed';

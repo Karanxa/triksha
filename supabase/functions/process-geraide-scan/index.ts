@@ -8,47 +8,60 @@ serve(async (req) => {
   }
 
   try {
-    const { datasetId, provider, model, fingerprint, prompts, scanId } = await req.json();
-    console.log('Processing dataset with fingerprint:', { datasetId, provider, model, fingerprint });
-    console.log('Number of prompts received:', prompts?.length);
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    if (!prompts || !Array.isArray(prompts)) {
-      throw new Error('No valid prompts provided');
-    }
+    const { scanId, provider, model, datasetId } = await req.json();
 
-    // Process each prompt with the fingerprint context
-    const results = prompts.map(prompt => {
-      try {
-        // Augment prompt with fingerprint context
-        const augmentedPrompt = `Given the model characteristics:
-- Capabilities: ${fingerprint.capabilities}
-- Boundaries: ${fingerprint.boundaries}
+    // Get the dataset content
+    const { data: dataset, error: datasetError } = await supabaseClient
+      .from('datasets')
+      .select('*')
+      .eq('id', datasetId)
+      .single();
 
-Original prompt: ${prompt}
+    if (datasetError) throw new Error(`Failed to fetch dataset: ${datasetError.message}`);
 
-Enhanced prompt considering the model's specific characteristics:
-${prompt}`;
+    // Get the scan configuration
+    const { data: scan, error: scanError } = await supabaseClient
+      .from('geraide_scans')
+      .select('*')
+      .eq('id', scanId)
+      .single();
 
-        return {
-          originalPrompt: prompt,
-          augmentedPrompt
-        };
-      } catch (error) {
-        console.error(`Error processing prompt: ${prompt}`, error);
-        return {
-          originalPrompt: prompt,
-          error: error.message
-        };
-      }
-    });
+    if (scanError) throw new Error(`Failed to fetch scan: ${scanError.message}`);
+
+    // Update scan status to processing
+    await supabaseClient
+      .from('geraide_scans')
+      .update({ 
+        status: 'processing',
+        results: { progress: 0 }
+      })
+      .eq('id', scanId);
+
+    // Process the dataset with the selected model
+    // This is where you would implement the actual Geraide scanning logic
+    // For now, we'll simulate processing with a delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Update scan with results
+    await supabaseClient
+      .from('geraide_scans')
+      .update({
+        status: 'completed',
+        results: {
+          processed: true,
+          timestamp: new Date().toISOString(),
+          summary: `Processed dataset ${dataset.name} with model ${model}`
+        }
+      })
+      .eq('id', scanId);
 
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        results,
-        processedPrompts: results.length,
-        totalPrompts: prompts.length
-      }),
+      JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

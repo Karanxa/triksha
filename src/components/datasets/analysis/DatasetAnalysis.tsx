@@ -1,11 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Message } from "@/components/llm-scanner/geraid-engine/types";
 import { AnalysisProgress } from "./AnalysisProgress";
 import { ModelInteraction } from "./ModelInteraction";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
-import { useDatasetProcessing } from "./hooks/useDatasetProcessing";
 import { ApiKeys } from "@/integrations/supabase/types/common";
 
 interface DatasetAnalysisProps {
@@ -15,154 +14,73 @@ interface DatasetAnalysisProps {
     model: string;
   };
   fingerprint: FingerPrintResult;
-  isPaused: boolean;
-  isStopped: boolean;
-  scanId: string | null;
 }
 
-export const DatasetAnalysis = ({ 
-  config, 
-  fingerprint, 
-  isPaused,
-  isStopped,
-  scanId 
-}: DatasetAnalysisProps) => {
-  const {
-    messages,
-    setMessages,
-    isLoading,
-    setIsLoading,
-    progress,
-    setProgress,
-    currentQuestionIndex,
-    setCurrentQuestionIndex,
-    analysisData,
-    setAnalysisData,
-    totalPrompts,
-    setTotalPrompts,
-    augmentedPrompts,
-    setAugmentedPrompts,
-    fetchDataset,
-    downloadDatasetFile,
-    extractPrompts,
-    processPrompt
-  } = useDatasetProcessing();
+export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<'augmenting' | 'testing'>('augmenting');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const augmentDataset = async () => {
-      if (!analysisData && !isPaused && !isStopped) {
-        try {
-          setIsLoading(true);
-          console.log('Starting dataset analysis for ID:', config.datasetId);
-          
-          // Get user's API key
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('api_keys')
-            .single();
+    const analyzeDataset = async () => {
+      setIsLoading(true);
+      try {
+        // Get user's profile for API keys
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('api_keys')
+          .single();
 
-          const apiKeys = profile?.api_keys as ApiKeys;
-          if (!apiKeys?.openai) {
-            throw new Error('OpenAI API key not found. Please add it in Settings.');
-          }
-
-          // Fetch and process dataset
-          const dataset = await fetchDataset(config.datasetId);
-          console.log('Found dataset:', dataset);
-
-          const fileData = await downloadDatasetFile(dataset.file_path);
-          const prompts = await extractPrompts(fileData);
-          console.log(`Successfully extracted ${prompts.length} prompts`);
-
-          setMessages([{
-            role: 'system',
-            content: `Starting model analysis with fingerprint results:
-- Capabilities: ${fingerprint.capabilities || 'Not detected'}
-- Boundaries: ${fingerprint.boundaries || 'Not detected'}`
-          }]);
-
-          const { data, error } = await supabase.functions.invoke('process-geraide-scan', {
-            body: {
-              datasetId: config.datasetId,
-              provider: config.provider,
-              model: config.model,
-              fingerprint: {
-                capabilities: fingerprint.capabilities || '',
-                boundaries: fingerprint.boundaries || ''
-              },
-              scanId,
-              prompts
-            }
-          });
-
-          if (error) throw error;
-          
-          setAnalysisData(data);
-          setTotalPrompts(prompts.length);
-          
-          const augmentedPrompts = data?.results?.map((r: any) => r.augmentedPrompt) || prompts;
-          setAugmentedPrompts(augmentedPrompts);
-          
-          const augmentationProgress = Math.round((augmentedPrompts.length || 0) / (prompts.length || 1) * 100);
-          setProgress(augmentationProgress);
-          
-          if (augmentationProgress === 100) {
-            setMessages(prev => [
-              ...prev,
-              { 
-                role: 'system', 
-                content: 'Dataset augmentation complete. Beginning model response testing...' 
-              }
-            ]);
-            
-            setProgress(0);
-            
-            if (augmentedPrompts.length > 0) {
-              const success = await processPrompt(augmentedPrompts[0], scanId);
-              if (success) {
-                setCurrentQuestionIndex(1);
-                setProgress((1 / augmentedPrompts.length) * 100);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Dataset analysis error:', error);
-          toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
-        } finally {
-          setIsLoading(false);
+        const apiKeys = profile?.api_keys as ApiKeys;
+        if (!apiKeys?.openai) {
+          throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
+
+        // Initial system message
+        setMessages([{
+          role: 'system',
+          content: `Starting dataset analysis for ${config.model}`
+        }]);
+
+        // Process dataset with fingerprint results
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+          body: {
+            datasetId: config.datasetId,
+            provider: config.provider,
+            model: config.model,
+            fingerprint
+          }
+        });
+
+        if (error) throw error;
+
+        // Update messages and progress as prompts are processed
+        setPhase('testing');
+        
+        analysisData.results.forEach((result: any) => {
+          setMessages(prev => [
+            ...prev,
+            { role: 'user', content: result.augmentedPrompt },
+            { role: 'assistant', content: result.modelResponse }
+          ]);
+        });
+
+      } catch (error) {
+        console.error('Dataset analysis error:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
+      } finally {
+        setIsLoading(false);
+        setProgress(100);
       }
     };
 
-    augmentDataset();
-  }, [config, fingerprint, isPaused, isStopped, scanId]);
-
-  useEffect(() => {
-    const processNextPrompt = async () => {
-      if (!augmentedPrompts.length || 
-          isPaused || 
-          isStopped || 
-          isLoading || 
-          currentQuestionIndex >= augmentedPrompts.length) {
-        return;
-      }
-
-      const prompt = augmentedPrompts[currentQuestionIndex];
-      const success = await processPrompt(prompt, scanId);
-      
-      if (success) {
-        const newProgress = ((currentQuestionIndex + 1) / totalPrompts) * 100;
-        setProgress(Math.min(newProgress, 100));
-        setCurrentQuestionIndex(prev => prev + 1);
-      }
-    };
-
-    processNextPrompt();
-  }, [currentQuestionIndex, augmentedPrompts, isPaused, isStopped, isLoading, totalPrompts]);
+    analyzeDataset();
+  }, [config, fingerprint]);
 
   return (
     <div className="space-y-4">
-      <AnalysisProgress progress={progress} phase={currentQuestionIndex === 0 ? 'augmenting' : 'testing'} isPaused={isPaused} />
+      <AnalysisProgress progress={progress} phase={phase} />
       <ModelInteraction messages={messages} isLoading={isLoading} />
     </div>
   );

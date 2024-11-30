@@ -13,13 +13,15 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, model, prompt, scanId } = await req.json();
-    console.log('Processing fingerprint request:', { provider, model, prompt, scanId });
+    const { provider, model, prompt } = await req.json();
+    console.log('Fingerprinting request:', { provider, model, prompt });
 
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) throw new Error('No authorization header');
 
@@ -29,6 +31,7 @@ serve(async (req) => {
 
     if (userError || !user) throw new Error('Invalid user token');
 
+    // Get user's API keys
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('api_keys')
@@ -38,83 +41,23 @@ serve(async (req) => {
     if (profileError) throw new Error('Failed to fetch user profile');
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
-    let modelResponse;
+    let response;
     if (provider === 'openai') {
       const openaiKey = profile.api_keys.openai;
       if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
       
-      console.log('Making OpenAI request...');
-      const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: model === 'gpt-4o' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-        }),
-      });
-
-      if (!openaiResponse.ok) {
-        const error = await openaiResponse.text();
-        console.error('OpenAI API error:', error);
-        throw new Error(`OpenAI API error: ${error}`);
-      }
-
-      const data = await openaiResponse.json();
-      modelResponse = data.choices[0].message.content;
-      console.log('Received OpenAI response:', modelResponse);
+      response = await handleOpenAIRequest(prompt, model, openaiKey);
     } else if (provider === 'anthropic') {
       const anthropicKey = profile.api_keys.anthropic;
       if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
       
-      console.log('Making Anthropic request...');
-      const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': anthropicKey,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 1024,
-        }),
-      });
-
-      if (!anthropicResponse.ok) {
-        const error = await anthropicResponse.text();
-        console.error('Anthropic API error:', error);
-        throw new Error(`Anthropic API error: ${error}`);
-      }
-
-      const data = await anthropicResponse.json();
-      modelResponse = data.content[0].text;
-      console.log('Received Anthropic response:', modelResponse);
+      response = await handleAnthropicRequest(prompt, model, anthropicKey);
     } else {
       throw new Error('Unsupported provider');
     }
 
-    if (scanId) {
-      console.log('Updating scan with response:', { scanId, modelResponse });
-      const { error: updateError } = await supabase
-        .from('contextual_scans')
-        .update({
-          messages: supabase.sql`array_append(messages, jsonb_build_object('role', 'assistant', 'content', ${modelResponse}))`
-        })
-        .eq('id', scanId);
-
-      if (updateError) {
-        console.error('Error updating scan:', updateError);
-        throw new Error(`Failed to update scan: ${updateError.message}`);
-      }
-    }
-
     return new Response(
-      JSON.stringify({ response: modelResponse }),
+      JSON.stringify({ response }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -128,3 +71,50 @@ serve(async (req) => {
     );
   }
 });
+
+async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model === 'gpt-4o' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`OpenAI API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0].message.content;
+}
+
+async function handleAnthropicRequest(prompt: string, model: string, apiKey: string) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1024,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Anthropic API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+}

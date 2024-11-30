@@ -1,4 +1,8 @@
-import { TestResult } from "./types.ts";
+interface TestResult {
+  prompt: string;
+  response: string;
+  error?: string;
+}
 
 export async function testPromptsWithModel(
   prompts: string[],
