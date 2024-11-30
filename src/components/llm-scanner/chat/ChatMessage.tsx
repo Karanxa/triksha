@@ -1,4 +1,4 @@
-import { Message } from '../geraid-engine/types';
+import { Message } from '../contextual-engine/types';
 
 interface ChatMessageProps {
   message: Message;

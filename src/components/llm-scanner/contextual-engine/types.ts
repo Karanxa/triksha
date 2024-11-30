@@ -8,7 +8,7 @@ export interface ProviderModel {
   label: string;
 }
 
-export interface GeraidConfig {
+export interface ContextualConfig {
   provider: string;
   model: string;
   datasetId: string;

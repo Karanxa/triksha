@@ -1,5 +1,5 @@
 import { ChatMessages } from "@/components/llm-scanner/chat/ChatMessages";
-import { Message } from "@/components/llm-scanner/geraid-engine/types";
+import { Message } from "@/components/llm-scanner/contextual-engine/types";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface ModelInteractionProps {

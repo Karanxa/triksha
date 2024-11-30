@@ -1,4 +1,4 @@
-import { Message } from "@/components/llm-scanner/geraid-engine/types";
+import { Message } from "@/components/llm-scanner/contextual-engine/types";
 import { AnalysisResult } from "../types";
 
 export const addResultMessages = (

@@ -1,4 +1,4 @@
-import { Message } from "@/components/llm-scanner/geraid-engine/types";
+import { Message } from "@/components/llm-scanner/contextual-engine/types";
 
 export interface AnalysisResult {
   originalPrompt: string;
