@@ -1,6 +1,6 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,25 +41,25 @@ serve(async (req) => {
     if (profileError) throw new Error('Failed to fetch user profile');
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
-    let response;
+    let modelResponse;
     if (provider === 'custom' && customEndpoint) {
-      response = await handleCustomRequest(prompt, customEndpoint);
+      modelResponse = await handleCustomRequest(prompt, customEndpoint);
     } else if (provider === 'openai') {
       const openaiKey = profile.api_keys.openai;
       if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
-      response = await handleOpenAIRequest(prompt, model, openaiKey);
+      modelResponse = await handleOpenAIRequest(prompt, model, openaiKey);
     } else if (provider === 'anthropic') {
       const anthropicKey = profile.api_keys.anthropic;
       if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
-      response = await handleAnthropicRequest(prompt, model, anthropicKey);
+      modelResponse = await handleAnthropicRequest(prompt, model, anthropicKey);
     } else {
       throw new Error('Unsupported provider');
     }
 
-    console.log('Got response from model:', response);
+    console.log('Got response from model:', modelResponse);
 
     return new Response(
-      JSON.stringify({ response }),
+      JSON.stringify({ response: modelResponse }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
@@ -83,7 +83,6 @@ async function handleCustomRequest(prompt: string, customEndpoint: any) {
     'Content-Type': 'application/json'
   };
 
-  // Parse custom headers if provided
   if (rawHeaders) {
     try {
       const parsedHeaders = JSON.parse(rawHeaders);
@@ -94,13 +93,10 @@ async function handleCustomRequest(prompt: string, customEndpoint: any) {
   }
 
   if (inputType === 'http') {
-    // Parse HTTP request and replace placeholder
     requestBody = httpRequest.replace('{PROMPT}', prompt);
   } else if (inputType === 'curl') {
-    // Parse curl command and replace placeholder
     requestBody = curlCommand.replace('{PROMPT}', prompt);
   } else {
-    // Manual configuration
     requestBody = JSON.stringify({ prompt });
   }
 
@@ -121,7 +117,8 @@ async function handleCustomRequest(prompt: string, customEndpoint: any) {
     throw new Error(`Custom endpoint returned status ${response.status}`);
   }
 
-  return await response.text();
+  const data = await response.json();
+  return data.response || data;
 }
 
 async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {

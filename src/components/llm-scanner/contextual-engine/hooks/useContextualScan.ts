@@ -121,7 +121,6 @@ export const useContextualScan = () => {
 
       if (error) throw error;
 
-      // Add analysis results to chat
       setMessages(prev => [
         ...prev,
         { 
