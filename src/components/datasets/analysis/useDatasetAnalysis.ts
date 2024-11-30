@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnalysisState, DatasetAnalysisProps, AnalysisResult } from "./types";
 import { Message } from "@/components/llm-scanner/geraid-engine/types";
-import { ApiKeys, Json } from "@/integrations/supabase/types/common";
+import { ApiKeys } from "@/integrations/supabase/types/common";
 
 export const useDatasetAnalysis = ({
   config,
@@ -106,13 +106,15 @@ export const useDatasetAnalysis = ({
 
           if (error) throw error;
 
+          const results = analysisData.results as AnalysisResult[];
           updateState({ 
-            analysisResults: analysisData.results,
-            phase: 'testing'
+            analysisResults: results,
+            phase: 'testing',
+            progress: 100
           });
 
           // Add messages for each processed prompt
-          analysisData.results.forEach((result: AnalysisResult) => {
+          results.forEach((result: AnalysisResult) => {
             addMessage({ 
               role: 'system', 
               content: `Original prompt: ${result.originalPrompt}`
@@ -143,19 +145,16 @@ export const useDatasetAnalysis = ({
             content: msg.content
           }));
 
-          const scanData = {
+          await supabase.from('geraide_scans').insert({
             user_id: user.id,
             provider: config.provider,
             model: config.model,
-            name: `Dataset Analysis - ${dataset.name}`,
-            messages: messagesJson as Json[],
-            fingerprint_results: fingerprint as unknown as Json,
-            dataset_analysis_results: state.analysisResults as unknown as Json,
+            messages: messagesJson,
+            fingerprint_results: fingerprint,
+            dataset_analysis_results: state.analysisResults,
             is_vulnerable: null,
             status: 'completed'
-          };
-
-          await supabase.from('geraide_scans').insert(scanData);
+          });
         }
 
       } catch (error) {

@@ -1,10 +1,18 @@
 import { Message } from "@/components/llm-scanner/geraid-engine/types";
-import { Json } from "@/integrations/supabase/types/common";
 
 export interface AnalysisResult {
   originalPrompt: string;
   augmentedPrompt: string;
   modelResponse: string;
+}
+
+export interface AnalysisState {
+  messages: Message[];
+  isLoading: boolean;
+  originalPrompts: string[];
+  analysisResults: AnalysisResult[] | null;
+  phase: 'augmenting' | 'testing';
+  progress: number;
 }
 
 export interface DatasetAnalysisProps {
@@ -20,13 +28,4 @@ export interface DatasetAnalysisProps {
     phase: string;
     progress?: number;
   } | null;
-}
-
-export interface AnalysisState {
-  messages: Message[];
-  isLoading: boolean;
-  originalPrompts: string[];
-  analysisResults: AnalysisResult[] | null;
-  phase: 'augmenting' | 'testing';
-  progress: number;
 }
