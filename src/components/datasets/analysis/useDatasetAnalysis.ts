@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { AnalysisState, DatasetAnalysisProps, AnalysisResult } from "./types";
 import { Message } from "@/components/llm-scanner/geraid-engine/types";
 import { ApiKeys } from "@/integrations/supabase/types/common";
+import { Json } from "@/integrations/supabase/types";
 
 export const useDatasetAnalysis = ({
   config,
@@ -149,9 +150,9 @@ export const useDatasetAnalysis = ({
             user_id: user.id,
             provider: config.provider,
             model: config.model,
-            messages: messagesJson,
-            fingerprint_results: fingerprint,
-            dataset_analysis_results: state.analysisResults,
+            messages: messagesJson as Json,
+            fingerprint_results: fingerprint as Json,
+            dataset_analysis_results: state.analysisResults as unknown as Json,
             is_vulnerable: null,
             status: 'completed'
           });
