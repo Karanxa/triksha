@@ -18,12 +18,20 @@ export const Chat = ({
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
   const processingRef = useRef(false);
+  const lastResponseRef = useRef<string | null>(null);
 
   useEffect(() => {
     const processQuestion = async () => {
       // Don't process if already processing, paused, stopped, or no config
       if (processingRef.current || !config || isLoading || isPaused || isStopped || 
           currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
+        return;
+      }
+
+      // Check if we've already processed this question
+      const currentQuestion = FINGERPRINTING_QUESTIONS[currentQuestionIndex];
+      if (lastResponseRef.current === currentQuestion) {
+        console.log('Skipping duplicate question:', currentQuestion);
         return;
       }
 
@@ -45,6 +53,11 @@ export const Chat = ({
           if (currentQuestionIndex === FINGERPRINTING_QUESTIONS.length - 1 && fingerprintResults) {
             onComplete(fingerprintResults);
           }
+
+          // Store the last processed question
+          lastResponseRef.current = currentQuestion;
+        } else {
+          throw new Error('Invalid response format from model');
         }
       } catch (error) {
         console.error('Error processing question:', error);
@@ -55,7 +68,7 @@ export const Chat = ({
     };
 
     // Add a small delay before processing the next question
-    const timeoutId = setTimeout(processQuestion, 1000);
+    const timeoutId = setTimeout(processQuestion, 2000);
     return () => clearTimeout(timeoutId);
   }, [config, currentQuestionIndex, isLoading, isPaused, isStopped, scanId]);
 

@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Message, ChatState, ProcessQuestionResult } from '../types';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
-import { Json } from '@/integrations/supabase/types';
 
 export const useChat = () => {
   const [state, setState] = useState<ChatState>({
@@ -36,9 +35,6 @@ export const useChat = () => {
         messages: [...prev.messages, newMessage]
       }));
 
-      // Add delay to prevent rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       console.log('Making request to geraide-fingerprint function');
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {
@@ -62,7 +58,7 @@ export const useChat = () => {
 
       const assistantMessage: Message = { role: 'assistant', content: data.response };
       
-      // Update state with the new message
+      // Update state with the new message and increment question index
       setState(prev => ({
         ...prev,
         messages: [...prev.messages, assistantMessage],
