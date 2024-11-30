@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnalysisState, DatasetAnalysisProps, AnalysisResult } from "./types";
 import { Message } from "@/components/llm-scanner/geraid-engine/types";
-import { ApiKeys, Json } from "@/integrations/supabase/types/common";
+import { Json } from "@/integrations/supabase/types/common";
 
 export const useDatasetAnalysis = ({
   config,
@@ -49,7 +49,7 @@ export const useDatasetAnalysis = ({
           .select('api_keys')
           .single();
 
-        const apiKeys = profile?.api_keys as ApiKeys;
+        const apiKeys = profile?.api_keys;
         if (!apiKeys?.openai) {
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
@@ -141,16 +141,16 @@ export const useDatasetAnalysis = ({
           const messagesJson = state.messages.map(msg => ({
             role: msg.role,
             content: msg.content
-          }));
+          })) as unknown as Json;
 
           const scanData = {
             user_id: user.id,
             provider: config.provider,
             model: config.model,
             name: `Dataset Analysis - ${dataset.name}`,
-            messages: messagesJson as Json[],
+            messages: messagesJson,
             fingerprint_results: fingerprint as unknown as Json,
-            dataset_analysis_results: state.analysisResults as unknown as Json,
+            dataset_analysis_results: state.analysisResults as Json,
             is_vulnerable: null,
             status: 'completed'
           };
