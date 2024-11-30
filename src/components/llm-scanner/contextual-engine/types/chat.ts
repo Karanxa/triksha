@@ -45,4 +45,5 @@ export interface UseContextualScanReturn {
   startDatasetAnalysis: (datasetId: string, fingerprint: any, provider: string, model: string, customEndpoint?: any) => Promise<void>;
   reset: () => void;
   totalQuestions: number;
+  canProcessNext: boolean;
 }

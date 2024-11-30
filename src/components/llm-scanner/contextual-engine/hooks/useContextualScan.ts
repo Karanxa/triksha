@@ -26,6 +26,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
   ) => {
     // Don't proceed if we're still waiting for the last response
     if (!lastResponseReceived || isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
+      console.log('Cannot process next question:', { lastResponseReceived, isLoading, currentStep });
       return false;
     }
 
@@ -34,19 +35,14 @@ export const useContextualScan = (): UseContextualScanReturn => {
     const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
+      console.log('Processing question:', question);
+      
       // Add the question to messages
       setMessages(prev => [...prev, { 
         role: 'user', 
         content: question,
         timestamp: new Date().toISOString()
       }]);
-
-      console.log('Sending request to contextual-fingerprint:', {
-        provider,
-        model,
-        prompt: question,
-        customEndpoint
-      });
 
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
@@ -181,6 +177,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
     processNextQuestion,
     startDatasetAnalysis,
     reset,
-    totalQuestions: FINGERPRINTING_QUESTIONS.length
+    totalQuestions: FINGERPRINTING_QUESTIONS.length,
+    canProcessNext: lastResponseReceived && !isLoading
   };
 };

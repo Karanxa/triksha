@@ -26,6 +26,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     method: 'POST'
   });
   const [isStarted, setIsStarted] = useState(false);
+  
   const { 
     messages, 
     isLoading, 
@@ -34,7 +35,8 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     processNextQuestion,
     reset,
     totalQuestions,
-    startDatasetAnalysis
+    startDatasetAnalysis,
+    canProcessNext
   } = useContextualScan();
 
   const startAnalysis = async () => {
@@ -63,14 +65,38 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
 
   useEffect(() => {
     const processNextStep = async () => {
-      if (isStarted && !isLoading && currentStep < totalQuestions && messages[messages.length - 1]?.role === 'assistant') {
+      // Only proceed if:
+      // 1. Scan is started
+      // 2. Not currently loading
+      // 3. Not at the end
+      // 4. Last message was from assistant
+      // 5. Can process next (last response was received)
+      if (
+        isStarted && 
+        !isLoading && 
+        currentStep < totalQuestions && 
+        messages.length > 0 &&
+        messages[messages.length - 1]?.role === 'assistant' &&
+        canProcessNext
+      ) {
         await new Promise(resolve => setTimeout(resolve, 1500)); // Add delay between messages
         await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
       }
     };
 
     processNextStep();
-  }, [currentStep, isLoading, isStarted, selectedProvider, selectedModel, customEndpoint, totalQuestions, messages, processNextQuestion]);
+  }, [
+    currentStep, 
+    isLoading, 
+    isStarted, 
+    messages, 
+    canProcessNext,
+    selectedProvider, 
+    selectedModel, 
+    customEndpoint, 
+    totalQuestions, 
+    processNextQuestion
+  ]);
 
   useEffect(() => {
     if (scanComplete && onFingerprint) {
@@ -135,7 +161,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
       <div className="flex justify-end">
         <Button
           onClick={() => processNextQuestion(selectedProvider, selectedModel, customEndpoint)}
-          disabled={isLoading || currentStep >= totalQuestions || messages[messages.length - 1]?.role !== 'assistant'}
+          disabled={isLoading || currentStep >= totalQuestions || !canProcessNext}
         >
           {currentStep >= totalQuestions ? "Analysis Complete" : "Continue Analysis"}
         </Button>
