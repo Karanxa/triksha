@@ -8,10 +8,11 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 interface DatasetSelectorProps {
-  onDatasetSelected: (prompts: string[]) => void;
+  value: string;
+  onValueChange: (value: string) => void;
 }
 
-export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => {
+export const DatasetSelector = ({ value, onValueChange }: DatasetSelectorProps) => {
   const [loading, setLoading] = useState<string | null>(null);
 
   const { data: datasets, isLoading } = useQuery({
@@ -30,54 +31,8 @@ export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => 
     }
   });
 
-  const handleDatasetSelect = async (datasetId: string, filePath: string | null) => {
-    if (!filePath) {
-      toast.error("Dataset file not found");
-      return;
-    }
-
-    setLoading(datasetId);
-    try {
-      const { data, error } = await supabase.storage
-        .from('datasets')
-        .download(filePath);
-
-      if (error) throw error;
-
-      const text = await data.text();
-      const lines = text.split(/\r?\n/).filter(line => line.trim());
-      
-      if (lines.length === 0) {
-        throw new Error("Dataset is empty");
-      }
-
-      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
-      const promptIndex = headers.findIndex(header => header === "original_prompt");
-
-      if (promptIndex === -1) {
-        throw new Error("No 'original_prompt' column found in dataset");
-      }
-
-      // Process each line, properly handling quoted values
-      const prompts = lines.slice(1).map(line => {
-        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
-        return cleanedValues[promptIndex];
-      }).filter(Boolean); // Remove any undefined or empty values
-
-      if (prompts.length === 0) {
-        throw new Error("No valid prompts found in the 'original_prompt' column");
-      }
-
-      console.log('Found prompts:', prompts); // Debug log
-      onDatasetSelected(prompts);
-      toast.success(`${prompts.length} prompts loaded from dataset`);
-    } catch (error: any) {
-      console.error("Error loading dataset:", error);
-      toast.error(error.message || "Failed to load dataset");
-    } finally {
-      setLoading(null);
-    }
+  const handleDatasetSelect = async (datasetId: string) => {
+    onValueChange(datasetId);
   };
 
   if (isLoading) {
@@ -105,11 +60,13 @@ export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => 
                 <Button 
                   variant="outline" 
                   size="sm"
-                  disabled={!!loading}
-                  onClick={() => handleDatasetSelect(dataset.id, dataset.file_path)}
+                  disabled={loading === dataset.id}
+                  onClick={() => handleDatasetSelect(dataset.id)}
                 >
                   {loading === dataset.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : value === dataset.id ? (
+                    'Selected'
                   ) : (
                     'Select'
                   )}
