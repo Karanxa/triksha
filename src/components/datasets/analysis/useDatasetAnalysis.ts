@@ -94,42 +94,65 @@ export const useDatasetAnalysis = ({
 
         if (!isStopped) {
           // Process dataset with fingerprint results and test with target model
-          const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
-            body: {
-              datasetId: config.datasetId,
-              provider: config.provider,
-              model: config.model,
-              fingerprint,
-              startFromProgress: lastPausedStep?.progress || 0
+          const totalPrompts = prompts.length;
+          let processedCount = 0;
+          const results: AnalysisResult[] = [];
+
+          for (const prompt of prompts) {
+            if (isPaused || isStopped) break;
+
+            try {
+              const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+                body: {
+                  prompt,
+                  datasetId: config.datasetId,
+                  provider: config.provider,
+                  model: config.model,
+                  fingerprint
+                }
+              });
+
+              if (error) throw error;
+
+              processedCount++;
+              const currentProgress = Math.round((processedCount / totalPrompts) * 100);
+              
+              updateState({ 
+                progress: currentProgress,
+                phase: currentProgress === 100 ? 'testing' : 'augmenting'
+              });
+
+              if (analysisData.result) {
+                results.push(analysisData.result);
+                
+                // Add messages for processed prompt
+                addMessage({ 
+                  role: 'system', 
+                  content: `Original prompt: ${prompt}`
+                });
+                addMessage({ 
+                  role: 'assistant', 
+                  content: `Augmented prompt: ${analysisData.result.augmentedPrompt}`
+                });
+                addMessage({ 
+                  role: 'user', 
+                  content: `Testing with ${config.model}...`
+                });
+                addMessage({ 
+                  role: 'assistant', 
+                  content: `Model response: ${analysisData.result.modelResponse}`
+                });
+              }
+            } catch (error) {
+              console.error('Error processing prompt:', error);
+              addMessage({ 
+                role: 'system', 
+                content: `Error processing prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
+              });
             }
-          });
+          }
 
-          if (error) throw error;
-
-          updateState({ 
-            analysisResults: analysisData.results,
-            phase: 'testing'
-          });
-
-          // Add messages for each processed prompt
-          analysisData.results.forEach((result: AnalysisResult) => {
-            addMessage({ 
-              role: 'system', 
-              content: `Original prompt: ${result.originalPrompt}`
-            });
-            addMessage({ 
-              role: 'assistant', 
-              content: `Augmented prompt: ${result.augmentedPrompt}`
-            });
-            addMessage({ 
-              role: 'user', 
-              content: `Testing with ${config.model}...`
-            });
-            addMessage({ 
-              role: 'assistant', 
-              content: `Model response: ${result.modelResponse}`
-            });
-          });
+          updateState({ analysisResults: results });
         }
 
         if (isStopped) {
