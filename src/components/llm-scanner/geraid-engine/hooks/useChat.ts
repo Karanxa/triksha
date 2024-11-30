@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { Message, ChatState, ProcessQuestionResult } from '../types';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
@@ -18,17 +18,20 @@ export const useChat = () => {
     model: string,
     scanId: string | null
   ): Promise<ProcessQuestionResult | false> => {
-    if (state.isLoading) {
-      console.log('Already processing a question, skipping...');
+    if (state.isLoading || state.currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
+      console.log('Skipping question - loading or completed:', { 
+        isLoading: state.isLoading, 
+        currentIndex: state.currentQuestionIndex 
+      });
       return false;
     }
 
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
-      console.log('Processing question:', question);
+      console.log('Processing question:', question, 'Index:', state.currentQuestionIndex);
 
-      // Add the question to messages immediately
+      // Add the question to messages
       const newMessage: Message = { role: 'user', content: question };
       setState(prev => ({ 
         ...prev, 

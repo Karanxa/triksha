@@ -18,20 +18,27 @@ export const Chat = ({
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
   const processingRef = useRef(false);
-  const lastResponseRef = useRef<string | null>(null);
+  const questionProcessedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     const processQuestion = async () => {
       // Don't process if already processing, paused, stopped, or no config
       if (processingRef.current || !config || isLoading || isPaused || isStopped || 
           currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
+        console.log('Skipping processing due to conditions:', {
+          processing: processingRef.current,
+          noConfig: !config,
+          loading: isLoading,
+          paused: isPaused,
+          stopped: isStopped,
+          indexExceeded: currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length
+        });
         return;
       }
 
-      // Check if we've already processed this question
-      const currentQuestion = FINGERPRINTING_QUESTIONS[currentQuestionIndex];
-      if (lastResponseRef.current === currentQuestion) {
-        console.log('Skipping duplicate question:', currentQuestion);
+      // Check if we've already processed this question index
+      if (questionProcessedRef.current.has(currentQuestionIndex)) {
+        console.log('Question already processed:', currentQuestionIndex);
         return;
       }
 
@@ -54,8 +61,8 @@ export const Chat = ({
             onComplete(fingerprintResults);
           }
 
-          // Store the last processed question
-          lastResponseRef.current = currentQuestion;
+          // Mark this question as processed
+          questionProcessedRef.current.add(currentQuestionIndex);
         } else {
           throw new Error('Invalid response format from model');
         }
@@ -67,7 +74,7 @@ export const Chat = ({
       }
     };
 
-    // Add a small delay before processing the next question
+    // Add a delay before processing the next question
     const timeoutId = setTimeout(processQuestion, 2000);
     return () => clearTimeout(timeoutId);
   }, [config, currentQuestionIndex, isLoading, isPaused, isStopped, scanId]);
