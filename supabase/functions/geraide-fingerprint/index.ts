@@ -41,7 +41,7 @@ serve(async (req) => {
     if (profileError) throw new Error('Failed to fetch user profile');
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
-    let response;
+    let modelResponse;
     if (provider === 'openai') {
       const openaiKey = profile.api_keys.openai;
       if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
@@ -62,12 +62,13 @@ serve(async (req) => {
 
       if (!openaiResponse.ok) {
         const error = await openaiResponse.text();
+        console.error('OpenAI API error:', error);
         throw new Error(`OpenAI API error: ${error}`);
       }
 
       const data = await openaiResponse.json();
-      response = data.choices[0].message.content;
-      console.log('Received OpenAI response:', response);
+      modelResponse = data.choices[0].message.content;
+      console.log('Received OpenAI response:', modelResponse);
     } else if (provider === 'anthropic') {
       const anthropicKey = profile.api_keys.anthropic;
       if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
@@ -89,32 +90,35 @@ serve(async (req) => {
 
       if (!anthropicResponse.ok) {
         const error = await anthropicResponse.text();
+        console.error('Anthropic API error:', error);
         throw new Error(`Anthropic API error: ${error}`);
       }
 
       const data = await anthropicResponse.json();
-      response = data.content[0].text;
-      console.log('Received Anthropic response:', response);
+      modelResponse = data.content[0].text;
+      console.log('Received Anthropic response:', modelResponse);
     } else {
       throw new Error('Unsupported provider');
     }
 
     // Update scan with response if scanId is provided
     if (scanId) {
+      console.log('Updating scan with response:', { scanId, modelResponse });
       const { error: updateError } = await supabase
         .from('contextual_scans')
         .update({
-          messages: supabase.sql`array_append(messages, jsonb_build_object('role', 'assistant', 'content', ${response}))`
+          messages: supabase.sql`array_append(messages, jsonb_build_object('role', 'assistant', 'content', ${modelResponse}))`
         })
         .eq('id', scanId);
 
       if (updateError) {
         console.error('Error updating scan:', updateError);
+        throw new Error(`Failed to update scan: ${updateError.message}`);
       }
     }
 
     return new Response(
-      JSON.stringify({ response }),
+      JSON.stringify({ response: modelResponse }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {

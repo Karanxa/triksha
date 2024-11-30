@@ -4,6 +4,7 @@ import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
 import { ChatProps } from '../types/chat';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
+import { toast } from 'sonner';
 
 export const Chat = ({ 
   config, 
@@ -46,6 +47,7 @@ export const Chat = ({
         }
       } catch (error) {
         console.error('Error processing question:', error);
+        toast.error('Failed to process question. Please check your API keys and try again.');
       } finally {
         processingRef.current = false;
       }
