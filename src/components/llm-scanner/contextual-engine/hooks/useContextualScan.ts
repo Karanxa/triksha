@@ -79,6 +79,61 @@ export const useContextualScan = () => {
     }
   }, [currentStep]);
 
+  const startDatasetAnalysis = useCallback(async (
+    datasetId: string,
+    fingerprint: any,
+    provider: string,
+    model: string,
+    customEndpoint?: CustomEndpoint
+  ) => {
+    try {
+      setIsLoading(true);
+      setMessages(prev => [...prev, { 
+        role: 'system', 
+        content: 'Starting dataset analysis with fingerprint results...',
+        timestamp: new Date().toISOString()
+      }]);
+
+      const { data, error } = await supabase.functions.invoke('process-contextual-scan', {
+        body: {
+          datasetId,
+          provider,
+          model,
+          fingerprint,
+          customEndpoint
+        }
+      });
+
+      if (error) throw error;
+
+      // Add analysis results to chat
+      setMessages(prev => [
+        ...prev,
+        { 
+          role: 'assistant', 
+          content: 'Dataset analysis complete. Results:',
+          timestamp: new Date().toISOString()
+        },
+        { 
+          role: 'assistant', 
+          content: JSON.stringify(data.results, null, 2),
+          timestamp: new Date().toISOString()
+        }
+      ]);
+
+    } catch (error: any) {
+      console.error('Dataset analysis error:', error);
+      toast.error(`Dataset analysis failed: ${error.message}`);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `Dataset analysis failed: ${error.message}`,
+        timestamp: new Date().toISOString()
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const reset = () => {
     setMessages([]);
     setCurrentStep(0);
@@ -92,6 +147,7 @@ export const useContextualScan = () => {
     currentStep,
     scanComplete,
     processNextQuestion,
+    startDatasetAnalysis,
     reset,
     totalQuestions: FINGERPRINTING_QUESTIONS.length
   };

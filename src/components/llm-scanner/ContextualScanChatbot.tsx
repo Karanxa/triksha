@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useContextualScan } from "./contextual-engine/hooks/useContextualScan";
 import { ContextualChatMessages } from "./contextual-engine/components/ContextualChatMessages";
-import { ModelSelector } from "./contextual-engine/components/ModelSelector";
+import { ModelSelector } from "./contextual-engine/ModelSelector";
 import { toast } from "sonner";
 import { CustomEndpoint } from "./types/CustomEndpoint";
-import { DatasetSelector } from "./contextual-engine/components/DatasetSelector";
+import { DatasetSelector } from "./DatasetSelector";
 
 interface ContextualChatbotProps {
   onFingerprint?: (results: any) => void;
