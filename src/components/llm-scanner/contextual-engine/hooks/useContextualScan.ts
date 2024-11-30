@@ -27,20 +27,22 @@ export const useContextualScan = () => {
       return false;
     }
 
-    setIsLoading(true);
     const question = FINGERPRINTING_QUESTIONS[currentStep];
+    
+    // Check if this question has already been asked
+    const questionExists = messages.some(
+      msg => msg.role === 'user' && msg.content === question
+    );
+    
+    if (questionExists) {
+      console.log('Question already asked, skipping:', question);
+      return false;
+    }
+
+    setIsLoading(true);
 
     try {
-      // Check if this question has already been asked
-      const questionExists = messages.some(
-        msg => msg.role === 'user' && msg.content === question
-      );
-      
-      if (questionExists) {
-        return false;
-      }
-
-      // Add the question to messages
+      // Add the question to messages with timestamp
       const newMessage: Message = { 
         role: 'user', 
         content: question,
@@ -62,7 +64,7 @@ export const useContextualScan = () => {
         throw new Error('No response received from the model');
       }
 
-      // Add response to messages
+      // Add response to messages with timestamp
       const responseMessage: Message = { 
         role: 'assistant', 
         content: data.response,

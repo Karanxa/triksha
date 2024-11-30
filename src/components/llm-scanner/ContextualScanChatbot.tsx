@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useContextualScan } from "./contextual-engine/hooks/useContextualScan";
@@ -26,6 +26,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     method: 'POST'
   });
   const [isStarted, setIsStarted] = useState(false);
+  const processingRef = useRef(false);
   
   const { 
     messages, 
@@ -55,44 +56,39 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
     }
 
     setIsStarted(true);
+    processingRef.current = false;
     reset();
     await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
   };
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
     const processNextStep = async () => {
-      // Only process next step if we have a response from the previous question
-      // or if we're just starting
+      // Only process if we're started, not loading, have more questions, 
+      // and either have no messages or the last message was from the assistant
       if (
         isStarted && 
         !isLoading && 
         currentStep < totalQuestions &&
+        !processingRef.current &&
         (messages.length === 0 || messages[messages.length - 1]?.role === 'assistant')
       ) {
-        timeoutId = setTimeout(async () => {
-          await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
-        }, 1000);
+        processingRef.current = true;
+        await processNextQuestion(selectedProvider, selectedModel, customEndpoint);
+        processingRef.current = false;
       }
     };
 
-    processNextStep();
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
+    const timeoutId = setTimeout(processNextStep, 1000);
+    return () => clearTimeout(timeoutId);
   }, [
-    currentStep,
-    isLoading,
     isStarted,
+    isLoading,
+    currentStep,
     messages,
+    totalQuestions,
     selectedProvider,
     selectedModel,
     customEndpoint,
-    totalQuestions,
     processNextQuestion
   ]);
 
