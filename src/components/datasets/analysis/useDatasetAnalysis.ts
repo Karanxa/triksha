@@ -105,16 +105,15 @@ export const useDatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           });
           
-          await supabase.from('geraide_scans').insert({
+          await supabase.from('geraide_scans').insert([{
             user_id: user.id,
             provider: config.provider,
             model: config.model,
             messages: state.messages,
             fingerprint_results: fingerprint,
             dataset_analysis_results: state.analysisResults,
-            is_vulnerable: null,
-            status: 'completed'
-          });
+            is_vulnerable: null
+          }]);
         }
 
       } catch (error) {
