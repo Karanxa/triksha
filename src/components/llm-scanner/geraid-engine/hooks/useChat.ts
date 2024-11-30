@@ -20,12 +20,14 @@ export const useChat = () => {
     scanId: string | null
   ): Promise<ProcessQuestionResult | false> => {
     if (state.isLoading) {
+      console.log('Already processing a question, skipping...');
       return false;
     }
 
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
+      console.log('Processing question:', question);
 
       // Add the question to messages immediately
       const newMessage: Message = { role: 'user', content: question };
@@ -47,13 +49,15 @@ export const useChat = () => {
       if (error) throw error;
       if (!data?.response) throw new Error('No response received from the model');
 
+      console.log('Received model response:', data.response);
+
       const assistantMessage: Message = { role: 'assistant', content: data.response };
       const finalMessages = [...updatedMessages, assistantMessage];
 
       // Store or update conversation in database
       if (!scanId) {
         const { data: scanData, error: scanError } = await supabase
-          .from('geraide_scans')
+          .from('contextual_scans')
           .insert({
             provider,
             model,
@@ -83,7 +87,7 @@ export const useChat = () => {
         return { success: true, scanId: scanData.id };
       } else {
         const { error: updateError } = await supabase
-          .from('geraide_scans')
+          .from('contextual_scans')
           .update({
             messages: finalMessages as unknown as Json,
           })

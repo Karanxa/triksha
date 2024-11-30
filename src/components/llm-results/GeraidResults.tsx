@@ -26,7 +26,7 @@ export const GeraidResults = () => {
     queryKey: ['geraide-scans'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('geraide_scans')
+        .from('contextual_scans')
         .select('*')
         .order('created_at', { ascending: false });
 

@@ -6,6 +6,7 @@ import { CustomEndpoint } from '../../types/CustomEndpoint';
 import { FINGERPRINTING_QUESTIONS } from '../constants/questions';
 import { ScanState } from '../types/scan';
 import { useDatasetAnalysis } from './useDatasetAnalysis';
+import { Json } from '@/integrations/supabase/types';
 
 export const useGeraideScan = () => {
   const [state, setState] = useState<ScanState>({
@@ -59,11 +60,11 @@ export const useGeraideScan = () => {
       // Store conversation in database if we haven't yet
       if (!state.scanId) {
         const { data: scanData, error: scanError } = await supabase
-          .from('geraide_scans')
+          .from('contextual_scans')
           .insert({
             provider,
             model,
-            messages: finalMessages as any,
+            messages: finalMessages as unknown as Json,
             user_id: (await supabase.auth.getUser()).data.user?.id
           })
           .select()
@@ -80,9 +81,9 @@ export const useGeraideScan = () => {
       } else {
         // Update existing scan
         const { error: updateError } = await supabase
-          .from('geraide_scans')
+          .from('contextual_scans')
           .update({
-            messages: finalMessages as any,
+            messages: finalMessages as unknown as Json,
           })
           .eq('id', state.scanId);
 
