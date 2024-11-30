@@ -23,7 +23,8 @@ export const useContextualScan = () => {
     model: string,
     customEndpoint?: CustomEndpoint
   ) => {
-    if (isLoading || currentStep >= FINGERPRINTING_QUESTIONS.length) {
+    if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
+      setScanComplete(true);
       return false;
     }
 
@@ -72,13 +73,7 @@ export const useContextualScan = () => {
       };
       setMessages(prev => [...prev, responseMessage]);
       
-      // Update state after successful response
       setCurrentStep(prev => prev + 1);
-
-      // Check if we've completed all questions
-      if (currentStep + 1 >= FINGERPRINTING_QUESTIONS.length) {
-        setScanComplete(true);
-      }
       
       return true;
     } catch (error: any) {
@@ -93,7 +88,7 @@ export const useContextualScan = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentStep, isLoading, messages]);
+  }, [currentStep, messages]);
 
   const startDatasetAnalysis = async (
     datasetId: string,

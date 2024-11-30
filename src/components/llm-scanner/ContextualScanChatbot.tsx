@@ -63,8 +63,6 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
 
   useEffect(() => {
     const processNextStep = async () => {
-      // Only process if we're started, not loading, have more questions, 
-      // and either have no messages or the last message was from the assistant
       if (
         isStarted && 
         !isLoading && 
