@@ -100,7 +100,7 @@ export const useDatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           });
           
-          await supabase.from('contextual_scans').insert([{
+          await supabase.from('contextual_scans').insert({
             user_id: user.id,
             provider: config.provider,
             model: config.model,
@@ -108,7 +108,7 @@ export const useDatasetAnalysis = ({
             fingerprint_results: fingerprint,
             dataset_analysis_results: state.analysisResults,
             is_vulnerable: null
-          }]);
+          });
         }
 
       } catch (error) {

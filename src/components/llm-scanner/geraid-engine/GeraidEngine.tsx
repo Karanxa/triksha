@@ -51,14 +51,14 @@ export const GeraidEngine = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Save scan results to database
-      await supabase.from('geraide_scans').insert({
+      // Save scan results to database using new table name
+      await supabase.from('contextual_scans').insert({
         user_id: user.id,
         provider: config.provider,
         model: config.model,
         messages: [...currentMessages, { role: 'system', content: 'Scan stopped manually by user' }],
         fingerprint_results: fingerprintResults,
-        is_vulnerable: null // Since scan was stopped, we can't determine vulnerability
+        is_vulnerable: null
       });
       
     } catch (error) {
