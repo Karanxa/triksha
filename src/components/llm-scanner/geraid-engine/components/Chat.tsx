@@ -54,8 +54,8 @@ export const Chat = ({
             onScanIdUpdate(result.scanId);
           }
           
-          const progress = Math.round((currentQuestionIndex / FINGERPRINTING_QUESTIONS.length) * 100);
-          onProgress?.(progress);
+          // Update progress after successful processing
+          onProgress(currentQuestionIndex + 1);
           
           if (currentQuestionIndex === FINGERPRINTING_QUESTIONS.length - 1 && fingerprintResults) {
             onComplete(fingerprintResults);
