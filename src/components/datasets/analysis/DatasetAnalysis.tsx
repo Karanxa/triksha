@@ -38,6 +38,7 @@ export const DatasetAnalysis = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [originalPrompts, setOriginalPrompts] = useState<string[]>([]);
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
 
   useEffect(() => {
     const analyzeDataset = async () => {
@@ -116,6 +117,8 @@ export const DatasetAnalysis = ({
 
           if (error) throw error;
 
+          setAnalysisResults(analysisData);
+
           // Update messages and progress as prompts are processed
           setPhase('testing');
           
@@ -160,7 +163,7 @@ export const DatasetAnalysis = ({
             name: `Dataset Analysis - ${dataset.name}`,
             messages: messagesJson,
             fingerprint_results: fingerprint as unknown as Json,
-            dataset_analysis_results: analysisData as Json,
+            dataset_analysis_results: analysisResults as Json,
             is_vulnerable: null,
             status: 'completed'
           };
