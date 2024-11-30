@@ -4,10 +4,11 @@ import { toast } from "sonner";
 import { AnalysisState, DatasetAnalysisProps, AnalysisResult } from "./types";
 import { Message } from "@/components/llm-scanner/geraid-engine/types";
 import { ApiKeys } from "@/integrations/supabase/types/common";
-import { Json } from "@/integrations/supabase/types";
+import { verifyModelResponse } from "./utils/modelResponseVerifier";
+import { addResultMessages } from "./utils/messageHandler";
 
 export const useDatasetAnalysis = ({
-  config,
+  config, 
   fingerprint,
   isPaused,
   isStopped,
@@ -42,6 +43,7 @@ export const useDatasetAnalysis = ({
       
       updateState({ isLoading: true });
       try {
+        // Validate user and API keys
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
@@ -55,7 +57,7 @@ export const useDatasetAnalysis = ({
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
 
-        // Get dataset content
+        // Get and validate dataset content
         const { data: dataset } = await supabase
           .from('datasets')
           .select('*')
@@ -64,96 +66,38 @@ export const useDatasetAnalysis = ({
 
         if (!dataset) throw new Error('Dataset not found');
 
-        // Download and parse CSV
-        const { data: fileData, error: downloadError } = await supabase.storage
-          .from('datasets')
-          .download(dataset.file_path);
-
-        if (downloadError) throw downloadError;
-
-        const text = await fileData.text();
-        const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-        const headers = lines[0].toLowerCase().split(',');
-        const promptIndex = headers.findIndex(header => 
-          header === 'prompts' || header === 'prompt' || header === 'text' || header === 'original_prompt'
-        );
-
-        if (promptIndex === -1) throw new Error('No prompt column found in dataset');
-
-        const prompts = lines.slice(1)
-          .map(line => {
-            const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-            return values[promptIndex]?.replace(/^"|"$/g, '').trim();
-          })
-          .filter(Boolean);
-
-        updateState({ originalPrompts: prompts });
-        addMessage({
-          role: 'system',
-          content: `Starting dataset analysis for ${config.model} with ${prompts.length} prompts identified`
+        // Process dataset
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+          body: {
+            datasetId: config.datasetId,
+            provider: config.provider,
+            model: config.model,
+            fingerprint,
+            startFromProgress: lastPausedStep?.progress || 0
+          }
         });
 
-        if (!isStopped) {
-          // Process dataset with fingerprint results and test with target model
-          const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
-            body: {
-              datasetId: config.datasetId,
-              provider: config.provider,
-              model: config.model,
-              fingerprint,
-              startFromProgress: lastPausedStep?.progress || 0
-            }
-          });
-
-          if (error) {
-            console.error('Error from process-geraide-scan:', error);
-            throw error;
-          }
-
-          if (!analysisData?.results) {
-            throw new Error('No results received from analysis');
-          }
-
-          const results = analysisData.results as AnalysisResult[];
-          updateState({ 
-            analysisResults: results,
-            phase: 'testing',
-            progress: 100
-          });
-
-          // Add messages for each processed prompt
-          results.forEach((result: AnalysisResult) => {
-            if (result.originalPrompt) {
-              addMessage({ 
-                role: 'system', 
-                content: `Original prompt: ${result.originalPrompt}`
-              });
-            }
-            
-            if (result.augmentedPrompt) {
-              addMessage({ 
-                role: 'assistant', 
-                content: `Augmented prompt: ${result.augmentedPrompt}`
-              });
-            }
-
-            if (result.modelResponse) {
-              addMessage({ 
-                role: 'user', 
-                content: `Testing with ${config.model}...`
-              });
-              addMessage({ 
-                role: 'assistant', 
-                content: `Model response: ${result.modelResponse}`
-              });
-            } else {
-              addMessage({
-                role: 'system',
-                content: 'Failed to get model response for this prompt'
-              });
-            }
-          });
+        if (error) {
+          console.error('Error from process-geraide-scan:', error);
+          throw error;
         }
+
+        // Verify response format and content
+        if (!verifyModelResponse(analysisData)) {
+          throw new Error('Invalid response format from analysis');
+        }
+
+        const results = analysisData.results as AnalysisResult[];
+        updateState({ 
+          analysisResults: results,
+          phase: 'testing',
+          progress: 100
+        });
+
+        // Process verified results
+        results.forEach(result => {
+          addResultMessages(result, config, addMessage);
+        });
 
         if (isStopped) {
           addMessage({ 
@@ -161,18 +105,13 @@ export const useDatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           });
           
-          const messagesJson = state.messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }));
-
           await supabase.from('geraide_scans').insert({
             user_id: user.id,
             provider: config.provider,
             model: config.model,
-            messages: messagesJson as Json,
-            fingerprint_results: fingerprint as Json,
-            dataset_analysis_results: state.analysisResults as unknown as Json,
+            messages: state.messages,
+            fingerprint_results: fingerprint,
+            dataset_analysis_results: state.analysisResults,
             is_vulnerable: null,
             status: 'completed'
           });
