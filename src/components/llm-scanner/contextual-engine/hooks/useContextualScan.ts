@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Message } from '../types';
+import { Message, UseContextualScanReturn } from '../types/chat';
 import { CustomEndpoint } from '../../types/CustomEndpoint';
 
 const FINGERPRINTING_QUESTIONS = [
@@ -12,7 +12,7 @@ const FINGERPRINTING_QUESTIONS = [
   "How do you handle potentially harmful or inappropriate requests?"
 ];
 
-export const useContextualScan = () => {
+export const useContextualScan = (): UseContextualScanReturn => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
