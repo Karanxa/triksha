@@ -1,6 +1,7 @@
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  timestamp?: string;
 }
 
 export interface ProviderModel {
