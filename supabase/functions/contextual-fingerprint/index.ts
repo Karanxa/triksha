@@ -123,6 +123,13 @@ async function handleCustomRequest(prompt: string, customEndpoint: any) {
 }
 
 async function handleOpenAIRequest(prompt: string, model: string, apiKey: string) {
+  const modelMap: { [key: string]: string } = {
+    'gpt-4o': 'gpt-4-0125-preview',
+    'gpt-4o-mini': 'gpt-3.5-turbo-0125',
+  };
+
+  const apiModel = modelMap[model] || 'gpt-3.5-turbo-0125';
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -130,7 +137,7 @@ async function handleOpenAIRequest(prompt: string, model: string, apiKey: string
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: model === 'gpt-4o' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
+      model: apiModel,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     }),
