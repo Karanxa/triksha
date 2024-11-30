@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnalysisState, DatasetAnalysisProps, AnalysisResult } from "./types";
-import { Message } from "@/components/llm-scanner/geraid-engine/types";
+import { Message } from "@/components/llm-scanner/contextual-scan/types";
 import { ApiKeys } from "@/integrations/supabase/types/common";
 import { verifyModelResponse } from "./utils/modelResponseVerifier";
 import { addResultMessages } from "./utils/messageHandler";
@@ -43,7 +43,6 @@ export const useDatasetAnalysis = ({
       
       updateState({ isLoading: true });
       try {
-        // Validate user and API keys
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
@@ -57,7 +56,6 @@ export const useDatasetAnalysis = ({
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
 
-        // Get and validate dataset content
         const { data: dataset } = await supabase
           .from('datasets')
           .select('*')
@@ -66,8 +64,7 @@ export const useDatasetAnalysis = ({
 
         if (!dataset) throw new Error('Dataset not found');
 
-        // Process dataset
-        const { data: analysisData, error } = await supabase.functions.invoke('process-geraid-scan', {
+        const { data: analysisData, error } = await supabase.functions.invoke('process-contextual-scan', {
           body: {
             datasetId: config.datasetId,
             provider: config.provider,
@@ -78,11 +75,10 @@ export const useDatasetAnalysis = ({
         });
 
         if (error) {
-          console.error('Error from process-geraid-scan:', error);
+          console.error('Error from process-contextual-scan:', error);
           throw error;
         }
 
-        // Verify response format and content
         if (!verifyModelResponse(analysisData)) {
           throw new Error('Invalid response format from analysis');
         }
@@ -94,7 +90,6 @@ export const useDatasetAnalysis = ({
           progress: 100
         });
 
-        // Process verified results
         results.forEach(result => {
           addResultMessages(result, config, addMessage);
         });
@@ -105,7 +100,7 @@ export const useDatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           });
           
-          await supabase.from('geraid_scans').insert([{
+          await supabase.from('contextual_scans').insert([{
             user_id: user.id,
             provider: config.provider,
             model: config.model,
