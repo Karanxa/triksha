@@ -34,11 +34,19 @@ export const useContextualScan = (): UseContextualScanReturn => {
     const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
+      // Add the question to messages immediately
       setMessages(prev => [...prev, { 
         role: 'user', 
         content: question,
         timestamp: new Date().toISOString()
       }]);
+
+      console.log('Sending request to contextual-fingerprint:', {
+        provider,
+        model,
+        prompt: question,
+        customEndpoint
+      });
 
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
@@ -55,11 +63,16 @@ export const useContextualScan = (): UseContextualScanReturn => {
         throw new Error('No response received from the model');
       }
 
+      console.log('Received response:', data.response);
+
+      // Add response to messages
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: data.response,
         timestamp: new Date().toISOString()
       }]);
+
+      // Move to next question
       setCurrentStep(prev => prev + 1);
       
       return true;
@@ -93,6 +106,13 @@ export const useContextualScan = (): UseContextualScanReturn => {
         timestamp: new Date().toISOString()
       }]);
 
+      console.log('Starting dataset analysis:', {
+        datasetId,
+        provider,
+        model,
+        fingerprint
+      });
+
       const { data, error } = await supabase.functions.invoke('process-contextual-scan', {
         body: {
           datasetId,
@@ -104,6 +124,8 @@ export const useContextualScan = (): UseContextualScanReturn => {
       });
 
       if (error) throw error;
+
+      console.log('Dataset analysis complete:', data);
 
       setMessages(prev => [
         ...prev,
@@ -123,7 +145,7 @@ export const useContextualScan = (): UseContextualScanReturn => {
       console.error('Dataset analysis error:', error);
       toast.error(`Dataset analysis failed: ${error.message}`);
       setMessages(prev => [...prev, { 
-        role: 'assistant', 
+        role: 'system', 
         content: `Dataset analysis failed: ${error.message}`,
         timestamp: new Date().toISOString()
       }]);
