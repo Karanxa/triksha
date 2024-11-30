@@ -19,6 +19,10 @@ export const useChat = () => {
     model: string,
     scanId: string | null
   ): Promise<ProcessQuestionResult | false> => {
+    if (state.isLoading) {
+      return false;
+    }
+
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       const question = FINGERPRINTING_QUESTIONS[state.currentQuestionIndex];
@@ -27,6 +31,9 @@ export const useChat = () => {
       const newMessage: Message = { role: 'user', content: question };
       const updatedMessages = [...state.messages, newMessage];
       setState(prev => ({ ...prev, messages: updatedMessages }));
+
+      // Add delay to prevent rate limiting
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const { data, error } = await supabase.functions.invoke('geraide-fingerprint', {
         body: {

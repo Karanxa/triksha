@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatMessages } from "../../chat/ChatMessages";
 import { useChat } from '../hooks/useChat';
@@ -16,15 +16,20 @@ export const Chat = ({
 }: ChatProps) => {
   const { state, processNextQuestion } = useChat();
   const { messages, isLoading, currentQuestionIndex, fingerprintResults } = state;
+  const processingRef = useRef(false);
 
   useEffect(() => {
     const processQuestion = async () => {
-      if (!config || isLoading || isPaused || isStopped || 
+      // Don't process if already processing, paused, stopped, or no config
+      if (processingRef.current || !config || isLoading || isPaused || isStopped || 
           currentQuestionIndex >= FINGERPRINTING_QUESTIONS.length) {
         return;
       }
 
       try {
+        processingRef.current = true;
+        console.log('Processing question:', currentQuestionIndex);
+        
         const result = await processNextQuestion(config.provider, config.model, scanId);
         
         if (result && 'success' in result) {
@@ -41,6 +46,8 @@ export const Chat = ({
         }
       } catch (error) {
         console.error('Error processing question:', error);
+      } finally {
+        processingRef.current = false;
       }
     };
 
