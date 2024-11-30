@@ -38,14 +38,10 @@ export const DatasetAnalysis = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [originalPrompts, setOriginalPrompts] = useState<string[]>([]);
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
 
   useEffect(() => {
     const analyzeDataset = async () => {
-      if (isPaused || isStopped) {
-        setIsLoading(false);
-        return;
-      }
+      if (isPaused || isStopped) return;
       
       setIsLoading(true);
       try {
@@ -103,47 +99,43 @@ export const DatasetAnalysis = ({
           content: `Starting dataset analysis for ${config.model} with ${prompts.length} prompts identified`
         }]);
 
-        if (!isStopped) {
-          // Process dataset with fingerprint results and test with target model
-          const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
-            body: {
-              datasetId: config.datasetId,
-              provider: config.provider,
-              model: config.model,
-              fingerprint,
-              startFromProgress: lastPausedStep?.progress || 0
+        // Process dataset with fingerprint results and test with target model
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+          body: {
+            datasetId: config.datasetId,
+            provider: config.provider,
+            model: config.model,
+            fingerprint,
+            startFromProgress: lastPausedStep?.progress || 0
+          }
+        });
+
+        if (error) throw error;
+
+        // Update messages and progress as prompts are processed
+        setPhase('testing');
+        
+        analysisData.results.forEach((result: any) => {
+          setMessages(prev => [
+            ...prev,
+            { 
+              role: 'system', 
+              content: `Processing prompt: ${result.originalPrompt}`
+            },
+            { 
+              role: 'assistant', 
+              content: `Augmented prompt: ${result.augmentedPrompt}`
+            },
+            { 
+              role: 'user', 
+              content: `Testing with ${config.model}...`
+            },
+            { 
+              role: 'assistant', 
+              content: `Model response: ${result.modelResponse}`
             }
-          });
-
-          if (error) throw error;
-
-          setAnalysisResults(analysisData);
-
-          // Update messages and progress as prompts are processed
-          setPhase('testing');
-          
-          analysisData.results.forEach((result: any) => {
-            setMessages(prev => [
-              ...prev,
-              { 
-                role: 'system', 
-                content: `Processing prompt: ${result.originalPrompt}`
-              },
-              { 
-                role: 'assistant', 
-                content: `Augmented prompt: ${result.augmentedPrompt}`
-              },
-              { 
-                role: 'user', 
-                content: `Testing with ${config.model}...`
-              },
-              { 
-                role: 'assistant', 
-                content: `Model response: ${result.modelResponse}`
-              }
-            ]);
-          });
-        }
+          ]);
+        });
 
         if (isStopped) {
           setMessages(prev => [...prev, { 
@@ -151,19 +143,14 @@ export const DatasetAnalysis = ({
             content: 'Scan stopped manually by user' 
           }]);
           
-          const messagesJson = messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })) as unknown as Json;
-
           const scanData = {
             user_id: user.id,
             provider: config.provider,
             model: config.model,
             name: `Dataset Analysis - ${dataset.name}`,
-            messages: messagesJson,
+            messages: messages as Json,
             fingerprint_results: fingerprint as unknown as Json,
-            dataset_analysis_results: analysisResults as Json,
+            dataset_analysis_results: analysisData as Json,
             is_vulnerable: null,
             status: 'completed'
           };
@@ -174,12 +161,6 @@ export const DatasetAnalysis = ({
       } catch (error) {
         console.error('Dataset analysis error:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to analyze dataset');
-        
-        // Add error message to chat
-        setMessages(prev => [...prev, {
-          role: 'system',
-          content: `Error: ${error instanceof Error ? error.message : 'Failed to analyze dataset'}`
-        }]);
       } finally {
         setIsLoading(false);
         setProgress(isStopped ? progress : 100);
