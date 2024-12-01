@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
 import { Message } from "./types";
+import { TypingIndicator } from "../chat/TypingIndicator";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -32,8 +32,8 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
           </div>
         ))}
         {isLoading && (
-          <div className="flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin" />
+          <div className="flex justify-start">
+            <TypingIndicator />
           </div>
         )}
       </div>

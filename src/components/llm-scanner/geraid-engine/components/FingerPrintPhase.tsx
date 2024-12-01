@@ -8,12 +8,6 @@ interface FingerPrintPhaseProps {
     provider: string;
     model: string;
     datasetId: string;
-    customEndpoint?: {
-      url: string;
-      apiKey: string;
-      headers: string;
-      method: string;
-    };
   };
   onComplete: (results: FingerPrintResult) => void;
   onProgress: (progress: number) => void;
@@ -29,17 +23,15 @@ export const FingerPrintPhase = ({
   const [currentProgress, setCurrentProgress] = useState(0);
 
   const handleProgress = (progress: number) => {
-    if (!isPaused) {
-      setCurrentProgress(progress);
-      onProgress(progress);
-    }
+    setCurrentProgress(progress);
+    onProgress(progress);
   };
 
   return (
     <div className="space-y-4">
       <AnalysisProgress 
         phase="fingerprinting" 
-        progress={currentProgress}
+        progress={currentProgress} 
         isPaused={isPaused}
       />
       <Chat 

@@ -1,26 +1,89 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { useDatasetAnalysis } from "../hooks/useDatasetAnalysis";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { AnalysisProgress } from "./AnalysisProgress";
+import { ChatMessages } from "../../chat/ChatMessages";
+import { Message } from "../types";
 import { FingerPrintResult } from "../types";
 
-export interface DatasetAnalysisProps {
+interface DatasetAnalysisProps {
   config: {
+    datasetId: string;
     provider: string;
     model: string;
-    datasetId: string;
-    customEndpoint?: {
-      url: string;
-      apiKey: string;
-      headers: string;
-      method: string;
-    };
   };
   fingerprint: FingerPrintResult;
-  isPaused?: boolean;
+  isPaused: boolean;
 }
 
 export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
-  const { messages, isLoading, progress, results } = useDatasetAnalysis(config, fingerprint);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<any>(null);
+
+  useEffect(() => {
+    const analyzeDataset = async () => {
+      if (isPaused) return;
+      
+      setIsLoading(true);
+      try {
+        // Initial message
+        setMessages([
+          {
+            role: 'system',
+            content: `Starting dataset analysis for ${config.model} using fingerprint results`
+          }
+        ]);
+
+        // Process dataset with fingerprint results
+        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+          body: {
+            datasetId: config.datasetId,
+            provider: config.provider,
+            model: config.model,
+            fingerprint
+          }
+        });
+
+        if (error) throw error;
+
+        // Update messages and progress as prompts are processed
+        let currentProgress = 0;
+        const updateInterval = setInterval(() => {
+          if (currentProgress < 100 && !isPaused) {
+            currentProgress += 10;
+            setProgress(currentProgress);
+          } else {
+            clearInterval(updateInterval);
+          }
+        }, 1000);
+
+        // Add analysis results
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `Analysis complete. Processed ${analysisData.processedPrompts} prompts with fingerprint-based augmentation.`
+          }
+        ]);
+
+        setResults(analysisData);
+      } catch (error) {
+        console.error('Dataset analysis error:', error);
+        toast.error('Failed to analyze dataset: ' + (error as Error).message);
+      } finally {
+        setIsLoading(false);
+        setProgress(100);
+      }
+    };
+
+    if (!isPaused) {
+      analyzeDataset();
+    }
+  }, [config, fingerprint, isPaused]);
 
   return (
     <div className="space-y-4">
@@ -29,22 +92,8 @@ export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalys
         progress={progress}
         isPaused={isPaused}
       />
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="text-lg font-medium mb-4">Dataset Analysis</h3>
-          {messages.map((message, index) => (
-            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-lg p-3 ${message.role === 'user' ? 'bg-primary text-primary-foreground' : message.role === 'system' ? 'bg-muted text-muted-foreground' : 'bg-accent'}`}>
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              </div>
-            </div>
-          ))}
-          {isLoading && (
-            <div className="flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          )}
-        </CardContent>
+      <Card className="p-4">
+        <ChatMessages messages={messages} isLoading={isLoading} />
       </Card>
     </div>
   );
