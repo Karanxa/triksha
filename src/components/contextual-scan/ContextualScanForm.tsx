@@ -43,7 +43,8 @@ export function ContextualScanForm() {
           provider: provider.split('-')[0],
           model: provider.split('-')[1],
           messages: [],
-          user_id: session.user.id
+          user_id: session.user.id,
+          is_vulnerable: null
         })
         .select()
         .single();
@@ -75,6 +76,7 @@ export function ContextualScanForm() {
       }
 
       console.log("Scan initiated:", data);
+      toast.success("Scan started successfully");
     } catch (error: any) {
       console.error('Scan error:', error);
       toast.error(error.message || "Failed to start scan");
@@ -160,10 +162,8 @@ export function ContextualScanForm() {
       </div>
 
       {scanId && (
-        <Card>
-          <ScrollArea className="h-[500px]">
-            <ChatWindow scanId={scanId} />
-          </ScrollArea>
+        <Card className="mt-4">
+          <ChatWindow scanId={scanId} />
         </Card>
       )}
     </div>

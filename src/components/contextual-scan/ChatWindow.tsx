@@ -25,12 +25,7 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         .single();
 
       if (!error && data?.messages) {
-        // Ensure proper typing of messages
-        const parsedMessages = (data.messages as any[]).map(msg => ({
-          role: msg.role as 'assistant' | 'user',
-          content: msg.content as string
-        }));
-        setMessages(parsedMessages);
+        setMessages(data.messages as Message[]);
       }
     };
 
@@ -48,13 +43,9 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
           filter: `id=eq.${scanId}`,
         },
         (payload) => {
+          console.log("Received update:", payload);
           if (payload.new.messages) {
-            // Ensure proper typing of messages
-            const newMessages = (payload.new.messages as any[]).map(msg => ({
-              role: msg.role as 'assistant' | 'user',
-              content: msg.content as string
-            }));
-            setMessages(newMessages);
+            setMessages(payload.new.messages as Message[]);
           }
         }
       )
