@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
@@ -26,7 +25,11 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         .single();
 
       if (!error && data?.messages) {
-        const parsedMessages = data.messages as Message[];
+        // Ensure proper typing of messages
+        const parsedMessages = (data.messages as any[]).map(msg => ({
+          role: msg.role as 'assistant' | 'user',
+          content: msg.content as string
+        }));
         setMessages(parsedMessages);
       }
     };
@@ -46,7 +49,11 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         },
         (payload) => {
           if (payload.new.messages) {
-            const newMessages = payload.new.messages as Message[];
+            // Ensure proper typing of messages
+            const newMessages = (payload.new.messages as any[]).map(msg => ({
+              role: msg.role as 'assistant' | 'user',
+              content: msg.content as string
+            }));
             setMessages(newMessages);
           }
         }

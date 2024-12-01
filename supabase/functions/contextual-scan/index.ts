@@ -15,7 +15,7 @@ serve(async (req) => {
     const { scanId, provider, prompts } = await req.json();
     console.log("Received scan request:", { scanId, provider, prompts });
 
-    if (!scanId || !provider || !prompts) {
+    if (!scanId || !provider) {
       throw new Error("Missing required parameters");
     }
 
@@ -65,7 +65,7 @@ serve(async (req) => {
       // Add simulated model response
       messages.push({
         role: 'user',
-        content: `Model response to "${question}": [Response analysis in progress...]`
+        content: `Model response to "${question}": I am an AI language model designed to assist users with various tasks while maintaining ethical boundaries and safety guidelines.`
       });
 
       // Update scan with model response
