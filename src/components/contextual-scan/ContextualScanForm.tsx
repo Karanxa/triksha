@@ -5,24 +5,30 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
-import { ProviderSelect } from "@/components/augment-prompt/ProviderSelect";
+import ProviderSelect from "@/components/augment-prompt/ProviderSelect";
 import { DatasetSelector } from "@/components/llm-scanner/DatasetSelector";
 import { CSVUpload } from "@/components/llm-scanner/CSVUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatWindow } from "./ChatWindow";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@supabase/auth-helpers-react";
 
 export function ContextualScanForm() {
   const navigate = useNavigate();
+  const auth = useAuth();
   const [provider, setProvider] = useState("");
   const [prompts, setPrompts] = useState<string[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
 
   const handleStartScan = async () => {
     if (!provider || prompts.length === 0) {
       toast.error("Please select a provider and upload prompts");
+      return;
+    }
+
+    if (!auth?.user?.id) {
+      toast.error("You must be logged in to start a scan");
       return;
     }
 
@@ -35,7 +41,8 @@ export function ContextualScanForm() {
         .insert({
           provider,
           model: provider.split('-')[1],
-          messages: []
+          messages: [],
+          user_id: auth.user.id
         })
         .select()
         .single();
@@ -65,12 +72,15 @@ export function ContextualScanForm() {
   };
 
   const handleStop = async () => {
-    if (!scanId) return;
+    if (!scanId || !auth?.user?.id) return;
     
     try {
       await supabase
         .from('contextual_scans')
-        .update({ status: 'stopped' })
+        .update({ 
+          status: 'stopped',
+          user_id: auth.user.id 
+        })
         .eq('id', scanId);
       
       toast.success("Scan stopped");

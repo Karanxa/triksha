@@ -13,7 +13,7 @@ interface ProviderSelectProps {
   onValueChange: (value: string) => void;
 }
 
-const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
+export default function ProviderSelect({ value, onValueChange }: ProviderSelectProps) {
   const handleProviderChange = (newValue: string) => {
     onValueChange(newValue);
   };
@@ -91,6 +91,4 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
       </div>
     </div>
   );
-};
-
-export default ProviderSelect;
+}
