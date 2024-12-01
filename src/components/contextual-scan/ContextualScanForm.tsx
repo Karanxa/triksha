@@ -34,12 +34,13 @@ export function ContextualScanForm() {
 
     try {
       setIsScanning(true);
+      console.log("Starting scan with provider:", provider);
       
       // Create new contextual scan
       const { data: scan, error: scanError } = await supabase
         .from('contextual_scans')
         .insert({
-          provider,
+          provider: provider.split('-')[0],
           model: provider.split('-')[1],
           messages: [],
           user_id: session.user.id
@@ -47,8 +48,16 @@ export function ContextualScanForm() {
         .select()
         .single();
 
-      if (scanError) throw scanError;
+      if (scanError) {
+        console.error("Error creating scan:", scanError);
+        throw scanError;
+      }
+
+      if (!scan) {
+        throw new Error("No scan data returned");
+      }
       
+      console.log("Created scan:", scan);
       setScanId(scan.id);
 
       // Start the fingerprinting phase
@@ -60,12 +69,16 @@ export function ContextualScanForm() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Edge function error:", error);
+        throw error;
+      }
 
+      console.log("Scan completed:", data);
       toast.success("Scan completed successfully");
     } catch (error: any) {
       console.error('Scan error:', error);
-      toast.error(error.message);
+      toast.error(error.message || "Failed to start scan");
     } finally {
       setIsScanning(false);
     }
@@ -75,17 +88,20 @@ export function ContextualScanForm() {
     if (!scanId || !session?.user?.id) return;
     
     try {
-      await supabase
+      const { error } = await supabase
         .from('contextual_scans')
         .update({ 
           is_vulnerable: false,
           user_id: session.user.id 
         })
         .eq('id', scanId);
+
+      if (error) throw error;
       
       toast.success("Scan stopped");
       setIsScanning(false);
     } catch (error: any) {
+      console.error("Error stopping scan:", error);
       toast.error("Failed to stop scan");
     }
   };
