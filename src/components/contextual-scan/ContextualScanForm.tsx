@@ -11,11 +11,11 @@ import { CSVUpload } from "@/components/llm-scanner/CSVUpload";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatWindow } from "./ChatWindow";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@supabase/auth-helpers-react";
+import { useSession } from "@supabase/auth-helpers-react";
 
 export function ContextualScanForm() {
   const navigate = useNavigate();
-  const auth = useAuth();
+  const session = useSession();
   const [provider, setProvider] = useState("");
   const [prompts, setPrompts] = useState<string[]>([]);
   const [isScanning, setIsScanning] = useState(false);
@@ -27,7 +27,7 @@ export function ContextualScanForm() {
       return;
     }
 
-    if (!auth?.user?.id) {
+    if (!session?.user?.id) {
       toast.error("You must be logged in to start a scan");
       return;
     }
@@ -42,7 +42,7 @@ export function ContextualScanForm() {
           provider,
           model: provider.split('-')[1],
           messages: [],
-          user_id: auth.user.id
+          user_id: session.user.id
         })
         .select()
         .single();
@@ -72,14 +72,14 @@ export function ContextualScanForm() {
   };
 
   const handleStop = async () => {
-    if (!scanId || !auth?.user?.id) return;
+    if (!scanId || !session?.user?.id) return;
     
     try {
       await supabase
         .from('contextual_scans')
         .update({ 
-          status: 'stopped',
-          user_id: auth.user.id 
+          is_vulnerable: false,
+          user_id: session.user.id 
         })
         .eq('id', scanId);
       

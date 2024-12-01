@@ -25,7 +25,9 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         .single();
 
       if (!error && data?.messages) {
-        setMessages(data.messages as Message[]);
+        // Type assertion since we know the structure of our messages
+        const parsedMessages = data.messages as unknown as Message[];
+        setMessages(parsedMessages);
       }
     };
 
@@ -44,7 +46,9 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         },
         (payload) => {
           if (payload.new.messages) {
-            setMessages(payload.new.messages as Message[]);
+            // Type assertion for the realtime updates
+            const newMessages = payload.new.messages as unknown as Message[];
+            setMessages(newMessages);
           }
         }
       )
