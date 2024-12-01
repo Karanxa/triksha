@@ -149,7 +149,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in process-geraide-scan:', error);
+    console.error('Error in process-contextual-scan:', error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
