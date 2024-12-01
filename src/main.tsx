@@ -4,9 +4,6 @@ import App from './App'
 import './index.css'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-// Ensure dark mode is set on initial load
-document.documentElement.classList.add('dark');
-
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {

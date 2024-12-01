@@ -6,21 +6,16 @@ export interface FingerPrintResult {
   safety?: string;
 }
 
-export interface Message {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-}
-
-export interface TestResult {
-  prompt: string;
-  response: string;
-  error?: string;
-}
-
 export interface AdversarialConfig {
   attackType: string;
   vulnerabilityCategory: string;
   difficulty: string;
   severity: string;
   context: string;
+}
+
+export interface TestResult {
+  prompt: string;
+  response: string;
+  error?: string;
 }
