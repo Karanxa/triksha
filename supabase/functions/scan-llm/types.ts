@@ -1,10 +1,17 @@
+export interface FingerPrintResult {
+  capabilities?: string;
+  boundaries?: string;
+  training?: string;
+  languages?: string;
+  safety?: string;
+}
+
 export interface CustomEndpointConfig {
   url: string;
-  apiKey: string;
-  headers: string;
-  placeholder: string;
-  curlCommand: string;
-  httpRequest: string;
-  inputType: 'curl' | 'manual' | 'http';
   method: string;
+  inputType: 'curl' | 'http' | 'manual';
+  placeholder?: string;
+  headers?: string;
+  httpRequest?: string;
+  apiKey?: string;
 }

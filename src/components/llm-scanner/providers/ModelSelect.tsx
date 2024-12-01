@@ -54,10 +54,7 @@ export const ModelSelect = ({
           { value: 'codellama', label: 'Code Llama' },
         ];
       default:
-        return [
-          { value: 'gpt-4o', label: 'GPT-4 Opus' },
-          { value: 'gpt-4o-mini', label: 'GPT-4 Opus Mini' },
-        ];
+        return [];
     }
   };
 
