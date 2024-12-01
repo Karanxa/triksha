@@ -14,11 +14,13 @@ const Navigation = () => {
   
   const links = [
     { href: "/", label: "Home" },
-    { href: "/llm-scanner", label: "Contextual Scans" },
+    { href: "/llm-scanner", label: "Scans" },
+    { href: "/automated-scans", label: "Automated" },
     { href: "/llm-results", label: "Results" },
     { href: "/datasets", label: "Datasets" },
     { href: "/augment-prompt", label: "Augmentation" },
     { href: "/fine-tuning", label: "Fine-tuning" },
+    { href: "/geraid", label: "Geraid" },
   ];
 
   const handleLogout = async () => {

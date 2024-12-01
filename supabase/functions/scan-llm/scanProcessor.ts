@@ -5,7 +5,6 @@ import { handleAnthropicRequest } from "./providers/anthropic.ts";
 import { handleGeminiRequest } from "./providers/gemini.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { handleCustomEndpoint } from "./customEndpoint.ts";
-import { augmentPrompt } from "./utils/promptAugmentation.ts";
 
 export async function processScan(
   scanId: string,
@@ -17,60 +16,30 @@ export async function processScan(
   userId: string,
   category: string = 'jailbreaking'
 ) {
+  // Get base provider for API calls
   const [baseProvider] = provider ? provider.split('-') : [null];
   
   console.log('Processing scan with provider:', baseProvider);
-  console.log('Initial prompts received:', prompts?.length || 0);
-
-  // More lenient prompt validation
-  if (!Array.isArray(prompts)) {
-    console.error('Invalid prompts format:', typeof prompts);
-    throw new Error('Prompts must be provided as an array');
-  }
-
-  // Clean prompts more gracefully
-  const validPrompts = prompts
-    .filter(prompt => prompt && typeof prompt === 'string')
-    .map(prompt => prompt.trim())
-    .filter(prompt => prompt.length > 0);
-
-  console.log('Valid prompts after cleaning:', validPrompts.length);
-
-  if (validPrompts.length === 0) {
-    throw new Error('No valid prompts found after cleaning. Please check your input.');
-  }
 
   const results = [];
   let processedCount = 0;
-  const totalPrompts = validPrompts.length;
-
-  // Update initial scan status
-  await supabase
-    .from('llm_scans')
-    .update({
-      status: 'processing',
-      results: {
-        progress: 0,
-        total: totalPrompts,
-        processed: 0
-      }
-    })
-    .eq('id', scanId);
-
-  for (const prompt of validPrompts) {
+  const totalPrompts = prompts.length;
+  
+  for (const prompt of prompts) {
     try {
       console.log('Processing prompt:', prompt);
       
       // Get response from provider
       const response = await getProviderResponse(prompt, baseProvider, null, customEndpoint, apiKeys);
-      console.log('Raw provider response received');
+      console.log('Raw provider response:', response);
       
       // Extract readable response and model info
       const modelResponse = processProviderResponse(response, baseProvider || 'custom');
       const modelName = extractModelFromResponse(response, baseProvider || 'custom');
-      console.log('Processed response for model:', modelName);
+      console.log('Processed response:', modelResponse);
+      console.log('Extracted model:', modelName);
 
-      // Store result
+      // Store result with category and extracted model name
       const { error: resultError } = await supabase
         .from('llm_scan_results')
         .insert({
@@ -90,17 +59,20 @@ export async function processScan(
         throw new Error(`Database error: ${resultError.message}`);
       }
 
-      results.push({
+      const result = {
         prompt,
         model_response: modelResponse,
         raw_response: response,
         model: modelName
-      });
+      };
+      
+      results.push(result);
       
       // Update progress
       processedCount++;
       const progress = Math.round((processedCount / totalPrompts) * 100);
       
+      // Update scan status with progress and model
       await supabase
         .from('llm_scans')
         .update({
@@ -108,9 +80,7 @@ export async function processScan(
           results: {
             progress,
             responses: results,
-            model: modelName,
-            total: totalPrompts,
-            processed: processedCount
+            model: modelName
           }
         })
         .eq('id', scanId);
@@ -133,8 +103,6 @@ export async function processScan(
       results: {
         responses: results,
         progress: 100,
-        total: totalPrompts,
-        processed: processedCount,
         model: results[0]?.model || 'Unknown Model'
       }
     })
@@ -169,6 +137,7 @@ async function getProviderResponse(
       return await handleOllamaRequest(prompt, apiKeys.ollama_endpoint, model);
     
     default:
+      // Only use customEndpoint if no standard provider is specified
       if (customEndpoint) {
         return await handleCustomEndpoint(prompt, customEndpoint);
       }
