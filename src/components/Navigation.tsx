@@ -21,6 +21,7 @@ const Navigation = () => {
     { href: "/augment-prompt", label: "Augmentation" },
     { href: "/fine-tuning", label: "Fine-tuning" },
     { href: "/geraid", label: "Geraid" },
+    { href: "/contextual-scan", label: "Contextual Scan" },
   ];
 
   const handleLogout = async () => {
