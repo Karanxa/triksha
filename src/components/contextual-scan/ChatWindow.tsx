@@ -13,20 +13,21 @@ interface ChatWindowProps {
 }
 
 // Type guard to validate if a JSON object is a Message
-function isMessage(json: Json): json is Message {
-  if (typeof json !== 'object' || json === null) return false;
+function isMessage(obj: unknown): obj is Message {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const candidate = obj as Record<string, unknown>;
   return (
-    'role' in json &&
-    'content' in json &&
-    (json.role === 'assistant' || json.role === 'user') &&
-    typeof json.content === 'string'
+    'role' in candidate &&
+    'content' in candidate &&
+    (candidate.role === 'assistant' || candidate.role === 'user') &&
+    typeof candidate.content === 'string'
   );
 }
 
 // Function to safely convert Json array to Message array
 function parseMessages(data: Json): Message[] {
   if (!Array.isArray(data)) return [];
-  return data.filter(isMessage);
+  return data.filter((item): item is Message => isMessage(item));
 }
 
 export function ChatWindow({ scanId }: ChatWindowProps) {
