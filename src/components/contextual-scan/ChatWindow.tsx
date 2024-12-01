@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Json } from "@/integrations/supabase/types";
 
 interface Message {
   role: 'assistant' | 'user';
@@ -25,7 +24,7 @@ function isMessage(obj: unknown): obj is Message {
 }
 
 // Function to safely convert Json array to Message array
-function parseMessages(data: Json): Message[] {
+function parseMessages(data: unknown): Message[] {
   if (!Array.isArray(data)) return [];
   return data.filter((item): item is Message => isMessage(item));
 }
