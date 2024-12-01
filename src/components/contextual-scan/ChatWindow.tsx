@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,6 +14,7 @@ interface ChatWindowProps {
 
 export function ChatWindow({ scanId }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Initial fetch of messages
@@ -25,8 +26,7 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         .single();
 
       if (!error && data?.messages) {
-        // Type assertion since we know the structure of our messages
-        const parsedMessages = data.messages as unknown as Message[];
+        const parsedMessages = data.messages as Message[];
         setMessages(parsedMessages);
       }
     };
@@ -46,8 +46,7 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         },
         (payload) => {
           if (payload.new.messages) {
-            // Type assertion for the realtime updates
-            const newMessages = payload.new.messages as unknown as Message[];
+            const newMessages = payload.new.messages as Message[];
             setMessages(newMessages);
           }
         }
@@ -59,26 +58,39 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
     };
   }, [scanId]);
 
+  // Scroll to bottom when messages update
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollArea = scrollAreaRef.current;
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <div className="p-4 space-y-4">
-      {messages.map((message, index) => (
-        <div
-          key={index}
-          className={`flex ${
-            message.role === 'assistant' ? 'justify-start' : 'justify-end'
-          }`}
-        >
+    <ScrollArea 
+      ref={scrollAreaRef}
+      className="h-[500px] p-4"
+    >
+      <div className="space-y-4">
+        {messages.map((message, index) => (
           <div
-            className={`max-w-[80%] rounded-lg p-3 ${
-              message.role === 'assistant'
-                ? 'bg-secondary text-secondary-foreground'
-                : 'bg-primary text-primary-foreground'
+            key={index}
+            className={`flex ${
+              message.role === 'assistant' ? 'justify-start' : 'justify-end'
             }`}
           >
-            <p className="whitespace-pre-wrap">{message.content}</p>
+            <div
+              className={`max-w-[80%] rounded-lg p-3 ${
+                message.role === 'assistant'
+                  ? 'bg-secondary text-secondary-foreground'
+                  : 'bg-primary text-primary-foreground'
+              }`}
+            >
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }

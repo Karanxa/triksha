@@ -74,12 +74,10 @@ export function ContextualScanForm() {
         throw error;
       }
 
-      console.log("Scan completed:", data);
-      toast.success("Scan completed successfully");
+      console.log("Scan initiated:", data);
     } catch (error: any) {
       console.error('Scan error:', error);
       toast.error(error.message || "Failed to start scan");
-    } finally {
       setIsScanning(false);
     }
   };
@@ -162,7 +160,7 @@ export function ContextualScanForm() {
       </div>
 
       {scanId && (
-        <Card className="mt-8">
+        <Card>
           <ScrollArea className="h-[500px]">
             <ChatWindow scanId={scanId} />
           </ScrollArea>
