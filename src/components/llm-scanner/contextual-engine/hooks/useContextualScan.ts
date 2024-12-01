@@ -32,20 +32,8 @@ export const useContextualScan = () => {
     const question = FINGERPRINTING_QUESTIONS[currentStep];
 
     try {
-      // Add user question with timestamp
-      const userMessage: Message = { 
-        role: 'user', 
-        content: question,
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, userMessage]);
-
-      console.log('Sending request to contextual-fingerprint:', {
-        provider,
-        model,
-        prompt: question,
-        customEndpoint
-      });
+      console.log('Processing question:', question);
+      setMessages(prev => [...prev, { role: 'user', content: question }]);
 
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
@@ -56,45 +44,31 @@ export const useContextualScan = () => {
         }
       });
 
-      if (error) {
-        console.error('Error from contextual-fingerprint:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data?.response) {
-        console.error('No response received:', data);
         throw new Error('No response received from the model');
       }
 
       console.log('Received response:', data.response);
 
-      // Add model response with timestamp
-      const assistantMessage: Message = { 
-        role: 'assistant', 
-        content: data.response,
-        timestamp: new Date().toISOString()
-      };
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
       setCurrentStep(prev => prev + 1);
+      
       return true;
     } catch (error: any) {
       console.error('Error in fingerprinting:', error);
       toast.error(`Error: ${error.message}`);
-      
-      const errorMessage: Message = { 
-        role: 'system', 
-        content: `Error: ${error.message}`,
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${error.message}` }]);
       return false;
     } finally {
       setIsLoading(false);
     }
   }, [currentStep]);
 
-  const startDatasetAnalysis = useCallback(async (
+  const startDatasetAnalysis = async (
     datasetId: string,
     fingerprint: any,
     provider: string,
@@ -105,8 +79,7 @@ export const useContextualScan = () => {
       setIsLoading(true);
       setMessages(prev => [...prev, { 
         role: 'system', 
-        content: 'Starting dataset analysis with fingerprint results...',
-        timestamp: new Date().toISOString()
+        content: 'Starting dataset analysis with fingerprint results...' 
       }]);
 
       const { data, error } = await supabase.functions.invoke('process-contextual-scan', {
@@ -123,16 +96,8 @@ export const useContextualScan = () => {
 
       setMessages(prev => [
         ...prev,
-        { 
-          role: 'assistant', 
-          content: 'Dataset analysis complete. Results:',
-          timestamp: new Date().toISOString()
-        },
-        { 
-          role: 'assistant', 
-          content: JSON.stringify(data.results, null, 2),
-          timestamp: new Date().toISOString()
-        }
+        { role: 'assistant', content: 'Dataset analysis complete. Results:' },
+        { role: 'assistant', content: JSON.stringify(data.results, null, 2) }
       ]);
 
     } catch (error: any) {
@@ -140,13 +105,12 @@ export const useContextualScan = () => {
       toast.error(`Dataset analysis failed: ${error.message}`);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: `Dataset analysis failed: ${error.message}`,
-        timestamp: new Date().toISOString()
+        content: `Dataset analysis failed: ${error.message}` 
       }]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  };
 
   const reset = () => {
     setMessages([]);

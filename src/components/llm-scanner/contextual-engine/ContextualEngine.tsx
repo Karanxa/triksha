@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Phase = "not_started" | "fingerprinting" | "dataset_analysis";
 
-export const GeraidEngine = () => {
+export const ContextualEngine = () => {
   const [phase, setPhase] = useState<Phase>("not_started");
   const [config, setConfig] = useState<any>(null);
   const [fingerprintResults, setFingerprintResults] = useState<any>(null);
@@ -20,6 +20,7 @@ export const GeraidEngine = () => {
   const [lastPausedStep, setLastPausedStep] = useState<any>(null);
 
   const handleStart = (config: any) => {
+    console.log("Starting analysis with config:", config);
     setConfig(config);
     setPhase("fingerprinting");
     setIsPaused(false);
@@ -29,21 +30,25 @@ export const GeraidEngine = () => {
   };
 
   const handleFingerprint = (results: any) => {
+    console.log("Fingerprint phase completed with results:", results);
     setFingerprintResults(results);
     setPhase("dataset_analysis");
   };
 
   const handlePause = () => {
+    console.log("Pausing scan");
     setIsPaused(true);
     toast.info("Scan paused");
   };
 
   const handleResume = () => {
+    console.log("Resuming scan");
     setIsPaused(false);
     toast.info("Scan resumed");
   };
 
   const handleStop = async () => {
+    console.log("Stopping scan");
     setIsStopped(true);
     toast.info("Scan stopped");
 
@@ -51,7 +56,6 @@ export const GeraidEngine = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Save scan results to database using new table name
       await supabase.from('contextual_scans').insert({
         user_id: user.id,
         provider: config.provider,

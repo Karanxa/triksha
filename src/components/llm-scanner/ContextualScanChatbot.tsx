@@ -12,7 +12,7 @@ interface ContextualChatbotProps {
   onFingerprint?: (results: any) => void;
 }
 
-export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => {
+export const ContextualScanChatbot = ({ onFingerprint }: ContextualChatbotProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
