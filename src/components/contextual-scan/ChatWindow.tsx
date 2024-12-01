@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Json } from "@/integrations/supabase/types";
 
 interface Message {
   role: 'assistant' | 'user';
@@ -9,6 +10,23 @@ interface Message {
 
 interface ChatWindowProps {
   scanId: string;
+}
+
+// Type guard to validate if a JSON object is a Message
+function isMessage(json: Json): json is Message {
+  if (typeof json !== 'object' || json === null) return false;
+  return (
+    'role' in json &&
+    'content' in json &&
+    (json.role === 'assistant' || json.role === 'user') &&
+    typeof json.content === 'string'
+  );
+}
+
+// Function to safely convert Json array to Message array
+function parseMessages(data: Json): Message[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter(isMessage);
 }
 
 export function ChatWindow({ scanId }: ChatWindowProps) {
@@ -25,7 +43,7 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         .single();
 
       if (!error && data?.messages) {
-        setMessages(data.messages as Message[]);
+        setMessages(parseMessages(data.messages));
       }
     };
 
@@ -45,7 +63,7 @@ export function ChatWindow({ scanId }: ChatWindowProps) {
         (payload) => {
           console.log("Received update:", payload);
           if (payload.new.messages) {
-            setMessages(payload.new.messages as Message[]);
+            setMessages(parseMessages(payload.new.messages));
           }
         }
       )
