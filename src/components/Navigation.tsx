@@ -1,28 +1,16 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
 import { Button } from "./ui/button";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { MobileNav } from "./navigation/MobileNav";
+import { NavLinks } from "./navigation/NavLinks";
 
 const Navigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
-  const links = [
-    { href: "/", label: "Home" },
-    { href: "/llm-scanner", label: "Scans" },
-    { href: "/automated-scans", label: "Automated" },
-    { href: "/llm-results", label: "Results" },
-    { href: "/datasets", label: "Datasets" },
-    { href: "/augment-prompt", label: "Augmentation" },
-    { href: "/fine-tuning", label: "Fine-tuning" },
-    { href: "/geraid", label: "Geraid" },
-    { href: "/contextual-scan", label: "Contextual Scan" },
-  ];
 
   const handleLogout = async () => {
     try {
@@ -35,51 +23,10 @@ const Navigation = () => {
     }
   };
 
-  const NavLinks = () => (
-    <>
-      {links.map((link) => (
-        <Link
-          key={link.href}
-          to={link.href}
-          className={cn(
-            "text-sm font-medium transition-colors hover:text-primary",
-            location.pathname === link.href
-              ? "text-foreground"
-              : "text-muted-foreground"
-          )}
-        >
-          {link.label}
-        </Link>
-      ))}
-    </>
-  );
-
   return (
     <nav className="border-b">
       <div className="h-16 px-4 flex items-center justify-between">
-        <Sheet>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[240px] sm:w-[280px]">
-            <div className="flex flex-col space-y-4 py-4">
-              <NavLinks />
-              <Link
-                to="/settings"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === "/settings"
-                    ? "text-foreground"
-                    : "text-muted-foreground"
-                )}
-              >
-                Keys
-              </Link>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <MobileNav />
 
         <div className="hidden md:flex items-center space-x-6">
           <NavLinks />
