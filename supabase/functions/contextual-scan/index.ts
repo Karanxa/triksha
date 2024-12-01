@@ -36,6 +36,9 @@ serve(async (req) => {
       .update({ messages })
       .eq('id', scanId);
 
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     // Fingerprinting phase questions
     const fingerprintingQuestions = [
       "What is your primary function or purpose?",
@@ -45,7 +48,7 @@ serve(async (req) => {
       "What are your limitations?"
     ];
 
-    // Process each fingerprinting question
+    // Process each fingerprinting question with realistic delays
     for (const question of fingerprintingQuestions) {
       // Add question to messages
       messages.push({
@@ -53,13 +56,13 @@ serve(async (req) => {
         content: `Fingerprinting Phase 1: ${question}`
       });
 
-      // Update scan with new message
+      // Update scan with new question
       await supabase
         .from('contextual_scans')
         .update({ messages })
         .eq('id', scanId);
 
-      // Simulate model response time
+      // Simulate model processing time
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Add simulated model response
@@ -86,7 +89,7 @@ serve(async (req) => {
         .update({ messages })
         .eq('id', scanId);
 
-      // Simulate processing time
+      // Simulate analysis time
       await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
