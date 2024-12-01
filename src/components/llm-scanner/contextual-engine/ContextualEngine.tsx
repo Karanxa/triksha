@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { FingerPrintPhase } from "./components/FingerPrintPhase";
-import { DatasetAnalysis } from "./components/DatasetAnalysis";
-import { InitialPhase } from "./components/InitialPhase";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { InitialPhase } from "./components/InitialPhase";
+import { ContextualChat } from "./components/ContextualChat";
+import { DatasetChat } from "./components/DatasetChat";
+import { AnalysisProgress } from "./components/AnalysisProgress";
 
 type Phase = "not_started" | "fingerprinting" | "dataset_analysis";
 
@@ -16,7 +17,7 @@ export const ContextualEngine = () => {
   const [fingerprintResults, setFingerprintResults] = useState<any>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
-  const [currentMessages, setCurrentMessages] = useState<any[]>([]);
+  const [progress, setProgress] = useState(0);
   const [lastPausedStep, setLastPausedStep] = useState<any>(null);
 
   const handleStart = (config: any) => {
@@ -25,7 +26,7 @@ export const ContextualEngine = () => {
     setPhase("fingerprinting");
     setIsPaused(false);
     setIsStopped(false);
-    setCurrentMessages([]);
+    setProgress(0);
     setLastPausedStep(null);
   };
 
@@ -36,19 +37,16 @@ export const ContextualEngine = () => {
   };
 
   const handlePause = () => {
-    console.log("Pausing scan");
     setIsPaused(true);
     toast.info("Scan paused");
   };
 
   const handleResume = () => {
-    console.log("Resuming scan");
     setIsPaused(false);
     toast.info("Scan resumed");
   };
 
   const handleStop = async () => {
-    console.log("Stopping scan");
     setIsStopped(true);
     toast.info("Scan stopped");
 
@@ -60,7 +58,6 @@ export const ContextualEngine = () => {
         user_id: user.id,
         provider: config.provider,
         model: config.model,
-        messages: [...currentMessages, { role: 'system', content: 'Scan stopped manually by user' }],
         fingerprint_results: fingerprintResults,
         is_vulnerable: null
       });
@@ -71,7 +68,7 @@ export const ContextualEngine = () => {
     }
   };
 
-  const renderPhase = () => {
+  const renderContent = () => {
     switch (phase) {
       case "not_started":
         return (
@@ -83,62 +80,6 @@ export const ContextualEngine = () => {
         );
 
       case "fingerprinting":
-        return (
-          <div className="space-y-4">
-            <div className="flex justify-end space-x-2">
-              {!isStopped && (
-                <>
-                  {isPaused ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleResume}
-                      className="flex items-center gap-2"
-                    >
-                      <PlayCircle className="h-4 w-4" />
-                      Resume
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePause}
-                      className="flex items-center gap-2"
-                    >
-                      <PauseCircle className="h-4 w-4" />
-                      Pause
-                    </Button>
-                  )}
-                </>
-              )}
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleStop}
-                className="flex items-center gap-2"
-                disabled={isStopped}
-              >
-                <StopCircle className="h-4 w-4" />
-                Stop
-              </Button>
-            </div>
-
-            <FingerPrintPhase
-              config={config}
-              onComplete={handleFingerprint}
-              onProgress={(progress) => {
-                setLastPausedStep({
-                  phase: "fingerprinting",
-                  progress
-                });
-              }}
-              isPaused={isPaused}
-              isStopped={isStopped}
-              lastPausedStep={lastPausedStep}
-            />
-          </div>
-        );
-
       case "dataset_analysis":
         return (
           <div className="space-y-4">
@@ -180,13 +121,29 @@ export const ContextualEngine = () => {
               </Button>
             </div>
 
-            <DatasetAnalysis
-              config={config}
-              fingerprint={fingerprintResults}
+            <AnalysisProgress 
+              phase={phase} 
+              progress={progress}
               isPaused={isPaused}
-              isStopped={isStopped}
-              lastPausedStep={lastPausedStep}
             />
+
+            {phase === "fingerprinting" ? (
+              <ContextualChat
+                config={config}
+                isPaused={isPaused}
+                isStopped={isStopped}
+                onComplete={handleFingerprint}
+                lastPausedStep={lastPausedStep?.step}
+              />
+            ) : (
+              <DatasetChat
+                config={config}
+                fingerprint={fingerprintResults}
+                isPaused={isPaused}
+                isStopped={isStopped}
+                onProgress={setProgress}
+              />
+            )}
           </div>
         );
     }
@@ -195,7 +152,7 @@ export const ContextualEngine = () => {
   return (
     <div className="container py-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Contextual Scan Engine</h1>
-      {renderPhase()}
+      {renderContent()}
     </div>
   );
 };
