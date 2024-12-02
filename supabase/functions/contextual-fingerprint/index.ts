@@ -58,6 +58,23 @@ serve(async (req) => {
 
     console.log('Got response from model:', modelResponse);
 
+    // Store the interaction in the database
+    const { error: insertError } = await supabase
+      .from('contextual_scans')
+      .insert({
+        user_id: user.id,
+        provider,
+        model,
+        messages: [
+          { role: 'user', content: prompt },
+          { role: 'assistant', content: modelResponse }
+        ]
+      });
+
+    if (insertError) {
+      console.error('Error storing scan:', insertError);
+    }
+
     return new Response(
       JSON.stringify({ response: modelResponse }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
