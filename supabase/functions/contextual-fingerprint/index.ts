@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     const { provider, model, prompt, customEndpoint } = await req.json();
-    console.log('Received request:', { provider, model, prompt });
+    console.log('Request received:', { provider, model, prompt });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -23,13 +23,19 @@ serve(async (req) => {
 
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) throw new Error('No authorization header');
+    if (!authHeader) {
+      console.error('No authorization header found');
+      throw new Error('No authorization header');
+    }
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
 
-    if (userError || !user) throw new Error('Invalid user token');
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      throw new Error('Invalid user token');
+    }
 
     // Get user's API keys
     const { data: profile, error: profileError } = await supabase
@@ -38,8 +44,14 @@ serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    if (profileError) throw new Error('Failed to fetch user profile');
-    if (!profile?.api_keys) throw new Error('API keys not configured');
+    if (profileError) {
+      console.error('Failed to fetch user profile:', profileError);
+      throw new Error('Failed to fetch user profile');
+    }
+    if (!profile?.api_keys) {
+      console.error('No API keys found in profile');
+      throw new Error('API keys not configured');
+    }
 
     let modelResponse;
     console.log('Attempting to get model response...');
@@ -50,21 +62,25 @@ serve(async (req) => {
     } else if (provider === 'openai') {
       console.log('Using OpenAI endpoint');
       const openaiKey = profile.api_keys.openai;
-      if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
+      if (!openaiKey) {
+        console.error('OpenAI API key not found in profile');
+        throw new Error('OpenAI API key not configured in Settings');
+      }
       modelResponse = await handleOpenAIRequest(prompt, model, openaiKey);
+      console.log('OpenAI response received:', modelResponse ? 'success' : 'null');
     } else if (provider === 'anthropic') {
       console.log('Using Anthropic endpoint');
       const anthropicKey = profile.api_keys.anthropic;
       if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
       modelResponse = await handleAnthropicRequest(prompt, model, anthropicKey);
     } else {
+      console.error('Unsupported provider:', provider);
       throw new Error('Unsupported provider');
     }
 
-    console.log('Got response from model:', modelResponse);
-
     // Validate response
     if (!modelResponse || typeof modelResponse !== 'string') {
+      console.error('Invalid response format:', modelResponse);
       throw new Error('Invalid response format from model');
     }
 
@@ -85,6 +101,7 @@ serve(async (req) => {
       console.error('Error storing scan:', insertError);
     }
 
+    console.log('Successfully processed request, sending response');
     return new Response(
       JSON.stringify({ response: modelResponse }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -102,6 +119,7 @@ serve(async (req) => {
 });
 
 async function handleCustomRequest(prompt: string, customEndpoint: any) {
+  console.log('Processing custom request');
   const { url, method, headers: rawHeaders, inputType, httpRequest, curlCommand } = customEndpoint;
   
   let requestUrl = url;
@@ -179,6 +197,7 @@ async function handleOpenAIRequest(prompt: string, model: string, apiKey: string
   }
 
   const data = await response.json();
+  console.log('OpenAI response structure:', JSON.stringify(data, null, 2));
   return data.choices[0].message.content;
 }
 
