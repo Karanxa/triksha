@@ -35,6 +35,33 @@ export const DatasetChat = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [prompts, setPrompts] = useState<string[]>([]);
+  const [apiKeys, setApiKeys] = useState<any>(null);
+
+  // Fetch API keys from user profile
+  useEffect(() => {
+    const fetchApiKeys = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("User not authenticated");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        toast.error("Failed to fetch API keys");
+        return;
+      }
+
+      setApiKeys(profile.api_keys);
+    };
+
+    fetchApiKeys();
+  }, []);
 
   useEffect(() => {
     const loadDataset = async () => {
@@ -85,7 +112,7 @@ export const DatasetChat = ({
 
   useEffect(() => {
     const processNextPrompt = async () => {
-      if (isPaused || isStopped || isLoading || currentPromptIndex >= prompts.length) {
+      if (isPaused || isStopped || isLoading || currentPromptIndex >= prompts.length || !apiKeys) {
         return;
       }
 
@@ -98,6 +125,7 @@ export const DatasetChat = ({
             provider: config.provider,
             model: config.model,
             prompt,
+            apiKey: apiKeys[config.provider.toLowerCase()],
             customEndpoint: config.customEndpoint
           }
         });
@@ -130,7 +158,7 @@ export const DatasetChat = ({
 
     const timer = setTimeout(processNextPrompt, 1000);
     return () => clearTimeout(timer);
-  }, [currentPromptIndex, isPaused, isStopped, prompts.length, config, isLoading]);
+  }, [currentPromptIndex, isPaused, isStopped, prompts.length, config, isLoading, apiKeys]);
 
   return (
     <Card className="p-4">
