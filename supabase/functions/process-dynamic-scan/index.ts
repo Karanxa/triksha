@@ -1,50 +1,57 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { provider, model, prompt, customEndpoint } = await req.json()
-    console.log('Processing dynamic scan:', { provider, model, prompt })
+    const { provider, model, prompt, apiKey, customEndpoint } = await req.json();
+    console.log('Processing dynamic scan:', { provider, model });
 
-    let response
+    if (!apiKey) {
+      throw new Error(`API key not found for provider: ${provider}`);
+    }
+
+    let response;
     if (provider === 'openai') {
-      const openAIApiKey = Deno.env.get('OPENAI_API_KEY')
-      if (!openAIApiKey) throw new Error('OpenAI API key not configured')
-
+      console.log('Making OpenAI request...');
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: model === 'gpt-4o' ? 'gpt-4o' : 'gpt-4o-mini',
+          model: model === 'gpt-4o' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
           messages: [
             { role: 'system', content: 'You are a helpful AI assistant.' },
             { role: 'user', content: prompt }
           ],
         }),
-      })
+      });
 
-      const data = await openaiResponse.json()
-      response = data.choices[0].message.content
+      if (!openaiResponse.ok) {
+        const errorText = await openaiResponse.text();
+        console.error('OpenAI API error:', errorText);
+        throw new Error(`OpenAI API error: ${errorText}`);
+      }
+
+      const data = await openaiResponse.json();
+      response = data.choices[0].message.content;
     } else if (provider === 'anthropic') {
-      const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY')
-      if (!anthropicApiKey) throw new Error('Anthropic API key not configured')
-
+      console.log('Making Anthropic request...');
       const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
-          'x-api-key': anthropicApiKey,
+          'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
           'content-type': 'application/json',
         },
@@ -53,36 +60,59 @@ serve(async (req) => {
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 1024,
         }),
-      })
+      });
 
-      const data = await anthropicResponse.json()
-      response = data.content[0].text
+      if (!anthropicResponse.ok) {
+        const errorText = await anthropicResponse.text();
+        console.error('Anthropic API error:', errorText);
+        throw new Error(`Anthropic API error: ${errorText}`);
+      }
+
+      const data = await anthropicResponse.json();
+      response = data.content[0].text;
     } else if (provider === 'custom' && customEndpoint) {
+      console.log('Making custom endpoint request...');
       const customResponse = await fetch(customEndpoint.url, {
-        method: customEndpoint.method,
-        headers: JSON.parse(customEndpoint.headers || '{}'),
-        body: JSON.stringify({ prompt: prompt }),
-      })
+        method: customEndpoint.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {})
+        },
+        body: JSON.stringify({ prompt }),
+      });
 
-      const data = await customResponse.json()
-      response = data.response || data.text || JSON.stringify(data)
+      if (!customResponse.ok) {
+        const errorText = await customResponse.text();
+        console.error('Custom endpoint error:', errorText);
+        throw new Error(`Custom endpoint error: ${errorText}`);
+      }
+
+      const data = await customResponse.json();
+      response = data.response || data.text || JSON.stringify(data);
     } else {
-      throw new Error('Unsupported provider')
+      throw new Error(`Unsupported provider: ${provider}`);
     }
 
+    console.log('Successfully processed request');
     return new Response(
       JSON.stringify({ response }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    );
 
   } catch (error) {
-    console.error('Error in dynamic scan:', error)
+    console.error('Error in dynamic scan:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        status: 'error'
+      }),
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 // We return 200 but with error in payload to handle it gracefully in frontend
       }
-    )
+    );
   }
-})
+});
