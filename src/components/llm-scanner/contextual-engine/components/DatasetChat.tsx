@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Message } from "../types";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,12 +59,16 @@ export const DatasetChat = ({
         return;
       }
 
-      console.log('API keys fetched successfully');
+      console.log('API keys fetched successfully:', {
+        hasOpenAI: !!profile.api_keys?.openai,
+        hasAnthropic: !!profile.api_keys?.anthropic,
+        provider: config.provider
+      });
       setApiKeys(profile.api_keys);
     };
 
     fetchApiKeys();
-  }, []);
+  }, [config.provider]);
 
   // Load dataset prompts
   useEffect(() => {
@@ -138,7 +142,12 @@ export const DatasetChat = ({
       console.log('Processing prompt:', { index: currentPromptIndex, prompt });
 
       try {
-        console.log('Calling process-dynamic-scan function...');
+        console.log('Calling process-dynamic-scan function...', {
+          provider: config.provider,
+          model: config.model,
+          hasApiKey: !!apiKeys[config.provider.toLowerCase()]
+        });
+        
         const startTime = Date.now();
         const { data, error } = await supabase.functions.invoke('process-dynamic-scan', {
           body: {
@@ -150,9 +159,19 @@ export const DatasetChat = ({
           }
         });
         const endTime = Date.now();
-        console.log(`Edge function response received in ${endTime - startTime}ms`);
+        console.log('Edge function response:', { 
+          error: error?.message,
+          hasData: !!data,
+          responseTime: `${endTime - startTime}ms`
+        });
 
         if (error) throw error;
+        if (!data?.response) throw new Error('No response received from model');
+
+        console.log('Adding messages to chat:', {
+          prompt,
+          responseLength: data.response.length
+        });
 
         setMessages(prev => [
           ...prev,
