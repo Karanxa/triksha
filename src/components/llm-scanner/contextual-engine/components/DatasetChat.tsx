@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Message, ApiKeys } from "../types";
+import { Message } from "../types";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TypingIndicator } from "../../chat/TypingIndicator";
+import { ApiKeys } from "@/integrations/supabase/types/common";
 
 interface DatasetChatProps {
   config: {
@@ -64,6 +65,7 @@ export const DatasetChat = ({
         hasAnthropic: !!profile.api_keys?.anthropic,
         provider: config.provider
       });
+      
       setApiKeys(profile.api_keys as ApiKeys);
     };
 
