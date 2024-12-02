@@ -4,12 +4,19 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TypingIndicator } from "../../chat/TypingIndicator";
 
 interface DatasetChatProps {
   config: {
     provider: string;
     model: string;
     datasetId: string;
+    customEndpoint?: {
+      url: string;
+      apiKey: string;
+      headers: string;
+      method: string;
+    };
   };
   fingerprint: any;
   isPaused: boolean;
@@ -32,7 +39,6 @@ export const DatasetChat = ({
   useEffect(() => {
     const loadDataset = async () => {
       try {
-        // Get dataset content
         const { data: dataset } = await supabase
           .from('datasets')
           .select('*')
@@ -41,7 +47,6 @@ export const DatasetChat = ({
 
         if (!dataset) throw new Error('Dataset not found');
 
-        // Download and parse CSV
         const { data: fileData } = await supabase.storage
           .from('datasets')
           .download(dataset.file_path);
@@ -72,94 +77,64 @@ export const DatasetChat = ({
       } catch (error) {
         console.error('Error loading dataset:', error);
         toast.error('Failed to load dataset');
-        setMessages([{ 
-          role: 'system', 
-          content: `Error: ${error instanceof Error ? error.message : 'Failed to load dataset'}`,
-          timestamp: new Date().toISOString()
-        }]);
       }
     };
 
     loadDataset();
   }, [config.datasetId]);
 
-  const processNextPrompt = async () => {
-    if (isPaused || isStopped || isLoading || currentPromptIndex >= prompts.length) {
-      return;
-    }
-
-    setIsLoading(true);
-    const prompt = prompts[currentPromptIndex];
-
-    try {
-      // First augment the prompt using fingerprint results
-      const { data: augmentData, error: augmentError } = await supabase.functions.invoke('process-contextual-scan', {
-        body: {
-          prompt,
-          fingerprint,
-          provider: config.provider,
-          model: config.model
-        }
-      });
-
-      if (augmentError) throw augmentError;
-
-      const augmentedPrompt = augmentData.augmentedPrompt;
-
-      // Add the augmented prompt to messages
-      setMessages(prev => [...prev, { 
-        role: 'system', 
-        content: `Original prompt: ${prompt}\nAugmented prompt: ${augmentedPrompt}`,
-        timestamp: new Date().toISOString()
-      }]);
-
-      // Send augmented prompt to model
-      const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
-        body: {
-          provider: config.provider,
-          model: config.model,
-          prompt: augmentedPrompt
-        }
-      });
-
-      if (error) throw error;
-
-      // Add model's response
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: data.response,
-        timestamp: new Date().toISOString()
-      }]);
-
-      // Update progress
-      const progress = Math.round(((currentPromptIndex + 1) / prompts.length) * 100);
-      onProgress(progress);
-
-      setCurrentPromptIndex(prev => prev + 1);
-
-    } catch (error) {
-      console.error('Error processing prompt:', error);
-      toast.error('Failed to process prompt');
-      
-      setMessages(prev => [...prev, { 
-        role: 'system', 
-        content: `Error: ${error instanceof Error ? error.message : 'Failed to process prompt'}`,
-        timestamp: new Date().toISOString()
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (prompts.length > 0 && !isPaused && !isStopped) {
-      processNextPrompt();
-    }
-  }, [currentPromptIndex, isPaused, isStopped, prompts.length]);
+    const processNextPrompt = async () => {
+      if (isPaused || isStopped || isLoading || currentPromptIndex >= prompts.length) {
+        return;
+      }
+
+      setIsLoading(true);
+      const prompt = prompts[currentPromptIndex];
+
+      try {
+        const { data, error } = await supabase.functions.invoke('process-dynamic-scan', {
+          body: {
+            provider: config.provider,
+            model: config.model,
+            prompt,
+            customEndpoint: config.customEndpoint
+          }
+        });
+
+        if (error) throw error;
+
+        setMessages(prev => [
+          ...prev,
+          { role: 'user', content: prompt, timestamp: new Date().toISOString() },
+          { role: 'assistant', content: data.response, timestamp: new Date().toISOString() }
+        ]);
+
+        const progress = Math.round(((currentPromptIndex + 1) / prompts.length) * 100);
+        onProgress(progress);
+
+        setCurrentPromptIndex(prev => prev + 1);
+      } catch (error) {
+        console.error('Error processing prompt:', error);
+        toast.error('Failed to process prompt');
+        
+        setMessages(prev => [...prev, { 
+          role: 'system', 
+          content: `Error: ${error instanceof Error ? error.message : 'Failed to process prompt'}`,
+          timestamp: new Date().toISOString()
+        }]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const timer = setTimeout(processNextPrompt, 1000);
+    return () => clearTimeout(timer);
+  }, [currentPromptIndex, isPaused, isStopped, prompts.length, config, isLoading]);
 
   return (
     <Card className="p-4">
-      <ScrollArea className="h-[400px]">
+      <ScrollArea className="h-[600px]">
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div
@@ -184,17 +159,7 @@ export const DatasetChat = ({
               </div>
             </div>
           ))}
-          {isLoading && !isPaused && !isStopped && (
-            <div className="flex justify-start">
-              <div className="bg-accent rounded-lg p-3">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-100" />
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-200" />
-                </div>
-              </div>
-            </div>
-          )}
+          {isLoading && !isPaused && !isStopped && <TypingIndicator />}
         </div>
       </ScrollArea>
     </Card>

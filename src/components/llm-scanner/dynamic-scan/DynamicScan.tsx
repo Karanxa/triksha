@@ -1,144 +1,122 @@
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ModelSelector } from "../contextual-engine/ModelSelector";
+import { DatasetSelector } from "../contextual-engine/DatasetSelector";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { ModelSelect } from "../providers/ModelSelect";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2 } from "lucide-react";
+import { DatasetChat } from "../contextual-engine/components/DatasetChat";
+import { CustomEndpoint } from "../types/CustomEndpoint";
 import { toast } from "sonner";
-import { useForm } from "react-hook-form";
-import { supabase } from "@/integrations/supabase/client";
 
 export const DynamicScan = () => {
-  const [isScanning, setIsScanning] = useState(false);
-  const [responses, setResponses] = useState<Array<{ prompt: string; response: string }>>([]);
-  const form = useForm({
-    defaultValues: {
-      model: "",
-      initialPrompt: ""
-    }
+  const [provider, setProvider] = useState("");
+  const [model, setModel] = useState("");
+  const [selectedDataset, setSelectedDataset] = useState("");
+  const [isStarted, setIsStarted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isStopped, setIsStopped] = useState(false);
+  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
+    url: '',
+    apiKey: '',
+    headers: '',
+    placeholder: '{PROMPT}',
+    curlCommand: '',
+    inputType: 'manual',
+    method: 'POST'
   });
 
-  const startScan = async (values: { model: string; initialPrompt: string }) => {
-    try {
-      setIsScanning(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error("You must be logged in to perform scans");
-        return;
-      }
-
-      // Create a new scan record
-      const { data: scan, error: scanError } = await supabase
-        .from('llm_scans')
-        .insert({
-          user_id: user.id,
-          name: "Dynamic Scan",
-          status: 'processing',
-          scan_type: 'dynamic_scan',
-          results: {
-            initial_prompt: values.initialPrompt,
-            model: values.model,
-            responses: []
-          }
-        })
-        .select()
-        .single();
-
-      if (scanError) throw scanError;
-
-      // Start the dynamic scan process
-      const { data, error } = await supabase.functions.invoke('dynamic-scan', {
-        body: {
-          scanId: scan.id,
-          model: values.model,
-          initialPrompt: values.initialPrompt
-        }
-      });
-
-      if (error) throw error;
-
-      setResponses(data.responses);
-      toast.success("Dynamic scan completed successfully");
-
-    } catch (error: any) {
-      console.error("Dynamic scan error:", error);
-      toast.error("Failed to complete dynamic scan: " + error.message);
-    } finally {
-      setIsScanning(false);
+  const handleStart = () => {
+    if (!provider || (!model && provider !== 'custom')) {
+      toast.error("Please select a provider and model");
+      return;
     }
+
+    if (!selectedDataset) {
+      toast.error("Please select a dataset");
+      return;
+    }
+
+    setIsStarted(true);
   };
 
-  return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Dynamic Scan</CardTitle>
-          <CardDescription>
-            Start an adaptive scanning session that evolves based on the model's responses
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(startScan)} className="space-y-6">
-            <div className="space-y-2">
-              <ModelSelect
-                name="model"
-                label="Model"
-                placeholder="Select a model"
-              />
-            </div>
+  const handlePause = () => {
+    setIsPaused(prev => !prev);
+  };
 
-            <div className="space-y-2">
-              <Label htmlFor="initialPrompt">Initial Prompt</Label>
-              <Textarea
-                id="initialPrompt"
-                placeholder="Enter your initial prompt..."
-                className="min-h-[100px]"
-                {...form.register("initialPrompt", { required: true })}
-              />
-            </div>
+  const handleStop = () => {
+    setIsStopped(true);
+  };
 
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isScanning}
-            >
-              {isScanning ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Scan...
-                </>
-              ) : (
-                "Start Dynamic Scan"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+  const handleProgress = (progress: number) => {
+    console.log('Scan progress:', progress);
+  };
 
-      {responses.length > 0 && (
+  if (!isStarted) {
+    return (
+      <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Scan Results</CardTitle>
+            <CardTitle>Dynamic Dataset Scan</CardTitle>
+            <CardDescription>
+              Test your model against a dataset and analyze its responses in real-time
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-4">
-                {responses.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="font-medium">Prompt {index + 1}:</div>
-                    <div className="bg-muted p-3 rounded-md">{item.prompt}</div>
-                    <div className="font-medium">Response:</div>
-                    <div className="bg-muted p-3 rounded-md">{item.response}</div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+          <CardContent className="space-y-6">
+            <ModelSelector
+              provider={provider}
+              model={model}
+              onProviderChange={setProvider}
+              onModelChange={setModel}
+              customEndpoint={customEndpoint}
+              onCustomEndpointChange={(endpoint) => setCustomEndpoint(prev => ({ ...prev, ...endpoint }))}
+            />
+
+            <DatasetSelector
+              value={selectedDataset}
+              onValueChange={setSelectedDataset}
+            />
+
+            <Button 
+              onClick={handleStart}
+              className="w-full"
+              disabled={!provider || (!model && provider !== 'custom') || !selectedDataset}
+            >
+              Start Dynamic Scan
+            </Button>
           </CardContent>
         </Card>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end space-x-2">
+        <Button
+          variant="outline"
+          onClick={handlePause}
+        >
+          {isPaused ? "Resume" : "Pause"}
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={handleStop}
+        >
+          Stop Scan
+        </Button>
+      </div>
+
+      <DatasetChat
+        config={{
+          provider,
+          model,
+          datasetId: selectedDataset,
+          customEndpoint
+        }}
+        fingerprint={{}}
+        isPaused={isPaused}
+        isStopped={isStopped}
+        onProgress={handleProgress}
+      />
     </div>
   );
 };
