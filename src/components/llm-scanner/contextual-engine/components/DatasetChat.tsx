@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Message } from "../types";
+import { Message, ApiKeys } from "../types";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,7 +35,7 @@ export const DatasetChat = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [prompts, setPrompts] = useState<string[]>([]);
-  const [apiKeys, setApiKeys] = useState<any>(null);
+  const [apiKeys, setApiKeys] = useState<ApiKeys | null>(null);
 
   // Fetch API keys from user profile
   useEffect(() => {
@@ -64,7 +64,7 @@ export const DatasetChat = ({
         hasAnthropic: !!profile.api_keys?.anthropic,
         provider: config.provider
       });
-      setApiKeys(profile.api_keys);
+      setApiKeys(profile.api_keys as ApiKeys);
     };
 
     fetchApiKeys();
@@ -142,10 +142,11 @@ export const DatasetChat = ({
       console.log('Processing prompt:', { index: currentPromptIndex, prompt });
 
       try {
+        const providerKey = config.provider.toLowerCase() as keyof ApiKeys;
         console.log('Calling process-dynamic-scan function...', {
           provider: config.provider,
           model: config.model,
-          hasApiKey: !!apiKeys[config.provider.toLowerCase()]
+          hasApiKey: !!apiKeys[providerKey]
         });
         
         const startTime = Date.now();
@@ -154,7 +155,7 @@ export const DatasetChat = ({
             provider: config.provider,
             model: config.model,
             prompt,
-            apiKey: apiKeys[config.provider.toLowerCase()],
+            apiKey: apiKeys[providerKey],
             customEndpoint: config.customEndpoint
           }
         });
