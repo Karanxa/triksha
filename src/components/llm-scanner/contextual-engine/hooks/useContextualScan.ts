@@ -84,8 +84,52 @@ export const useContextualScan = () => {
     }
   }, [currentStep, processedQuestions]);
 
+  const startDatasetAnalysis = async (
+    datasetId: string,
+    fingerprint: any,
+    provider: string,
+    model: string,
+    customEndpoint?: CustomEndpoint
+  ) => {
+    try {
+      setIsLoading(true);
+      setMessages(prev => [...prev, { 
+        role: 'system', 
+        content: 'Starting dataset analysis with fingerprint results...' 
+      }]);
+
+      const { data, error } = await supabase.functions.invoke('process-contextual-scan', {
+        body: {
+          datasetId,
+          provider,
+          model,
+          fingerprint,
+          customEndpoint
+        }
+      });
+
+      if (error) throw error;
+
+      // Add analysis results to chat
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: 'Dataset analysis complete. Results:' },
+        { role: 'assistant', content: JSON.stringify(data.results, null, 2) }
+      ]);
+
+    } catch (error: any) {
+      console.error('Dataset analysis error:', error);
+      toast.error(`Dataset analysis failed: ${error.message}`);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `Dataset analysis failed: ${error.message}` 
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const reset = () => {
-    console.log('Resetting contextual scan state');
     setMessages([]);
     setCurrentStep(0);
     setScanComplete(false);
@@ -99,6 +143,7 @@ export const useContextualScan = () => {
     currentStep,
     scanComplete,
     processNextQuestion,
+    startDatasetAnalysis,
     reset,
     totalQuestions: FINGERPRINTING_QUESTIONS.length
   };
