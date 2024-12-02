@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     const { provider, model, prompt, customEndpoint } = await req.json();
-    console.log('Fingerprinting request:', { provider, model, prompt });
+    console.log('Received request:', { provider, model, prompt });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -42,13 +42,18 @@ serve(async (req) => {
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
     let modelResponse;
+    console.log('Attempting to get model response...');
+
     if (provider === 'custom' && customEndpoint) {
+      console.log('Using custom endpoint');
       modelResponse = await handleCustomRequest(prompt, customEndpoint);
     } else if (provider === 'openai') {
+      console.log('Using OpenAI endpoint');
       const openaiKey = profile.api_keys.openai;
       if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
       modelResponse = await handleOpenAIRequest(prompt, model, openaiKey);
     } else if (provider === 'anthropic') {
+      console.log('Using Anthropic endpoint');
       const anthropicKey = profile.api_keys.anthropic;
       if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
       modelResponse = await handleAnthropicRequest(prompt, model, anthropicKey);
@@ -57,6 +62,11 @@ serve(async (req) => {
     }
 
     console.log('Got response from model:', modelResponse);
+
+    // Validate response
+    if (!modelResponse || typeof modelResponse !== 'string') {
+      throw new Error('Invalid response format from model');
+    }
 
     // Store the interaction in the database
     const { error: insertError } = await supabase
@@ -85,7 +95,7 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
