@@ -14,13 +14,15 @@ serve(async (req) => {
 
   try {
     const { provider, model, prompt, apiKey, customEndpoint } = await req.json();
-    console.log('Processing dynamic scan:', { provider, model });
+    console.log('Processing dynamic scan:', { provider, model, promptLength: prompt?.length });
 
     if (!apiKey) {
       throw new Error(`API key not found for provider: ${provider}`);
     }
 
     let response;
+    const startTime = Date.now();
+
     if (provider === 'openai') {
       console.log('Making OpenAI request...');
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -93,7 +95,9 @@ serve(async (req) => {
       throw new Error(`Unsupported provider: ${provider}`);
     }
 
-    console.log('Successfully processed request');
+    const endTime = Date.now();
+    console.log(`Request completed in ${endTime - startTime}ms`);
+
     return new Response(
       JSON.stringify({ response }),
       { 

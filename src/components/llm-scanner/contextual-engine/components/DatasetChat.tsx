@@ -40,6 +40,7 @@ export const DatasetChat = ({
   // Fetch API keys from user profile
   useEffect(() => {
     const fetchApiKeys = async () => {
+      console.log('Fetching API keys...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("User not authenticated");
@@ -53,18 +54,22 @@ export const DatasetChat = ({
         .single();
 
       if (error) {
+        console.error('Error fetching API keys:', error);
         toast.error("Failed to fetch API keys");
         return;
       }
 
+      console.log('API keys fetched successfully');
       setApiKeys(profile.api_keys);
     };
 
     fetchApiKeys();
   }, []);
 
+  // Load dataset prompts
   useEffect(() => {
     const loadDataset = async () => {
+      console.log('Loading dataset:', config.datasetId);
       try {
         const { data: dataset } = await supabase
           .from('datasets')
@@ -73,11 +78,13 @@ export const DatasetChat = ({
           .single();
 
         if (!dataset) throw new Error('Dataset not found');
+        console.log('Dataset found:', dataset.name);
 
         const { data: fileData } = await supabase.storage
           .from('datasets')
           .download(dataset.file_path);
 
+        console.log('Dataset file downloaded');
         const text = await fileData.text();
         const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
         const headers = lines[0].toLowerCase().split(',');
@@ -94,6 +101,7 @@ export const DatasetChat = ({
           })
           .filter(Boolean);
 
+        console.log(`Extracted ${extractedPrompts.length} prompts from dataset`);
         setPrompts(extractedPrompts);
         setMessages([{ 
           role: 'system', 
@@ -110,16 +118,28 @@ export const DatasetChat = ({
     loadDataset();
   }, [config.datasetId]);
 
+  // Process prompts
   useEffect(() => {
     const processNextPrompt = async () => {
       if (isPaused || isStopped || isLoading || currentPromptIndex >= prompts.length || !apiKeys) {
+        console.log('Skipping prompt processing:', {
+          isPaused,
+          isStopped,
+          isLoading,
+          currentPromptIndex,
+          totalPrompts: prompts.length,
+          hasApiKeys: !!apiKeys
+        });
         return;
       }
 
       setIsLoading(true);
       const prompt = prompts[currentPromptIndex];
+      console.log('Processing prompt:', { index: currentPromptIndex, prompt });
 
       try {
+        console.log('Calling process-dynamic-scan function...');
+        const startTime = Date.now();
         const { data, error } = await supabase.functions.invoke('process-dynamic-scan', {
           body: {
             provider: config.provider,
@@ -129,6 +149,8 @@ export const DatasetChat = ({
             customEndpoint: config.customEndpoint
           }
         });
+        const endTime = Date.now();
+        console.log(`Edge function response received in ${endTime - startTime}ms`);
 
         if (error) throw error;
 
@@ -140,6 +162,7 @@ export const DatasetChat = ({
 
         const progress = Math.round(((currentPromptIndex + 1) / prompts.length) * 100);
         onProgress(progress);
+        console.log('Progress updated:', progress);
 
         setCurrentPromptIndex(prev => prev + 1);
       } catch (error) {
