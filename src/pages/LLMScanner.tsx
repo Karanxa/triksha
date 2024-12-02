@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ScanTabs } from "@/components/llm-scanner/ScanTabs";
 import ToolCard from "@/components/ToolCard";
-import { Shield, Zap } from "lucide-react";
+import { Shield, Zap, Wand2 } from "lucide-react";
 import { useState } from "react";
 
 const LLMScanner = () => {
@@ -19,6 +19,12 @@ const LLMScanner = () => {
       title: "Contextual Scan",
       description: "Advanced LLM testing with automated analysis and reporting",
       icon: Zap
+    },
+    {
+      id: "dynamic",
+      title: "Dynamic Scan",
+      description: "Adaptive scanning that evolves based on model responses",
+      icon: Wand2
     }
   ];
 
