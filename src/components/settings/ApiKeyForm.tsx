@@ -36,8 +36,17 @@ export const ApiKeyForm = () => {
           .single();
           
         if (error) throw error;
+        
         if (data?.api_keys) {
-          setKeys(data.api_keys as ApiKeys);
+          // Ensure all expected keys exist with empty strings as defaults
+          setKeys({
+            openai: data.api_keys.openai || "",
+            anthropic: data.api_keys.anthropic || "",
+            gemini: data.api_keys.gemini || "",
+            huggingface: data.api_keys.huggingface || "",
+            github: data.api_keys.github || "",
+            ollama_endpoint: data.api_keys.ollama_endpoint || ""
+          });
         }
       } catch (error) {
         console.error('Error fetching API keys:', error);
@@ -56,9 +65,19 @@ export const ApiKeyForm = () => {
 
     setSaving(true);
     try {
+      // Ensure we're sending a complete object with all required keys
+      const apiKeys = {
+        openai: keys.openai || "",
+        anthropic: keys.anthropic || "",
+        gemini: keys.gemini || "",
+        huggingface: keys.huggingface || "",
+        github: keys.github || "",
+        ollama_endpoint: keys.ollama_endpoint || ""
+      };
+
       const { error } = await supabase
         .from('profiles')
-        .update({ api_keys: keys })
+        .update({ api_keys: apiKeys })
         .eq('id', session.user.id);
 
       if (error) throw error;
