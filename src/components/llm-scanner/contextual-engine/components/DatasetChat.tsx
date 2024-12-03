@@ -66,7 +66,12 @@ export const DatasetChat = ({
         provider: config.provider
       });
       
-      setApiKeys(profile.api_keys as ApiKeys);
+      if (typeof profile.api_keys === 'object' && profile.api_keys !== null) {
+        setApiKeys(profile.api_keys as ApiKeys);
+      } else {
+        console.error('Invalid API keys format:', profile.api_keys);
+        toast.error("Invalid API keys format");
+      }
     };
 
     fetchApiKeys();
@@ -145,10 +150,12 @@ export const DatasetChat = ({
 
       try {
         const providerKey = config.provider.toLowerCase() as keyof ApiKeys;
+        const apiKey = apiKeys[providerKey];
+        
         console.log('Calling process-dynamic-scan function...', {
           provider: config.provider,
           model: config.model,
-          hasApiKey: !!apiKeys[providerKey]
+          hasApiKey: !!apiKey
         });
         
         const startTime = Date.now();
@@ -157,7 +164,7 @@ export const DatasetChat = ({
             provider: config.provider,
             model: config.model,
             prompt,
-            apiKey: apiKeys[providerKey],
+            apiKey,
             customEndpoint: config.customEndpoint
           }
         });
