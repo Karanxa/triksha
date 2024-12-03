@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { augmentPrompts } from './promptAugmenter.ts'
-import { testPromptsWithModel } from './modelTester.ts'
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
+import { generateRecipePrompts } from "./recipeGenerator.ts"
+import { generateAdversarialPrompts } from "./adversarialGenerator.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,15 +18,13 @@ serve(async (req) => {
     const { 
       name, 
       description, 
-      originalPrompts, 
-      provider,
-      model,
-      fingerprintResults 
+      basePrompt,
+      numSamples,
+      method,
+      recipe,
+      targetModel,
+      adversarialConfig 
     } = await req.json()
-
-    if (!name || !originalPrompts || !Array.isArray(originalPrompts)) {
-      throw new Error('Invalid input: name and originalPrompts array are required')
-    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -42,39 +41,24 @@ serve(async (req) => {
 
     if (userError || !user) throw userError || new Error('User not found')
 
-    // Get user's API key
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile?.api_keys?.openai) {
-      throw new Error('OpenAI API key not found')
+    // Generate prompts based on method
+    let prompts: string[];
+    if (method === 'manual') {
+      prompts = Array(numSamples).fill(basePrompt);
+    } else if (method === 'recipe') {
+      prompts = await generateRecipePrompts({
+        recipe,
+        targetModel,
+        numSamples
+      });
+    } else {
+      prompts = await generateAdversarialPrompts(adversarialConfig, numSamples);
     }
 
-    // Step 1: Augment prompts using fingerprint results
-    const augmentedPrompts = await augmentPrompts(
-      originalPrompts,
-      fingerprintResults,
-      profile.api_keys.openai
-    )
-
-    // Step 2: Test augmented prompts with target model
-    const testResults = await testPromptsWithModel(
-      augmentedPrompts,
-      provider,
-      model,
-      profile.api_keys[provider] || profile.api_keys.openai
-    )
-
     // Create CSV content
-    const csvContent = 'original_prompt,augmented_prompt,model_response,error\n' +
-      originalPrompts.map((original, index) => {
-        const result = testResults[index]
-        const augmented = augmentedPrompts[index]
-        return `"${original.replace(/"/g, '""')}","${augmented.replace(/"/g, '""')}","${(result.response || '').replace(/"/g, '""')}","${(result.error || '').replace(/"/g, '""')}"`
-      }).join('\n')
+    const csvContent = 'original_prompt\n' + prompts.map(prompt => 
+      `"${prompt.replace(/"/g, '""')}"`
+    ).join('\n');
 
     // Upload to storage
     const timestamp = new Date().getTime()
@@ -97,12 +81,13 @@ serve(async (req) => {
         description,
         user_id: user.id,
         file_path: filePath,
-        category: 'augmented',
+        category: method,
         metadata: {
-          fingerprintResults,
-          originalCount: originalPrompts.length,
-          augmentedCount: augmentedPrompts.length,
-          testResults: testResults.map(r => ({ error: r.error || null }))
+          method,
+          recipe: recipe || null,
+          targetModel: targetModel || null,
+          adversarialConfig: adversarialConfig || null,
+          promptCount: prompts.length
         }
       })
       .select()
@@ -111,11 +96,7 @@ serve(async (req) => {
     if (datasetError) throw datasetError
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        dataset,
-        testResults 
-      }),
+      JSON.stringify({ success: true, dataset }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
