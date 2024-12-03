@@ -6,6 +6,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ApiKeys } from "@/integrations/supabase/types/common";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const ApiKeyForm = () => {
   const session = useSession();
@@ -18,10 +19,14 @@ export const ApiKeyForm = () => {
     ollama_endpoint: ""
   });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchKeys = async () => {
-      if (!session?.user?.id) return;
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         const { data, error } = await supabase
@@ -35,6 +40,7 @@ export const ApiKeyForm = () => {
           setKeys(data.api_keys as ApiKeys);
         }
       } catch (error) {
+        console.error('Error fetching API keys:', error);
         toast.error("Failed to load API keys");
       } finally {
         setLoading(false);
@@ -48,6 +54,7 @@ export const ApiKeyForm = () => {
     e.preventDefault();
     if (!session?.user?.id) return;
 
+    setSaving(true);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -57,7 +64,10 @@ export const ApiKeyForm = () => {
       if (error) throw error;
       toast.success("API keys updated successfully");
     } catch (error) {
+      console.error('Error updating API keys:', error);
       toast.error("Failed to update API keys");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -66,7 +76,21 @@ export const ApiKeyForm = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-4">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -162,8 +186,8 @@ export const ApiKeyForm = () => {
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full">
-          Save API Keys
+        <Button type="submit" className="w-full" disabled={saving}>
+          {saving ? "Saving..." : "Save API Keys"}
         </Button>
       </div>
     </form>
