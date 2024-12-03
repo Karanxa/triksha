@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { FileUpload } from "@/components/augment-prompt/FileUpload";
+import FileUpload from "@/components/augment-prompt/FileUpload";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,6 @@ export const RedTeamingDataset = ({
   });
 
   const handleFileUpload = async (prompts: string) => {
-    // Create a new dataset from the uploaded file
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 

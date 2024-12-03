@@ -1,34 +1,13 @@
 project_id = "irdlyshhtwzqjvymilww"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
+[[functions]]
+name = "red-teaming-scan"
+verify_jwt = true
 
 [[functions]]
 name = "scan-llm"
 verify_jwt = true
 
-[[functions]] 
-name = "fetch-datasets"
-verify_jwt = true
-
-[[functions]]
-name = "download-dataset"
-verify_jwt = true
-
-[[functions]]
-name = "augment-prompt" 
-verify_jwt = true
-
-[[functions]]
-name = "process-scheduled-scans"
-verify_jwt = true
-
 [[functions]]
 name = "generate-dataset"
-verify_jwt = true
-
-[[functions]]
-name = "red-teaming-scan"
 verify_jwt = true
