@@ -19,7 +19,7 @@ export const ScanFormProvider = ({
   onCustomEndpointChange,
 }: ScanFormProviderProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
-  const [inputType, setInputType] = useState<'curl' | 'manual'>('manual');
+  const [inputType, setInputType] = useState<'curl' | 'manual' | 'http'>("manual");
   const form = useForm({
     defaultValues: {
       model: "",
@@ -52,8 +52,7 @@ export const ScanFormProvider = ({
               <SelectItem value="openai">OpenAI</SelectItem>
               <SelectItem value="anthropic">Anthropic</SelectItem>
               <SelectItem value="google">Google AI</SelectItem>
-              <SelectItem value="ollama">Ollama</SelectItem>
-              <SelectItem value="custom">Custom Endpoint</SelectItem>
+              <SelectItem value="ollama">Ollama (Custom Endpoint)</SelectItem>
             </SelectContent>
           </Select>
         </div>

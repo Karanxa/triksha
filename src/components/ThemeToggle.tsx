@@ -1,18 +1,33 @@
 import { Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
 
 const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
+  const [isDark, setIsDark] = useState(true);
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Check initial theme
+    const isDarkMode = document.documentElement.classList.contains("dark");
+    setIsDark(isDarkMode);
+  }, []);
+
   const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    toast({
-      description: `${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} mode enabled`,
-    });
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    
+    if (newIsDark) {
+      document.documentElement.classList.add("dark");
+      toast({
+        description: "Dark mode enabled",
+      });
+    } else {
+      document.documentElement.classList.remove("dark");
+      toast({
+        description: "Light mode enabled",
+      });
+    }
   };
 
   return (
@@ -22,7 +37,7 @@ const ThemeToggle = () => {
       onClick={toggleTheme}
       className="w-9 h-9 rounded-full"
     >
-      {theme === "dark" ? (
+      {isDark ? (
         <Moon className="h-5 w-5" />
       ) : (
         <Sun className="h-5 w-5" />

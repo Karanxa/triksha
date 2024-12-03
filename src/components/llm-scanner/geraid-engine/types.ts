@@ -12,16 +12,6 @@ export interface GeraidConfig {
   provider: string;
   model: string;
   datasetId: string;
-  customEndpoint?: {
-    url: string;
-    apiKey: string;
-    headers: string;
-    method: string;
-    inputType: 'curl' | 'http' | 'manual';
-    placeholder?: string;
-    httpRequest?: string;
-    curlCommand?: string;
-  };
 }
 
 export interface DatasetOption {
