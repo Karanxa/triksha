@@ -19,7 +19,6 @@ const Navigation = () => {
     { href: "/datasets", label: "Datasets" },
     { href: "/augment-prompt", label: "Augmentation" },
     { href: "/fine-tuning", label: "Fine-tuning" },
-    { href: "/geraid", label: "Geraid" },
   ];
 
   const handleLogout = async () => {

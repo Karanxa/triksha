@@ -14,9 +14,6 @@ export async function processCustomEndpointRequest(
       case 'curl':
         result = await processCurlRequest(prompt, config, controller.signal);
         break;
-      case 'http':
-        result = await processHttpRequest(prompt, config, controller.signal);
-        break;
       case 'manual':
         result = await processManualRequest(prompt, config, controller.signal);
         break;
@@ -100,46 +97,6 @@ async function processCurlRequest(
     console.error('Error in curl request:', error);
     throw error;
   }
-}
-
-async function processHttpRequest(
-  prompt: string,
-  config: CustomEndpointConfig,
-  signal: AbortSignal
-): Promise<any> {
-  const headers = config.headers ? JSON.parse(config.headers) : {};
-  let body = config.httpRequest;
-
-  // Replace prompt placeholder in URL and body
-  const url = config.url.replace(config.placeholder, encodeURIComponent(prompt));
-  if (body) {
-    body = body.replace(config.placeholder, prompt);
-    try {
-      body = JSON.parse(body);
-    } catch {
-      // If body is not JSON, use as-is
-    }
-  }
-
-  const response = await fetch(url, {
-    method: config.method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers
-    },
-    body: ['GET', 'HEAD'].includes(config.method) ? undefined : JSON.stringify(body),
-    signal
-  });
-
-  if (!response.ok) {
-    throw new Error(`Custom endpoint returned status ${response.status}`);
-  }
-
-  const result = await response.json();
-  return {
-    model_response: JSON.stringify(result),
-    raw_response: result
-  };
 }
 
 async function processManualRequest(

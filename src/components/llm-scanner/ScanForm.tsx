@@ -36,7 +36,6 @@ export const ScanForm = () => {
     headers: '',
     placeholder: '{PROMPT}',
     curlCommand: '',
-    httpRequest: '',
     inputType: 'manual',
     method: 'POST'
   });
