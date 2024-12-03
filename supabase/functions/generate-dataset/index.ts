@@ -65,10 +65,8 @@ serve(async (req) => {
         targetModel,
         numSamples
       }
-      // Generate base recipe prompts
       prompts = await generateRecipePrompts({ recipe, targetModel, numSamples })
       
-      // Get user's OpenAI API key for enhancement
       const { data: profile } = await supabase
         .from('profiles')
         .select('api_keys')
@@ -76,10 +74,10 @@ serve(async (req) => {
         .single()
 
       if (profile?.api_keys?.openai) {
-        // Enhance the prompts and store both versions
         enhancedPrompts = await enhanceRecipePrompts(prompts, { recipe, targetModel, numSamples }, profile.api_keys.openai)
       }
     } else if (method === 'adversarial') {
+      console.log('Generating adversarial prompts...')
       prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
       
       const { data: profile } = await supabase
@@ -89,8 +87,11 @@ serve(async (req) => {
         .single()
 
       if (profile?.api_keys?.openai) {
-        // Enhance the prompts and store both versions
+        console.log('Enhancing adversarial prompts...')
         enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
+      } else {
+        console.log('OpenAI API key not found, skipping enhancement')
+        enhancedPrompts = prompts
       }
       
       metadata = {
@@ -103,10 +104,11 @@ serve(async (req) => {
         numSamples
       }
       prompts = [basePrompt]
+      enhancedPrompts = [basePrompt]
     }
 
     // Create CSV content with prompts
-    fileContent = 'original_prompt,prompt,category,method\n'
+    fileContent = 'original_prompt,enhanced_prompt,category,method\n'
     prompts.forEach((prompt, index) => {
       if (prompt) {
         const escapedPrompt = prompt.replace(/"/g, '""')
@@ -120,6 +122,7 @@ serve(async (req) => {
     const sanitizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '_')
     const filePath = `${user.id}/${timestamp}_${sanitizedName}.csv`
 
+    console.log('Uploading dataset to storage...')
     // Upload file to storage
     const { error: uploadError } = await supabase.storage
       .from('datasets')
@@ -132,6 +135,7 @@ serve(async (req) => {
       throw new Error(`Failed to upload dataset: ${uploadError.message}`)
     }
 
+    console.log('Creating dataset record...')
     // Create dataset record
     const { data: dataset, error: datasetError } = await supabase
       .from('datasets')

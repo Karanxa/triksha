@@ -9,6 +9,147 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      contextual_scans: {
+        Row: {
+          created_at: string
+          dataset_analysis_results: Json | null
+          fingerprint_results: Json | null
+          id: string
+          is_vulnerable: boolean | null
+          messages: Json
+          model: string
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dataset_analysis_results?: Json | null
+          fingerprint_results?: Json | null
+          id?: string
+          is_vulnerable?: boolean | null
+          messages?: Json
+          model: string
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dataset_analysis_results?: Json | null
+          fingerprint_results?: Json | null
+          id?: string
+          is_vulnerable?: boolean | null
+          messages?: Json
+          model?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contextual_scans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_scan_executions: {
+        Row: {
+          created_at: string
+          id: string
+          model: string
+          name: string
+          results: Json | null
+          status: string
+          test_ids: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model: string
+          name: string
+          results?: Json | null
+          status?: string
+          test_ids: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model?: string
+          name?: string
+          results?: Json | null
+          status?: string
+          test_ids?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_scan_executions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_scan_tests: {
+        Row: {
+          category: Database["public"]["Enums"]["scan_test_category"]
+          created_at: string
+          description: string | null
+          expected_behavior: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          test_prompt: string
+          updated_at: string
+          user_id: string
+          validation_rules: Json | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["scan_test_category"]
+          created_at?: string
+          description?: string | null
+          expected_behavior?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          test_prompt: string
+          updated_at?: string
+          user_id: string
+          validation_rules?: Json | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["scan_test_category"]
+          created_at?: string
+          description?: string | null
+          expected_behavior?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          test_prompt?: string
+          updated_at?: string
+          user_id?: string
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_scan_tests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       datasets: {
         Row: {
           category: string | null
@@ -608,6 +749,20 @@ export type Database = {
         | "data_extraction"
       scan_severity: "low" | "medium" | "high" | "critical"
       scan_status: "pending" | "processing" | "completed" | "failed"
+      scan_test_category:
+        | "prompt_injection"
+        | "data_leakage"
+        | "model_behavior"
+        | "safety_bounds"
+        | "system_prompt"
+        | "performance"
+      test_category:
+        | "prompt_injection"
+        | "data_leakage"
+        | "model_behavior"
+        | "safety_bounds"
+        | "system_prompt"
+        | "performance"
     }
     CompositeTypes: {
       [_ in never]: never
