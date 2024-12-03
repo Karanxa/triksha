@@ -54,7 +54,7 @@ export const CreateDataset = () => {
     try {
       // First, perform fingerprinting if needed
       if (method !== 'manual') {
-        const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
+        const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraid-fingerprint', {
           body: {
             provider: targetModel.split('-')[0],
             model: targetModel.split('-')[1],

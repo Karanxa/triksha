@@ -4,6 +4,7 @@ export interface CustomEndpoint {
   headers: string;
   placeholder: string;
   curlCommand: string;
-  inputType: 'curl' | 'manual';
+  httpRequest: string;
+  inputType: 'curl' | 'manual' | 'http';
   method: string;
 }

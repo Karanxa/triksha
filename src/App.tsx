@@ -16,7 +16,7 @@ import Login from "@/pages/Login";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="geraid-theme" forcedTheme="dark">
+    <ThemeProvider defaultTheme="dark" enableSystem={false} forcedTheme="dark" storageKey="vite-ui-theme">
       <ErrorBoundary>
         <Router>
           <Routes>
