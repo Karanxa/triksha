@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
+import { GeraideResults } from "@/components/llm-results/GeraideResults";
 import { Loader2 } from "lucide-react";
-import { LLMScan } from "@/components/llm-results/types";
+import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ModelInteraction } from "@/components/datasets/analysis/ModelInteraction";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,7 +39,7 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as GeraideScan[];
     },
   });
 
@@ -96,17 +96,7 @@ const LLMResults = () => {
       return <ResultsTable scans={data} />;
     }
 
-    return (
-      <div className="space-y-4">
-        {data.map((scan: any) => (
-          <ModelInteraction 
-            key={scan.id}
-            messages={scan.messages || []}
-            isLoading={false}
-          />
-        ))}
-      </div>
-    );
+    return <GeraideResults scans={data} />;
   };
 
   return (
