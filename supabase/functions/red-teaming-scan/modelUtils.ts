@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-
 export const queryModel = async (provider: string, model: string, apiKey: string, prompt: string): Promise<string> => {
   let endpoint, headers, body;
 
