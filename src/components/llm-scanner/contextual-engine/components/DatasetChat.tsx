@@ -1,29 +1,12 @@
-import { useState, useEffect } from "react";
-import { Message } from "../types";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TypingIndicator } from "../../chat/TypingIndicator";
-import { ApiKeys } from "@/integrations/supabase/types/common";
-
-interface DatasetChatProps {
-  config: {
-    provider: string;
-    model: string;
-    datasetId: string;
-    customEndpoint?: {
-      url: string;
-      apiKey: string;
-      headers: string;
-      method: string;
-    };
-  };
-  fingerprint: any;
-  isPaused: boolean;
-  isStopped: boolean;
-  onProgress: (progress: number) => void;
-}
+import { useApiKeys } from "../hooks/useApiKeys";
+import { processModelRequest } from "../services/modelService";
+import { DatasetChatProps, Message } from "../types/dataset-chat";
+import { ChatMessage } from "./ChatMessage";
 
 export const DatasetChat = ({ 
   config, 
@@ -36,152 +19,29 @@ export const DatasetChat = ({
   const [isLoading, setIsLoading] = useState(false);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [prompts, setPrompts] = useState<string[]>([]);
-  const [apiKeys, setApiKeys] = useState<ApiKeys | null>(null);
-
-  // Fetch API keys from user profile
-  useEffect(() => {
-    const fetchApiKeys = async () => {
-      console.log('Fetching API keys...');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("User not authenticated");
-        return;
-      }
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('api_keys')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching API keys:', error);
-        toast.error("Failed to fetch API keys");
-        return;
-      }
-
-      console.log('API keys fetched successfully:', {
-        hasOpenAI: !!profile.api_keys?.openai,
-        hasAnthropic: !!profile.api_keys?.anthropic,
-        provider: config.provider
-      });
-      
-      if (typeof profile.api_keys === 'object' && profile.api_keys !== null) {
-        setApiKeys(profile.api_keys as ApiKeys);
-      } else {
-        console.error('Invalid API keys format:', profile.api_keys);
-        toast.error("Invalid API keys format");
-      }
-    };
-
-    fetchApiKeys();
-  }, [config.provider]);
-
-  // Load dataset prompts
-  useEffect(() => {
-    const loadDataset = async () => {
-      console.log('Loading dataset:', config.datasetId);
-      try {
-        const { data: dataset } = await supabase
-          .from('datasets')
-          .select('*')
-          .eq('id', config.datasetId)
-          .single();
-
-        if (!dataset) throw new Error('Dataset not found');
-        console.log('Dataset found:', dataset.name);
-
-        const { data: fileData } = await supabase.storage
-          .from('datasets')
-          .download(dataset.file_path);
-
-        console.log('Dataset file downloaded');
-        const text = await fileData.text();
-        const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
-        const headers = lines[0].toLowerCase().split(',');
-        const promptIndex = headers.findIndex(header => 
-          header === 'prompts' || header === 'prompt' || header === 'text'
-        );
-
-        if (promptIndex === -1) throw new Error('No prompt column found in dataset');
-
-        const extractedPrompts = lines.slice(1)
-          .map(line => {
-            const values = line.split(',');
-            return values[promptIndex]?.trim();
-          })
-          .filter(Boolean);
-
-        console.log(`Extracted ${extractedPrompts.length} prompts from dataset`);
-        setPrompts(extractedPrompts);
-        setMessages([{ 
-          role: 'system', 
-          content: `Loaded ${extractedPrompts.length} prompts from dataset`,
-          timestamp: new Date().toISOString()
-        }]);
-
-      } catch (error) {
-        console.error('Error loading dataset:', error);
-        toast.error('Failed to load dataset');
-      }
-    };
-
-    loadDataset();
-  }, [config.datasetId]);
+  const { apiKeys, isLoading: isLoadingKeys } = useApiKeys();
 
   // Process prompts
   useEffect(() => {
     const processNextPrompt = async () => {
-      if (isPaused || isStopped || isLoading || currentPromptIndex >= prompts.length || !apiKeys) {
-        console.log('Skipping prompt processing:', {
-          isPaused,
-          isStopped,
-          isLoading,
-          currentPromptIndex,
-          totalPrompts: prompts.length,
-          hasApiKeys: !!apiKeys
-        });
+      if (isPaused || isStopped || isLoading || currentPromptIndex >= prompts.length || !apiKeys || isLoadingKeys) {
         return;
       }
 
       setIsLoading(true);
       const prompt = prompts[currentPromptIndex];
-      console.log('Processing prompt:', { index: currentPromptIndex, prompt });
 
       try {
-        const providerKey = config.provider.toLowerCase() as keyof ApiKeys;
+        const providerKey = config.provider.toLowerCase() as keyof typeof apiKeys;
         const apiKey = apiKeys[providerKey];
         
-        console.log('Calling process-dynamic-scan function...', {
-          provider: config.provider,
-          model: config.model,
-          hasApiKey: !!apiKey
-        });
-        
-        const startTime = Date.now();
-        const { data, error } = await supabase.functions.invoke('process-dynamic-scan', {
-          body: {
-            provider: config.provider,
-            model: config.model,
-            prompt,
-            apiKey,
-            customEndpoint: config.customEndpoint
-          }
-        });
-        const endTime = Date.now();
-        console.log('Edge function response:', { 
-          error: error?.message,
-          hasData: !!data,
-          responseTime: `${endTime - startTime}ms`
-        });
-
-        if (error) throw error;
-        if (!data?.response) throw new Error('No response received from model');
-
-        console.log('Adding messages to chat:', {
+        const data = await processModelRequest(
+          config.provider,
+          config.model,
           prompt,
-          responseLength: data.response.length
-        });
+          apiKey,
+          config.customEndpoint
+        );
 
         setMessages(prev => [
           ...prev,
@@ -191,7 +51,6 @@ export const DatasetChat = ({
 
         const progress = Math.round(((currentPromptIndex + 1) / prompts.length) * 100);
         onProgress(progress);
-        console.log('Progress updated:', progress);
 
         setCurrentPromptIndex(prev => prev + 1);
       } catch (error) {
@@ -210,34 +69,14 @@ export const DatasetChat = ({
 
     const timer = setTimeout(processNextPrompt, 1000);
     return () => clearTimeout(timer);
-  }, [currentPromptIndex, isPaused, isStopped, prompts.length, config, isLoading, apiKeys]);
+  }, [currentPromptIndex, isPaused, isStopped, prompts.length, config, isLoading, apiKeys, isLoadingKeys]);
 
   return (
     <Card className="p-4">
       <ScrollArea className="h-[600px]">
         <div className="space-y-4">
           {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : message.role === 'system'
-                    ? 'bg-muted text-muted-foreground'
-                    : 'bg-accent'
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                {message.timestamp && (
-                  <span className="text-[10px] opacity-70 mt-1 block">
-                    {new Date(message.timestamp).toLocaleTimeString()}
-                  </span>
-                )}
-              </div>
-            </div>
+            <ChatMessage key={index} message={message} />
           ))}
           {isLoading && !isPaused && !isStopped && <TypingIndicator />}
         </div>
