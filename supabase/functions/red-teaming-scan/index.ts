@@ -16,12 +16,20 @@ const FINGERPRINT_QUESTIONS = [
 ];
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('Received request to red-teaming-scan');
+    
     const { phase, provider, datasetId, fingerprintResults, augmentedPrompts } = await req.json();
+    console.log('Request parameters:', { phase, provider, datasetId });
+
+    if (!phase || !provider || !datasetId) {
+      throw new Error('Missing required parameters: phase, provider, and datasetId are required');
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -51,6 +59,8 @@ serve(async (req) => {
 
     let messages = [];
     let result;
+
+    console.log(`Processing ${phase} phase`);
 
     switch (phase) {
       case 'fingerprint': {
@@ -138,6 +148,8 @@ serve(async (req) => {
         throw new Error(`Invalid phase: ${phase}`);
     }
 
+    console.log(`${phase} phase completed successfully`);
+
     return new Response(
       JSON.stringify(result),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -146,7 +158,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in red-teaming-scan function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        details: error instanceof Error ? error.stack : undefined
+      }),
       { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
