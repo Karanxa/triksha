@@ -2,3 +2,12 @@ project_id = "irdlyshhtwzqjvymilww"
 
 [functions.scan-llm]
 verify_jwt = true
+
+[functions.augment-prompt]
+verify_jwt = true
+
+[functions.generate-dataset]
+verify_jwt = true
+
+[functions.red-teaming-scan]
+verify_jwt = true

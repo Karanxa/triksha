@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { processScan } from "./scanProcessor.ts";
+import { analyzeVulnerability } from "./vulnerabilityAnalyzer.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,54 +28,69 @@ serve(async (req) => {
     
     if (userError || !user) throw new Error('Invalid user token');
 
-    // Get request data
-    const { scanId, prompts, provider, customEndpoint, category } = await req.json();
-    console.log('Received scan request:', { scanId, promptCount: prompts?.length, provider, category });
+    const { action, ...params } = await req.json();
 
-    if (!prompts?.length) throw new Error('No prompts provided');
-    if (!provider && !customEndpoint) throw new Error('Provider or custom endpoint required');
+    switch (action) {
+      case 'scan': {
+        const { scanId, prompts, provider, customEndpoint, category } = params;
+        console.log('Received scan request:', { scanId, promptCount: prompts?.length, provider, category });
 
-    // Update scan status to processing
-    await supabase
-      .from('llm_scans')
-      .update({ 
-        status: 'processing',
-        results: { progress: 0 }
-      })
-      .eq('id', scanId);
+        if (!prompts?.length) throw new Error('No prompts provided');
+        if (!provider && !customEndpoint) throw new Error('Provider or custom endpoint required');
 
-    // Get user's API keys
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single();
+        // Update scan status to processing
+        await supabase
+          .from('llm_scans')
+          .update({ 
+            status: 'processing',
+            results: { progress: 0 }
+          })
+          .eq('id', scanId);
 
-    if (profileError) throw new Error(`Failed to get profile: ${profileError.message}`);
-    if (!profile?.api_keys) throw new Error('API keys not configured');
+        // Get user's API keys
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('api_keys')
+          .eq('id', user.id)
+          .single();
 
-    // Process the scan with category
-    const results = await processScan(
-      scanId,
-      prompts,
-      provider,
-      customEndpoint,
-      profile.api_keys,
-      supabase,
-      user.id,
-      category || 'jailbreaking' // Provide default category if none specified
-    );
+        if (profileError) throw new Error(`Failed to get profile: ${profileError.message}`);
+        if (!profile?.api_keys) throw new Error('API keys not configured');
 
-    return new Response(
-      JSON.stringify({ results }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
+        // Process the scan with category
+        const results = await processScan(
+          scanId,
+          prompts,
+          provider,
+          customEndpoint,
+          profile.api_keys,
+          supabase,
+          user.id,
+          category || 'jailbreaking'
+        );
+
+        return new Response(
+          JSON.stringify({ results }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
-    );
+
+      case 'analyze': {
+        const { scanId, responses } = params;
+        const results = await analyzeVulnerability(scanId, responses, supabase, user.id);
+        
+        return new Response(
+          JSON.stringify({ results }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      default:
+        throw new Error(`Unknown action: ${action}`);
+    }
 
   } catch (error) {
-    console.error('Scan error:', error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error occurred',
