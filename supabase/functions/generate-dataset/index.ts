@@ -1,8 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import "https://deno.land/x/xhr@0.1.0/mod.ts"
-import { generateRecipePrompts } from "./recipeGenerator.ts"
-import { generateAdversarialPrompts } from "./adversarialGenerator.ts"
+import { generateAdversarialPrompts } from './adversarialGenerator.ts'
+import { enhanceWithOpenAI } from './openaiEnhancer.ts'
+import { generateRecipePrompts } from './recipeGenerator.ts'
+import { enhanceRecipePrompts } from './recipeEnhancer.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,16 +16,24 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      name, 
-      description, 
-      basePrompt,
-      numSamples,
-      method,
-      recipe,
-      targetModel,
-      adversarialConfig 
-    } = await req.json()
+    const { name, description, basePrompt, numSamples, method, recipe, targetModel, adversarialConfig } = await req.json()
+
+    // Validate input
+    if (!name) {
+      throw new Error('Dataset name is required')
+    }
+
+    if (method === "manual" && !basePrompt) {
+      throw new Error('Base prompt is required for manual method')
+    }
+
+    if (method === "recipe" && (!recipe || !targetModel)) {
+      throw new Error('Recipe and target model are required for recipe method')
+    }
+
+    if (method === "adversarial" && !adversarialConfig) {
+      throw new Error('Adversarial config is required for adversarial method')
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -33,45 +42,95 @@ serve(async (req) => {
 
     // Get user from auth header
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) throw new Error('No authorization header')
+    if (!authHeader) {
+      throw new Error('No authorization header')
+    }
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
 
-    if (userError || !user) throw userError || new Error('User not found')
+    if (userError || !user) {
+      throw userError || new Error('User not found')
+    }
 
-    // Generate prompts based on method
-    let prompts: string[];
-    if (method === 'manual') {
-      prompts = Array(numSamples).fill(basePrompt);
-    } else if (method === 'recipe') {
-      prompts = await generateRecipePrompts({
+    let metadata = {}
+    let prompts: string[] = []
+    let enhancedPrompts: string[] = []
+    let fileContent = ''
+    
+    if (method === 'recipe') {
+      metadata = {
         recipe,
         targetModel,
         numSamples
-      });
+      }
+      // Generate base recipe prompts
+      prompts = await generateRecipePrompts({ recipe, targetModel, numSamples })
+      
+      // Get user's OpenAI API key for enhancement
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.api_keys?.openai) {
+        // Enhance the prompts and store both versions
+        enhancedPrompts = await enhanceRecipePrompts(prompts, { recipe, targetModel, numSamples }, profile.api_keys.openai)
+      }
+    } else if (method === 'adversarial') {
+      prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.api_keys?.openai) {
+        // Enhance the prompts and store both versions
+        enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
+      }
+      
+      metadata = {
+        ...adversarialConfig,
+        numSamples
+      }
     } else {
-      prompts = await generateAdversarialPrompts(adversarialConfig, numSamples);
+      metadata = {
+        basePrompt,
+        numSamples
+      }
+      prompts = [basePrompt]
     }
 
-    // Create CSV content
-    const csvContent = 'original_prompt\n' + prompts.map(prompt => 
-      `"${prompt.replace(/"/g, '""')}"`
-    ).join('\n');
+    // Create CSV content with prompts
+    fileContent = 'original_prompt,prompt,category,method\n'
+    prompts.forEach((prompt, index) => {
+      if (prompt) {
+        const escapedPrompt = prompt.replace(/"/g, '""')
+        const enhancedPrompt = enhancedPrompts[index] ? enhancedPrompts[index].replace(/"/g, '""') : ''
+        fileContent += `"${escapedPrompt}","${enhancedPrompt}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
+      }
+    })
 
-    // Upload to storage
+    // Generate unique filename using a sanitized version of the name
     const timestamp = new Date().getTime()
-    const filePath = `${user.id}/${timestamp}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`
+    const sanitizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '_')
+    const filePath = `${user.id}/${timestamp}_${sanitizedName}.csv`
 
+    // Upload file to storage
     const { error: uploadError } = await supabase.storage
       .from('datasets')
-      .upload(filePath, csvContent, {
+      .upload(filePath, fileContent, {
         contentType: 'text/csv',
         upsert: true
       })
 
-    if (uploadError) throw uploadError
+    if (uploadError) {
+      throw new Error(`Failed to upload dataset: ${uploadError.message}`)
+    }
 
     // Create dataset record
     const { data: dataset, error: datasetError } = await supabase
@@ -81,19 +140,15 @@ serve(async (req) => {
         description,
         user_id: user.id,
         file_path: filePath,
-        category: method,
-        metadata: {
-          method,
-          recipe: recipe || null,
-          targetModel: targetModel || null,
-          adversarialConfig: adversarialConfig || null,
-          promptCount: prompts.length
-        }
+        category: method === 'recipe' ? 'easyjailbreak' : method === 'adversarial' ? 'adversarial' : 'manual',
+        metadata
       })
       .select()
       .single()
 
-    if (datasetError) throw datasetError
+    if (datasetError) {
+      throw new Error('Failed to create dataset record')
+    }
 
     return new Response(
       JSON.stringify({ success: true, dataset }),

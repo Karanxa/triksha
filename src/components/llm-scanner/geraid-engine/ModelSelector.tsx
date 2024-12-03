@@ -3,9 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DatasetSelector } from "./DatasetSelector";
-import { GeraidConfig } from "./types";
+import { ProviderModel, GeraidConfig } from "./types";
 
 interface ModelSelectorProps {
   onStart: (config: GeraidConfig) => void;
@@ -16,7 +15,7 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
 
-  const getModelsForProvider = (provider: string): { value: string; label: string }[] => {
+  const getModelsForProvider = (provider: string): ProviderModel[] => {
     switch (provider) {
       case "openai":
         return [
@@ -98,22 +97,10 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Dataset</Label>
-              <Tabs defaultValue="select" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="select">Select Dataset</TabsTrigger>
-                  <TabsTrigger value="upload" disabled>Upload CSV</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="select" className="mt-4">
-                  <DatasetSelector 
-                    value={selectedDataset}
-                    onValueChange={setSelectedDataset}
-                  />
-                </TabsContent>
-              </Tabs>
-            </div>
+            <DatasetSelector 
+              value={selectedDataset}
+              onValueChange={setSelectedDataset}
+            />
           </div>
 
           <Button 

@@ -1,100 +1,54 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { AnalysisProgress } from "./AnalysisProgress";
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ChatMessages } from "../../chat/ChatMessages";
-import { Message } from "../types";
+import { useDatasetAnalysis } from "../hooks/useDatasetAnalysis";
 import { FingerPrintResult } from "../types";
 
 interface DatasetAnalysisProps {
   config: {
-    datasetId: string;
     provider: string;
     model: string;
+    datasetId: string;
   };
   fingerprint: FingerPrintResult;
-  isPaused: boolean;
 }
 
-export const DatasetAnalysis = ({ config, fingerprint, isPaused }: DatasetAnalysisProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<any>(null);
-
-  useEffect(() => {
-    const analyzeDataset = async () => {
-      if (isPaused) return;
-      
-      setIsLoading(true);
-      try {
-        // Initial message
-        setMessages([
-          {
-            role: 'system',
-            content: `Starting dataset analysis for ${config.model} using fingerprint results`
-          }
-        ]);
-
-        // Process dataset with fingerprint results
-        const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
-          body: {
-            datasetId: config.datasetId,
-            provider: config.provider,
-            model: config.model,
-            fingerprint
-          }
-        });
-
-        if (error) throw error;
-
-        // Update messages and progress as prompts are processed
-        let currentProgress = 0;
-        const updateInterval = setInterval(() => {
-          if (currentProgress < 100 && !isPaused) {
-            currentProgress += 10;
-            setProgress(currentProgress);
-          } else {
-            clearInterval(updateInterval);
-          }
-        }, 1000);
-
-        // Add analysis results
-        setMessages(prev => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `Analysis complete. Processed ${analysisData.processedPrompts} prompts with fingerprint-based augmentation.`
-          }
-        ]);
-
-        setResults(analysisData);
-      } catch (error) {
-        console.error('Dataset analysis error:', error);
-        toast.error('Failed to analyze dataset: ' + (error as Error).message);
-      } finally {
-        setIsLoading(false);
-        setProgress(100);
-      }
-    };
-
-    if (!isPaused) {
-      analyzeDataset();
-    }
-  }, [config, fingerprint, isPaused]);
+export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
+  const [isStarted, setIsStarted] = useState(false);
+  const { messages, isLoading, isComplete } = useDatasetAnalysis(
+    config,
+    fingerprint,
+    isStarted
+  );
 
   return (
     <div className="space-y-4">
-      <AnalysisProgress 
-        phase="dataset_analysis" 
-        progress={progress}
-        isPaused={isPaused}
-      />
-      <Card className="p-4">
-        <ChatMessages messages={messages} isLoading={isLoading} />
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="text-lg font-medium mb-4">Dataset Analysis</h3>
+          {!isStarted ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Ready to analyze your dataset using the model fingerprint results.
+              </p>
+              <Button onClick={() => setIsStarted(true)}>
+                Start Dataset Analysis
+              </Button>
+            </div>
+          ) : (
+            <ChatMessages messages={messages} isLoading={isLoading} />
+          )}
+        </CardContent>
       </Card>
+
+      {isComplete && (
+        <div className="flex justify-end">
+          <Button variant="secondary">
+            Download Analysis Report
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

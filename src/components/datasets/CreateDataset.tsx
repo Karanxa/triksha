@@ -1,54 +1,97 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
-import { useSession } from "@supabase/auth-helpers-react"
-import { CreateDatasetForm } from "./CreateDatasetForm"
+import { AdversarialConfig } from "./AdversarialConfig"
 
 export const CreateDataset = () => {
-  const session = useSession()
+  const { toast } = useToast()
   const [isGenerating, setIsGenerating] = useState(false)
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [basePrompt, setBasePrompt] = useState("")
+  const [numSamples, setNumSamples] = useState("100")
+  const [method, setMethod] = useState("manual")
+  const [recipe, setRecipe] = useState("")
+  const [targetModel, setTargetModel] = useState("")
+  const [adversarialConfig, setAdversarialConfig] = useState({
+    attackType: "evasion",
+    vulnerabilityCategory: "prompt-injection",
+    difficulty: "medium",
+    severity: "medium",
+    context: "chatbot"
+  })
 
-  const handleGenerate = async (formData: {
-    name: string;
-    description: string;
-    basePrompt: string;
-    numSamples: string;
-    method: string;
-    recipe: string;
-    targetModel: string;
-    adversarialConfig: any;
-  }) => {
-    if (!session?.user?.id) {
-      toast.error("Please log in to generate datasets");
-      return;
+  const recipes = [
+    { id: "PAIR", name: "PAIR (Chao 2023)" },
+    { id: "AutoDAN", name: "AutoDAN" },
+    { id: "DeepInception", name: "Deep Inception" }
+  ]
+
+  const models = [
+    { id: "gpt-4", name: "GPT-4" },
+    { id: "claude-3", name: "Claude 3" },
+    { id: "llama-2", name: "Llama 2" },
+    { id: "vicuna", name: "Vicuna" }
+  ]
+
+  const handleGenerate = async () => {
+    if (!name || (method === "manual" && !basePrompt) || 
+        (method === "recipe" && !recipe) || 
+        (method === "adversarial" && !adversarialConfig.attackType)) {
+      toast({
+        variant: "destructive",
+        title: "Missing fields",
+        description: "Please fill in all required fields"
+      })
+      return
     }
 
-    setIsGenerating(true);
+    setIsGenerating(true)
     try {
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
         body: {
-          name: formData.name,
-          description: formData.description,
-          basePrompt: formData.method === "manual" ? formData.basePrompt : undefined,
-          numSamples: parseInt(formData.numSamples),
-          method: formData.method,
-          recipe: formData.recipe,
-          targetModel: formData.targetModel,
-          adversarialConfig: formData.method === "adversarial" ? formData.adversarialConfig : undefined,
+          name,
+          description,
+          basePrompt: method === "manual" ? basePrompt : undefined,
+          numSamples: parseInt(numSamples),
+          method,
+          recipe,
+          targetModel,
+          adversarialConfig: method === "adversarial" ? adversarialConfig : undefined
         }
-      });
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
-      toast.success("Dataset generated successfully");
+      toast({
+        title: "Success",
+        description: "Dataset generated successfully"
+      })
+
+      // Reset form
+      setName("")
+      setDescription("")
+      setBasePrompt("")
+      setNumSamples("100")
+      setRecipe("")
+      setTargetModel("")
     } catch (error: any) {
-      console.error('Error generating dataset:', error);
-      toast.error(error.message || "Failed to generate dataset");
+      toast({
+        variant: "destructive",
+        title: "Generation failed",
+        description: error.message
+      })
     } finally {
-      setIsGenerating(false);
+      setIsGenerating(false)
     }
-  };
+  }
 
   return (
     <Card>
@@ -58,12 +101,113 @@ export const CreateDataset = () => {
           Generate adversarial datasets using manual input, EasyJailbreak recipes, or advanced adversarial techniques
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <CreateDatasetForm 
-          onSubmit={handleGenerate}
-          isGenerating={isGenerating}
-        />
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="name">Dataset Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter dataset name"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter dataset description"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Generation Method</Label>
+          <Select value={method} onValueChange={setMethod}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select generation method" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manual">Manual Input</SelectItem>
+              <SelectItem value="recipe">EasyJailbreak Recipe</SelectItem>
+              <SelectItem value="adversarial">Advanced Adversarial</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {method === "manual" ? (
+          <div className="space-y-2">
+            <Label htmlFor="base-prompt">Base Prompt</Label>
+            <Textarea
+              id="base-prompt"
+              value={basePrompt}
+              onChange={(e) => setBasePrompt(e.target.value)}
+              placeholder="Enter the base prompt for generating variations"
+            />
+          </div>
+        ) : method === "recipe" ? (
+          <>
+            <div className="space-y-2">
+              <Label>Recipe</Label>
+              <Select value={recipe} onValueChange={setRecipe}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select EasyJailbreak recipe" />
+                </SelectTrigger>
+                <SelectContent>
+                  {recipes.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Target Model</Label>
+              <Select value={targetModel} onValueChange={setTargetModel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        ) : (
+          <AdversarialConfig 
+            config={adversarialConfig}
+            onChange={setAdversarialConfig}
+          />
+        )}
+
+        <div className="space-y-2">
+          <Label htmlFor="num-samples">Number of Samples</Label>
+          <Input
+            id="num-samples"
+            type="number"
+            value={numSamples}
+            onChange={(e) => setNumSamples(e.target.value)}
+            min="1"
+            max="1000"
+          />
+        </div>
+
+        <Button 
+          onClick={handleGenerate} 
+          className="w-full"
+          disabled={isGenerating}
+        >
+          {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Generate Dataset
+        </Button>
       </CardContent>
     </Card>
-  );
-};
+  )
+}

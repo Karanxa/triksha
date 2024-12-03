@@ -8,9 +8,9 @@ const ThemeToggle = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Ensure dark mode is always set
-    document.documentElement.classList.add("dark");
-    setIsDark(true);
+    // Check initial theme
+    const isDarkMode = document.documentElement.classList.contains("dark");
+    setIsDark(isDarkMode);
   }, []);
 
   const toggleTheme = () => {

@@ -14,6 +14,4 @@ export interface ChatProps {
     datasetId: string;
   } | null;
   onComplete: (results: FingerPrintResult) => void;
-  onProgress?: (progress: number) => void;
-  isPaused: boolean;
 }
