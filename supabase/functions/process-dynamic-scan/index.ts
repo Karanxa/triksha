@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,21 +14,13 @@ serve(async (req) => {
 
   try {
     const { provider, model, prompt, apiKey, customEndpoint } = await req.json();
-    console.log('Processing dynamic scan:', { 
-      provider, 
-      model, 
-      promptLength: prompt?.length,
-      hasApiKey: !!apiKey,
-      hasCustomEndpoint: !!customEndpoint
-    });
+    console.log('Processing dynamic scan:', { provider, model });
 
     if (!apiKey) {
       throw new Error(`API key not found for provider: ${provider}`);
     }
 
     let response;
-    const startTime = Date.now();
-
     if (provider === 'openai') {
       console.log('Making OpenAI request...');
       const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -52,11 +45,6 @@ serve(async (req) => {
       }
 
       const data = await openaiResponse.json();
-      console.log('OpenAI response received:', {
-        hasChoices: !!data.choices,
-        firstChoice: !!data.choices?.[0],
-        messageContent: !!data.choices?.[0]?.message?.content
-      });
       response = data.choices[0].message.content;
     } else if (provider === 'anthropic') {
       console.log('Making Anthropic request...');
@@ -81,11 +69,6 @@ serve(async (req) => {
       }
 
       const data = await anthropicResponse.json();
-      console.log('Anthropic response received:', {
-        hasContent: !!data.content,
-        firstContent: !!data.content?.[0],
-        textContent: !!data.content?.[0]?.text
-      });
       response = data.content[0].text;
     } else if (provider === 'custom' && customEndpoint) {
       console.log('Making custom endpoint request...');
@@ -105,20 +88,12 @@ serve(async (req) => {
       }
 
       const data = await customResponse.json();
-      console.log('Custom endpoint response received:', {
-        hasResponse: !!data.response,
-        hasText: !!data.text
-      });
       response = data.response || data.text || JSON.stringify(data);
     } else {
       throw new Error(`Unsupported provider: ${provider}`);
     }
 
-    const endTime = Date.now();
-    console.log(`Request completed in ${endTime - startTime}ms`, {
-      responseLength: response?.length
-    });
-
+    console.log('Successfully processed request');
     return new Response(
       JSON.stringify({ response }),
       { 

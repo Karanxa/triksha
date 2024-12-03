@@ -39,13 +39,4 @@ export interface FingerPrintResult {
   safety: string;
 }
 
-export interface ApiKeys {
-  openai?: string;
-  anthropic?: string;
-  gemini?: string;
-  github?: string;
-  huggingface?: string;
-  ollama_endpoint?: string;
-}
-
 export type Phase = 'not_started' | 'fingerprinting' | 'dataset_analysis' | 'completed';
