@@ -1,10 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -67,10 +67,13 @@ Enhanced: "Generate a product description for an e-commerce website, focusing on
 
 Format: Return only the enhanced prompt without explanations.`;
 
+    console.log('Starting prompt augmentation process...');
     const results = [];
     
     for (const prompt of prompts) {
       try {
+        console.log('Processing prompt:', prompt);
+        
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -95,7 +98,9 @@ Format: Return only the enhanced prompt without explanations.`;
 
         const data = await response.json();
         const augmentedText = data.choices[0].message.content;
+        console.log('Augmented text:', augmentedText);
 
+        // Store the result in the database
         const { error: insertError } = await supabaseClient
           .from('prompts')
           .insert({
@@ -115,6 +120,9 @@ Format: Return only the enhanced prompt without explanations.`;
           original: prompt,
           augmented: augmentedText
         });
+
+        // Add a small delay between requests to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 200));
       } catch (error) {
         console.error(`Error processing prompt "${prompt}":`, error);
         results.push({
