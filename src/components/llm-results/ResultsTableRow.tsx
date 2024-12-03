@@ -1,7 +1,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, FileJson, Eye, Trash2 } from "lucide-react";
+import { CheckCircle2, XCircle, FileJson } from "lucide-react";
 import { LLMScan } from "./types";
 import {
   Tooltip,
@@ -16,29 +16,26 @@ const CategoryBadge = ({ category }: { category: string }) => {
   return (
     <Badge 
       variant="default" 
-      className="bg-background-dark hover:bg-background-dark text-foreground-dark border border-border ml-2"
+      className="bg-background-dark hover:bg-background-dark text-foreground-dark border border-border"
     >
       {category || 'Uncategorized'}
     </Badge>
   );
 };
 
-const VulnerabilityStatus = ({ isVulnerable, category }: { isVulnerable: boolean | null, category: string }) => (
+const VulnerabilityStatus = ({ isVulnerable }: { isVulnerable: boolean | null }) => (
   <div className="flex items-center">
-    <div className="flex items-center gap-1 text-sm">
-      {isVulnerable ? (
-        <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
-          <CheckCircle2 className="w-4 h-4" />
-          <span className="ml-1">Vulnerable</span>
-        </div>
-      ) : (
-        <div className="flex items-center text-green-500" title="No clear signs of successful exploitation">
-          <XCircle className="w-4 h-4" />
-          <span className="ml-1">Secure</span>
-        </div>
-      )}
-    </div>
-    <CategoryBadge category={category} />
+    {isVulnerable ? (
+      <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
+        <CheckCircle2 className="w-4 h-4" />
+        <span className="ml-1">Vulnerable</span>
+      </div>
+    ) : (
+      <div className="flex items-center text-green-500" title="No clear signs of successful exploitation">
+        <XCircle className="w-4 h-4" />
+        <span className="ml-1">Secure</span>
+      </div>
+    )}
   </div>
 );
 
@@ -74,11 +71,9 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
   const fullDateTime = new Date(scan.created_at).toLocaleString();
 
   return (
-    <TableRow className="h-16">
-      <TableCell className="py-2">
-        {formatScanType(scan.scan_type)}
-      </TableCell>
-      <TableCell className="py-2">
+    <TableRow>
+      <TableCell>{formatScanType(scan.scan_type)}</TableCell>
+      <TableCell>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger className="cursor-default">
@@ -90,33 +85,24 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className="py-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="outline" className="cursor-default">
-                {model}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{model}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      <TableCell>
+        <Badge variant="outline" className="cursor-default">
+          {model}
+        </Badge>
       </TableCell>
-      <TableCell className="py-2 border-l">
+      <TableCell className="border-l">
         <TruncatedCell
           content={prompt || 'No prompt available'}
           onContentClick={() => onContentClick("Prompt", prompt || 'No prompt available')}
         />
       </TableCell>
-      <TableCell className="py-2">
+      <TableCell>
         <TruncatedCell
           content={modelResponse || 'No response available'}
           onContentClick={() => onContentClick("Response", modelResponse || 'No response available')}
         />
       </TableCell>
-      <TableCell className="py-2 w-[60px] text-center">
+      <TableCell className="w-[60px] text-center">
         <Button
           variant="ghost"
           size="sm"
@@ -126,27 +112,15 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
           <FileJson className="h-4 w-4" />
         </Button>
       </TableCell>
-      <TableCell className="py-2 border-l">
-        <VulnerabilityStatus isVulnerable={scan.is_vulnerable} category={scan.category || 'Uncategorized'} />
+      <TableCell className="border-l">
+        <CategoryBadge category={scan.category || 'Uncategorized'} />
       </TableCell>
-      <TableCell className="py-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => onContentClick("Full Details", JSON.stringify(scan, null, 2))}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
+      <TableCell>
+        <VulnerabilityStatus isVulnerable={scan.is_vulnerable} />
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center">
           <HideButton scanId={scan.id} onHide={onHide} />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
         </div>
       </TableCell>
     </TableRow>
