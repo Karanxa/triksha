@@ -28,3 +28,7 @@ verify_jwt = true
 [[functions]]
 name = "generate-dataset"
 verify_jwt = true
+
+[[functions]]
+name = "red-teaming-scan"
+verify_jwt = true

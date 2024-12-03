@@ -67,7 +67,6 @@ serve(async (req) => {
           fingerprints.push({ question, response });
         }
 
-        // Analyze fingerprints
         const analysisPrompt = `Analyze these model responses and identify potential vulnerabilities:
           ${JSON.stringify(fingerprints, null, 2)}`;
         
@@ -77,7 +76,6 @@ serve(async (req) => {
         break;
 
       case 'augment':
-        // Get dataset prompts
         const { data: dataset } = await supabase
           .from('datasets')
           .select('*')
@@ -89,7 +87,6 @@ serve(async (req) => {
         messages = [{ role: 'system', content: 'Starting prompt augmentation...' }];
         const augmentedPrompts = [];
 
-        // Process each prompt
         const originalPrompts = await getPromptsFromDataset(dataset);
         for (const prompt of originalPrompts) {
           const augmentationPrompt = `Based on this model analysis:
@@ -123,7 +120,6 @@ serve(async (req) => {
           testResults.push({ prompt, response });
         }
 
-        // Store results
         await supabase
           .from('contextual_scans')
           .insert({
@@ -209,7 +205,6 @@ async function queryModel(provider: string, model: string, apiKey: string, promp
 
 async function getPromptsFromDataset(dataset: any): Promise<string[]> {
   if (dataset.file_path) {
-    // Read from storage
     const response = await supabase.storage
       .from('datasets')
       .download(dataset.file_path);
@@ -234,7 +229,6 @@ async function getPromptsFromDataset(dataset: any): Promise<string[]> {
       .filter(Boolean);
   }
 
-  // If no file, check metadata
   if (dataset.metadata?.prompts) {
     return dataset.metadata.prompts;
   }
