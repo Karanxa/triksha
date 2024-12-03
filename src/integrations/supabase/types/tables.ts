@@ -13,3 +13,7 @@ export type TablesInsert<
 export type TablesUpdate<
   T extends keyof PublicSchema['Tables'] = keyof PublicSchema['Tables']
 > = PublicSchema['Tables'][T]['Update'];
+
+export type GeraideScan = Tables<'geraide_scans'>;
+export type GeraideScanInsert = TablesInsert<'geraide_scans'>;
+export type GeraideScanUpdate = TablesUpdate<'geraide_scans'>;

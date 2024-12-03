@@ -45,31 +45,31 @@ export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => 
       if (error) throw error;
 
       const text = await data.text();
-      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const lines = text.split(/\r?\n/).filter(line => line.trim());
       
       if (lines.length === 0) {
         throw new Error("Dataset is empty");
       }
 
       const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
-      const promptIndex = headers.findIndex(header => 
-        header === "prompts" || header === "prompt" || header === "text"
-      );
+      const promptIndex = headers.findIndex(header => header === "original_prompt");
 
       if (promptIndex === -1) {
-        throw new Error("No prompt column found in dataset");
+        throw new Error("No 'original_prompt' column found in dataset");
       }
 
+      // Process each line, properly handling quoted values
       const prompts = lines.slice(1).map(line => {
         const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
         const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
         return cleanedValues[promptIndex];
-      }).filter(Boolean);
+      }).filter(Boolean); // Remove any undefined or empty values
 
       if (prompts.length === 0) {
-        throw new Error("No valid prompts found in dataset");
+        throw new Error("No valid prompts found in the 'original_prompt' column");
       }
 
+      console.log('Found prompts:', prompts); // Debug log
       onDatasetSelected(prompts);
       toast.success(`${prompts.length} prompts loaded from dataset`);
     } catch (error: any) {

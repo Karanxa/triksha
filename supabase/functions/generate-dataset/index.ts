@@ -1,9 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { generateAdversarialPrompts } from './adversarialGenerator.ts'
-import { enhanceWithOpenAI } from './openaiEnhancer.ts'
-import { generateRecipePrompts } from './recipeGenerator.ts'
-import { enhanceRecipePrompts } from './recipeEnhancer.ts'
+import { augmentPrompts } from './promptAugmenter.ts'
+import { testPromptsWithModel } from './modelTester.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,23 +14,17 @@ serve(async (req) => {
   }
 
   try {
-    const { name, description, basePrompt, numSamples, method, recipe, targetModel, adversarialConfig } = await req.json()
+    const { 
+      name, 
+      description, 
+      originalPrompts, 
+      provider,
+      model,
+      fingerprintResults 
+    } = await req.json()
 
-    // Validate input
-    if (!name) {
-      throw new Error('Dataset name is required')
-    }
-
-    if (method === "manual" && !basePrompt) {
-      throw new Error('Base prompt is required for manual method')
-    }
-
-    if (method === "recipe" && (!recipe || !targetModel)) {
-      throw new Error('Recipe and target model are required for recipe method')
-    }
-
-    if (method === "adversarial" && !adversarialConfig) {
-      throw new Error('Adversarial config is required for adversarial method')
+    if (!name || !originalPrompts || !Array.isArray(originalPrompts)) {
+      throw new Error('Invalid input: name and originalPrompts array are required')
     }
 
     const supabase = createClient(
@@ -42,100 +34,61 @@ serve(async (req) => {
 
     // Get user from auth header
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
+    if (!authHeader) throw new Error('No authorization header')
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
 
-    if (userError || !user) {
-      throw userError || new Error('User not found')
+    if (userError || !user) throw userError || new Error('User not found')
+
+    // Get user's API key
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('api_keys')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile?.api_keys?.openai) {
+      throw new Error('OpenAI API key not found')
     }
 
-    let metadata = {}
-    let prompts: string[] = []
-    let enhancedPrompts: string[] = []
-    let fileContent = ''
-    
-    if (method === 'recipe') {
-      metadata = {
-        recipe,
-        targetModel,
-        numSamples
-      }
-      prompts = await generateRecipePrompts({ recipe, targetModel, numSamples })
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('api_keys')
-        .eq('id', user.id)
-        .single()
+    // Step 1: Augment prompts using fingerprint results
+    const augmentedPrompts = await augmentPrompts(
+      originalPrompts,
+      fingerprintResults,
+      profile.api_keys.openai
+    )
 
-      if (profile?.api_keys?.openai) {
-        enhancedPrompts = await enhanceRecipePrompts(prompts, { recipe, targetModel, numSamples }, profile.api_keys.openai)
-      }
-    } else if (method === 'adversarial') {
-      console.log('Generating adversarial prompts...')
-      prompts = await generateAdversarialPrompts(adversarialConfig, numSamples)
-      
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('api_keys')
-        .eq('id', user.id)
-        .single()
+    // Step 2: Test augmented prompts with target model
+    const testResults = await testPromptsWithModel(
+      augmentedPrompts,
+      provider,
+      model,
+      profile.api_keys[provider] || profile.api_keys.openai
+    )
 
-      if (profile?.api_keys?.openai) {
-        console.log('Enhancing adversarial prompts...')
-        enhancedPrompts = await enhanceWithOpenAI(prompts, adversarialConfig, profile.api_keys.openai)
-      } else {
-        console.log('OpenAI API key not found, skipping enhancement')
-        enhancedPrompts = prompts
-      }
-      
-      metadata = {
-        ...adversarialConfig,
-        numSamples
-      }
-    } else {
-      metadata = {
-        basePrompt,
-        numSamples
-      }
-      prompts = [basePrompt]
-      enhancedPrompts = [basePrompt]
-    }
+    // Create CSV content
+    const csvContent = 'original_prompt,augmented_prompt,model_response,error\n' +
+      originalPrompts.map((original, index) => {
+        const result = testResults[index]
+        const augmented = augmentedPrompts[index]
+        return `"${original.replace(/"/g, '""')}","${augmented.replace(/"/g, '""')}","${(result.response || '').replace(/"/g, '""')}","${(result.error || '').replace(/"/g, '""')}"`
+      }).join('\n')
 
-    // Create CSV content with prompts
-    fileContent = 'original_prompt,enhanced_prompt,category,method\n'
-    prompts.forEach((prompt, index) => {
-      if (prompt) {
-        const escapedPrompt = prompt.replace(/"/g, '""')
-        const enhancedPrompt = enhancedPrompts[index] ? enhancedPrompts[index].replace(/"/g, '""') : ''
-        fileContent += `"${escapedPrompt}","${enhancedPrompt}",${method},${method === 'recipe' ? recipe : method === 'adversarial' ? adversarialConfig.attackType : 'manual'}\n`
-      }
-    })
-
-    // Generate unique filename using a sanitized version of the name
+    // Upload to storage
     const timestamp = new Date().getTime()
-    const sanitizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '_')
-    const filePath = `${user.id}/${timestamp}_${sanitizedName}.csv`
+    const filePath = `${user.id}/${timestamp}_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}.csv`
 
-    console.log('Uploading dataset to storage...')
-    // Upload file to storage
     const { error: uploadError } = await supabase.storage
       .from('datasets')
-      .upload(filePath, fileContent, {
+      .upload(filePath, csvContent, {
         contentType: 'text/csv',
         upsert: true
       })
 
-    if (uploadError) {
-      throw new Error(`Failed to upload dataset: ${uploadError.message}`)
-    }
+    if (uploadError) throw uploadError
 
-    console.log('Creating dataset record...')
     // Create dataset record
     const { data: dataset, error: datasetError } = await supabase
       .from('datasets')
@@ -144,18 +97,25 @@ serve(async (req) => {
         description,
         user_id: user.id,
         file_path: filePath,
-        category: method === 'recipe' ? 'easyjailbreak' : method === 'adversarial' ? 'adversarial' : 'manual',
-        metadata
+        category: 'augmented',
+        metadata: {
+          fingerprintResults,
+          originalCount: originalPrompts.length,
+          augmentedCount: augmentedPrompts.length,
+          testResults: testResults.map(r => ({ error: r.error || null }))
+        }
       })
       .select()
       .single()
 
-    if (datasetError) {
-      throw new Error('Failed to create dataset record')
-    }
+    if (datasetError) throw datasetError
 
     return new Response(
-      JSON.stringify({ success: true, dataset }),
+      JSON.stringify({ 
+        success: true, 
+        dataset,
+        testResults 
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
