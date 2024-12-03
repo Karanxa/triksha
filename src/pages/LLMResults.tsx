@@ -5,6 +5,7 @@ import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
 import { Loader2 } from "lucide-react";
 import { LLMScan } from "@/components/llm-results/types";
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,6 +25,26 @@ const LLMResults = () => {
       if (error) throw error;
       return data as LLMScan[];
     },
+  });
+
+  // Filter scans based on search query and filters
+  const filteredScans = scans?.filter(scan => {
+    const matchesSearch = searchQuery === "" || 
+      (scan.results?.prompt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       scan.results?.model_response?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesCategory = selectedCategory === "all" || scan.category === selectedCategory;
+    
+    const matchesScanType = selectedScanType === "all" || scan.scan_type === selectedScanType;
+    
+    const matchesVulnerability = vulnerabilityStatus === "all" || 
+      (vulnerabilityStatus === "vulnerable" ? scan.is_vulnerable : !scan.is_vulnerable);
+
+    const matchesModel = selectedModel === "all" || 
+      scan.results?.model === selectedModel;
+
+    return matchesSearch && matchesCategory && matchesScanType && 
+           matchesVulnerability && matchesModel;
   });
 
   return (
@@ -52,8 +73,8 @@ const LLMResults = () => {
         <div className="text-destructive text-center py-8">
           Failed to load scan results: {error.message}
         </div>
-      ) : scans && scans.length > 0 ? (
-        <ResultsTable scans={scans} />
+      ) : filteredScans && filteredScans.length > 0 ? (
+        <ResultsTable scans={filteredScans} />
       ) : (
         <div className="text-center text-muted-foreground py-8">
           No scan results found. Try running a scan first.
