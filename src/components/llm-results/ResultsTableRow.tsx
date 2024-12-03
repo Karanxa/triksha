@@ -1,7 +1,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, FileJson } from "lucide-react";
+import { CheckCircle2, XCircle, FileJson, Eye, Trash2 } from "lucide-react";
 import { LLMScan } from "./types";
 import {
   Tooltip,
@@ -130,8 +130,23 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
         <VulnerabilityStatus isVulnerable={scan.is_vulnerable} category={scan.category || 'Uncategorized'} />
       </TableCell>
       <TableCell className="py-2">
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => onContentClick("Full Details", JSON.stringify(scan, null, 2))}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
           <HideButton scanId={scan.id} onHide={onHide} />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </TableCell>
     </TableRow>

@@ -12,7 +12,7 @@ export const ResultsTableHeader = () => {
         <TableHead className="w-[60px]">Raw</TableHead>
         <TableHead className="border-l">Category</TableHead>
         <TableHead>Status</TableHead>
-        <TableHead>Actions</TableHead>
+        <TableHead className="w-[140px]">Actions</TableHead>
       </TableRow>
     </TableHeader>
   );
