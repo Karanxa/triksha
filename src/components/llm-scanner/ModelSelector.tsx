@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { DatasetSelector } from "./DatasetSelector";
-import { GeraidConfig } from "./contextual-engine/types";
+import { ContextualConfig } from "./contextual-engine/types";
 
 interface ModelSelectorProps {
-  onStart: (config: GeraidConfig) => void;
+  onStart: (config: ContextualConfig) => void;
 }
 
 export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
@@ -47,6 +47,13 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
     <Card>
       <CardContent className="p-6">
         <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium mb-2">Contextual Analysis</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Select a target model and dataset to begin. This will help understand the model's capabilities and test it against your dataset.
+            </p>
+          </div>
+          
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Provider</Label>
@@ -91,8 +98,8 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
             )}
 
             <DatasetSelector 
-              value={selectedDataset}
-              onValueChange={setSelectedDataset}
+              selectedDataset={selectedDataset}
+              onDatasetSelect={setSelectedDataset}
             />
           </div>
 

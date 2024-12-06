@@ -1,8 +1,8 @@
 import { ModelSelector } from "../ModelSelector";
-import { GeraidConfig } from "./types";
+import { ContextualConfig } from "./types";
 
 export const ContextualEngine = () => {
-  const handleStart = async (config: GeraidConfig) => {
+  const handleStart = async (config: ContextualConfig) => {
     // Handle the start of the contextual analysis with the provided configuration
     // This function will be implemented to initiate the analysis process
   };

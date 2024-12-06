@@ -1,129 +1,48 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { DatasetOption } from "./contextual-engine/types";
 
 interface DatasetSelectorProps {
-  onDatasetSelected: (prompts: string[]) => void;
+  selectedDataset: string;
+  onDatasetSelect: (value: string) => void;
 }
 
-export const DatasetSelector = ({ onDatasetSelected }: DatasetSelectorProps) => {
-  const [loading, setLoading] = useState<string | null>(null);
-
+export const DatasetSelector = ({ selectedDataset, onDatasetSelect }: DatasetSelectorProps) => {
   const { data: datasets, isLoading } = useQuery({
     queryKey: ['user-datasets'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('datasets')
-        .select('*')
+        .select('id, name, description')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        toast.error("Failed to fetch datasets");
-        return [];
-      }
-      return data;
+      if (error) throw error;
+      return data as DatasetOption[];
     }
   });
 
-  const handleDatasetSelect = async (datasetId: string, filePath: string | null) => {
-    if (!filePath) {
-      toast.error("Dataset file not found");
-      return;
-    }
-
-    setLoading(datasetId);
-    try {
-      const { data, error } = await supabase.storage
-        .from('datasets')
-        .download(filePath);
-
-      if (error) throw error;
-
-      const text = await data.text();
-      const lines = text.split(/\r?\n/).filter(line => line.trim());
-      
-      if (lines.length === 0) {
-        throw new Error("Dataset is empty");
-      }
-
-      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
-      const promptIndex = headers.findIndex(header => header === "original_prompt");
-
-      if (promptIndex === -1) {
-        throw new Error("No 'original_prompt' column found in dataset");
-      }
-
-      // Process each line, properly handling quoted values
-      const prompts = lines.slice(1).map(line => {
-        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
-        return cleanedValues[promptIndex];
-      }).filter(Boolean); // Remove any undefined or empty values
-
-      if (prompts.length === 0) {
-        throw new Error("No valid prompts found in the 'original_prompt' column");
-      }
-
-      console.log('Found prompts:', prompts); // Debug log
-      onDatasetSelected(prompts);
-      toast.success(`${prompts.length} prompts loaded from dataset`);
-    } catch (error: any) {
-      console.error("Error loading dataset:", error);
-      toast.error(error.message || "Failed to load dataset");
-    } finally {
-      setLoading(null);
-    }
-  };
-
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
+    return <Loader2 className="h-4 w-4 animate-spin" />;
   }
 
   return (
-    <ScrollArea className="h-[300px]">
-      <div className="space-y-2 p-1">
-        <h3 className="text-lg font-medium mb-4">Your Datasets</h3>
-        {datasets?.map((dataset) => (
-          <Card key={dataset.id} className="cursor-pointer hover:bg-accent">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">{dataset.name}</h4>
-                  {dataset.description && (
-                    <p className="text-sm text-muted-foreground">{dataset.description}</p>
-                  )}
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  disabled={!!loading}
-                  onClick={() => handleDatasetSelect(dataset.id, dataset.file_path)}
-                >
-                  {loading === dataset.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Select'
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {datasets?.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">
-            No datasets found. Create some in the Datasets section first.
-          </p>
-        )}
-      </div>
-    </ScrollArea>
+    <div className="space-y-2">
+      <Label>Dataset</Label>
+      <Select value={selectedDataset} onValueChange={onDatasetSelect}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select a dataset" />
+        </SelectTrigger>
+        <SelectContent>
+          {datasets?.map((dataset) => (
+            <SelectItem key={dataset.id} value={dataset.id}>
+              {dataset.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 };
