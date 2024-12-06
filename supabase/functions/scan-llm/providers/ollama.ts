@@ -1,28 +1,39 @@
-export async function handleOllamaRequest(prompt: string, endpoint: string, model = 'llama2') {
-  const modelMap: { [key: string]: string } = {
-    'llama2': 'llama2',
-    'mistral': 'mistral',
-    'codellama': 'codellama'
-  };
+export async function handleOllamaRequest(
+  prompt: string, 
+  endpoint: string, 
+  modelName: string,
+  customCurl?: string
+) {
+  try {
+    if (customCurl) {
+      // Parse and execute custom curl command
+      const curlCommand = customCurl
+        .replace('{MODEL}', modelName)
+        .replace('{PROMPT}', prompt);
+      
+      // Execute the custom curl command
+      // Note: Implementation depends on how you want to handle custom curl commands
+      return { error: 'Custom curl commands not yet implemented' };
+    }
 
-  const apiModel = modelMap[model] || 'llama2';
+    const response = await fetch(`${endpoint}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelName,
+        prompt: prompt,
+      }),
+    });
 
-  const response = await fetch(`${endpoint}/api/generate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: apiModel,
-      prompt,
-      stream: false,
-    }),
-  });
+    if (!response.ok) {
+      throw new Error(`Ollama API error: ${response.statusText}`);
+    }
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Ollama API error: ${errorText}`);
+    return await response.json();
+  } catch (error) {
+    console.error('Error in Ollama request:', error);
+    throw error;
   }
-
-  return await response.json();
 }

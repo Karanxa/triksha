@@ -2,6 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { OllamaConfig } from "../providers/OllamaConfig";
+import { DatasetSelector } from "./DatasetSelector";
 
 interface ModelSelectorProps {
   selectedProvider: string;
@@ -18,6 +21,10 @@ export const ModelSelector = ({
   onModelChange,
   onStart
 }: ModelSelectorProps) => {
+  const [showOllamaConfig, setShowOllamaConfig] = useState(false);
+  const [ollamaConfig, setOllamaConfig] = useState<any>(null);
+  const [selectedDataset, setSelectedDataset] = useState("");
+
   const getModelsForProvider = (provider: string) => {
     switch (provider) {
       case "openai":
@@ -35,15 +42,25 @@ export const ModelSelector = ({
           { value: "gemini-1.0-pro", label: "Gemini Pro" },
           { value: "gemini-1.0-ultra", label: "Gemini Ultra" }
         ];
-      case "ollama":
-        return [
-          { value: "llama2", label: "Llama 2" },
-          { value: "mistral", label: "Mistral" },
-          { value: "codellama", label: "Code Llama" }
-        ];
       default:
         return [];
     }
+  };
+
+  const handleProviderSelect = (value: string) => {
+    onProviderChange(value);
+    if (value === "ollama") {
+      setShowOllamaConfig(true);
+    } else {
+      setShowOllamaConfig(false);
+      onModelChange("");
+    }
+  };
+
+  const handleOllamaConfig = (config: any) => {
+    setOllamaConfig(config);
+    onModelChange(config.modelName);
+    setShowOllamaConfig(false);
   };
 
   return (
@@ -62,10 +79,7 @@ export const ModelSelector = ({
               <Label>Provider</Label>
               <Select 
                 value={selectedProvider} 
-                onValueChange={(value) => {
-                  onProviderChange(value);
-                  onModelChange(""); // Reset model when provider changes
-                }}
+                onValueChange={handleProviderSelect}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select provider" />
@@ -79,7 +93,7 @@ export const ModelSelector = ({
               </Select>
             </div>
 
-            {selectedProvider && (
+            {selectedProvider && selectedProvider !== "ollama" && (
               <div className="space-y-2">
                 <Label>Model</Label>
                 <Select 
@@ -99,15 +113,27 @@ export const ModelSelector = ({
                 </Select>
               </div>
             )}
+
+            {showOllamaConfig && (
+              <OllamaConfig onConfigComplete={handleOllamaConfig} />
+            )}
+
+            {selectedProvider && selectedModel && !showOllamaConfig && (
+              <DatasetSelector 
+                selectedDataset={selectedDataset}
+                onDatasetSelect={setSelectedDataset}
+              />
+            )}
           </div>
 
-          <Button 
-            onClick={onStart}
-            className="w-full"
-            disabled={!selectedProvider || !selectedModel}
-          >
-            Start Analysis
-          </Button>
+          {selectedProvider && selectedModel && selectedDataset && !showOllamaConfig && (
+            <Button 
+              onClick={onStart}
+              className="w-full"
+            >
+              Start Analysis
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
