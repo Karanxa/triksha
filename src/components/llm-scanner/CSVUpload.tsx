@@ -96,7 +96,7 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
         </TabsContent>
         
         <TabsContent value="select">
-          <DatasetSelector onDatasetSelected={onPromptsExtracted} />
+          <DatasetSelector onDatasetSelect={onPromptsExtracted} />
         </TabsContent>
       </Tabs>
     </div>
