@@ -16,3 +16,9 @@ export interface FingerPrintResult {
   languages: string;
   safety: string;
 }
+
+export interface DatasetOption {
+  id: string;
+  name: string;
+  description: string | null;
+}
