@@ -160,7 +160,10 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
         </TabsContent>
         
         <TabsContent value="select">
-          <DatasetSelector onDatasetSelect={handleDatasetSelect} />
+          <DatasetSelector 
+            selectedDataset=""
+            onDatasetSelect={handleDatasetSelect}
+          />
         </TabsContent>
       </Tabs>
     </div>
