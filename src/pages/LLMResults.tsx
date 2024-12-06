@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
-import { GeraideResults } from "@/components/llm-results/GeraideResults";
+import { ContextualScanResults } from "@/components/llm-results/GeraideResults";
 import { Loader2 } from "lucide-react";
 import { LLMScan, GeraideScan, Message } from "@/components/llm-results/types";
 import { useState } from "react";
@@ -114,7 +114,7 @@ const LLMResults = () => {
       <Tabs defaultValue="scans" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="scans">Custom Scans</TabsTrigger>
-          <TabsTrigger value="geraide">Geraide Analysis</TabsTrigger>
+          <TabsTrigger value="contextual">Contextual Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="scans">
@@ -133,7 +133,7 @@ const LLMResults = () => {
           {renderContent('scans')}
         </TabsContent>
 
-        <TabsContent value="geraide">
+        <TabsContent value="contextual">
           {renderContent('geraide')}
         </TabsContent>
       </Tabs>

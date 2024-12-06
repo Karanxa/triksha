@@ -12,7 +12,7 @@ interface GeraideResultsProps {
   scans: GeraideScan[];
 }
 
-export function GeraideResults({ scans }: GeraideResultsProps) {
+export function ContextualScanResults({ scans }: GeraideResultsProps) {
   const [selectedScan, setSelectedScan] = useState<GeraideScan | null>(null);
 
   const formatDate = (date: string) => {
