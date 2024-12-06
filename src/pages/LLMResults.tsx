@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
-import { ContextualScanResults } from "@/components/llm-results/GeraideResults";
+import { ContextualScanResults } from "@/components/llm-results/ContextualScanResults";
 import { Loader2 } from "lucide-react";
 import { LLMScan, GeraideScan, Message } from "@/components/llm-results/types";
 import { useState } from "react";
@@ -70,7 +70,7 @@ const LLMResults = () => {
            matchesVulnerability && matchesModel;
   });
 
-  const renderContent = (type: 'scans' | 'geraide') => {
+  const renderContent = (type: 'scans' | 'contextual') => {
     const isLoading = type === 'scans' ? isScansLoading : isGeraideLoading;
     const error = type === 'scans' ? scansError : geraideError;
     const data = type === 'scans' ? filteredScans : geraidScans;
@@ -103,7 +103,7 @@ const LLMResults = () => {
       return <ResultsTable scans={data as LLMScan[]} />;
     }
 
-    return <GeraideResults scans={data as GeraideScan[]} />;
+    return <ContextualScanResults scans={data as GeraideScan[]} />;
   };
 
   return (
@@ -134,7 +134,7 @@ const LLMResults = () => {
         </TabsContent>
 
         <TabsContent value="contextual">
-          {renderContent('geraide')}
+          {renderContent('contextual')}
         </TabsContent>
       </Tabs>
     </div>
