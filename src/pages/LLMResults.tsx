@@ -4,7 +4,7 @@ import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
 import { GeraideResults } from "@/components/llm-results/GeraideResults";
 import { Loader2 } from "lucide-react";
-import { LLMScan, GeraideScan } from "@/components/llm-results/types";
+import { LLMScan, GeraideScan, Message } from "@/components/llm-results/types";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -29,7 +29,7 @@ const LLMResults = () => {
     },
   });
 
-  // Query for Geraide scans
+  // Query for Geraide scans with proper type conversion
   const { data: geraidScans, isLoading: isGeraideLoading, error: geraideError } = useQuery({
     queryKey: ['geraide-scans'],
     queryFn: async () => {
@@ -39,11 +39,18 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as GeraideScan[];
+
+      // Convert the raw data to properly typed GeraideScan objects
+      return (data || []).map(scan => ({
+        ...scan,
+        messages: (scan.messages as any[]).map((msg: any) => ({
+          role: msg.role as Message['role'],
+          content: msg.content as string
+        }))
+      })) as GeraideScan[];
     },
   });
 
-  // Filter scans based on search query and filters
   const filteredScans = scans?.filter(scan => {
     const matchesSearch = searchQuery === "" || 
       (scan.results?.prompt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -79,7 +86,7 @@ const LLMResults = () => {
     if (error) {
       return (
         <div className="text-destructive text-center py-8">
-          Failed to load results: {error.message}
+          Failed to load results: {(error as Error).message}
         </div>
       );
     }
@@ -93,10 +100,10 @@ const LLMResults = () => {
     }
 
     if (type === 'scans') {
-      return <ResultsTable scans={data} />;
+      return <ResultsTable scans={data as LLMScan[]} />;
     }
 
-    return <GeraideResults scans={data} />;
+    return <GeraideResults scans={data as GeraideScan[]} />;
   };
 
   return (
