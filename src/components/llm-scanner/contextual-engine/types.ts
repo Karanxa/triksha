@@ -1,3 +1,9 @@
+export interface ContextualConfig {
+  provider: string;
+  model: string;
+  datasetId: string;
+}
+
 export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -9,10 +15,4 @@ export interface FingerPrintResult {
   training: string;
   languages: string;
   safety: string;
-}
-
-export interface DatasetOption {
-  id: string;
-  name: string;
-  description: string | null;
 }

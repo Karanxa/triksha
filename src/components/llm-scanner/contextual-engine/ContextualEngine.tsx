@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { ContextualChatbot } from "./ContextualChatbot";
-import { DatasetAnalysis } from "../datasets/analysis/DatasetAnalysis";
-import { FingerPrintResult } from "./types";
+import { useState } from "react"
+import { ContextualChatbot } from "./ContextualChatbot"
+import { DatasetAnalysis } from "@/components/datasets/analysis/DatasetAnalysis"
+import { FingerPrintResult } from "./types"
 
 export const ContextualEngine = () => {
   const [config, setConfig] = useState<{
