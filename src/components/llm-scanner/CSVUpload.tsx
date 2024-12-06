@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DatasetSelector } from "./DatasetSelector";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CSVUploadProps {
   onPromptsExtracted: (prompts: string[]) => void;
@@ -63,6 +64,69 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
     }
   };
 
+  const handleDatasetSelect = async (datasetId: string) => {
+    try {
+      // First, get the dataset details
+      const { data: dataset, error: datasetError } = await supabase
+        .from('datasets')
+        .select('file_path')
+        .eq('id', datasetId)
+        .single();
+
+      if (datasetError) throw datasetError;
+      if (!dataset?.file_path) {
+        toast.error("Dataset file not found");
+        return;
+      }
+
+      // Download the file content
+      const { data: fileData, error: downloadError } = await supabase
+        .storage
+        .from('datasets')
+        .download(dataset.file_path);
+
+      if (downloadError) throw downloadError;
+
+      // Read the file content
+      const text = await fileData.text();
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      
+      if (lines.length === 0) {
+        toast.error("Dataset is empty");
+        return;
+      }
+
+      // Assume first line is header
+      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
+      const promptIndex = headers.findIndex(header => 
+        header === "prompts" || header === "prompt" || header === "text"
+      );
+
+      if (promptIndex === -1) {
+        toast.error("Dataset must have a 'prompts', 'prompt', or 'text' column");
+        return;
+      }
+
+      const prompts = lines.slice(1).map(line => {
+        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
+        return cleanedValues[promptIndex];
+      }).filter(Boolean);
+
+      if (prompts.length === 0) {
+        toast.error("No valid prompts found in the dataset");
+        return;
+      }
+
+      onPromptsExtracted(prompts);
+      toast.success(`${prompts.length} prompts extracted from dataset`);
+
+    } catch (error) {
+      console.error("Dataset processing error:", error);
+      toast.error("Error processing dataset: " + (error as Error).message);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Tabs defaultValue="upload" className="w-full">
@@ -96,7 +160,7 @@ export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
         </TabsContent>
         
         <TabsContent value="select">
-          <DatasetSelector onDatasetSelect={onPromptsExtracted} />
+          <DatasetSelector onDatasetSelect={handleDatasetSelect} />
         </TabsContent>
       </Tabs>
     </div>
