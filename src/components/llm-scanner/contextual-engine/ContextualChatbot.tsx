@@ -54,11 +54,12 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
         { role: 'user', content: questions[currentStep] }
       ]);
 
+      // Send the fingerprinting question as a regular prompt
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
           provider: selectedProvider,
           model: selectedModel,
-          prompt: questions[currentStep]
+          prompt: questions[currentStep] // This will be sent to Ollama in the same format as regular prompts
         }
       });
 
