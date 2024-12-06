@@ -16,7 +16,7 @@ export async function handleOllamaRequest(
       return { error: 'Custom curl commands not yet implemented' };
     }
 
-    const response = await fetch(`${endpoint}/api/chat`, {
+    const response = await fetch(`http://127.0.0.1:5000/api/ollama`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
