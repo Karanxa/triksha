@@ -7,6 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 interface ProviderSelectProps {
   value: string;
@@ -14,12 +16,25 @@ interface ProviderSelectProps {
 }
 
 const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
+  const [customModel, setCustomModel] = useState("");
+  
   const handleProviderChange = (newValue: string) => {
-    onValueChange(newValue);
+    if (newValue === "ollama") {
+      // For Ollama, we'll use a custom model name format
+      onValueChange(`${newValue}-${customModel}`);
+    } else {
+      onValueChange(newValue);
+      setCustomModel("");
+    }
   };
 
   const handleModelChange = (model: string) => {
     onValueChange(`${value.split('-')[0]}-${model}`);
+  };
+
+  const handleCustomModelChange = (modelName: string) => {
+    setCustomModel(modelName);
+    onValueChange(`ollama-${modelName}`);
   };
 
   const getModelsForProvider = () => {
@@ -39,12 +54,6 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
         return [
           { value: "gemini-1.0-pro", label: "Gemini Pro" },
           { value: "gemini-1.0-ultra", label: "Gemini Ultra" }
-        ];
-      case "ollama":
-        return [
-          { value: "llama2", label: "Llama 2" },
-          { value: "mistral", label: "Mistral" },
-          { value: "codellama", label: "Code Llama" }
         ];
       default:
         return [];
@@ -71,7 +80,7 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
           </SelectContent>
         </Select>
 
-        {selectedProvider && (
+        {selectedProvider && selectedProvider !== "ollama" && (
           <Select 
             value={value.split('-')[1] || ""} 
             onValueChange={handleModelChange}
@@ -87,6 +96,19 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
               ))}
             </SelectContent>
           </Select>
+        )}
+
+        {selectedProvider === "ollama" && (
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">
+              Enter Model Name
+            </label>
+            <Input
+              placeholder="e.g., llama2, mistral, codellama"
+              value={customModel}
+              onChange={(e) => handleCustomModelChange(e.target.value)}
+            />
+          </div>
         )}
       </div>
     </div>
