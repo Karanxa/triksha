@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { ScanTabs } from "@/components/llm-scanner/ScanTabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScanForm } from "@/components/llm-scanner/ScanForm";
 import { ContextualEngine } from "@/components/llm-scanner/contextual-engine/ContextualEngine";
