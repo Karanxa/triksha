@@ -16,7 +16,7 @@ import Login from "@/pages/Login";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="ui-theme" forcedTheme="dark">
       <ErrorBoundary>
         <Router>
           <Routes>
