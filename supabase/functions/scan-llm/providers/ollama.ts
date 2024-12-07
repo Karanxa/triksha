@@ -5,6 +5,8 @@ export async function handleOllamaRequest(
   customCurl?: string
 ) {
   try {
+    // Normalize endpoint URL to ensure no double slashes
+    const baseUrl = endpoint.replace(/\/+$/, '');
     const requestHeaders = {
       'Content-Type': 'application/json',
     };
@@ -12,16 +14,24 @@ export async function handleOllamaRequest(
     const requestBody = JSON.stringify({
       model: modelName,
       prompt: prompt,
+      stream: false
     });
 
+    // Log the full request details
     console.log('Sending Ollama request:', {
-      url: `${endpoint}/api/generate`,
+      url: `${baseUrl}/api/chat/completions`,
       method: 'POST',
       headers: requestHeaders,
-      body: requestBody
+      body: JSON.parse(requestBody)
     });
 
-    const response = await fetch(`${endpoint}/api/generate`, {
+    // Example cURL command for debugging
+    const curlCommand = `curl -X POST ${baseUrl}/api/chat/completions \
+      -H 'Content-Type: application/json' \
+      -d '${requestBody}'`;
+    console.log('Equivalent cURL command:', curlCommand);
+
+    const response = await fetch(`${baseUrl}/api/chat/completions`, {
       method: 'POST',
       headers: requestHeaders,
       body: requestBody
@@ -33,20 +43,21 @@ export async function handleOllamaRequest(
 
     const responseData = await response.json();
     
-    // Return verbose information
+    // Return verbose information including the cURL command
     return {
       request: {
-        url: `${endpoint}/api/generate`,
+        url: `${baseUrl}/api/chat/completions`,
         method: 'POST',
         headers: requestHeaders,
-        body: JSON.parse(requestBody)
+        body: JSON.parse(requestBody),
+        curl: curlCommand
       },
       response: {
         status: response.status,
         headers: Object.fromEntries(response.headers.entries()),
         body: responseData
       },
-      model_response: responseData.response || 'No response text available'
+      model_response: responseData.response || responseData.choices?.[0]?.message?.content || 'No response text available'
     };
 
   } catch (error) {
