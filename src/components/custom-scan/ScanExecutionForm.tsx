@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { ModelSelect } from "@/components/llm-scanner/providers/ModelSelect";
+import { ProviderSelect } from "@/components/augment-prompt/ProviderSelect";
 import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  provider: z.string().min(1, "Provider is required"),
   model: z.string().min(1, "Model is required"),
   testIds: z.array(z.string()).min(1, "At least one test must be selected"),
 });
@@ -32,6 +33,7 @@ export function ScanExecutionForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      provider: "",
       model: "",
       testIds: selectedTests,
     },
@@ -51,10 +53,13 @@ export function ScanExecutionForm({
     <FormProvider {...form}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          <ModelSelect
-            name="model"
-            label="Model"
-            placeholder="Select a model"
+          <ProviderSelect
+            value={`${form.watch("provider")}-${form.watch("model")}`}
+            onValueChange={(value) => {
+              const [provider, model] = value.split('-');
+              form.setValue("provider", provider);
+              form.setValue("model", model);
+            }}
           />
           <div className="flex justify-end space-x-4">
             <Button
