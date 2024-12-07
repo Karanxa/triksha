@@ -15,6 +15,9 @@ import { ScanStatusHandler } from "./ScanStatusHandler";
 import { ScanNotification } from "./ScanNotification";
 import { CustomEndpoint } from "./types/CustomEndpoint";
 import { useScanSubmit } from "./hooks/useScanSubmit";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 export const ScanForm = () => {
   const navigate = useNavigate();
@@ -62,7 +65,6 @@ export const ScanForm = () => {
           setSchedule("none");
           setIsRecurring(false);
           
-          // For batch scans, show a notification and optionally redirect
           if (scanType === "batch") {
             toast.success('Batch scan started successfully', {
               description: 'You can navigate away - the scan will continue in the background.'
@@ -80,32 +82,11 @@ export const ScanForm = () => {
     setScanId: setCurrentScanId
   });
 
-  const onFormSubmit = async () => {
-    const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
-
-    if (promptsToSubmit.length === 0) {
-      toast.error("Please enter at least one prompt");
-      return;
-    }
-
-    if (!provider) {
-      toast.error("Please select a provider");
-      return;
-    }
-
-    if (promptsToSubmit.length > 100000) {
-      toast.error("Maximum batch size is 100,000 prompts");
-      return;
-    }
-
-    if (promptsToSubmit.length > 1000) {
-      toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
-    }
-
+  const handleFormSubmit = async () => {
     await handleSubmit({
       provider,
       customEndpoint,
-      prompts: promptsToSubmit,
+      prompts: scanType === "manual" ? [singlePrompt] : prompts,
       category,
       label,
       schedule,
@@ -117,52 +98,68 @@ export const ScanForm = () => {
   return (
     <div className="space-y-8">
       <ScanNotification />
-      <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
-
-      <ScanFormProvider 
-        provider={provider}
-        onProviderChange={setProvider}
-        customEndpoint={customEndpoint}
-        onCustomEndpointChange={(endpoint: Partial<CustomEndpoint>) => {
-          setCustomEndpoint(prev => ({
-            ...prev,
-            ...endpoint
-          }));
-        }}
-      />
-
-      <ScanPromptInput
-        scanType={scanType}
-        singlePrompt={singlePrompt}
-        onSinglePromptChange={setSinglePrompt}
-        prompts={prompts}
-        onPromptsExtracted={setPrompts}
-      />
-
-      <div className="space-y-4">
-        <AttackCategorySelect
-          value={category}
-          onValueChange={setCategory}
-        />
-      </div>
-
-      {scanType === "batch" && (
-        <QPSControl qps={qps} onQPSChange={setQPS} />
+      
+      {provider === 'custom' && (
+        <Alert>
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Dynamic Endpoint Configuration</AlertTitle>
+          <AlertDescription>
+            Configure your custom LLM endpoint using curl commands, HTTP requests, or manual configuration. 
+            Use placeholders like {'{PROMPT}'} to indicate where the test prompts should be inserted.
+          </AlertDescription>
+        </Alert>
       )}
 
-      <ScanFormSchedule
-        schedule={schedule}
-        onScheduleChange={setSchedule}
-        isRecurring={isRecurring}
-        onRecurringChange={setIsRecurring}
-      />
+      <Card className="border-2 border-primary/20">
+        <CardContent className="pt-6">
+          <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
 
-      <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
+          <ScanFormProvider 
+            provider={provider}
+            onProviderChange={setProvider}
+            customEndpoint={customEndpoint}
+            onCustomEndpointChange={(endpoint: Partial<CustomEndpoint>) => {
+              setCustomEndpoint(prev => ({
+                ...prev,
+                ...endpoint
+              }));
+            }}
+          />
 
-      <ScanFormActions 
-        isScanning={isScanning} 
-        onSubmit={onFormSubmit} 
-      />
+          <ScanPromptInput
+            scanType={scanType}
+            singlePrompt={singlePrompt}
+            onSinglePromptChange={setSinglePrompt}
+            prompts={prompts}
+            onPromptsExtracted={setPrompts}
+          />
+
+          <div className="space-y-4 mt-6">
+            <AttackCategorySelect
+              value={category}
+              onValueChange={setCategory}
+            />
+          </div>
+
+          {scanType === "batch" && (
+            <QPSControl qps={qps} onQPSChange={setQPS} />
+          )}
+
+          <ScanFormSchedule
+            schedule={schedule}
+            onScheduleChange={setSchedule}
+            isRecurring={isRecurring}
+            onRecurringChange={setIsRecurring}
+          />
+
+          <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
+
+          <ScanFormActions 
+            isScanning={isScanning} 
+            onSubmit={handleFormSubmit}
+          />
+        </CardContent>
+      </Card>
 
       <ScanStatusHandler
         scanId={currentScanId}
