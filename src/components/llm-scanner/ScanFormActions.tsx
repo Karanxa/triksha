@@ -3,7 +3,7 @@ import { Loader2 } from "lucide-react";
 
 interface ScanFormActionsProps {
   isScanning: boolean;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void> | void;
 }
 
 export const ScanFormActions = ({ isScanning, onSubmit }: ScanFormActionsProps) => {

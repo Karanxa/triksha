@@ -82,6 +82,19 @@ export const ScanForm = () => {
     setScanId: setCurrentScanId
   });
 
+  const handleFormSubmit = async () => {
+    await handleSubmit({
+      provider,
+      customEndpoint,
+      prompts: scanType === "manual" ? [singlePrompt] : prompts,
+      category,
+      label,
+      schedule,
+      isRecurring,
+      qps: Math.min(qps, 50)
+    });
+  };
+
   return (
     <div className="space-y-8">
       <ScanNotification />
@@ -143,7 +156,7 @@ export const ScanForm = () => {
 
           <ScanFormActions 
             isScanning={isScanning} 
-            onSubmit={handleSubmit} 
+            onSubmit={handleFormSubmit}
           />
         </CardContent>
       </Card>
