@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { ProviderSelect } from "@/components/augment-prompt/ProviderSelect";
+import ProviderSelect from "@/components/augment-prompt/ProviderSelect";
 import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
