@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 export interface ModelSelectProps {
   name: string;
@@ -47,12 +48,6 @@ export const ModelSelect = ({
           { value: 'gemini-1.0-pro', label: 'Gemini Pro' },
           { value: 'gemini-1.0-ultra', label: 'Gemini Ultra' },
         ];
-      case 'ollama':
-        return [
-          { value: 'llama2', label: 'Llama 2' },
-          { value: 'mistral', label: 'Mistral' },
-          { value: 'codellama', label: 'Code Llama' },
-        ];
       default:
         return [];
     }
@@ -66,26 +61,39 @@ export const ModelSelect = ({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Select
-              value={field.value}
-              onValueChange={(value) => {
-                field.onChange(value);
-                if (onModelChange) {
-                  onModelChange(value);
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={placeholder} />
-              </SelectTrigger>
-              <SelectContent>
-                {getModelOptions().map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {provider === 'ollama' ? (
+              <Input
+                placeholder="Enter model name (e.g., llama2, mistral, codellama)"
+                value={field.value}
+                onChange={(e) => {
+                  field.onChange(e.target.value);
+                  if (onModelChange) {
+                    onModelChange(e.target.value);
+                  }
+                }}
+              />
+            ) : (
+              <Select
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  if (onModelChange) {
+                    onModelChange(value);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {getModelOptions().map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </FormControl>
         </FormItem>
       )}
