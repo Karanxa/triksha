@@ -1,59 +1,44 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ScanTabs } from "@/components/llm-scanner/ScanTabs";
-import ToolCard from "@/components/ToolCard";
-import { Shield, Zap } from "lucide-react";
-import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScanForm } from "@/components/llm-scanner/ScanForm";
+import { ContextualEngine } from "@/components/llm-scanner/contextual-engine/ContextualEngine";
+import { Link } from "react-router-dom";
 
 const LLMScanner = () => {
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
-
-  const tools = [
-    {
-      id: "basic",
-      title: "Custom Scan",
-      description: "Test LLMs with custom prompts and analyze their responses",
-      icon: Shield
-    },
-    {
-      id: "contextual",
-      title: "Contextual Analysis",
-      description: "Advanced LLM testing with automated analysis and reporting",
-      icon: Zap
-    }
-  ];
-
   return (
     <div className="container py-4 md:py-8 px-4 md:px-8">
-      <h1 className="text-2xl md:text-3xl font-bold mb-2">Scans</h1>
-      <p className="text-muted-foreground mb-6 md:mb-8">Test LLM models for security vulnerabilities and analyze their responses.</p>
+      <div className="flex items-baseline justify-between mb-2">
+        <h1 className="text-2xl md:text-3xl font-bold">Scans</h1>
+        <Link 
+          to="/llm-results" 
+          className="text-sm text-primary hover:underline"
+        >
+          View Results →
+        </Link>
+      </div>
+      <p className="text-muted-foreground mb-6 md:mb-8">
+        Test LLM models for security vulnerabilities and analyze their responses.
+      </p>
       
-      {!selectedTool ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {tools.map((tool) => (
-            <ToolCard
-              key={tool.id}
-              icon={tool.icon}
-              title={tool.title}
-              description={tool.description}
-              onClick={() => setSelectedTool(tool.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <Card className="w-full max-w-3xl mx-auto">
-          <CardContent className="pt-4 md:pt-6">
-            <div className="mb-4 md:mb-6">
-              <button 
-                onClick={() => setSelectedTool(null)}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                ← Back to tools
-              </button>
-            </div>
-            <ScanTabs initialTab={selectedTool} />
-          </CardContent>
-        </Card>
-      )}
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardContent className="pt-6">
+          <Tabs defaultValue="basic" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Custom Scan</TabsTrigger>
+              <TabsTrigger value="contextual">Contextual Analysis</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="basic">
+              <ScanForm />
+            </TabsContent>
+
+            <TabsContent value="contextual">
+              <ContextualEngine />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
