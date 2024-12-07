@@ -5,33 +5,50 @@ export async function handleOllamaRequest(
   customCurl?: string
 ) {
   try {
-    if (customCurl) {
-      // Parse and execute custom curl command
-      const curlCommand = customCurl
-        .replace('{MODEL}', modelName)
-        .replace('{PROMPT}', prompt);
-      
-      // Execute the custom curl command
-      // Note: Implementation depends on how you want to handle custom curl commands
-      return { error: 'Custom curl commands not yet implemented' };
-    }
+    const requestHeaders = {
+      'Content-Type': 'application/json',
+    };
 
-    const response = await fetch(`http://127.0.0.1:5000/api/ollama`, {
+    const requestBody = JSON.stringify({
+      model: modelName,
+      prompt: prompt,
+    });
+
+    console.log('Sending Ollama request:', {
+      url: `${endpoint}/api/generate`,
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelName,
-        prompt: prompt,
-      }),
+      headers: requestHeaders,
+      body: requestBody
+    });
+
+    const response = await fetch(`${endpoint}/api/generate`, {
+      method: 'POST',
+      headers: requestHeaders,
+      body: requestBody
     });
 
     if (!response.ok) {
       throw new Error(`Ollama API error: ${response.statusText}`);
     }
 
-    return await response.json();
+    const responseData = await response.json();
+    
+    // Return verbose information
+    return {
+      request: {
+        url: `${endpoint}/api/generate`,
+        method: 'POST',
+        headers: requestHeaders,
+        body: JSON.parse(requestBody)
+      },
+      response: {
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: responseData
+      },
+      model_response: responseData.response || 'No response text available'
+    };
+
   } catch (error) {
     console.error('Error in Ollama request:', error);
     throw error;

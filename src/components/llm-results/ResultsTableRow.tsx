@@ -1,7 +1,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, FileJson } from "lucide-react";
+import { CheckCircle2, XCircle, FileJson, Terminal } from "lucide-react";
 import { LLMScan } from "./types";
 import {
   Tooltip,
@@ -70,6 +70,17 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
 
+  // Format verbose Ollama data if available
+  const formatVerboseData = () => {
+    if (rawResponse?.request && rawResponse?.response) {
+      return JSON.stringify({
+        request: rawResponse.request,
+        response: rawResponse.response
+      }, null, 2);
+    }
+    return JSON.stringify(rawResponse, null, 2);
+  };
+
   return (
     <TableRow>
       <TableCell>{formatScanType(scan.scan_type)}</TableCell>
@@ -102,15 +113,27 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
           onContentClick={() => onContentClick("Response", modelResponse || 'No response available')}
         />
       </TableCell>
-      <TableCell className="w-[60px] text-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => onContentClick("Raw Data", JSON.stringify(rawResponse, null, 2))}
-        >
-          <FileJson className="h-4 w-4" />
-        </Button>
+      <TableCell className="w-[100px] text-center">
+        <div className="flex items-center justify-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => onContentClick("Raw Data", formatVerboseData())}
+          >
+            <FileJson className="h-4 w-4" />
+          </Button>
+          {model.toLowerCase().includes('ollama') && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => onContentClick("Verbose Ollama Details", formatVerboseData())}
+            >
+              <Terminal className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </TableCell>
       <TableCell className="border-l">
         <CategoryBadge category={scan.category || 'Uncategorized'} />
