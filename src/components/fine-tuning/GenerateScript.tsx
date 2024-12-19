@@ -6,10 +6,8 @@ import { ModelSelect } from "./ModelSelect"
 import { ParameterTabs } from "./ParameterTabs"
 import { ScriptPreview } from "./ScriptPreview"
 import { Upload } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 
 export const GenerateScript = () => {
-  const { toast } = useToast()
   const [selectedModel, setSelectedModel] = useState("")
   const [selectedDataset, setSelectedDataset] = useState("")
 
