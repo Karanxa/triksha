@@ -6,10 +6,13 @@ import { DatasetSelect } from "./components/DatasetSelect";
 import { BasicParameters } from "./components/BasicParameters";
 import { useSession } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 export const CreateFineTuningJob = () => {
   const { toast } = useToast();
   const session = useSession();
+  const navigate = useNavigate();
   
   const [model, setModel] = useState("");
   const [datasetId, setDatasetId] = useState("");
@@ -63,13 +66,8 @@ export const CreateFineTuningJob = () => {
         description: "Fine-tuning job created successfully"
       });
 
-      // Reset form
-      setModel("");
-      setDatasetId("");
-      setLearningRate("0.0001");
-      setBatchSize("32");
-      setEpochs("3");
-      setOptimizer("adamw");
+      // Navigate to job history
+      navigate("/fine-tuning?tab=history");
     } catch (error: any) {
       console.error('Error creating fine-tuning job:', error);
       toast({
@@ -83,35 +81,58 @@ export const CreateFineTuningJob = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <ModelSelect 
-        value={model}
-        onValueChange={setModel}
-      />
+    <Card className="p-6">
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold mb-2">Create Fine-tuning Job</h2>
+          <p className="text-sm text-muted-foreground">
+            Select a model and dataset to begin fine-tuning. Make sure you have uploaded your training data first.
+          </p>
+        </div>
 
-      <DatasetSelect
-        value={datasetId}
-        onValueChange={setDatasetId}
-      />
+        <ModelSelect 
+          value={model}
+          onValueChange={setModel}
+        />
 
-      <BasicParameters
-        learningRate={learningRate}
-        setLearningRate={setLearningRate}
-        batchSize={batchSize}
-        setBatchSize={setBatchSize}
-        epochs={epochs}
-        setEpochs={setEpochs}
-        optimizer={optimizer}
-        setOptimizer={setOptimizer}
-      />
+        <DatasetSelect
+          value={datasetId}
+          onValueChange={setDatasetId}
+        />
 
-      <Button 
-        onClick={handleSubmit} 
-        disabled={isSubmitting}
-        className="w-full"
-      >
-        {isSubmitting ? "Creating..." : "Create Fine-tuning Job"}
-      </Button>
-    </div>
+        <BasicParameters
+          learningRate={learningRate}
+          setLearningRate={setLearningRate}
+          batchSize={batchSize}
+          setBatchSize={setBatchSize}
+          epochs={epochs}
+          setEpochs={setEpochs}
+          optimizer={optimizer}
+          setOptimizer={setOptimizer}
+        />
+
+        <Button 
+          onClick={handleSubmit} 
+          disabled={isSubmitting || !model || !datasetId}
+          className="w-full"
+        >
+          {isSubmitting ? "Creating..." : "Create Fine-tuning Job"}
+        </Button>
+
+        {!datasetId && (
+          <p className="text-sm text-muted-foreground text-center">
+            No dataset selected. You can{" "}
+            <Button 
+              variant="link" 
+              className="p-0 h-auto font-normal"
+              onClick={() => navigate("/datasets")}
+            >
+              create or upload a dataset
+            </Button>{" "}
+            first.
+          </p>
+        )}
+      </div>
+    </Card>
   );
 };

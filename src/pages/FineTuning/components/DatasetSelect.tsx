@@ -15,7 +15,7 @@ export const DatasetSelect = ({ value, onValueChange }: DatasetSelectProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('datasets')
-        .select('id, name')
+        .select('id, name, description')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -24,7 +24,15 @@ export const DatasetSelect = ({ value, onValueChange }: DatasetSelectProps) => {
   });
 
   if (isLoading) {
-    return <Loader2 className="h-4 w-4 animate-spin" />;
+    return (
+      <div className="space-y-2">
+        <Label>Dataset</Label>
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-sm text-muted-foreground">Loading datasets...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -36,12 +44,24 @@ export const DatasetSelect = ({ value, onValueChange }: DatasetSelectProps) => {
         </SelectTrigger>
         <SelectContent>
           {datasets?.map((dataset) => (
-            <SelectItem key={dataset.id} value={dataset.id}>
-              {dataset.name}
+            <SelectItem 
+              key={dataset.id} 
+              value={dataset.id}
+              className="flex flex-col items-start"
+            >
+              <span>{dataset.name}</span>
+              {dataset.description && (
+                <span className="text-xs text-muted-foreground">{dataset.description}</span>
+              )}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+      {datasets?.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          No datasets found. Please create a dataset first.
+        </p>
+      )}
     </div>
   );
 };
