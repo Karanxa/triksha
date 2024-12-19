@@ -5,8 +5,10 @@ import { useToast } from "@/hooks/use-toast"
 import { ModelSelect } from "./ModelSelect"
 import { DatasetSelect } from "./DatasetSelect"
 import { TaskSelect } from "./TaskSelect"
-import { DatasetUpload } from "./DatasetUpload"
 import { ParameterTabs } from "./ParameterTabs"
+import { LanguageSelect } from "./LanguageSelect"
+import { GeneratedScript } from "./GeneratedScript"
+import { generateTrainingScript } from "./utils/scriptGenerator"
 
 interface GenerateScriptProps {
   isGoogleAuthed: boolean
@@ -17,9 +19,9 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
   
   // Model and Dataset Selection
   const [model, setModel] = useState("")
-  const [datasetType, setDatasetType] = useState("")
+  const [datasetId, setDatasetId] = useState("")
   const [taskType, setTaskType] = useState("")
-  const [file, setFile] = useState<File | null>(null)
+  const [scriptLanguage, setScriptLanguage] = useState("python")
   
   // Basic Parameters with default values
   const [learningRate, setLearningRate] = useState("0.0001")
@@ -42,20 +44,50 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
   const [useMemoryOptimization, setUseMemoryOptimization] = useState(false)
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
+  const [generatedScript, setGeneratedScript] = useState<string | null>(null)
+
   // Check if all required inputs are filled
-  const areRequiredInputsFilled = model.length > 0 && datasetType.length > 0 && taskType.length > 0 && file !== null
+  const areRequiredInputsFilled = model.length > 0 && datasetId.length > 0 && taskType.length > 0
 
   const handleGenerateScript = async () => {
     if (!areRequiredInputsFilled) {
       toast({
         variant: "destructive",
         title: "Missing information",
-        description: "Please fill in all required fields: Base Model, Dataset Type, Task Type, and Dataset"
+        description: "Please fill in all required fields: Base Model, Dataset, and Task Type"
       })
       return
     }
 
-    // Add script generation logic here
+    const parameters = {
+      learningRate,
+      batchSize,
+      epochs,
+      warmupSteps,
+      weightDecay,
+      optimizer,
+      scheduler,
+      maxSteps,
+      evaluationStrategy,
+      saveStrategy,
+      randomSeed,
+      precision,
+      gradientAccumulation,
+      useDeepSpeed,
+      useFlashAttention,
+      useMemoryOptimization,
+      hardwareAcceleration
+    }
+
+    const script = generateTrainingScript({
+      model,
+      datasetId,
+      taskType,
+      scriptLanguage,
+      parameters
+    })
+
+    setGeneratedScript(script)
     toast({
       title: "Script generated",
       description: "Your fine-tuning script has been generated successfully"
@@ -67,9 +99,9 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
       <Card className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ModelSelect model={model} setModel={setModel} />
-          <DatasetSelect datasetType={datasetType} setDatasetType={setDatasetType} />
+          <DatasetSelect value={datasetId} onValueChange={setDatasetId} />
           <TaskSelect taskType={taskType} setTaskType={setTaskType} />
-          <DatasetUpload onFileSelect={(file) => setFile(file)} />
+          <LanguageSelect value={scriptLanguage} onValueChange={setScriptLanguage} />
         </div>
       </Card>
 
@@ -122,6 +154,10 @@ export const GenerateScript = ({ isGoogleAuthed }: GenerateScriptProps) => {
       >
         Generate Fine-tuning Script
       </Button>
+
+      {generatedScript && (
+        <GeneratedScript script={generatedScript} />
+      )}
     </div>
   )
 }
