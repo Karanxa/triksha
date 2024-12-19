@@ -1,6 +1,4 @@
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Download, ExternalLink } from "lucide-react"
+import { GeneratedScript } from "./GeneratedScript"
 
 interface ScriptPreviewProps {
   script: string;
@@ -28,40 +26,9 @@ interface ScriptPreviewProps {
 }
 
 export const ScriptPreview = ({ script, model, dataset, parameters }: ScriptPreviewProps) => {
-  const handleDownload = () => {
-    const blob = new Blob([script], { type: 'text/plain' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'fine-tuning-script.py'
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+  if (!script || script === "# Your generated script will appear here") {
+    return null;
   }
 
-  const openJupyterNotebook = () => {
-    window.open('http://localhost:8888/tree', '_blank');
-  };
-
-  return (
-    <Card className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Generated Script</h3>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
-          <Button variant="outline" size="sm" onClick={openJupyterNotebook}>
-            <ExternalLink className="h-4 w-4 mr-2" />
-            Open Jupyter
-          </Button>
-        </div>
-      </div>
-      <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-        <code>{script}</code>
-      </pre>
-    </Card>
-  )
+  return <GeneratedScript script={script} />;
 }

@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Download, Copy, Check } from "lucide-react"
-import { useState } from "react"
+import { Download, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
 
 interface GeneratedScriptProps {
@@ -9,7 +8,7 @@ interface GeneratedScriptProps {
 }
 
 export const GeneratedScript = ({ script }: GeneratedScriptProps) => {
-  const [copied, setCopied] = useState(false)
+  if (!script) return null;
 
   const handleDownload = () => {
     const blob = new Blob([script], { type: 'text/plain' })
@@ -24,31 +23,32 @@ export const GeneratedScript = ({ script }: GeneratedScriptProps) => {
     toast.success("Script downloaded successfully")
   }
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(script)
-      setCopied(true)
-      toast.success("Script copied to clipboard")
-      setTimeout(() => setCopied(false), 2000)
-    } catch (error) {
-      toast.error("Failed to copy script")
-    }
+  const openJupyterNotebook = () => {
+    window.open('http://localhost:8888/tree', '_blank')
   }
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="p-6 space-y-4 bg-background border-border">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Generated Script</h3>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            {copied ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDownload}
+            className="flex items-center gap-2"
+          >
             <Download className="h-4 w-4" />
+            Download
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={openJupyterNotebook}
+            className="flex items-center gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open Jupyter
           </Button>
         </div>
       </div>
