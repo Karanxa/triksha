@@ -16,8 +16,18 @@ serve(async (req) => {
     const { model, datasetId, userId, basicParams, advancedParams } = await req.json()
     console.log('Received request:', { model, datasetId, basicParams, advancedParams })
 
+    // Validate required parameters
     if (!model || !datasetId || !basicParams || !advancedParams) {
       throw new Error('Missing required parameters')
+    }
+
+    // Validate specific parameters
+    if (!basicParams.learningRate || !basicParams.batchSize || !basicParams.epochs) {
+      throw new Error('Missing required basic parameters')
+    }
+
+    if (!advancedParams.precision || !advancedParams.gradientAccumulation) {
+      throw new Error('Missing required advanced parameters')
     }
 
     // Initialize Supabase client
