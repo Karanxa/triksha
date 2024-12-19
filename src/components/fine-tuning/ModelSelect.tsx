@@ -2,15 +2,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 
 interface ModelSelectProps {
-  model: string
-  setModel: (value: string) => void
+  value: string;
+  onValueChange: (value: string) => void;
 }
 
-export const ModelSelect = ({ model, setModel }: ModelSelectProps) => {
+export const ModelSelect = ({ value, onValueChange }: ModelSelectProps) => {
   return (
     <div className="space-y-2">
       <Label>Base Model</Label>
-      <Select value={model} onValueChange={setModel}>
+      <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger>
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
