@@ -45,15 +45,6 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
   const handleGenerateScript = async () => {
-    if (!session?.user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Authentication required",
-        description: "Please sign in to generate scripts"
-      })
-      return
-    }
-
     if (!model || !taskType) {
       toast({
         variant: "destructive",
@@ -96,7 +87,7 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
       const { error } = await supabase
         .from('fine_tuning_jobs')
         .insert({
-          user_id: session.user.id,
+          user_id: session!.user.id,
           model: model,
           dataset_id: datasetId || null,
           status: 'script_generated',
@@ -121,6 +112,17 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
         description: "Please try again"
       })
     }
+  }
+
+  // If we have a session, render the form
+  if (!session) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please sign in to generate fine-tuning scripts</p>
+        </div>
+      </Card>
+    )
   }
 
   return (
