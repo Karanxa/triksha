@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import Navigation from "@/components/Navigation";
 import AuthGuard from "@/components/AuthGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -15,44 +14,39 @@ import FineTuning from "@/pages/FineTuning";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
 
-// Replace this with your actual Google Client ID
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID";
-
 function App() {
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <ThemeProvider defaultTheme="dark" storageKey="ui-theme" forcedTheme="dark" enableSystem={false}>
-        <ErrorBoundary>
-          <Router>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<AuthGuard />}>
-                <Route
-                  element={
-                    <>
-                      <Navigation />
-                      <main className="container mx-auto px-4">
-                        <Outlet />
-                      </main>
-                    </>
-                  }
-                >
-                  <Route index element={<Index />} />
-                  <Route path="/llm-scanner" element={<LLMScanner />} />
-                  <Route path="/llm-results" element={<LLMResults />} />
-                  <Route path="/datasets" element={<Datasets />} />
-                  <Route path="/augment-prompt" element={<AugmentPrompt />} />
-                  <Route path="/fine-tuning" element={<FineTuning />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Route>
+    <ThemeProvider defaultTheme="dark" storageKey="ui-theme" forcedTheme="dark" enableSystem={false}>
+      <ErrorBoundary>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<AuthGuard />}>
+              <Route
+                element={
+                  <>
+                    <Navigation />
+                    <main className="container mx-auto px-4">
+                      <Outlet />
+                    </main>
+                  </>
+                }
+              >
+                <Route index element={<Index />} />
+                <Route path="/llm-scanner" element={<LLMScanner />} />
+                <Route path="/llm-results" element={<LLMResults />} />
+                <Route path="/datasets" element={<Datasets />} />
+                <Route path="/augment-prompt" element={<AugmentPrompt />} />
+                <Route path="/fine-tuning" element={<FineTuning />} />
+                <Route path="/settings" element={<Settings />} />
               </Route>
-            </Routes>
-            <ScanNotification />
-            <Toaster />
-          </Router>
-        </ErrorBoundary>
-      </ThemeProvider>
-    </GoogleOAuthProvider>
+            </Route>
+          </Routes>
+          <ScanNotification />
+          <Toaster />
+        </Router>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 

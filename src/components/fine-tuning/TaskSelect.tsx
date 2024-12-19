@@ -2,8 +2,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 
 interface TaskSelectProps {
-  taskType: string
-  setTaskType: (value: string) => void
+  taskType: string;
+  setTaskType: (value: string) => void;
 }
 
 export const TaskSelect = ({ taskType, setTaskType }: TaskSelectProps) => {
