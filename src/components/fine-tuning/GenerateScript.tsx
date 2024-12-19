@@ -12,11 +12,10 @@ import { generateScript } from "./utils/scriptGenerator"
 import { useToast } from "@/hooks/use-toast"
 
 interface GenerateScriptProps {
-  isGoogleAuthed: boolean;
   onScriptGenerated: (script: string, model: string, parameters: any) => void;
 }
 
-export const GenerateScript = ({ isGoogleAuthed, onScriptGenerated }: GenerateScriptProps) => {
+export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
   const { toast } = useToast()
   const [model, setModel] = useState("")
   const [datasetId, setDatasetId] = useState("")
@@ -45,15 +44,6 @@ export const GenerateScript = ({ isGoogleAuthed, onScriptGenerated }: GenerateSc
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
   const handleGenerateScript = async () => {
-    if (!isGoogleAuthed) {
-      toast({
-        variant: "destructive",
-        title: "Google authentication required",
-        description: "Please authenticate with Google before generating a script"
-      })
-      return
-    }
-
     if (!model || !taskType) {
       toast({
         variant: "destructive",
@@ -154,7 +144,7 @@ export const GenerateScript = ({ isGoogleAuthed, onScriptGenerated }: GenerateSc
 
           <Button 
             onClick={handleGenerateScript}
-            disabled={!isGoogleAuthed || !model || !taskType}
+            disabled={!model || !taskType}
           >
             Generate Script
           </Button>
