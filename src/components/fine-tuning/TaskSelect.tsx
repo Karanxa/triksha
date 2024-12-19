@@ -1,7 +1,13 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-interface TaskSelectProps {
+export interface TaskSelectProps {
   value: string;
   onValueChange: (value: string) => void;
 }
@@ -15,9 +21,11 @@ export const TaskSelect = ({ value, onValueChange }: TaskSelectProps) => {
           <SelectValue placeholder="Select task type" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="classification">Classification</SelectItem>
-          <SelectItem value="generation">Text Generation</SelectItem>
-          <SelectItem value="completion">Completion</SelectItem>
+          <SelectItem value="text-generation">Text Generation</SelectItem>
+          <SelectItem value="text-classification">Text Classification</SelectItem>
+          <SelectItem value="question-answering">Question Answering</SelectItem>
+          <SelectItem value="summarization">Summarization</SelectItem>
+          <SelectItem value="translation">Translation</SelectItem>
         </SelectContent>
       </Select>
     </div>

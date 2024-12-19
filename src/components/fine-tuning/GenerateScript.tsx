@@ -5,11 +5,11 @@ import { ModelSelect } from "./ModelSelect"
 import { DatasetSelect } from "./DatasetSelect"
 import { TaskSelect } from "./TaskSelect"
 import { LanguageSelect } from "./LanguageSelect"
-import { BasicParameters } from "./BasicParameters"
-import { AdvancedParameters } from "./AdvancedParameters"
 import { ParameterTabs } from "./ParameterTabs"
 import { generateScript } from "./utils/scriptGenerator"
 import { useToast } from "@/hooks/use-toast"
+import { useSession } from "@supabase/auth-helpers-react"
+import { supabase } from "@/integrations/supabase/client"
 
 interface GenerateScriptProps {
   onScriptGenerated: (script: string, model: string, parameters: any) => void;
@@ -17,6 +17,7 @@ interface GenerateScriptProps {
 
 export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
   const { toast } = useToast()
+  const session = useSession()
   const [model, setModel] = useState("")
   const [datasetId, setDatasetId] = useState("")
   const [taskType, setTaskType] = useState("")
@@ -44,6 +45,15 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
   const handleGenerateScript = async () => {
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to generate scripts"
+      })
+      return
+    }
+
     if (!model || !taskType) {
       toast({
         variant: "destructive",
@@ -82,7 +92,26 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
         parameters
       })
 
+      // Save to Supabase
+      const { error } = await supabase
+        .from('fine_tuning_jobs')
+        .insert({
+          user_id: session.user.id,
+          model: model,
+          dataset_id: datasetId || null,
+          status: 'script_generated',
+          parameters: parameters,
+          script_content: script
+        })
+
+      if (error) throw error
+
       onScriptGenerated(script, model, parameters)
+
+      toast({
+        title: "Script generated successfully",
+        description: "You can view it in the Job History tab"
+      })
 
     } catch (error) {
       console.error('Error generating script:', error)

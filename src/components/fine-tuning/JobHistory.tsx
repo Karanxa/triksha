@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { Card } from "@/components/ui/card"
-import { Loader2, Code } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Loader2, Code } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { GeneratedScript } from "./GeneratedScript"
 
 export const JobHistory = () => {
   const { data: jobs, isLoading } = useQuery({
@@ -71,9 +72,7 @@ export const JobHistory = () => {
                         <DialogTitle>Generated Script</DialogTitle>
                       </DialogHeader>
                       <ScrollArea className="h-[500px] w-full rounded-md border p-4">
-                        <pre className="text-sm">
-                          <code>{job.script_content}</code>
-                        </pre>
+                        <GeneratedScript script={job.script_content} />
                       </ScrollArea>
                     </DialogContent>
                   </Dialog>
