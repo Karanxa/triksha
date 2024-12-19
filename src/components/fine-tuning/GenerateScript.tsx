@@ -6,10 +6,17 @@ import { ModelSelect } from "./ModelSelect"
 import { ParameterTabs } from "./ParameterTabs"
 import { ScriptPreview } from "./ScriptPreview"
 import { Upload } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
+import { useSession } from "@supabase/auth-helpers-react"
 
 export const GenerateScript = () => {
+  const { toast } = useToast()
+  const session = useSession()
   const [selectedModel, setSelectedModel] = useState("")
   const [selectedDataset, setSelectedDataset] = useState("")
+  const [generatedScript, setGeneratedScript] = useState("")
+  const [isGenerating, setIsGenerating] = useState(false)
 
   // Basic Parameters
   const [learningRate, setLearningRate] = useState("0.0001")
@@ -34,6 +41,66 @@ export const GenerateScript = () => {
 
   const openJupyterNotebook = () => {
     window.open('http://localhost:8888/tree', '_blank')
+  }
+
+  const handleGenerateScript = async () => {
+    if (!selectedModel || !selectedDataset) {
+      toast({
+        variant: "destructive",
+        title: "Missing required fields",
+        description: "Please select a model and dataset before generating a script."
+      })
+      return
+    }
+
+    setIsGenerating(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-finetuning-script', {
+        body: {
+          model: selectedModel,
+          datasetId: selectedDataset,
+          userId: session?.user?.id,
+          basicParams: {
+            learningRate,
+            batchSize,
+            epochs,
+            warmupSteps,
+            weightDecay,
+            optimizer,
+            scheduler,
+            maxSteps,
+            evaluationStrategy,
+            saveStrategy,
+            randomSeed
+          },
+          advancedParams: {
+            precision,
+            gradientAccumulation,
+            useDeepSpeed,
+            useFlashAttention,
+            useMemoryOptimization,
+            hardwareAcceleration
+          }
+        }
+      })
+
+      if (error) throw error
+
+      setGeneratedScript(data.script)
+      toast({
+        title: "Success",
+        description: "Fine-tuning script generated successfully"
+      })
+    } catch (error) {
+      console.error('Error generating script:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to generate fine-tuning script. Please try again."
+      })
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return (
@@ -92,12 +159,20 @@ export const GenerateScript = () => {
             hardwareAcceleration={hardwareAcceleration}
             setHardwareAcceleration={setHardwareAcceleration}
           />
+
+          <Button 
+            className="w-full"
+            onClick={handleGenerateScript}
+            disabled={isGenerating || !selectedModel || !selectedDataset}
+          >
+            {isGenerating ? "Generating Script..." : "Generate Script"}
+          </Button>
         </div>
       </Card>
 
-      {selectedModel && selectedDataset && (
+      {generatedScript && (
         <ScriptPreview
-          script="# Your generated script will appear here"
+          script={generatedScript}
           model={selectedModel}
           dataset={selectedDataset}
           parameters={{
