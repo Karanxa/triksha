@@ -46,7 +46,11 @@ export const JobHistory = () => {
                   Created on {new Date(job.created_at).toLocaleDateString()}
                 </p>
               </div>
-              <span className="text-sm text-muted-foreground">
+              <span className={`text-sm ${
+                job.status === 'completed' ? 'text-green-500' : 
+                job.status === 'failed' ? 'text-red-500' : 
+                'text-muted-foreground'
+              }`}>
                 Status: {job.status}
               </span>
             </div>

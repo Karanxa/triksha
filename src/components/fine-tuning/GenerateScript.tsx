@@ -38,8 +38,7 @@ export const GenerateScript = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Generate Fine-tuning Script</h2>
+      <div className="flex justify-end">
         <Button 
           variant="outline" 
           onClick={openJupyterNotebook}
@@ -96,30 +95,32 @@ export const GenerateScript = () => {
         </div>
       </Card>
 
-      <ScriptPreview
-        script="# Your generated script will appear here"
-        model={selectedModel}
-        dataset={selectedDataset}
-        parameters={{
-          learning_rate: parseFloat(learningRate),
-          batch_size: parseInt(batchSize),
-          epochs: parseInt(epochs),
-          warmup_steps: parseInt(warmupSteps),
-          weight_decay: parseFloat(weightDecay),
-          optimizer,
-          scheduler,
-          max_steps: parseInt(maxSteps),
-          evaluation_strategy: evaluationStrategy,
-          save_strategy: saveStrategy,
-          random_seed: parseInt(randomSeed),
-          precision,
-          gradient_accumulation_steps: parseInt(gradientAccumulation),
-          use_deepspeed: useDeepSpeed,
-          use_flash_attention: useFlashAttention,
-          use_memory_optimization: useMemoryOptimization,
-          hardware_acceleration: hardwareAcceleration,
-        }}
-      />
+      {selectedModel && selectedDataset && (
+        <ScriptPreview
+          script="# Your generated script will appear here"
+          model={selectedModel}
+          dataset={selectedDataset}
+          parameters={{
+            learning_rate: parseFloat(learningRate),
+            batch_size: parseInt(batchSize),
+            epochs: parseInt(epochs),
+            warmup_steps: parseInt(warmupSteps),
+            weight_decay: parseFloat(weightDecay),
+            optimizer,
+            scheduler,
+            max_steps: parseInt(maxSteps),
+            evaluation_strategy: evaluationStrategy,
+            save_strategy: saveStrategy,
+            random_seed: parseInt(randomSeed),
+            precision,
+            gradient_accumulation_steps: parseInt(gradientAccumulation),
+            use_deepspeed: useDeepSpeed,
+            use_flash_attention: useFlashAttention,
+            use_memory_optimization: useMemoryOptimization,
+            hardware_acceleration: hardwareAcceleration,
+          }}
+        />
+      )}
     </div>
   )
 }
