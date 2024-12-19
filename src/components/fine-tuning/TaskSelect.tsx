@@ -2,15 +2,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 
 interface TaskSelectProps {
-  taskType: string;
-  setTaskType: (value: string) => void;
+  value: string;
+  onValueChange: (value: string) => void;
 }
 
-export const TaskSelect = ({ taskType, setTaskType }: TaskSelectProps) => {
+export const TaskSelect = ({ value, onValueChange }: TaskSelectProps) => {
   return (
     <div className="space-y-2">
       <Label>Task Type</Label>
-      <Select value={taskType} onValueChange={setTaskType}>
+      <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger>
           <SelectValue placeholder="Select task type" />
         </SelectTrigger>
