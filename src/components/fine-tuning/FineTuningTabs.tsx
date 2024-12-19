@@ -1,13 +1,11 @@
-import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { GenerateScript } from "@/components/fine-tuning/GenerateScript"
-import { JobHistory } from "@/components/fine-tuning/JobHistory"
-import { useSession } from "@supabase/auth-helpers-react"
+import { GenerateScript } from "./GenerateScript"
+import { JobHistory } from "./JobHistory"
+import { GoogleLogin } from "./GoogleLogin"
 import { useToast } from "@/hooks/use-toast"
-import { GoogleLogin } from "@/components/fine-tuning/GoogleLogin"
+import { useState } from "react"
 
-export const FineTuning = () => {
-  const session = useSession()
+export const FineTuningTabs = () => {
   const { toast } = useToast()
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false)
 
@@ -44,5 +42,3 @@ export const FineTuning = () => {
     </div>
   )
 }
-
-export default FineTuning

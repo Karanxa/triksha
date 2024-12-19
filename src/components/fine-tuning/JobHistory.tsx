@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
-import { GeneratedScript } from "./GeneratedScript"
 
 export const JobHistory = () => {
   const { data: jobs, isLoading } = useQuery({
@@ -29,7 +28,7 @@ export const JobHistory = () => {
   if (!jobs?.length) {
     return (
       <Card className="p-12 text-center text-muted-foreground">
-        No fine-tuning scripts generated yet
+        No fine-tuning jobs found
       </Card>
     );
   }
@@ -38,25 +37,16 @@ export const JobHistory = () => {
     <div className="space-y-6">
       {jobs.map((job) => (
         <Card key={job.id} className="p-6">
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium">{job.model}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Created on {new Date(job.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <span className={`text-sm ${
-                job.status === 'completed' ? 'text-green-500' : 
-                job.status === 'failed' ? 'text-red-500' : 
-                'text-muted-foreground'
-              }`}>
-                Status: {job.status}
+              <h3 className="font-medium">{job.model}</h3>
+              <span className="text-sm text-muted-foreground">
+                {new Date(job.created_at).toLocaleDateString()}
               </span>
             </div>
-            {job.script_content && (
-              <GeneratedScript script={job.script_content} />
-            )}
+            <p className="text-sm text-muted-foreground">
+              Status: {job.status}
+            </p>
           </div>
         </Card>
       ))}
