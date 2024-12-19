@@ -196,32 +196,50 @@ export type Database = {
       }
       fine_tuning_jobs: {
         Row: {
+          advanced_parameters: Json | null
           created_at: string
           dataset_id: string | null
+          google_job_id: string | null
           id: string
+          metrics: Json | null
           model: string
+          model_artifact_path: string | null
           parameters: Json | null
+          script_content: string | null
           status: string
+          training_logs: Json[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          advanced_parameters?: Json | null
           created_at?: string
           dataset_id?: string | null
+          google_job_id?: string | null
           id?: string
+          metrics?: Json | null
           model: string
+          model_artifact_path?: string | null
           parameters?: Json | null
+          script_content?: string | null
           status?: string
+          training_logs?: Json[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          advanced_parameters?: Json | null
           created_at?: string
           dataset_id?: string | null
+          google_job_id?: string | null
           id?: string
+          metrics?: Json | null
           model?: string
+          model_artifact_path?: string | null
           parameters?: Json | null
+          script_content?: string | null
           status?: string
+          training_logs?: Json[] | null
           updated_at?: string
           user_id?: string
         }

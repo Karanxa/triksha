@@ -9,9 +9,9 @@ interface TaskSelectProps {
 export const TaskSelect = ({ taskType, setTaskType }: TaskSelectProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="task-type">Task Type</Label>
+      <Label>Task Type</Label>
       <Select value={taskType} onValueChange={setTaskType}>
-        <SelectTrigger id="task-type">
+        <SelectTrigger>
           <SelectValue placeholder="Select task type" />
         </SelectTrigger>
         <SelectContent>

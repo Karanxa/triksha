@@ -9,9 +9,9 @@ interface DatasetSelectProps {
 export const DatasetSelect = ({ datasetType, setDatasetType }: DatasetSelectProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="dataset-type">Dataset Type</Label>
+      <Label>Dataset Type</Label>
       <Select value={datasetType} onValueChange={setDatasetType}>
-        <SelectTrigger id="dataset-type">
+        <SelectTrigger>
           <SelectValue placeholder="Select dataset type" />
         </SelectTrigger>
         <SelectContent>

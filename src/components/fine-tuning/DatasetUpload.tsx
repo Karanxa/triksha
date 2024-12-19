@@ -27,9 +27,8 @@ export const DatasetUpload = ({ onFileSelect }: DatasetUploadProps) => {
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="dataset">Upload Dataset</Label>
+      <Label>Upload Dataset</Label>
       <Input
-        id="dataset"
         type="file"
         accept=".json,.jsonl,.csv,.txt"
         onChange={handleFileChange}

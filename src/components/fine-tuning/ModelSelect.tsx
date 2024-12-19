@@ -9,9 +9,9 @@ interface ModelSelectProps {
 export const ModelSelect = ({ model, setModel }: ModelSelectProps) => {
   return (
     <div className="space-y-2">
-      <Label htmlFor="model">Base Model</Label>
+      <Label>Base Model</Label>
       <Select value={model} onValueChange={setModel}>
-        <SelectTrigger id="model">
+        <SelectTrigger>
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
         <SelectContent>
