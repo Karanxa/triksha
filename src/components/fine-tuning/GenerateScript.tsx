@@ -8,7 +8,6 @@ import { LanguageSelect } from "./LanguageSelect"
 import { BasicParameters } from "./BasicParameters"
 import { AdvancedParameters } from "./AdvancedParameters"
 import { ParameterTabs } from "./ParameterTabs"
-import { GeneratedScript } from "./GeneratedScript"
 import { generateScript } from "./utils/scriptGenerator"
 import { useToast } from "@/hooks/use-toast"
 
@@ -23,27 +22,27 @@ export const GenerateScript = ({ isGoogleAuthed, onScriptGenerated }: GenerateSc
   const [datasetId, setDatasetId] = useState("")
   const [taskType, setTaskType] = useState("")
   const [scriptLanguage, setScriptLanguage] = useState("python")
-  const [basicParams, setBasicParams] = useState({
-    learningRate: "0.0001",
-    batchSize: "8",
-    epochs: "3",
-    warmupSteps: "500",
-    weightDecay: "0.01",
-    optimizer: "AdamW",
-    scheduler: "linear",
-  })
-  const [advancedParams, setAdvancedParams] = useState({
-    maxSteps: "1000",
-    evaluationStrategy: "steps",
-    saveStrategy: "steps",
-    randomSeed: "42",
-    precision: "fp16",
-    gradientAccumulation: "4",
-    useDeepSpeed: false,
-    useFlashAttention: false,
-    useMemoryOptimization: false,
-    hardwareAcceleration: "cuda",
-  })
+  
+  // Basic parameters state
+  const [learningRate, setLearningRate] = useState("0.0001")
+  const [batchSize, setBatchSize] = useState("8")
+  const [epochs, setEpochs] = useState("3")
+  const [warmupSteps, setWarmupSteps] = useState("500")
+  const [weightDecay, setWeightDecay] = useState("0.01")
+  const [optimizer, setOptimizer] = useState("adamw")
+  const [scheduler, setScheduler] = useState("linear")
+  const [maxSteps, setMaxSteps] = useState("1000")
+  const [evaluationStrategy, setEvaluationStrategy] = useState("steps")
+  const [saveStrategy, setSaveStrategy] = useState("steps")
+  const [randomSeed, setRandomSeed] = useState("42")
+
+  // Advanced parameters state
+  const [precision, setPrecision] = useState("fp16")
+  const [gradientAccumulation, setGradientAccumulation] = useState("4")
+  const [useDeepSpeed, setUseDeepSpeed] = useState(false)
+  const [useFlashAttention, setUseFlashAttention] = useState(false)
+  const [useMemoryOptimization, setUseMemoryOptimization] = useState(false)
+  const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
   const handleGenerateScript = async () => {
     if (!isGoogleAuthed) {
@@ -65,8 +64,23 @@ export const GenerateScript = ({ isGoogleAuthed, onScriptGenerated }: GenerateSc
     }
 
     const parameters = {
-      ...basicParams,
-      ...advancedParams
+      learningRate,
+      batchSize,
+      epochs,
+      warmupSteps,
+      weightDecay,
+      optimizer,
+      scheduler,
+      maxSteps,
+      evaluationStrategy,
+      saveStrategy,
+      randomSeed,
+      precision,
+      gradientAccumulation,
+      useDeepSpeed,
+      useFlashAttention,
+      useMemoryOptimization,
+      hardwareAcceleration
     }
 
     try {
@@ -95,22 +109,48 @@ export const GenerateScript = ({ isGoogleAuthed, onScriptGenerated }: GenerateSc
       <Card className="p-6">
         <div className="space-y-8">
           <div className="grid gap-6 md:grid-cols-2">
-            <ModelSelect value={model} onChange={setModel} />
-            <DatasetSelect value={datasetId} onChange={setDatasetId} />
-            <TaskSelect value={taskType} onChange={setTaskType} />
-            <LanguageSelect value={scriptLanguage} onChange={setScriptLanguage} />
+            <ModelSelect value={model} onValueChange={setModel} />
+            <DatasetSelect value={datasetId} onValueChange={setDatasetId} />
+            <TaskSelect value={taskType} onValueChange={setTaskType} />
+            <LanguageSelect value={scriptLanguage} onValueChange={setScriptLanguage} />
           </div>
 
-          <ParameterTabs>
-            <BasicParameters
-              parameters={basicParams}
-              onChange={setBasicParams}
-            />
-            <AdvancedParameters
-              parameters={advancedParams}
-              onChange={setAdvancedParams}
-            />
-          </ParameterTabs>
+          <ParameterTabs
+            learningRate={learningRate}
+            setLearningRate={setLearningRate}
+            batchSize={batchSize}
+            setBatchSize={setBatchSize}
+            epochs={epochs}
+            setEpochs={setEpochs}
+            warmupSteps={warmupSteps}
+            setWarmupSteps={setWarmupSteps}
+            weightDecay={weightDecay}
+            setWeightDecay={setWeightDecay}
+            optimizer={optimizer}
+            setOptimizer={setOptimizer}
+            scheduler={scheduler}
+            setScheduler={setScheduler}
+            maxSteps={maxSteps}
+            setMaxSteps={setMaxSteps}
+            evaluationStrategy={evaluationStrategy}
+            setEvaluationStrategy={setEvaluationStrategy}
+            saveStrategy={saveStrategy}
+            setSaveStrategy={setSaveStrategy}
+            randomSeed={randomSeed}
+            setRandomSeed={setRandomSeed}
+            precision={precision}
+            setPrecision={setPrecision}
+            gradientAccumulation={gradientAccumulation}
+            setGradientAccumulation={setGradientAccumulation}
+            useDeepSpeed={useDeepSpeed}
+            setUseDeepSpeed={setUseDeepSpeed}
+            useFlashAttention={useFlashAttention}
+            setUseFlashAttention={setUseFlashAttention}
+            useMemoryOptimization={useMemoryOptimization}
+            setUseMemoryOptimization={setUseMemoryOptimization}
+            hardwareAcceleration={hardwareAcceleration}
+            setHardwareAcceleration={setHardwareAcceleration}
+          />
 
           <Button 
             onClick={handleGenerateScript}
