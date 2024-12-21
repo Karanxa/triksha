@@ -15,15 +15,19 @@ serve(async (req) => {
 
   try {
     const { 
-      name, 
-      description, 
-      originalPrompts, 
-      provider,
-      model,
+      name,
+      description,
+      originalPrompts,
+      numSamples,
+      method,
+      recipe,
+      targetModel,
+      adversarialConfig,
       fingerprintResults,
       useOpenAI 
     } = await req.json()
 
+    // Validate required fields
     if (!name || !originalPrompts || !Array.isArray(originalPrompts)) {
       throw new Error('Invalid input: name and originalPrompts array are required')
     }
@@ -66,14 +70,14 @@ serve(async (req) => {
     // Test augmented prompts with target model
     const testResults = await testPromptsWithModel(
       augmentedPrompts,
-      provider,
-      model,
+      targetModel?.split('-')[0],
+      targetModel?.split('-')[1],
       apiKey
     )
 
     // Create CSV content
     const csvContent = 'original_prompt,augmented_prompt,model_response,error\n' +
-      originalPrompts.map((original, index) => {
+      originalPrompts.map((original: string, index: number) => {
         const result = testResults[index]
         const augmented = augmentedPrompts[index]
         return `"${original.replace(/"/g, '""')}","${augmented.replace(/"/g, '""')}","${(result.response || '').replace(/"/g, '""')}","${(result.error || '').replace(/"/g, '""')}"`
@@ -100,13 +104,16 @@ serve(async (req) => {
         description,
         user_id: user.id,
         file_path: filePath,
-        category: 'augmented',
+        category: method,
         metadata: {
           fingerprintResults: useOpenAI ? fingerprintResults : null,
           originalCount: originalPrompts.length,
           augmentedCount: augmentedPrompts.length,
-          testResults: testResults.map(r => ({ error: r.error || null })),
-          useOpenAI
+          testResults: testResults.map((r: any) => ({ error: r.error || null })),
+          useOpenAI,
+          method,
+          recipe,
+          adversarialConfig
         }
       })
       .select()

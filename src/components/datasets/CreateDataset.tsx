@@ -28,8 +28,8 @@ export const CreateDataset = () => {
       if (formData.useOpenAI && formData.method !== 'manual') {
         const { data, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
           body: {
-            provider: formData.targetModel.split('-')[0],
-            model: formData.targetModel.split('-')[1],
+            provider: formData.targetModel?.split('-')[0],
+            model: formData.targetModel?.split('-')[1],
             prompt: "Tell me about your capabilities and limitations"
           }
         })
@@ -39,12 +39,22 @@ export const CreateDataset = () => {
         setFingerprintResults(data)
       }
 
+      // Generate base prompts based on method
+      let originalPrompts = []
+      if (formData.method === "manual") {
+        originalPrompts = [formData.basePrompt]
+      } else {
+        // For recipe and adversarial methods, we'll use a default set of prompts
+        // This should be replaced with actual prompt generation logic
+        originalPrompts = ["Default prompt 1", "Default prompt 2"]
+      }
+
       // Generate dataset with or without fingerprint results
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
         body: {
           name: formData.name,
           description: formData.description,
-          basePrompt: formData.method === "manual" ? formData.basePrompt : undefined,
+          originalPrompts: originalPrompts,
           numSamples: parseInt(formData.numSamples),
           method: formData.method,
           recipe: formData.recipe,
