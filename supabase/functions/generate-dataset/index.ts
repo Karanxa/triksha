@@ -58,12 +58,12 @@ serve(async (req) => {
       apiKey = profile.api_keys.openai
     }
 
-    // Step 1: Augment prompts using fingerprint results if OpenAI enhancement is enabled
-    const augmentedPrompts = useOpenAI 
+    // Use original prompts if OpenAI is disabled, otherwise enhance them
+    const augmentedPrompts = useOpenAI && apiKey
       ? await augmentPrompts(originalPrompts, fingerprintResults, apiKey)
-      : originalPrompts // Use original prompts if OpenAI enhancement is disabled
+      : originalPrompts
 
-    // Step 2: Test augmented prompts with target model
+    // Test augmented prompts with target model
     const testResults = await testPromptsWithModel(
       augmentedPrompts,
       provider,
