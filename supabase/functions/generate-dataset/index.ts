@@ -20,7 +20,8 @@ serve(async (req) => {
       originalPrompts, 
       provider,
       model,
-      fingerprintResults 
+      fingerprintResults,
+      useOpenAI 
     } = await req.json()
 
     if (!name || !originalPrompts || !Array.isArray(originalPrompts)) {
@@ -42,30 +43,32 @@ serve(async (req) => {
 
     if (userError || !user) throw userError || new Error('User not found')
 
-    // Get user's API key
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single()
+    // Get user's API key only if OpenAI enhancement is enabled
+    let apiKey = undefined
+    if (useOpenAI) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', user.id)
+        .single()
 
-    if (!profile?.api_keys?.openai) {
-      throw new Error('OpenAI API key not found')
+      if (!profile?.api_keys?.openai) {
+        throw new Error('OpenAI API key not found')
+      }
+      apiKey = profile.api_keys.openai
     }
 
-    // Step 1: Augment prompts using fingerprint results
-    const augmentedPrompts = await augmentPrompts(
-      originalPrompts,
-      fingerprintResults,
-      profile.api_keys.openai
-    )
+    // Step 1: Augment prompts using fingerprint results if OpenAI enhancement is enabled
+    const augmentedPrompts = useOpenAI 
+      ? await augmentPrompts(originalPrompts, fingerprintResults, apiKey)
+      : originalPrompts // Use original prompts if OpenAI enhancement is disabled
 
     // Step 2: Test augmented prompts with target model
     const testResults = await testPromptsWithModel(
       augmentedPrompts,
       provider,
       model,
-      profile.api_keys[provider] || profile.api_keys.openai
+      apiKey
     )
 
     // Create CSV content
@@ -99,10 +102,11 @@ serve(async (req) => {
         file_path: filePath,
         category: 'augmented',
         metadata: {
-          fingerprintResults,
+          fingerprintResults: useOpenAI ? fingerprintResults : null,
           originalCount: originalPrompts.length,
           augmentedCount: augmentedPrompts.length,
-          testResults: testResults.map(r => ({ error: r.error || null }))
+          testResults: testResults.map(r => ({ error: r.error || null })),
+          useOpenAI
         }
       })
       .select()

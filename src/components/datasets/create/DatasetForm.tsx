@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Loader2 } from "lucide-react"
 import { AdversarialConfig } from "../AdversarialConfig"
 
@@ -18,6 +19,7 @@ interface DatasetFormProps {
     recipe: string;
     targetModel: string;
     adversarialConfig: any;
+    useOpenAI: boolean;
   }) => void;
 }
 
@@ -29,6 +31,7 @@ export const DatasetForm = ({ isGenerating, onSubmit }: DatasetFormProps) => {
   const [method, setMethod] = useState("manual")
   const [recipe, setRecipe] = useState("")
   const [targetModel, setTargetModel] = useState("")
+  const [useOpenAI, setUseOpenAI] = useState(true)
   const [adversarialConfig, setAdversarialConfig] = useState({
     attackType: "evasion",
     vulnerabilityCategory: "prompt-injection",
@@ -46,7 +49,8 @@ export const DatasetForm = ({ isGenerating, onSubmit }: DatasetFormProps) => {
       method,
       recipe,
       targetModel,
-      adversarialConfig
+      adversarialConfig,
+      useOpenAI
     })
   }
 
@@ -144,6 +148,17 @@ export const DatasetForm = ({ isGenerating, onSubmit }: DatasetFormProps) => {
           min="1"
           max="1000"
         />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="use-openai"
+          checked={useOpenAI}
+          onCheckedChange={setUseOpenAI}
+        />
+        <Label htmlFor="use-openai">
+          Use OpenAI to enhance prompts
+        </Label>
       </div>
 
       <Button 

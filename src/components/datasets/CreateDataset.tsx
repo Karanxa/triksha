@@ -23,9 +23,10 @@ export const CreateDataset = () => {
 
     setIsGenerating(true)
     try {
-      // First, perform fingerprinting if needed
-      if (formData.method !== 'manual') {
-        const { data: fingerprintData, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
+      // Only perform fingerprinting if OpenAI enhancement is enabled
+      let fingerprintData = null
+      if (formData.useOpenAI && formData.method !== 'manual') {
+        const { data, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
           body: {
             provider: formData.targetModel.split('-')[0],
             model: formData.targetModel.split('-')[1],
@@ -34,10 +35,11 @@ export const CreateDataset = () => {
         })
 
         if (fingerprintError) throw fingerprintError
-        setFingerprintResults(fingerprintData)
+        fingerprintData = data
+        setFingerprintResults(data)
       }
 
-      // Generate dataset with fingerprint results
+      // Generate dataset with or without fingerprint results
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
         body: {
           name: formData.name,
@@ -48,7 +50,8 @@ export const CreateDataset = () => {
           recipe: formData.recipe,
           targetModel: formData.targetModel,
           adversarialConfig: formData.method === "adversarial" ? formData.adversarialConfig : undefined,
-          fingerprintResults
+          fingerprintResults: fingerprintData,
+          useOpenAI: formData.useOpenAI
         }
       })
 
