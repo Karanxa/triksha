@@ -42,18 +42,35 @@ serve(async (req) => {
     if (!profile?.api_keys) throw new Error('API keys not configured');
 
     let response;
-    if (provider === 'openai') {
-      const openaiKey = profile.api_keys.openai;
-      if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
-      
-      response = await handleOpenAIRequest(prompt, model, openaiKey);
-    } else if (provider === 'anthropic') {
-      const anthropicKey = profile.api_keys.anthropic;
-      if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
-      
-      response = await handleAnthropicRequest(prompt, model, anthropicKey);
-    } else {
-      throw new Error('Unsupported provider');
+    const normalizedProvider = provider.toLowerCase();
+    
+    switch (normalizedProvider) {
+      case 'openai':
+        const openaiKey = profile.api_keys.openai;
+        if (!openaiKey) throw new Error('OpenAI API key not configured in Settings');
+        response = await handleOpenAIRequest(prompt, model, openaiKey);
+        break;
+        
+      case 'anthropic':
+        const anthropicKey = profile.api_keys.anthropic;
+        if (!anthropicKey) throw new Error('Anthropic API key not configured in Settings');
+        response = await handleAnthropicRequest(prompt, model, anthropicKey);
+        break;
+        
+      case 'google':
+        const googleKey = profile.api_keys.gemini;
+        if (!googleKey) throw new Error('Google API key not configured in Settings');
+        response = await handleGoogleRequest(prompt, model, googleKey);
+        break;
+        
+      case 'ollama':
+        const ollamaEndpoint = profile.api_keys.ollama_endpoint;
+        if (!ollamaEndpoint) throw new Error('Ollama endpoint not configured in Settings');
+        response = await handleOllamaRequest(prompt, model, ollamaEndpoint);
+        break;
+        
+      default:
+        throw new Error(`Unsupported provider: ${provider}. Supported providers are: openai, anthropic, google, ollama`);
     }
 
     return new Response(
@@ -80,7 +97,7 @@ async function handleOpenAIRequest(prompt: string, model: string, apiKey: string
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: model === 'gpt-4o' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
+      model: model === 'gpt-4' ? 'gpt-4-0125-preview' : 'gpt-3.5-turbo-0125',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     }),
@@ -104,7 +121,7 @@ async function handleAnthropicRequest(prompt: string, model: string, apiKey: str
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model,
+      model: model || 'claude-3-opus-20240229',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 1024,
     }),
@@ -117,4 +134,46 @@ async function handleAnthropicRequest(prompt: string, model: string, apiKey: str
 
   const data = await response.json();
   return data.content[0].text;
+}
+
+async function handleGoogleRequest(prompt: string, model: string, apiKey: string) {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Google API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+async function handleOllamaRequest(prompt: string, model: string, endpoint: string) {
+  const response = await fetch(`${endpoint}/api/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model || 'llama2',
+      prompt,
+      stream: false,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Ollama API error: ${error}`);
+  }
+
+  const data = await response.json();
+  return data.response;
 }
