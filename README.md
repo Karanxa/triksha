@@ -2,8 +2,6 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/be33e0b7-385f-407c-bc6c-36be439fca6f
-
 ## Supabase Setup (Required)
 
 Before running this project, you need to set up your own Supabase project:
