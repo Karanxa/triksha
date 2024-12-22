@@ -2,6 +2,10 @@ export interface ContextualConfig {
   provider: string;
   model: string;
   datasetId: string;
+  customEndpoint?: {
+    curlCommand: string;
+    placeholder: string;
+  };
 }
 
 export interface Message {
