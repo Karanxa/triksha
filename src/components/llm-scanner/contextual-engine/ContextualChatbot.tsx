@@ -16,21 +16,14 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [selectedProvider, setSelectedProvider] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
   const [isStarted, setIsStarted] = useState(false);
 
-  const startAnalysis = async () => {
-    if (!selectedProvider || !selectedModel) {
-      toast.error("Please select both a provider and model first");
-      return;
-    }
-
+  const startAnalysis = async (config: any) => {
     setIsStarted(true);
     setMessages([
       {
         role: 'system',
-        content: `Starting contextual analysis for ${selectedModel}`
+        content: `Starting contextual analysis for ${config.model}`
       }
     ]);
     await askNextQuestion();
@@ -57,9 +50,9 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
       // Send the fingerprinting question as a regular prompt
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
-          provider: selectedProvider,
-          model: selectedModel,
-          prompt: questions[currentStep] // This will be sent to Ollama in the same format as regular prompts
+          provider: 'custom',
+          model: 'custom',
+          prompt: questions[currentStep]
         }
       });
 
@@ -90,15 +83,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
   }, [currentStep, isLoading, isStarted]);
 
   if (!isStarted) {
-    return (
-      <ModelSelector 
-        selectedProvider={selectedProvider}
-        selectedModel={selectedModel}
-        onProviderChange={setSelectedProvider}
-        onModelChange={setSelectedModel}
-        onStart={startAnalysis}
-      />
-    );
+    return <ModelSelector onStart={startAnalysis} />;
   }
 
   return (
