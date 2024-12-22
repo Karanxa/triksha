@@ -19,8 +19,8 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
   const [customModel, setCustomModel] = useState("");
   
   const handleProviderChange = (newValue: string) => {
-    if (newValue === "ollama") {
-      // For Ollama, we'll use a custom model name format
+    if (newValue === "custom") {
+      // For custom provider, we'll use a custom model name format
       onValueChange(`${newValue}-${customModel}`);
     } else {
       onValueChange(newValue);
@@ -34,7 +34,7 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
 
   const handleCustomModelChange = (modelName: string) => {
     setCustomModel(modelName);
-    onValueChange(`ollama-${modelName}`);
+    onValueChange(`custom-${modelName}`);
   };
 
   const getModelsForProvider = () => {
@@ -76,11 +76,11 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
             <SelectItem value="openai">OpenAI</SelectItem>
             <SelectItem value="anthropic">Anthropic</SelectItem>
             <SelectItem value="google">Google AI</SelectItem>
-            <SelectItem value="ollama">Ollama (Custom Endpoint)</SelectItem>
+            <SelectItem value="custom">Custom Provider</SelectItem>
           </SelectContent>
         </Select>
 
-        {selectedProvider && selectedProvider !== "ollama" && (
+        {selectedProvider && selectedProvider !== "custom" && (
           <Select 
             value={value.split('-')[1] || ""} 
             onValueChange={handleModelChange}
@@ -98,13 +98,13 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
           </Select>
         )}
 
-        {selectedProvider === "ollama" && (
+        {selectedProvider === "custom" && (
           <div className="space-y-2">
             <label className="text-sm text-muted-foreground">
               Enter Model Name
             </label>
             <Input
-              placeholder="e.g., llama2, mistral, codellama"
+              placeholder="Enter your model name"
               value={customModel}
               onChange={(e) => handleCustomModelChange(e.target.value)}
             />
