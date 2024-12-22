@@ -59,11 +59,11 @@ export const ApiKeyForm = () => {
         />
 
         <ApiKeyCard
-          title="Ollama Endpoint"
-          description="Configure your Ollama endpoint URL"
-          value={apiKeys.ollama_endpoint}
-          onChange={(value) => handleChange('ollama_endpoint', value)}
-          placeholder="http://localhost:11434"
+          title="Custom Provider"
+          description="Configure your custom provider endpoint URL"
+          value={apiKeys.custom_endpoint}
+          onChange={(value) => handleChange('custom_endpoint', value)}
+          placeholder="https://your-api-endpoint.com"
         />
 
         <Button type="submit" className="w-full" disabled={isSaving}>

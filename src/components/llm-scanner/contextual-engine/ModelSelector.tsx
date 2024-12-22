@@ -1,29 +1,23 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { OllamaConfig } from "../providers/OllamaConfig";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { DatasetSelector } from "./DatasetSelector";
+import { ContextualConfig } from "./types";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 interface ModelSelectorProps {
-  selectedProvider: string;
-  selectedModel: string;
-  onProviderChange: (value: string) => void;
-  onModelChange: (value: string) => void;
-  onStart: () => void;
+  onStart: (config: ContextualConfig) => void;
 }
 
-export const ModelSelector = ({
-  selectedProvider,
-  selectedModel,
-  onProviderChange,
-  onModelChange,
-  onStart
-}: ModelSelectorProps) => {
-  const [showOllamaConfig, setShowOllamaConfig] = useState(false);
-  const [ollamaConfig, setOllamaConfig] = useState<any>(null);
+export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
+  const [curlCommand, setCurlCommand] = useState("");
+  const [placeholder, setPlaceholder] = useState("{PROMPT}");
 
   const getModelsForProvider = (provider: string) => {
     switch (provider) {
@@ -47,30 +41,14 @@ export const ModelSelector = ({
     }
   };
 
-  const handleProviderSelect = (value: string) => {
-    onProviderChange(value);
-    if (value === "ollama") {
-      setShowOllamaConfig(true);
-    } else {
-      setShowOllamaConfig(false);
-      onModelChange("");
-    }
-  };
-
-  const handleOllamaConfig = (config: any) => {
-    setOllamaConfig(config);
-    onModelChange(config.modelName);
-    setShowOllamaConfig(false);
-  };
-
   return (
     <Card>
       <CardContent className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-medium mb-2">Contextual Model Analysis</h3>
+            <h3 className="text-lg font-medium mb-2">Contextual Analysis</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Select a target model to begin the analysis process. This will help understand the model's capabilities, limitations, and security boundaries.
+              Select a target model and dataset to begin. This will help understand the model's capabilities and test it against your dataset.
             </p>
           </div>
           
@@ -79,7 +57,10 @@ export const ModelSelector = ({
               <Label>Provider</Label>
               <Select 
                 value={selectedProvider} 
-                onValueChange={handleProviderSelect}
+                onValueChange={(value) => {
+                  setSelectedProvider(value);
+                  setSelectedModel(""); // Reset model when provider changes
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select provider" />
@@ -88,17 +69,40 @@ export const ModelSelector = ({
                   <SelectItem value="openai">OpenAI</SelectItem>
                   <SelectItem value="anthropic">Anthropic</SelectItem>
                   <SelectItem value="google">Google AI</SelectItem>
-                  <SelectItem value="ollama">Ollama</SelectItem>
+                  <SelectItem value="custom">Custom Provider</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedProvider && selectedProvider !== "ollama" && (
+            {selectedProvider === 'custom' ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>cURL Command</Label>
+                  <Textarea
+                    placeholder="Enter your cURL command here"
+                    value={curlCommand}
+                    onChange={(e) => setCurlCommand(e.target.value)}
+                    className="font-mono text-sm min-h-[100px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Prompt Placeholder</Label>
+                  <Input
+                    placeholder="{PROMPT}"
+                    value={placeholder}
+                    onChange={(e) => setPlaceholder(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Replace the text in your cURL command that should be replaced with the prompt
+                  </p>
+                </div>
+              </div>
+            ) : selectedProvider && (
               <div className="space-y-2">
                 <Label>Model</Label>
                 <Select 
                   value={selectedModel} 
-                  onValueChange={onModelChange}
+                  onValueChange={setSelectedModel}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select model" />
@@ -114,26 +118,27 @@ export const ModelSelector = ({
               </div>
             )}
 
-            {showOllamaConfig && (
-              <OllamaConfig onConfigComplete={handleOllamaConfig} />
-            )}
-
-            {selectedProvider && selectedModel && !showOllamaConfig && (
-              <DatasetSelector 
-                selectedDataset={selectedDataset}
-                onDatasetSelect={setSelectedDataset}
-              />
-            )}
+            <DatasetSelector 
+              selectedDataset={selectedDataset}
+              onDatasetSelect={setSelectedDataset}
+            />
           </div>
 
-          {selectedProvider && selectedModel && selectedDataset && !showOllamaConfig && (
-            <Button 
-              onClick={onStart}
-              className="w-full"
-            >
-              Start Analysis
-            </Button>
-          )}
+          <Button 
+            onClick={() => onStart({
+              provider: selectedProvider,
+              model: selectedModel,
+              datasetId: selectedDataset,
+              customEndpoint: selectedProvider === 'custom' ? {
+                curlCommand,
+                placeholder
+              } : undefined
+            })}
+            className="w-full"
+            disabled={!selectedProvider || (!curlCommand && selectedProvider === 'custom') || (selectedProvider !== 'custom' && !selectedModel) || !selectedDataset}
+          >
+            Start Analysis
+          </Button>
         </div>
       </CardContent>
     </Card>
