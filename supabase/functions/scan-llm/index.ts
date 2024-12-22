@@ -29,7 +29,13 @@ serve(async (req) => {
 
     // Get request data
     const { scanId, prompts, provider, customEndpoint, category } = await req.json();
-    console.log('Received scan request:', { scanId, promptCount: prompts?.length, provider, category });
+    console.log('Received scan request:', { 
+      scanId, 
+      promptCount: prompts?.length, 
+      provider,
+      isCustom: !!customEndpoint,
+      category 
+    });
 
     if (!prompts?.length) throw new Error('No prompts provided');
     if (!provider && !customEndpoint) throw new Error('Provider or custom endpoint required');
@@ -43,15 +49,20 @@ serve(async (req) => {
       })
       .eq('id', scanId);
 
-    // Get user's API keys
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
-      .single();
+    // For custom endpoints, we don't need API keys
+    let apiKeys = null;
+    if (provider !== 'custom') {
+      // Get user's API keys
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .eq('id', user.id)
+        .single();
 
-    if (profileError) throw new Error(`Failed to get profile: ${profileError.message}`);
-    if (!profile?.api_keys) throw new Error('API keys not configured');
+      if (profileError) throw new Error(`Failed to get profile: ${profileError.message}`);
+      if (!profile?.api_keys) throw new Error('API keys not configured');
+      apiKeys = profile.api_keys;
+    }
 
     // Process the scan with category
     const results = await processScan(
@@ -59,7 +70,7 @@ serve(async (req) => {
       prompts,
       provider,
       customEndpoint,
-      profile.api_keys,
+      apiKeys,
       supabase,
       user.id,
       category || 'jailbreaking' // Provide default category if none specified

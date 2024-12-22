@@ -7,11 +7,6 @@ export interface FingerPrintResult {
 }
 
 export interface CustomEndpointConfig {
-  url: string;
-  method: string;
-  inputType: 'curl' | 'http' | 'manual';
-  placeholder?: string;
-  headers?: string;
-  httpRequest?: string;
-  apiKey?: string;
+  curlCommand: string;
+  placeholder: string;
 }

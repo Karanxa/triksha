@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { DatasetSelector } from "./DatasetSelector";
 import { ContextualConfig } from "./contextual-engine/types";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 interface ModelSelectorProps {
   onStart: (config: ContextualConfig) => void;
@@ -14,6 +16,8 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDataset, setSelectedDataset] = useState("");
+  const [curlCommand, setCurlCommand] = useState("");
+  const [placeholder, setPlaceholder] = useState("{PROMPT}");
 
   const getModelsForProvider = (provider: string) => {
     switch (provider) {
@@ -31,12 +35,6 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
         return [
           { value: "gemini-1.0-pro", label: "Gemini Pro" },
           { value: "gemini-1.0-ultra", label: "Gemini Ultra" }
-        ];
-      case "ollama":
-        return [
-          { value: "llama2", label: "Llama 2" },
-          { value: "mistral", label: "Mistral" },
-          { value: "codellama", label: "Code Llama" }
         ];
       default:
         return [];
@@ -71,12 +69,35 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
                   <SelectItem value="openai">OpenAI</SelectItem>
                   <SelectItem value="anthropic">Anthropic</SelectItem>
                   <SelectItem value="google">Google AI</SelectItem>
-                  <SelectItem value="ollama">Ollama</SelectItem>
+                  <SelectItem value="custom">Custom Provider</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedProvider && (
+            {selectedProvider === 'custom' ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>cURL Command</Label>
+                  <Textarea
+                    placeholder="Enter your cURL command here"
+                    value={curlCommand}
+                    onChange={(e) => setCurlCommand(e.target.value)}
+                    className="font-mono text-sm min-h-[100px]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Prompt Placeholder</Label>
+                  <Input
+                    placeholder="{PROMPT}"
+                    value={placeholder}
+                    onChange={(e) => setPlaceholder(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Replace the text in your cURL command that should be replaced with the prompt
+                  </p>
+                </div>
+              </div>
+            ) : selectedProvider && (
               <div className="space-y-2">
                 <Label>Model</Label>
                 <Select 
@@ -107,10 +128,14 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
             onClick={() => onStart({
               provider: selectedProvider,
               model: selectedModel,
-              datasetId: selectedDataset
+              datasetId: selectedDataset,
+              customEndpoint: selectedProvider === 'custom' ? {
+                curlCommand,
+                placeholder
+              } : undefined
             })}
             className="w-full"
-            disabled={!selectedProvider || !selectedModel || !selectedDataset}
+            disabled={!selectedProvider || (!curlCommand && selectedProvider === 'custom') || (selectedProvider !== 'custom' && !selectedModel) || !selectedDataset}
           >
             Start Analysis
           </Button>

@@ -10,36 +10,39 @@ export async function handleCustomEndpoint(
 ): Promise<any> {
   try {
     console.log('Processing custom endpoint request:', { 
-      inputType: config.inputType,
-      method: config.method,
-      url: config.url 
+      curlCommand: config.curlCommand,
+      placeholder: config.placeholder
     });
 
-    // For curl requests, we'll use a predefined endpoint
-    let url = config.url;
-    if (config.inputType === 'curl') {
-      url = 'http://10.83.33.100/fk_jarvis_aegis/v1/evaluate_prompt';
+    // Replace placeholder with actual prompt in curl command
+    const modifiedCurl = config.curlCommand.replace(
+      config.placeholder || '{PROMPT}',
+      prompt
+    );
+
+    // Execute the curl command
+    const process = new Deno.Command('curl', {
+      args: modifiedCurl.split(' ').slice(1), // Remove 'curl' from the start
+      stdout: 'piped',
+      stderr: 'piped',
+    });
+
+    const { stdout, stderr } = await process.output();
+    const output = new TextDecoder().decode(stdout);
+    const error = new TextDecoder().decode(stderr);
+
+    if (error) {
+      console.error('Error executing curl command:', error);
+      throw new Error(error);
     }
 
-    // Skip health check for trusted endpoints
-    const isTrustedEndpoint = url.includes('localhost') || 
-                             url.includes('127.0.0.1') || 
-                             url.includes('10.83.33.100') ||
-                             url.includes('supabase.co') ||
-                             url.includes('fkcloud.in');
-
-    if (!isTrustedEndpoint) {
-      console.log('Checking endpoint health for:', url);
-      const isHealthy = await checkEndpointHealth(url);
-      if (!isHealthy) {
-        throw new Error('External endpoint is not accessible');
-      }
+    try {
+      // Try to parse the response as JSON
+      return JSON.parse(output);
+    } catch {
+      // If not JSON, return as plain text
+      return { response: output };
     }
-
-    // Process the request with timeout
-    const result = await processCustomEndpointRequest(prompt, config, TIMEOUT_MS);
-    console.log('Custom endpoint request completed successfully');
-    return result;
   } catch (error) {
     console.error('Custom endpoint error:', error);
     throw new Error(`Custom endpoint error: ${error.message}`);
