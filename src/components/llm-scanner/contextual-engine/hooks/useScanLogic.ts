@@ -95,7 +95,13 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   };
 
   const askNextQuestion = async (config: any, isPaused: boolean) => {
-    if (!config || currentStep >= questions.length || isPaused) {
+    // If paused, don't proceed with asking the next question
+    if (isPaused) {
+      console.log('Scan is paused, not asking next question');
+      return;
+    }
+
+    if (!config || currentStep >= questions.length) {
       if (currentStep >= questions.length) {
         const analysisResults = {
           capabilities: messages[2]?.content || '',
