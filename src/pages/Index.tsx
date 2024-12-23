@@ -1,8 +1,6 @@
 import { Link } from "react-router-dom";
 import { 
   Shield, 
-  Zap, 
-  Database, 
   Bot, 
   Brain,
   Settings
@@ -22,15 +20,10 @@ const Index = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Your comprehensive platform for LLM security testing and enhancement
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center">
             <Link to="/llm-scanner">
-              <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+              <button className="px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all duration-300 text-lg font-medium">
                 Get Started
-              </button>
-            </Link>
-            <Link to="/datasets">
-              <button className="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors">
-                View Datasets
               </button>
             </Link>
           </div>
@@ -50,7 +43,7 @@ const Index = () => {
 
         <Link to="/datasets">
           <ToolCard
-            icon={Database}
+            icon={Bot}
             title="Datasets"
             description="Manage and create datasets for testing and fine-tuning"
             className="h-full"
@@ -59,7 +52,7 @@ const Index = () => {
 
         <Link to="/augment-prompt">
           <ToolCard
-            icon={Zap}
+            icon={Brain}
             title="Prompt Augmentation"
             description="Enhance your prompts with security-focused improvements"
             className="h-full"
