@@ -82,7 +82,7 @@ export default {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'dataset-pattern': 'linear-gradient(to bottom, rgba(2,6,23,1) 0%, rgba(13,17,34,1) 100%)',
-        'results-header': 'linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1))',
+        'results-header': 'linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(88, 28, 135, 0.9))'
       },
     },
   },
