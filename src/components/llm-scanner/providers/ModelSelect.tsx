@@ -61,9 +61,9 @@ export const ModelSelect = ({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            {provider === 'ollama' ? (
+            {provider === 'custom' ? (
               <Input
-                placeholder="Enter model name (e.g., llama2, mistral, codellama)"
+                placeholder="Enter model name or identifier"
                 value={field.value}
                 onChange={(e) => {
                   field.onChange(e.target.value);
