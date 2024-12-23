@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { DatasetForm } from "./create/DatasetForm"
 import { useSession } from "@supabase/auth-helpers-react"
+import { ApiKeys } from "@/integrations/supabase/types/common"
 
 export const CreateDataset = () => {
   const { toast } = useToast()
@@ -28,7 +29,8 @@ export const CreateDataset = () => {
         .select('api_keys')
         .single();
 
-      if (formData.useOpenAI && (!profile?.api_keys?.openai)) {
+      const apiKeys = profile?.api_keys as ApiKeys;
+      if (formData.useOpenAI && (!apiKeys?.openai)) {
         toast({
           variant: "destructive",
           title: "OpenAI API Key Required",
