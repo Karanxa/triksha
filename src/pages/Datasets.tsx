@@ -2,32 +2,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ExistingDatasets } from "@/components/datasets/ExistingDatasets"
 import { CreateDataset } from "@/components/datasets/CreateDataset"
 import { DatasetsDashboard } from "@/components/datasets/DatasetsDashboard"
+import { Database, FileSpreadsheet, Plus } from "lucide-react"
 
 const Datasets = () => {
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-2">Datasets</h1>
-      <p className="text-muted-foreground mb-8">Manage and explore datasets for LLM testing and fine-tuning.</p>
-      
-      <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 max-w-[600px]">
-          <TabsTrigger value="dashboard">My Datasets</TabsTrigger>
-          <TabsTrigger value="existing">Public Datasets</TabsTrigger>
-          <TabsTrigger value="create">Create Dataset</TabsTrigger>
-        </TabsList>
+    <div className="min-h-screen bg-dataset-pattern">
+      <div className="container py-8 space-y-8">
+        <div className="space-y-4">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Datasets
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-2xl">
+            Manage and explore datasets for LLM testing and fine-tuning. Create, analyze, and share datasets to improve your models.
+          </p>
+        </div>
+        
+        <Tabs defaultValue="dashboard" className="space-y-8">
+          <TabsList className="grid w-full grid-cols-3 max-w-[600px] p-1 bg-muted/30 backdrop-blur-sm">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-background">
+              <Database className="h-4 w-4" />
+              My Datasets
+            </TabsTrigger>
+            <TabsTrigger value="existing" className="flex items-center gap-2 data-[state=active]:bg-background">
+              <FileSpreadsheet className="h-4 w-4" />
+              Public Datasets
+            </TabsTrigger>
+            <TabsTrigger value="create" className="flex items-center gap-2 data-[state=active]:bg-background">
+              <Plus className="h-4 w-4" />
+              Create Dataset
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="dashboard">
-          <DatasetsDashboard />
-        </TabsContent>
+          <TabsContent value="dashboard" className="animate-fade-in">
+            <DatasetsDashboard />
+          </TabsContent>
 
-        <TabsContent value="existing">
-          <ExistingDatasets />
-        </TabsContent>
+          <TabsContent value="existing" className="animate-fade-in">
+            <ExistingDatasets />
+          </TabsContent>
 
-        <TabsContent value="create">
-          <CreateDataset />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="create" className="animate-fade-in">
+            <CreateDataset />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Download, Users, Star, GitFork, ExternalLink } from "lucide-react"
+import { Download, Users, Star, GitFork, ExternalLink, Database } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { useState } from "react"
@@ -47,16 +47,23 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
   }
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="group flex flex-col h-full transition-all duration-300 hover:shadow-lg animate-fade-in bg-gradient-to-br from-card to-muted/5">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <h3 className="text-base font-medium leading-none">{dataset.title}</h3>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-md bg-primary/5 group-hover:bg-primary/10 transition-colors">
+              <Database className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="text-base font-medium leading-none group-hover:text-primary transition-colors">
+              {dataset.title}
+            </h3>
+          </div>
           {dataset.url && (
             <a 
               href={dataset.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary"
+              className="text-muted-foreground hover:text-primary transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
             </a>
@@ -64,7 +71,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
           {dataset.description}
         </p>
         
@@ -87,9 +94,9 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
           </div>
 
           {isGitHub && dataset.topics?.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 animate-slide-in">
               {dataset.language && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs bg-primary/5 hover:bg-primary/10">
                   {dataset.language}
                 </Badge>
               )}
@@ -106,7 +113,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
         <Button
           variant="outline"
           size="sm"
-          className="w-full"
+          className="w-full hover:bg-primary/5 transition-colors"
           onClick={handleCloneRepo}
           disabled={isDownloading}
         >
