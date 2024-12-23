@@ -43,7 +43,15 @@ export const CreateDataset = () => {
           recipe: formData.recipe,
           targetModel: formData.targetModel,
           adversarialConfig: formData.method === "adversarial" ? formData.adversarialConfig : undefined,
-          useOpenAI: formData.useOpenAI
+          useOpenAI: formData.useOpenAI,
+          // Add empty fingerprint if not provided
+          fingerprintResults: {
+            capabilities: "",
+            boundaries: "",
+            training: "",
+            languages: "",
+            safety: ""
+          }
         }
       })
 

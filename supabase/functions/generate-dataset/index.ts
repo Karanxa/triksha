@@ -62,9 +62,19 @@ serve(async (req) => {
       apiKey = profile.api_keys.openai
     }
 
+    // Ensure fingerprint has default values if not provided
+    const safeFingerprint = {
+      capabilities: "",
+      boundaries: "",
+      training: "",
+      languages: "",
+      safety: "",
+      ...fingerprintResults
+    }
+
     // Use original prompts if OpenAI is disabled, otherwise enhance them
     const augmentedPrompts = useOpenAI && apiKey
-      ? await augmentPrompts(originalPrompts, fingerprintResults, apiKey)
+      ? await augmentPrompts(originalPrompts, safeFingerprint, apiKey)
       : originalPrompts
 
     // Test augmented prompts with target model
@@ -106,7 +116,7 @@ serve(async (req) => {
         file_path: filePath,
         category: method,
         metadata: {
-          fingerprintResults: useOpenAI ? fingerprintResults : null,
+          fingerprintResults: useOpenAI ? safeFingerprint : null,
           originalCount: originalPrompts.length,
           augmentedCount: augmentedPrompts.length,
           testResults: testResults.map((r: any) => ({ error: r.error || null })),
