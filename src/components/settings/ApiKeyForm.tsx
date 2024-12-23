@@ -3,6 +3,7 @@ import { ApiKeyCard } from "./ApiKeyCard";
 import { LoadingState } from "./LoadingState";
 import { useApiKeys } from "./useApiKeys";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export const ApiKeyForm = () => {
   const { apiKeys, isLoading, isSaving, loadApiKeys, handleSubmit, handleChange } = useApiKeys();
@@ -11,17 +12,27 @@ export const ApiKeyForm = () => {
     loadApiKeys();
   }, []);
 
+  const onSubmit = async (e: React.FormEvent) => {
+    try {
+      await handleSubmit(e);
+      toast.success("API keys saved successfully");
+    } catch (error) {
+      console.error("Error saving API keys:", error);
+      toast.error("Failed to save API keys");
+    }
+  };
+
   if (isLoading) {
     return <LoadingState />;
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={onSubmit}>
       <div className="space-y-4">
         <ApiKeyCard
           title="OpenAI"
           description="Configure your OpenAI API key for GPT models"
-          value={apiKeys.openai}
+          value={apiKeys.openai || ''}
           onChange={(value) => handleChange('openai', value)}
           placeholder="sk-..."
         />
@@ -29,7 +40,7 @@ export const ApiKeyForm = () => {
         <ApiKeyCard
           title="Anthropic"
           description="Configure your Anthropic API key for Claude models"
-          value={apiKeys.anthropic}
+          value={apiKeys.anthropic || ''}
           onChange={(value) => handleChange('anthropic', value)}
           placeholder="sk-ant-..."
         />
@@ -37,7 +48,7 @@ export const ApiKeyForm = () => {
         <ApiKeyCard
           title="Google AI (Gemini)"
           description="Configure your Google AI API key for Gemini models"
-          value={apiKeys.gemini}
+          value={apiKeys.gemini || ''}
           onChange={(value) => handleChange('gemini', value)}
           placeholder="AIza..."
         />
@@ -45,7 +56,7 @@ export const ApiKeyForm = () => {
         <ApiKeyCard
           title="Hugging Face"
           description="Configure your Hugging Face API key"
-          value={apiKeys.huggingface}
+          value={apiKeys.huggingface || ''}
           onChange={(value) => handleChange('huggingface', value)}
           placeholder="hf_..."
         />
@@ -53,17 +64,17 @@ export const ApiKeyForm = () => {
         <ApiKeyCard
           title="GitHub"
           description="Configure your GitHub API key for code scanning"
-          value={apiKeys.github}
+          value={apiKeys.github || ''}
           onChange={(value) => handleChange('github', value)}
           placeholder="ghp_..."
         />
 
         <ApiKeyCard
-          title="Custom Provider"
-          description="Configure your custom provider endpoint URL"
-          value={apiKeys.custom_endpoint}
-          onChange={(value) => handleChange('custom_endpoint', value)}
-          placeholder="https://your-api-endpoint.com"
+          title="Ollama Endpoint"
+          description="Configure your custom Ollama endpoint URL"
+          value={apiKeys.ollama_endpoint || ''}
+          onChange={(value) => handleChange('ollama_endpoint', value)}
+          placeholder="http://localhost:11434"
         />
 
         <Button type="submit" className="w-full" disabled={isSaving}>

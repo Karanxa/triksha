@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { ApiKeys } from '@/integrations/supabase/types/common';
 
 export const useApiKeys = () => {
@@ -25,19 +24,10 @@ export const useApiKeys = () => {
       if (error) throw error;
 
       if (profile?.api_keys) {
-        const keys = profile.api_keys as Record<string, string>;
-        setApiKeys({
-          openai: keys.openai || '',
-          anthropic: keys.anthropic || '',
-          gemini: keys.gemini || '',
-          huggingface: keys.huggingface || '',
-          github: keys.github || '',
-          ollama_endpoint: keys.ollama_endpoint || ''
-        });
+        setApiKeys(profile.api_keys as ApiKeys);
       }
     } catch (error) {
       console.error('Error loading API keys:', error);
-      toast.error('Failed to load API keys');
     } finally {
       setIsLoading(false);
     }
@@ -57,10 +47,11 @@ export const useApiKeys = () => {
         .eq('id', (await supabase.auth.getUser()).data.user?.id);
 
       if (error) throw error;
-      toast.success('API keys updated successfully');
+      
+      console.log('API keys saved successfully:', apiKeys);
     } catch (error) {
-      console.error('Error updating API keys:', error);
-      toast.error('Failed to update API keys');
+      console.error('Error saving API keys:', error);
+      throw error;
     } finally {
       setIsSaving(false);
     }
