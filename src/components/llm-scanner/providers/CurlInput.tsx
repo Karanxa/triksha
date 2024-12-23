@@ -25,6 +25,9 @@ export const CurlInput = ({
           onChange={(e) => onCurlCommandChange(e.target.value)}
           className="font-mono text-sm min-h-[100px]"
         />
+        <p className="text-sm text-muted-foreground">
+          Enter your complete cURL command. Replace the text that should be replaced with the prompt using the placeholder below.
+        </p>
       </div>
       <div className="space-y-2">
         <Label>Prompt Placeholder</Label>
@@ -34,7 +37,7 @@ export const CurlInput = ({
           onChange={(e) => onPlaceholderChange(e.target.value)}
         />
         <p className="text-sm text-muted-foreground">
-          Replace the text in your cURL command that should be replaced with the prompt
+          This text will be replaced with the actual prompt in your cURL command during scanning
         </p>
       </div>
     </div>
