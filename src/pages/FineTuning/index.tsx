@@ -2,8 +2,20 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateFineTuningJob } from "./CreateFineTuningJob";
 import { JobHistory } from "./JobHistory";
+import { useSession } from "@supabase/auth-helpers-react";
+import { Loader2 } from "lucide-react";
 
 const FineTuning = () => {
+  const session = useSession();
+
+  if (session === undefined) {
+    return (
+      <div className="container py-8 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="container py-8 space-y-6">
       <div>

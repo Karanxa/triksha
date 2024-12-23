@@ -2,6 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
+import { Loader2 } from "lucide-react";
 
 const AuthGuard = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -22,7 +23,11 @@ const AuthGuard = () => {
   }, []);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   if (!session) {
