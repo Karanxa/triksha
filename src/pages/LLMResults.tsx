@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
 import { ContextualScanResults } from "@/components/llm-results/ContextualScanResults";
+import { ContextualFilters } from "@/components/llm-results/ContextualFilters";
 import { Loader2, Shield } from "lucide-react";
 import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 import { useState } from "react";
@@ -10,11 +11,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 
 const LLMResults = () => {
+  // Existing filters for custom scans
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedScanType, setSelectedScanType] = useState("all");
   const [vulnerabilityStatus, setVulnerabilityStatus] = useState("all");
   const [selectedModel, setSelectedModel] = useState("all");
+
+  // New filters for contextual analysis
+  const [contextSearchQuery, setContextSearchQuery] = useState("");
+  const [contextModel, setContextModel] = useState("all");
+  const [contextVulnerabilityStatus, setContextVulnerabilityStatus] = useState("all");
 
   // Query for regular LLM scans
   const { data: scans, isLoading: isScansLoading, error: scansError } = useQuery({
@@ -65,10 +72,22 @@ const LLMResults = () => {
            matchesVulnerability && matchesModel;
   });
 
+  const filteredContextualScans = geraidScans?.filter(scan => {
+    const matchesSearch = contextSearchQuery === "" || 
+      scan.messages.some(msg => 
+        msg.content.toLowerCase().includes(contextSearchQuery.toLowerCase())
+      );
+    const matchesModel = contextModel === "all" || scan.model === contextModel;
+    const matchesVulnerability = contextVulnerabilityStatus === "all" || 
+      (contextVulnerabilityStatus === "vulnerable" ? scan.is_vulnerable : !scan.is_vulnerable);
+
+    return matchesSearch && matchesModel && matchesVulnerability;
+  });
+
   const renderContent = (type: 'scans' | 'contextual') => {
     const isLoading = type === 'scans' ? isScansLoading : isGeraideLoading;
     const error = type === 'scans' ? scansError : geraideError;
-    const data = type === 'scans' ? filteredScans : geraidScans;
+    const data = type === 'scans' ? filteredScans : filteredContextualScans;
 
     if (isLoading) {
       return (
@@ -153,7 +172,15 @@ const LLMResults = () => {
               {renderContent('scans')}
             </TabsContent>
 
-            <TabsContent value="contextual" className="mt-0 animate-fade-in">
+            <TabsContent value="contextual" className="mt-0 animate-fade-in space-y-6">
+              <ContextualFilters
+                searchQuery={contextSearchQuery}
+                setSearchQuery={setContextSearchQuery}
+                selectedModel={contextModel}
+                setSelectedModel={setContextModel}
+                vulnerabilityStatus={contextVulnerabilityStatus}
+                setVulnerabilityStatus={setContextVulnerabilityStatus}
+              />
               {renderContent('contextual')}
             </TabsContent>
           </Tabs>
