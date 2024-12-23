@@ -1,11 +1,11 @@
-import { useState } from "react"
-import { ContextualChatbot } from "./ContextualChatbot"
-import { DatasetAnalysis } from "@/components/datasets/analysis/DatasetAnalysis"
-import { FingerPrintResult } from "./types"
-import { Button } from "@/components/ui/button"
-import { PauseCircle, PlayCircle, StopCircle } from "lucide-react"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { toast } from "sonner"
+import { useState } from "react";
+import { ContextualChatbot } from "./ContextualChatbot";
+import { DatasetAnalysis } from "@/components/datasets/analysis/DatasetAnalysis";
+import { FingerPrintResult } from "./types";
+import { Button } from "@/components/ui/button";
+import { PauseCircle, PlayCircle, StopCircle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export const ContextualEngine = () => {
   const [config, setConfig] = useState<{
