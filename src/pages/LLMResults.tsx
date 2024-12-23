@@ -1,24 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ResultsTable } from "@/components/llm-results/ResultsTable";
-import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
-import { ContextualScanResults } from "@/components/llm-results/ContextualScanResults";
-import { ContextualFilters } from "@/components/llm-results/ContextualFilters";
-import { Loader2, Shield } from "lucide-react";
-import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
+import { LLMScan, GeraideScan } from "@/components/llm-results/types";
+import { ResultsContainer } from "@/components/llm-results/ResultsContainer";
 
 const LLMResults = () => {
-  // Existing filters for custom scans
+  // Custom scans filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedScanType, setSelectedScanType] = useState("all");
   const [vulnerabilityStatus, setVulnerabilityStatus] = useState("all");
   const [selectedModel, setSelectedModel] = useState("all");
 
-  // New filters for contextual analysis
+  // Contextual analysis filters
   const [contextSearchQuery, setContextSearchQuery] = useState("");
   const [contextModel, setContextModel] = useState("all");
   const [contextVulnerabilityStatus, setContextVulnerabilityStatus] = useState("all");
@@ -84,51 +78,6 @@ const LLMResults = () => {
     return matchesSearch && matchesModel && matchesVulnerability;
   });
 
-  const renderContent = (type: 'scans' | 'contextual') => {
-    const isLoading = type === 'scans' ? isScansLoading : isGeraideLoading;
-    const error = type === 'scans' ? scansError : geraideError;
-    const data = type === 'scans' ? filteredScans : filteredContextualScans;
-
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-neutral-gray mx-auto" />
-            <p className="text-sm text-muted-foreground">Loading results...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center space-y-4">
-            <Shield className="h-12 w-12 text-destructive mx-auto" />
-            <p className="text-destructive">Failed to load results: {(error as Error).message}</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (!data || data.length === 0) {
-      return (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center space-y-4">
-            <Shield className="h-12 w-12 text-muted-foreground mx-auto" />
-            <p className="text-muted-foreground">No results found. Try running a scan first.</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (type === 'scans') {
-      return <ResultsTable scans={data as LLMScan[]} />;
-    }
-
-    return <ContextualScanResults scans={data as GeraideScan[]} />;
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container py-8 space-y-8 animate-fade-in">
@@ -139,52 +88,36 @@ const LLMResults = () => {
           </p>
         </div>
         
-        <Card className="glass-card overflow-hidden border-0 p-6">
-          <Tabs defaultValue="scans" className="w-full">
-            <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent mb-8">
-              <TabsTrigger 
-                value="scans" 
-                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
-              >
-                Custom Scans
-              </TabsTrigger>
-              <TabsTrigger 
-                value="contextual" 
-                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
-              >
-                Contextual Analysis
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="scans" className="mt-0 animate-fade-in space-y-6">
-              <ResultsFilters
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                selectedScanType={selectedScanType}
-                setSelectedScanType={setSelectedScanType}
-                vulnerabilityStatus={vulnerabilityStatus}
-                setVulnerabilityStatus={setVulnerabilityStatus}
-                selectedModel={selectedModel}
-                setSelectedModel={setSelectedModel}
-              />
-              {renderContent('scans')}
-            </TabsContent>
-
-            <TabsContent value="contextual" className="mt-0 animate-fade-in space-y-6">
-              <ContextualFilters
-                searchQuery={contextSearchQuery}
-                setSearchQuery={setContextSearchQuery}
-                selectedModel={contextModel}
-                setSelectedModel={setContextModel}
-                vulnerabilityStatus={contextVulnerabilityStatus}
-                setVulnerabilityStatus={setContextVulnerabilityStatus}
-              />
-              {renderContent('contextual')}
-            </TabsContent>
-          </Tabs>
-        </Card>
+        <ResultsContainer
+          scans={scans}
+          geraidScans={geraidScans}
+          isScansLoading={isScansLoading}
+          isGeraideLoading={isGeraideLoading}
+          scansError={scansError as Error | null}
+          geraideError={geraideError as Error | null}
+          filteredScans={filteredScans}
+          filteredContextualScans={filteredContextualScans}
+          searchProps={{
+            searchQuery,
+            setSearchQuery,
+            selectedCategory,
+            setSelectedCategory,
+            selectedScanType,
+            setSelectedScanType,
+            vulnerabilityStatus,
+            setVulnerabilityStatus,
+            selectedModel,
+            setSelectedModel,
+          }}
+          contextualProps={{
+            contextSearchQuery,
+            setContextSearchQuery,
+            contextModel,
+            setContextModel,
+            contextVulnerabilityStatus,
+            setContextVulnerabilityStatus,
+          }}
+        />
       </div>
     </div>
   );
