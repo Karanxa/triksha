@@ -57,14 +57,10 @@ const LLMResults = () => {
        scan.results?.model_response?.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesCategory = selectedCategory === "all" || scan.category === selectedCategory;
-    
     const matchesScanType = selectedScanType === "all" || scan.scan_type === selectedScanType;
-    
     const matchesVulnerability = vulnerabilityStatus === "all" || 
       (vulnerabilityStatus === "vulnerable" ? scan.is_vulnerable : !scan.is_vulnerable);
-
-    const matchesModel = selectedModel === "all" || 
-      scan.results?.model === selectedModel;
+    const matchesModel = selectedModel === "all" || scan.results?.model === selectedModel;
 
     return matchesSearch && matchesCategory && matchesScanType && 
            matchesVulnerability && matchesModel;
@@ -125,13 +121,19 @@ const LLMResults = () => {
           </p>
         </div>
         
-        <Card className="bg-results-header border-0 shadow-sm">
+        <Card className="glass-card overflow-hidden border-0">
           <Tabs defaultValue="scans" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="scans" className="data-[state=active]:bg-background">
+            <TabsList className="w-full grid grid-cols-2 gap-4 p-4 bg-transparent">
+              <TabsTrigger 
+                value="scans" 
+                className="w-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 Custom Scans
               </TabsTrigger>
-              <TabsTrigger value="contextual" className="data-[state=active]:bg-background">
+              <TabsTrigger 
+                value="contextual" 
+                className="w-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 Contextual Analysis
               </TabsTrigger>
             </TabsList>
