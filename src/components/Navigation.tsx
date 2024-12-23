@@ -39,10 +39,9 @@ const Navigation = () => {
           key={link.href}
           to={link.href}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-            "hover:bg-accent/50 hover:text-foreground",
+            "text-sm font-medium transition-colors hover:text-primary",
             location.pathname === link.href
-              ? "bg-accent text-foreground"
+              ? "text-foreground"
               : "text-muted-foreground"
           )}
         >
@@ -53,50 +52,48 @@ const Navigation = () => {
   );
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="h-16 px-4 flex items-center justify-between max-w-7xl mx-auto">
+    <nav className="border-b">
+      <div className="h-16 px-4 flex items-center justify-between">
         <Sheet>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="shrink-0">
+            <Button variant="ghost" size="icon">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-[240px] sm:w-[280px]">
-            <div className="flex flex-col space-y-2 py-4">
+            <div className="flex flex-col space-y-4 py-4">
               <NavLinks />
               <Link
                 to="/settings"
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  "hover:bg-accent/50 hover:text-foreground",
+                  "text-sm font-medium transition-colors hover:text-primary",
                   location.pathname === "/settings"
-                    ? "bg-accent text-foreground"
+                    ? "text-foreground"
                     : "text-muted-foreground"
                 )}
               >
-                Settings
+                Keys
               </Link>
             </div>
           </SheetContent>
         </Sheet>
 
-        <div className="hidden md:flex items-center space-x-1">
+        <div className="hidden md:flex items-center space-x-6">
           <NavLinks />
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
           <div className="hidden md:block">
             <Link
               to="/settings"
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                "hover:bg-accent/50 hover:text-foreground",
+                "text-sm font-medium transition-colors hover:text-primary",
                 location.pathname === "/settings"
-                  ? "bg-accent text-foreground"
+                  ? "text-foreground"
                   : "text-muted-foreground"
               )}
             >
-              Settings
+              Keys
             </Link>
           </div>
           <ThemeToggle />
