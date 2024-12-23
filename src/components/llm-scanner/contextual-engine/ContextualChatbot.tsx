@@ -10,14 +10,16 @@ import { AnalysisPhase } from "./components/AnalysisPhase";
 
 interface ContextualChatbotProps {
   onFingerprint?: (results: any) => void;
+  isPaused?: boolean;
 }
 
-export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => {
+export const ContextualChatbot = ({ onFingerprint, isPaused = false }: ContextualChatbotProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isStarted, setIsStarted] = useState(false);
   const [config, setConfig] = useState<any>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<boolean>(false);
 
   const startAnalysis = async (analysisConfig: any) => {
     setIsStarted(true);
@@ -32,16 +34,19 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
   };
 
   const askNextQuestion = async () => {
-    if (!config || currentStep >= questions.length) {
-      // Analysis complete
-      const analysisResults = analyzeResponses(messages);
-      if (onFingerprint) {
-        onFingerprint(analysisResults);
+    if (!config || currentStep >= questions.length || isPaused) {
+      if (currentStep >= questions.length) {
+        // Analysis complete
+        const analysisResults = analyzeResponses(messages);
+        if (onFingerprint) {
+          onFingerprint(analysisResults);
+        }
       }
       return;
     }
 
     setIsLoading(true);
+    setPendingQuestion(true);
     try {
       // Add the question
       const question = questions[currentStep];
@@ -76,15 +81,16 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
       toast.error("Failed to get model response");
     } finally {
       setIsLoading(false);
+      setPendingQuestion(false);
     }
   };
 
   useEffect(() => {
-    if (isStarted && !isLoading && currentStep < questions.length) {
+    if (isStarted && !isLoading && !isPaused && !pendingQuestion && currentStep < questions.length) {
       const timer = setTimeout(askNextQuestion, 1500);
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isLoading, isStarted]);
+  }, [currentStep, isLoading, isStarted, isPaused, pendingQuestion]);
 
   if (!isStarted) {
     return <ModelSelector onStart={startAnalysis} />;
@@ -97,6 +103,7 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
       currentStep={currentStep}
       onContinue={askNextQuestion}
       questionsLength={questions.length}
+      isPaused={isPaused}
     />
   );
 };
