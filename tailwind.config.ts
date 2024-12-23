@@ -101,7 +101,6 @@ export default {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'dataset-pattern': 'linear-gradient(to bottom, rgba(2,6,23,1) 0%, rgba(13,17,34,1) 100%)',
-        'results-header': 'linear-gradient(to right, rgba(2, 6, 23, 0.95), rgba(88, 28, 135, 0.95))',
         'hero-gradient': 'linear-gradient(to right, rgba(155, 135, 245, 0.1), rgba(126, 105, 171, 0.1))',
         'card-gradient': 'linear-gradient(to bottom right, rgba(155, 135, 245, 0.05), rgba(110, 89, 165, 0.05))',
       },

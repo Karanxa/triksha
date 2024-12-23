@@ -55,7 +55,6 @@ const LLMResults = () => {
     const matchesSearch = searchQuery === "" || 
       (scan.results?.prompt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
        scan.results?.model_response?.toLowerCase().includes(searchQuery.toLowerCase()));
-
     const matchesCategory = selectedCategory === "all" || scan.category === selectedCategory;
     const matchesScanType = selectedScanType === "all" || scan.scan_type === selectedScanType;
     const matchesVulnerability = vulnerabilityStatus === "all" || 
@@ -75,7 +74,7 @@ const LLMResults = () => {
       return (
         <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+            <Loader2 className="h-8 w-8 animate-spin text-neutral-gray mx-auto" />
             <p className="text-sm text-muted-foreground">Loading results...</p>
           </div>
         </div>
@@ -126,13 +125,13 @@ const LLMResults = () => {
             <TabsList className="w-full grid grid-cols-2 gap-4 p-4 bg-transparent">
               <TabsTrigger 
                 value="scans" 
-                className="w-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
               >
                 Custom Scans
               </TabsTrigger>
               <TabsTrigger 
                 value="contextual" 
-                className="w-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
               >
                 Contextual Analysis
               </TabsTrigger>
