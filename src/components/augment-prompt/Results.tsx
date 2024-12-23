@@ -1,4 +1,5 @@
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Result {
   original: string;
@@ -31,22 +32,47 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
         </div>
       )}
 
-      {results.map((result, index) => (
-        <div key={index} className="p-4 rounded-lg border">
-          <div className="mb-2">
-            <h3 className="font-medium">Original Prompt:</h3>
-            <p className="text-muted-foreground">{result.original}</p>
+      <ScrollArea className="h-[500px] w-full rounded-md border">
+        <div className="min-w-full">
+          {/* Header */}
+          <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-muted/50 border-b">
+            <div className="col-span-1 font-medium">#</div>
+            <div className="col-span-4 font-medium">Original Prompt</div>
+            <div className="col-span-5 font-medium">Augmented Prompt</div>
+            <div className="col-span-2 font-medium">Status</div>
           </div>
-          {result.augmented ? (
-            <div>
-              <h3 className="font-medium">Augmented Prompt:</h3>
-              <p className="text-muted-foreground">{result.augmented}</p>
-            </div>
-          ) : (
-            <p className="text-red-500">{result.error}</p>
-          )}
+
+          {/* Results */}
+          <div className="divide-y">
+            {results.map((result, index) => (
+              <div key={index} className="grid grid-cols-12 gap-4 px-4 py-4 hover:bg-muted/30">
+                <div className="col-span-1 text-muted-foreground">
+                  {(index + 1).toString().padStart(2, '0')}
+                </div>
+                <div className="col-span-4 text-sm">
+                  <div className="line-clamp-3">{result.original}</div>
+                </div>
+                <div className="col-span-5 text-sm">
+                  {result.augmented ? (
+                    <div className="line-clamp-3">{result.augmented}</div>
+                  ) : (
+                    <div className="italic text-muted-foreground">Processing...</div>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  {result.error ? (
+                    <span className="text-sm text-destructive">{result.error}</span>
+                  ) : result.augmented ? (
+                    <span className="text-sm text-green-500">Complete</span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Pending</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      ))}
+      </ScrollArea>
     </div>
   );
 };
