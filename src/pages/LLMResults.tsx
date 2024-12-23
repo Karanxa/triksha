@@ -7,6 +7,7 @@ import { Loader2, Shield } from "lucide-react";
 import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -119,24 +120,24 @@ const LLMResults = () => {
           </p>
         </div>
         
-        <Tabs defaultValue="scans" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent">
-            <TabsTrigger 
-              value="scans" 
-              className="w-full bg-neutral-light data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
-            >
-              Custom Scans
-            </TabsTrigger>
-            <TabsTrigger 
-              value="contextual" 
-              className="w-full bg-neutral-light data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
-            >
-              Contextual Analysis
-            </TabsTrigger>
-          </TabsList>
+        <Card className="glass-card overflow-hidden border-0 p-6">
+          <Tabs defaultValue="scans" className="w-full">
+            <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent mb-8">
+              <TabsTrigger 
+                value="scans" 
+                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
+              >
+                Custom Scans
+              </TabsTrigger>
+              <TabsTrigger 
+                value="contextual" 
+                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
+              >
+                Contextual Analysis
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="mt-6">
-            <TabsContent value="scans" className="animate-fade-in">
+            <TabsContent value="scans" className="mt-0 animate-fade-in space-y-6">
               <ResultsFilters
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -152,11 +153,11 @@ const LLMResults = () => {
               {renderContent('scans')}
             </TabsContent>
 
-            <TabsContent value="contextual" className="animate-fade-in">
+            <TabsContent value="contextual" className="mt-0 animate-fade-in">
               {renderContent('contextual')}
             </TabsContent>
-          </div>
-        </Tabs>
+          </Tabs>
+        </Card>
       </div>
     </div>
   );
