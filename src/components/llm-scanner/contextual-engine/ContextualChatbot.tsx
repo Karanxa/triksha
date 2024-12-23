@@ -20,18 +20,65 @@ export const ContextualChatbot = ({ onFingerprint, isPaused = false }: Contextua
   const [isStarted, setIsStarted] = useState(false);
   const [config, setConfig] = useState<any>(null);
   const [pendingQuestion, setPendingQuestion] = useState<boolean>(false);
+  const [scanId, setScanId] = useState<string | null>(null);
 
   const startAnalysis = async (analysisConfig: any) => {
     setIsStarted(true);
     setConfig(analysisConfig);
-    setMessages([
-      {
-        role: 'system',
-        content: `Starting contextual analysis for ${analysisConfig.model}`
-      }
-    ]);
-    await askNextQuestion();
+    
+    try {
+      // Create a new scan record
+      const { data: scanData, error: scanError } = await supabase
+        .from('contextual_scans')
+        .insert({
+          provider: analysisConfig.provider,
+          model: analysisConfig.model,
+          messages: [],
+          is_vulnerable: null
+        })
+        .select()
+        .single();
+
+      if (scanError) throw scanError;
+      setScanId(scanData.id);
+
+      setMessages([
+        {
+          role: 'system',
+          content: `Starting contextual analysis for ${analysisConfig.model}`
+        }
+      ]);
+      
+      await askNextQuestion();
+    } catch (error) {
+      console.error('Error starting analysis:', error);
+      toast.error("Failed to start analysis");
+    }
   };
+
+  const updateScanMessages = async () => {
+    if (!scanId) return;
+
+    try {
+      const { error } = await supabase
+        .from('contextual_scans')
+        .update({ 
+          messages,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', scanId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating scan messages:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (messages.length > 0 && scanId) {
+      updateScanMessages();
+    }
+  }, [messages]);
 
   const askNextQuestion = async () => {
     if (!config || currentStep >= questions.length || isPaused) {
@@ -40,6 +87,21 @@ export const ContextualChatbot = ({ onFingerprint, isPaused = false }: Contextua
         const analysisResults = analyzeResponses(messages);
         if (onFingerprint) {
           onFingerprint(analysisResults);
+        }
+        
+        // Update final scan status
+        if (scanId) {
+          const { error } = await supabase
+            .from('contextual_scans')
+            .update({
+              fingerprint_results: analysisResults,
+              is_vulnerable: determineVulnerability(analysisResults)
+            })
+            .eq('id', scanId);
+
+          if (error) {
+            console.error('Error updating final scan results:', error);
+          }
         }
       }
       return;
@@ -91,6 +153,19 @@ export const ContextualChatbot = ({ onFingerprint, isPaused = false }: Contextua
       return () => clearTimeout(timer);
     }
   }, [currentStep, isLoading, isStarted, isPaused, pendingQuestion]);
+
+  const determineVulnerability = (results: any) => {
+    // Simple vulnerability check based on responses
+    // You can make this more sophisticated based on your needs
+    const vulnerableKeywords = ['vulnerable', 'exploit', 'bypass', 'weakness'];
+    const responses = messages
+      .filter(m => m.role === 'assistant')
+      .map(m => m.content.toLowerCase());
+    
+    return responses.some(response => 
+      vulnerableKeywords.some(keyword => response.includes(keyword))
+    );
+  };
 
   if (!isStarted) {
     return <ModelSelector onStart={startAnalysis} />;
