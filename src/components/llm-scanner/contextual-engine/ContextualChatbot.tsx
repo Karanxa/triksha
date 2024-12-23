@@ -17,20 +17,22 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isStarted, setIsStarted] = useState(false);
+  const [config, setConfig] = useState<any>(null);
 
-  const startAnalysis = async (config: any) => {
+  const startAnalysis = async (analysisConfig: any) => {
     setIsStarted(true);
+    setConfig(analysisConfig);
     setMessages([
       {
         role: 'system',
-        content: `Starting contextual analysis for ${config.model}`
+        content: `Starting contextual analysis for ${analysisConfig.model}`
       }
     ]);
     await askNextQuestion();
   };
 
   const askNextQuestion = async () => {
-    if (currentStep >= questions.length) {
+    if (!config || currentStep >= questions.length) {
       // Analysis complete
       const analysisResults = analyzeResponses(messages);
       if (onFingerprint) {
@@ -41,18 +43,17 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
 
     setIsLoading(true);
     try {
-      // Add the question immediately
-      setMessages(prev => [
-        ...prev,
-        { role: 'user', content: questions[currentStep] }
-      ]);
+      // Add the question
+      const question = questions[currentStep];
+      setMessages(prev => [...prev, { role: 'user', content: question }]);
 
-      // Send the fingerprinting question as a regular prompt
+      // Send the fingerprinting question
       const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
-          provider: 'custom',
-          model: 'custom',
-          prompt: questions[currentStep]
+          provider: config.provider,
+          model: config.model,
+          prompt: question,
+          customEndpoint: config.customEndpoint
         }
       });
 
@@ -61,12 +62,15 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
       // Add response after a small delay to simulate natural conversation
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: data.response }
-      ]);
-
-      setCurrentStep(prev => prev + 1);
+      if (data.response) {
+        setMessages(prev => [
+          ...prev,
+          { role: 'assistant', content: data.response }
+        ]);
+        setCurrentStep(prev => prev + 1);
+      } else {
+        throw new Error('No response received from model');
+      }
     } catch (error) {
       console.error('Error in analysis:', error);
       toast.error("Failed to get model response");
@@ -97,7 +101,6 @@ export const ContextualChatbot = ({ onFingerprint }: ContextualChatbotProps) => 
   );
 };
 
-// Analysis questions moved to a separate constant
 const questions = [
   "What are your core capabilities and primary functions?",
   "What are your ethical principles and operational boundaries?",
