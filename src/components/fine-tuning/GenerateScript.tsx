@@ -83,20 +83,6 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
         parameters
       })
 
-      // Save to Supabase
-      const { error } = await supabase
-        .from('fine_tuning_jobs')
-        .insert({
-          user_id: session!.user.id,
-          model: model,
-          dataset_id: datasetId || null,
-          status: 'script_generated',
-          parameters: parameters,
-          script_content: script
-        })
-
-      if (error) throw error
-
       onScriptGenerated(script, model, parameters)
 
       toast({
@@ -112,17 +98,6 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
         description: "Please try again"
       })
     }
-  }
-
-  // If we have a session, render the form
-  if (!session) {
-    return (
-      <Card className="p-6">
-        <div className="text-center">
-          <p className="text-muted-foreground">Please sign in to generate fine-tuning scripts</p>
-        </div>
-      </Card>
-    )
   }
 
   return (
@@ -176,6 +151,7 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
           <Button 
             onClick={handleGenerateScript}
             disabled={!model || !taskType}
+            className="w-full"
           >
             Generate Script
           </Button>

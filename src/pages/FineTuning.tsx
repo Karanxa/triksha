@@ -4,10 +4,25 @@ import { JobHistory } from "@/components/fine-tuning/JobHistory"
 import { useSession } from "@supabase/auth-helpers-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { Loader2 } from "lucide-react"
 
 export const FineTuning = () => {
   const session = useSession()
   const { toast } = useToast()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    // Check authentication status when component mounts
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        navigate('/login')
+      }
+    }
+    checkAuth()
+  }, [navigate])
 
   const handleScriptGenerated = async (script: string, model: string, parameters: any) => {
     if (!session?.user?.id) {
@@ -44,6 +59,15 @@ export const FineTuning = () => {
         description: "Please try again"
       })
     }
+  }
+
+  // Show loading state while checking session
+  if (session === undefined) {
+    return (
+      <div className="container py-8 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    )
   }
 
   return (
