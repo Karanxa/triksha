@@ -47,14 +47,14 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
   }
 
   return (
-    <Card className="group flex flex-col h-full transition-all duration-300 hover:shadow-lg animate-fade-in bg-gradient-to-br from-card to-muted/5">
+    <Card className="group flex flex-col h-full transition-all duration-300 hover:shadow-lg animate-fade-in bg-white/5 backdrop-blur-sm border-white/10">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-md bg-primary/5 group-hover:bg-primary/10 transition-colors">
-              <Database className="h-4 w-4 text-primary" />
+            <div className="p-2 rounded-md bg-white/5 group-hover:bg-white/10 transition-colors">
+              <Database className="h-4 w-4 text-white" />
             </div>
-            <h3 className="text-base font-medium leading-none group-hover:text-primary transition-colors">
+            <h3 className="text-base font-medium leading-none text-white group-hover:text-white/90 transition-colors">
               {dataset.title}
             </h3>
           </div>
@@ -63,7 +63,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
               href={dataset.url} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-white/60 hover:text-white/90 transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
             </a>
@@ -71,12 +71,12 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+        <p className="text-sm text-white/60 line-clamp-2 mb-4 leading-relaxed">
           {dataset.description}
         </p>
         
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-white/60">
             {isGitHub ? (
               <>
                 <GitFork className="h-4 w-4" />
@@ -96,12 +96,12 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
           {isGitHub && dataset.topics?.length > 0 && (
             <div className="flex flex-wrap gap-2 animate-slide-in">
               {dataset.language && (
-                <Badge variant="secondary" className="text-xs bg-primary/5 hover:bg-primary/10">
+                <Badge variant="secondary" className="text-xs bg-white/5 hover:bg-white/10 text-white/80">
                   {dataset.language}
                 </Badge>
               )}
               {dataset.topics?.slice(0, 3).map((topic) => (
-                <Badge key={topic} variant="outline" className="text-xs">
+                <Badge key={topic} variant="outline" className="text-xs text-white/80 border-white/20">
                   {topic}
                 </Badge>
               ))}
@@ -113,7 +113,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
         <Button
           variant="outline"
           size="sm"
-          className="w-full hover:bg-primary/5 transition-colors"
+          className="w-full hover:bg-white/5 transition-colors text-white/80 border-white/20"
           onClick={handleCloneRepo}
           disabled={isDownloading}
         >
