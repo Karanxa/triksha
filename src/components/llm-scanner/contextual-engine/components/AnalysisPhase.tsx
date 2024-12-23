@@ -8,9 +8,9 @@ interface AnalysisPhaseProps {
   isLoading: boolean;
   currentStep: number;
   questionsLength: number;
-  onContinue: () => void;
   isPaused?: boolean;
   onPauseResume: () => void;
+  onContinue?: () => void; // Made optional with ?
 }
 
 export const AnalysisPhase = ({
