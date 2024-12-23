@@ -27,23 +27,16 @@ export const DeleteDatasetButton = ({ datasetId, filePath }: DeleteDatasetButton
 
   const { mutate: deleteDataset, isPending } = useMutation({
     mutationFn: async () => {
-      // First check if dataset exists
-      const { data: dataset, error: fetchError } = await supabase
-        .from('datasets')
-        .select()
-        .eq('id', datasetId)
-        .maybeSingle()
-
-      if (fetchError) throw fetchError
-      if (!dataset) throw new Error('Dataset not found')
-
       // If there's a file, delete it first
       if (filePath) {
         const { error: storageError } = await supabase.storage
           .from('datasets')
           .remove([filePath])
 
-        if (storageError) throw storageError
+        if (storageError) {
+          console.error("Storage error:", storageError)
+          throw new Error("Failed to delete dataset file")
+        }
       }
 
       // Then delete the dataset record
@@ -52,7 +45,10 @@ export const DeleteDatasetButton = ({ datasetId, filePath }: DeleteDatasetButton
         .delete()
         .eq('id', datasetId)
 
-      if (deleteError) throw deleteError
+      if (deleteError) {
+        console.error("Database error:", deleteError)
+        throw new Error("Failed to delete dataset record")
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-datasets'] })
@@ -61,18 +57,10 @@ export const DeleteDatasetButton = ({ datasetId, filePath }: DeleteDatasetButton
     },
     onError: (error: Error) => {
       console.error("Delete error:", error)
-      toast.error("Failed to delete dataset: " + error.message)
+      toast.error(error.message)
       setIsOpen(false)
     }
   })
-
-  const handleDelete = async () => {
-    try {
-      await deleteDataset()
-    } catch (error) {
-      console.error("Error deleting dataset:", error)
-    }
-  }
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
@@ -96,7 +84,7 @@ export const DeleteDatasetButton = ({ datasetId, filePath }: DeleteDatasetButton
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleDelete}
+            onClick={() => deleteDataset()}
             className="bg-destructive hover:bg-destructive/90"
             disabled={isPending}
           >
