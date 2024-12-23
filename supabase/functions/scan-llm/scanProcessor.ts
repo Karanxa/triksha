@@ -22,13 +22,11 @@ export async function processScan(
   console.log('Processing scan with provider:', baseProvider);
   console.log('Initial prompts received:', prompts?.length || 0);
 
-  // More lenient prompt validation
   if (!Array.isArray(prompts)) {
     console.error('Invalid prompts format:', typeof prompts);
     throw new Error('Prompts must be provided as an array');
   }
 
-  // Clean prompts more gracefully
   const validPrompts = prompts
     .filter(prompt => prompt && typeof prompt === 'string')
     .map(prompt => prompt.trim())
@@ -44,7 +42,6 @@ export async function processScan(
   let processedCount = 0;
   const totalPrompts = validPrompts.length;
 
-  // Update initial scan status
   await supabase
     .from('llm_scans')
     .update({
@@ -70,7 +67,12 @@ export async function processScan(
       const modelName = extractModelFromResponse(response, baseProvider || 'custom');
       console.log('Processed response for model:', modelName);
 
-      // Store result
+      // Analyze vulnerability
+      console.log('Analyzing vulnerability for category:', category);
+      const vulnerabilityAnalysis = await analyzeVulnerability(prompt, modelResponse, category);
+      console.log('Vulnerability analysis result:', vulnerabilityAnalysis);
+
+      // Store result with vulnerability analysis
       const { error: resultError } = await supabase
         .from('llm_scan_results')
         .insert({
@@ -81,7 +83,12 @@ export async function processScan(
           raw_response: response,
           provider: baseProvider || 'custom',
           model: modelName,
-          category
+          category,
+          is_vulnerable: vulnerabilityAnalysis?.vulnerability_status === 'vulnerable',
+          severity: vulnerabilityAnalysis?.severity || 'unknown',
+          metadata: {
+            vulnerability_analysis: vulnerabilityAnalysis
+          }
         })
         .single();
 
@@ -94,10 +101,12 @@ export async function processScan(
         prompt,
         model_response: modelResponse,
         raw_response: response,
-        model: modelName
+        model: modelName,
+        is_vulnerable: vulnerabilityAnalysis?.vulnerability_status === 'vulnerable',
+        severity: vulnerabilityAnalysis?.severity || 'unknown',
+        analysis: vulnerabilityAnalysis
       });
       
-      // Update progress
       processedCount++;
       const progress = Math.round((processedCount / totalPrompts) * 100);
       
@@ -125,17 +134,26 @@ export async function processScan(
     }
   }
 
-  // Update final scan status
+  // Update final scan status with vulnerability summary
+  const vulnerableCount = results.filter(r => r.is_vulnerable).length;
+  const overallVulnerable = vulnerableCount > 0;
+  
   await supabase
     .from('llm_scans')
     .update({
       status: 'completed',
+      is_vulnerable: overallVulnerable,
       results: {
         responses: results,
         progress: 100,
         total: totalPrompts,
         processed: processedCount,
-        model: results[0]?.model || 'Unknown Model'
+        model: results[0]?.model || 'Unknown Model',
+        vulnerability_summary: {
+          total_scans: results.length,
+          vulnerable_count: vulnerableCount,
+          is_vulnerable: overallVulnerable
+        }
       }
     })
     .eq('id', scanId);
@@ -150,7 +168,6 @@ async function getProviderResponse(
   customEndpoint: any,
   apiKeys: any
 ) {
-  // Handle standard providers
   switch (provider) {
     case 'openai':
       if (!apiKeys.openai) throw new Error('OpenAI API key not configured');
@@ -173,5 +190,27 @@ async function getProviderResponse(
         return await handleCustomEndpoint(prompt, customEndpoint);
       }
       throw new Error(`Unsupported provider: ${provider}`);
+  }
+}
+
+async function analyzeVulnerability(prompt: string, response: string, category: string) {
+  try {
+    const result = await fetch('https://irdlyshhtwzqjvymilww.functions.supabase.co/analyze-vulnerability', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+      },
+      body: JSON.stringify({ prompt, response, category }),
+    });
+
+    if (!result.ok) {
+      throw new Error(`Analysis failed: ${await result.text()}`);
+    }
+
+    return await result.json();
+  } catch (error) {
+    console.error('Error analyzing vulnerability:', error);
+    return null;
   }
 }
