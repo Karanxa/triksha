@@ -3,11 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
 import { ContextualScanResults } from "@/components/llm-results/ContextualScanResults";
-import { Loader2, Shield, ShieldAlert } from "lucide-react";
-import { LLMScan, GeraideScan, Message } from "@/components/llm-results/types";
+import { Loader2, Shield } from "lucide-react";
+import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,7 +29,7 @@ const LLMResults = () => {
     },
   });
 
-  // Query for Geraide scans with proper type conversion
+  // Query for Geraide scans
   const { data: geraidScans, isLoading: isGeraideLoading, error: geraideError } = useQuery({
     queryKey: ['geraide-scans'],
     queryFn: async () => {
@@ -44,8 +43,8 @@ const LLMResults = () => {
       return (data || []).map(scan => ({
         ...scan,
         messages: (scan.messages as any[]).map((msg: any) => ({
-          role: msg.role as Message['role'],
-          content: msg.content as string
+          role: msg.role,
+          content: msg.content
         }))
       })) as GeraideScan[];
     },
@@ -85,7 +84,7 @@ const LLMResults = () => {
       return (
         <div className="flex items-center justify-center py-12">
           <div className="text-center space-y-4">
-            <ShieldAlert className="h-12 w-12 text-destructive mx-auto" />
+            <Shield className="h-12 w-12 text-destructive mx-auto" />
             <p className="text-destructive">Failed to load results: {(error as Error).message}</p>
           </div>
         </div>
@@ -120,24 +119,24 @@ const LLMResults = () => {
           </p>
         </div>
         
-        <Card className="glass-card overflow-hidden border-0">
-          <Tabs defaultValue="scans" className="w-full">
-            <TabsList className="w-full grid grid-cols-2 gap-4 p-4 bg-transparent">
-              <TabsTrigger 
-                value="scans" 
-                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
-              >
-                Custom Scans
-              </TabsTrigger>
-              <TabsTrigger 
-                value="contextual" 
-                className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
-              >
-                Contextual Analysis
-              </TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="scans" className="w-full">
+          <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent">
+            <TabsTrigger 
+              value="scans" 
+              className="w-full bg-neutral-light data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
+            >
+              Custom Scans
+            </TabsTrigger>
+            <TabsTrigger 
+              value="contextual" 
+              className="w-full bg-neutral-light data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
+            >
+              Contextual Analysis
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="scans" className="mt-0 animate-fade-in">
+          <div className="mt-6">
+            <TabsContent value="scans" className="animate-fade-in">
               <ResultsFilters
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
@@ -153,11 +152,11 @@ const LLMResults = () => {
               {renderContent('scans')}
             </TabsContent>
 
-            <TabsContent value="contextual" className="mt-0 animate-fade-in">
+            <TabsContent value="contextual" className="animate-fade-in">
               {renderContent('contextual')}
             </TabsContent>
-          </Tabs>
-        </Card>
+          </div>
+        </Tabs>
       </div>
     </div>
   );
