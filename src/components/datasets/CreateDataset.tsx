@@ -22,6 +22,21 @@ export const CreateDataset = () => {
 
     setIsGenerating(true)
     try {
+      // Get user's profile for API keys
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .single();
+
+      if (formData.useOpenAI && (!profile?.api_keys?.openai)) {
+        toast({
+          variant: "destructive",
+          title: "OpenAI API Key Required",
+          description: "Please add your OpenAI API key in Settings to use OpenAI enhancement"
+        });
+        return;
+      }
+
       // Generate base prompts based on method
       let originalPrompts = []
       if (formData.method === "manual") {
@@ -31,6 +46,13 @@ export const CreateDataset = () => {
         // This should be replaced with actual prompt generation logic
         originalPrompts = ["Default prompt 1", "Default prompt 2"]
       }
+
+      console.log("Generating dataset with config:", {
+        name: formData.name,
+        method: formData.method,
+        useOpenAI: formData.useOpenAI,
+        promptCount: originalPrompts.length
+      });
 
       // Generate dataset
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
@@ -44,7 +66,6 @@ export const CreateDataset = () => {
           targetModel: formData.targetModel,
           adversarialConfig: formData.method === "adversarial" ? formData.adversarialConfig : undefined,
           useOpenAI: formData.useOpenAI,
-          // Add empty fingerprint if not provided
           fingerprintResults: {
             capabilities: "",
             boundaries: "",
@@ -55,7 +76,10 @@ export const CreateDataset = () => {
         }
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Dataset generation error:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",

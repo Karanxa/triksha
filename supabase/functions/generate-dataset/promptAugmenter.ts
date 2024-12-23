@@ -18,6 +18,8 @@ Return only the enhanced prompt without explanations.`;
 
   for (const prompt of originalPrompts) {
     try {
+      console.log('Augmenting prompt:', prompt);
+      
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -35,11 +37,15 @@ Return only the enhanced prompt without explanations.`;
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${await response.text()}`);
+        const errorText = await response.text();
+        console.error('OpenAI API error:', errorText);
+        throw new Error(`OpenAI API error: ${errorText}`);
       }
 
       const data = await response.json();
       const augmentedPrompt = data.choices[0].message.content.trim();
+      console.log('Augmented prompt:', augmentedPrompt);
+      
       augmentedPrompts.push(augmentedPrompt);
 
       // Add a small delay to respect rate limits
