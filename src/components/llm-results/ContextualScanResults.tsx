@@ -20,9 +20,9 @@ export function ContextualScanResults({ scans }: GeraideResultsProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {scans.map((scan) => (
-        <Card key={scan.id} className="glass-card overflow-hidden border-0">
+        <Card key={scan.id} className="glass-card overflow-hidden border-0 transition-all hover:shadow-lg">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left side - Model details */}
