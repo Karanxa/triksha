@@ -29,3 +29,24 @@ export function processResponse(rawResponse: any): string {
   // Fallback
   return JSON.stringify(rawResponse);
 }
+
+export async function analyzeVulnerability(prompt: string, response: string, category: string) {
+  try {
+    const result = await fetch('/functions/v1/analyze-vulnerability', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt, response, category }),
+    });
+
+    if (!result.ok) {
+      throw new Error(`Analysis failed: ${await result.text()}`);
+    }
+
+    return await result.json();
+  } catch (error) {
+    console.error('Error analyzing vulnerability:', error);
+    return null;
+  }
+}
