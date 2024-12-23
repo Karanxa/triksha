@@ -5,7 +5,7 @@ import { handleAnthropicRequest } from "./providers/anthropic.ts";
 import { handleGeminiRequest } from "./providers/gemini.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { handleCustomEndpoint } from "./customEndpoint.ts";
-import { augmentPrompt } from "./utils/promptAugmentation.ts";
+import { processAndStoreScanResult } from "./utils/resultProcessor.ts";
 
 export async function processScan(
   scanId: string,
@@ -67,45 +67,20 @@ export async function processScan(
       const modelName = extractModelFromResponse(response, baseProvider || 'custom');
       console.log('Processed response for model:', modelName);
 
-      // Analyze vulnerability
-      console.log('Analyzing vulnerability for category:', category);
-      const vulnerabilityAnalysis = await analyzeVulnerability(prompt, modelResponse, category);
-      console.log('Vulnerability analysis result:', vulnerabilityAnalysis);
-
-      // Store result with vulnerability analysis
-      const { error: resultError } = await supabase
-        .from('llm_scan_results')
-        .insert({
-          scan_id: scanId,
-          user_id: userId,
-          prompt,
-          model_response: modelResponse,
-          raw_response: response,
-          provider: baseProvider || 'custom',
-          model: modelName,
-          category,
-          is_vulnerable: vulnerabilityAnalysis?.vulnerability_status === 'vulnerable',
-          severity: vulnerabilityAnalysis?.severity || 'unknown',
-          metadata: {
-            vulnerability_analysis: vulnerabilityAnalysis
-          }
-        })
-        .single();
-
-      if (resultError) {
-        console.error('Error storing result:', resultError);
-        throw new Error(`Database error: ${resultError.message}`);
-      }
-
-      results.push({
+      // Process and store result
+      const result = await processAndStoreScanResult(
+        supabase,
+        scanId,
+        userId,
         prompt,
-        model_response: modelResponse,
-        raw_response: response,
-        model: modelName,
-        is_vulnerable: vulnerabilityAnalysis?.vulnerability_status === 'vulnerable',
-        severity: vulnerabilityAnalysis?.severity || 'unknown',
-        analysis: vulnerabilityAnalysis
-      });
+        modelResponse,
+        response,
+        baseProvider,
+        modelName,
+        category
+      );
+      
+      results.push(result);
       
       processedCount++;
       const progress = Math.round((processedCount / totalPrompts) * 100);
@@ -190,27 +165,5 @@ async function getProviderResponse(
         return await handleCustomEndpoint(prompt, customEndpoint);
       }
       throw new Error(`Unsupported provider: ${provider}`);
-  }
-}
-
-async function analyzeVulnerability(prompt: string, response: string, category: string) {
-  try {
-    const result = await fetch('https://irdlyshhtwzqjvymilww.functions.supabase.co/analyze-vulnerability', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
-      },
-      body: JSON.stringify({ prompt, response, category }),
-    });
-
-    if (!result.ok) {
-      throw new Error(`Analysis failed: ${await result.text()}`);
-    }
-
-    return await result.json();
-  } catch (error) {
-    console.error('Error analyzing vulnerability:', error);
-    return null;
   }
 }
