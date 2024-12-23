@@ -17,7 +17,6 @@ const Navigation = () => {
     { href: "/llm-scanner", label: "Scans" },
     { href: "/llm-results", label: "Results" },
     { href: "/datasets", label: "Datasets" },
-    { href: "/augment-prompt", label: "Augmentation" },
     { href: "/fine-tuning", label: "Fine-tuning" },
   ];
 
