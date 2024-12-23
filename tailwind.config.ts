@@ -63,15 +63,26 @@ export default {
           "0%": { transform: "translateX(-10px)", opacity: "0" },
           "100%": { transform: "translateX(0)", opacity: "1" },
         },
+        "table-row-fade-in": {
+          "0%": { opacity: "0", transform: "translateY(4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "filter-slide": {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        }
       },
       animation: {
         "card-hover": "card-hover 0.2s ease-out forwards",
         "fade-in": "fade-in 0.3s ease-out",
         "slide-in": "slide-in 0.2s ease-out",
+        "table-row-fade-in": "table-row-fade-in 0.2s ease-out",
+        "filter-slide": "filter-slide 0.3s ease-out"
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'dataset-pattern': 'linear-gradient(to bottom, rgba(2,6,23,1) 0%, rgba(13,17,34,1) 100%)',
+        'results-header': 'linear-gradient(to right, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1))',
       },
     },
   },

@@ -37,21 +37,22 @@ export const ResultsFilters = ({
   setSelectedModel
 }: ResultsFiltersProps) => {
   return (
-    <div className="space-y-6 bg-card p-6 rounded-lg border mb-6">
+    <div className="space-y-6 p-6 animate-filter-slide">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="space-y-2">
-          <Label>Search</Label>
+          <Label className="text-sm font-medium">Search</Label>
           <Input
             placeholder="Search in prompts and responses..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full transition-shadow duration-200 focus:ring-2 focus:ring-primary/20"
           />
         </div>
 
         <div className="space-y-2">
-          <Label>Category</Label>
+          <Label className="text-sm font-medium">Category</Label>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
@@ -66,9 +67,9 @@ export const ResultsFilters = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Scan Type</Label>
+          <Label className="text-sm font-medium">Scan Type</Label>
           <Select value={selectedScanType} onValueChange={setSelectedScanType}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select scan type" />
             </SelectTrigger>
             <SelectContent>
@@ -83,9 +84,9 @@ export const ResultsFilters = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Status</Label>
+          <Label className="text-sm font-medium">Status</Label>
           <Select value={vulnerabilityStatus} onValueChange={setVulnerabilityStatus}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
@@ -97,23 +98,19 @@ export const ResultsFilters = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Model</Label>
+          <Label className="text-sm font-medium">Model</Label>
           <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select model" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Models</SelectItem>
-              {/* OpenAI Models */}
               <SelectItem value="gpt-4-0125-preview">GPT-4 Opus</SelectItem>
               <SelectItem value="gpt-3.5-turbo-0125">GPT-4 Opus Mini</SelectItem>
-              {/* Anthropic Models */}
               <SelectItem value="claude-3-opus-20240229">Claude 3 Opus</SelectItem>
               <SelectItem value="claude-3-sonnet-20240229">Claude 3 Sonnet</SelectItem>
-              {/* Google Models */}
               <SelectItem value="gemini-1.0-pro">Gemini Pro</SelectItem>
               <SelectItem value="gemini-1.0-ultra">Gemini Ultra</SelectItem>
-              {/* Ollama Models */}
               <SelectItem value="llama2">Llama 2</SelectItem>
               <SelectItem value="mistral">Mistral</SelectItem>
               <SelectItem value="codellama">Code Llama</SelectItem>

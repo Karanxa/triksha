@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { ResultsTable } from "@/components/llm-results/ResultsTable";
 import { ResultsFilters } from "@/components/llm-results/ResultsFilters";
 import { ContextualScanResults } from "@/components/llm-results/ContextualScanResults";
-import { Loader2 } from "lucide-react";
+import { Loader2, Shield, ShieldAlert } from "lucide-react";
 import { LLMScan, GeraideScan, Message } from "@/components/llm-results/types";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,7 +41,6 @@ const LLMResults = () => {
 
       if (error) throw error;
 
-      // Convert the raw data to properly typed GeraideScan objects
       return (data || []).map(scan => ({
         ...scan,
         messages: (scan.messages as any[]).map((msg: any) => ({
@@ -77,24 +77,33 @@ const LLMResults = () => {
 
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+            <p className="text-sm text-muted-foreground">Loading results...</p>
+          </div>
         </div>
       );
     }
 
     if (error) {
       return (
-        <div className="text-destructive text-center py-8">
-          Failed to load results: {(error as Error).message}
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <ShieldAlert className="h-12 w-12 text-destructive mx-auto" />
+            <p className="text-destructive">Failed to load results: {(error as Error).message}</p>
+          </div>
         </div>
       );
     }
 
     if (!data || data.length === 0) {
       return (
-        <div className="text-center text-muted-foreground py-8">
-          No results found. Try running a scan first.
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center space-y-4">
+            <Shield className="h-12 w-12 text-muted-foreground mx-auto" />
+            <p className="text-muted-foreground">No results found. Try running a scan first.</p>
+          </div>
         </div>
       );
     }
@@ -107,36 +116,48 @@ const LLMResults = () => {
   };
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold mb-2">Results</h1>
-      <p className="text-muted-foreground mb-8">View and analyze the results of your LLM security scans.</p>
-      
-      <Tabs defaultValue="scans" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="scans">Custom Scans</TabsTrigger>
-          <TabsTrigger value="contextual">Contextual Analysis</TabsTrigger>
-        </TabsList>
+    <div className="min-h-screen bg-background">
+      <div className="container py-8 space-y-8 animate-fade-in">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Results</h1>
+          <p className="text-muted-foreground">
+            View and analyze the results of your LLM security scans.
+          </p>
+        </div>
+        
+        <Card className="bg-results-header border-0 shadow-sm">
+          <Tabs defaultValue="scans" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="scans" className="data-[state=active]:bg-background">
+                Custom Scans
+              </TabsTrigger>
+              <TabsTrigger value="contextual" className="data-[state=active]:bg-background">
+                Contextual Analysis
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="scans">
-          <ResultsFilters
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedScanType={selectedScanType}
-            setSelectedScanType={setSelectedScanType}
-            vulnerabilityStatus={vulnerabilityStatus}
-            setVulnerabilityStatus={setVulnerabilityStatus}
-            selectedModel={selectedModel}
-            setSelectedModel={setSelectedModel}
-          />
-          {renderContent('scans')}
-        </TabsContent>
+            <TabsContent value="scans" className="mt-0 animate-fade-in">
+              <ResultsFilters
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                selectedScanType={selectedScanType}
+                setSelectedScanType={setSelectedScanType}
+                vulnerabilityStatus={vulnerabilityStatus}
+                setVulnerabilityStatus={setVulnerabilityStatus}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+              />
+              {renderContent('scans')}
+            </TabsContent>
 
-        <TabsContent value="contextual">
-          {renderContent('contextual')}
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="contextual" className="mt-0 animate-fade-in">
+              {renderContent('contextual')}
+            </TabsContent>
+          </Tabs>
+        </Card>
+      </div>
     </div>
   );
 };
