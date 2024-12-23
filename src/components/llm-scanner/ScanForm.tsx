@@ -15,6 +15,8 @@ import { ScanStatusHandler } from "./ScanStatusHandler";
 import { ScanNotification } from "./ScanNotification";
 import { CustomEndpoint } from "./types/CustomEndpoint";
 import { useScanSubmit } from "./hooks/useScanSubmit";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, AlertCircle } from "lucide-react";
 
 export const ScanForm = () => {
   const navigate = useNavigate();
@@ -115,75 +117,101 @@ export const ScanForm = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <ScanNotification />
-      <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
+      
+      <div className="grid gap-6">
+        <Card className="border border-border/50">
+          <CardContent className="p-6">
+            <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
+          </CardContent>
+        </Card>
 
-      <ScanFormProvider 
-        provider={provider}
-        onProviderChange={setProvider}
-        customEndpoint={customEndpoint}
-        onCustomEndpointChange={(endpoint: Partial<CustomEndpoint>) => {
-          setCustomEndpoint(prev => ({
-            ...prev,
-            ...endpoint
-          }));
-        }}
-      />
+        <Card className="border border-border/50">
+          <CardContent className="p-6">
+            <ScanFormProvider 
+              provider={provider}
+              onProviderChange={setProvider}
+              customEndpoint={customEndpoint}
+              onCustomEndpointChange={(endpoint: Partial<CustomEndpoint>) => {
+                setCustomEndpoint(prev => ({
+                  ...prev,
+                  ...endpoint
+                }));
+              }}
+            />
+          </CardContent>
+        </Card>
 
-      <ScanPromptInput
-        scanType={scanType}
-        singlePrompt={singlePrompt}
-        onSinglePromptChange={setSinglePrompt}
-        prompts={prompts}
-        onPromptsExtracted={setPrompts}
-      />
+        <Card className="border border-border/50">
+          <CardContent className="p-6">
+            <ScanPromptInput
+              scanType={scanType}
+              singlePrompt={singlePrompt}
+              onSinglePromptChange={setSinglePrompt}
+              prompts={prompts}
+              onPromptsExtracted={setPrompts}
+            />
+          </CardContent>
+        </Card>
 
-      <div className="space-y-4">
-        <AttackCategorySelect
-          value={category}
-          onValueChange={setCategory}
+        <Card className="border border-border/50">
+          <CardContent className="p-6 space-y-6">
+            <AttackCategorySelect
+              value={category}
+              onValueChange={setCategory}
+            />
+
+            {scanType === "batch" && (
+              <QPSControl qps={qps} onQPSChange={setQPS} />
+            )}
+
+            <ScanFormSchedule
+              schedule={schedule}
+              onScheduleChange={setSchedule}
+              isRecurring={isRecurring}
+              onRecurringChange={setIsRecurring}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Progress and Actions */}
+        <div className="space-y-4">
+          <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
+
+          <ScanFormActions 
+            isScanning={isScanning} 
+            onSubmit={onFormSubmit} 
+          />
+        </div>
+
+        <ScanStatusHandler
+          scanId={currentScanId}
+          scanType={scanType}
+          onProgressUpdate={setScanProgress}
+          onResultUpdate={setScanResult}
         />
+
+        {/* Results Section */}
+        {scanType === "manual" && scanResult && (
+          <Card className="border-border/50 mt-8">
+            <CardContent className="p-6">
+              <ScanResults result={scanResult} />
+            </CardContent>
+          </Card>
+        )}
+
+        {scanType === "batch" && scanResult && (
+          <div className="mt-8 flex justify-center">
+            <Button 
+              onClick={() => navigate('/llm-results')}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              View Results
+            </Button>
+          </div>
+        )}
       </div>
-
-      {scanType === "batch" && (
-        <QPSControl qps={qps} onQPSChange={setQPS} />
-      )}
-
-      <ScanFormSchedule
-        schedule={schedule}
-        onScheduleChange={setSchedule}
-        isRecurring={isRecurring}
-        onRecurringChange={setIsRecurring}
-      />
-
-      <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
-
-      <ScanFormActions 
-        isScanning={isScanning} 
-        onSubmit={onFormSubmit} 
-      />
-
-      <ScanStatusHandler
-        scanId={currentScanId}
-        scanType={scanType}
-        onProgressUpdate={setScanProgress}
-        onResultUpdate={setScanResult}
-      />
-
-      {scanType === "manual" && scanResult && (
-        <div className="mt-8">
-          <ScanResults result={scanResult} />
-        </div>
-      )}
-
-      {scanType === "batch" && scanResult && (
-        <div className="mt-8 flex justify-center">
-          <Button onClick={() => navigate('/llm-results')}>
-            View Results
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
