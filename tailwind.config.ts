@@ -71,7 +71,7 @@ export default {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'dataset-pattern': 'linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)',
+        'dataset-pattern': 'linear-gradient(to bottom, rgba(2,6,23,1) 0%, rgba(13,17,34,1) 100%)',
       },
     },
   },

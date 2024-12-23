@@ -14,18 +14,18 @@ const ToolCard = ({ icon: Icon, title, description, onClick, className }: ToolCa
     <button
       onClick={onClick}
       className={cn(
-        "w-full p-6 bg-card rounded-lg border border-muted/20",
-        "hover:bg-secondary/10 hover:border-primary/30 hover:animate-card-hover",
+        "w-full p-6 bg-card/80 rounded-lg border border-muted/20",
+        "hover:bg-card hover:border-primary/30 hover:animate-card-hover",
         "transition-all duration-300 ease-out",
         "flex flex-col items-start gap-3",
         "shadow-sm hover:shadow-md",
-        "bg-gradient-to-br from-background to-muted/10",
+        "bg-gradient-to-br from-card to-background",
         className
       )}
     >
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-md bg-primary/5">
-          <Icon className="w-6 h-6 text-primary" />
+        <div className="p-2 rounded-md bg-background/50">
+          <Icon className="w-6 h-6 text-foreground" />
         </div>
         <span className="text-lg font-medium text-foreground">{title}</span>
       </div>
