@@ -9,7 +9,6 @@ export const CreateDataset = () => {
   const { toast } = useToast()
   const session = useSession()
   const [isGenerating, setIsGenerating] = useState(false)
-  const [fingerprintResults, setFingerprintResults] = useState(null)
 
   const handleGenerate = async (formData: any) => {
     if (!formData.name) {
@@ -23,22 +22,6 @@ export const CreateDataset = () => {
 
     setIsGenerating(true)
     try {
-      // Only perform fingerprinting if OpenAI enhancement is enabled
-      let fingerprintData = null
-      if (formData.useOpenAI && formData.method !== 'manual') {
-        const { data, error: fingerprintError } = await supabase.functions.invoke('geraide-fingerprint', {
-          body: {
-            provider: formData.targetModel?.split('-')[0],
-            model: formData.targetModel?.split('-')[1],
-            prompt: "Tell me about your capabilities and limitations"
-          }
-        })
-
-        if (fingerprintError) throw fingerprintError
-        fingerprintData = data
-        setFingerprintResults(data)
-      }
-
       // Generate base prompts based on method
       let originalPrompts = []
       if (formData.method === "manual") {
@@ -49,7 +32,7 @@ export const CreateDataset = () => {
         originalPrompts = ["Default prompt 1", "Default prompt 2"]
       }
 
-      // Generate dataset with or without fingerprint results
+      // Generate dataset
       const { data, error } = await supabase.functions.invoke('generate-dataset', {
         body: {
           name: formData.name,
@@ -60,7 +43,6 @@ export const CreateDataset = () => {
           recipe: formData.recipe,
           targetModel: formData.targetModel,
           adversarialConfig: formData.method === "adversarial" ? formData.adversarialConfig : undefined,
-          fingerprintResults: fingerprintData,
           useOpenAI: formData.useOpenAI
         }
       })
@@ -81,7 +63,6 @@ export const CreateDataset = () => {
       })
     } finally {
       setIsGenerating(false)
-      setFingerprintResults(null)
     }
   }
 
