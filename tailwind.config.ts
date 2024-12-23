@@ -25,12 +25,27 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: "#9b87f5",
+          dark: "#7E69AB",
+          darker: "#6E59A5",
+          light: "#D6BCFA",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         card: {
           DEFAULT: "hsl(var(--card))",
@@ -40,9 +55,13 @@ export default {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+        neutral: {
+          gray: "#8E9196",
+          light: "#F1F0FB",
+        },
+        pastel: {
+          green: "#F2FCE2",
+          blue: "#D3E4FD",
         },
       },
       borderRadius: {
@@ -82,7 +101,9 @@ export default {
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'dataset-pattern': 'linear-gradient(to bottom, rgba(2,6,23,1) 0%, rgba(13,17,34,1) 100%)',
-        'results-header': 'linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(88, 28, 135, 0.9))'
+        'results-header': 'linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(88, 28, 135, 0.9))',
+        'hero-gradient': 'linear-gradient(to right, rgba(155, 135, 245, 0.1), rgba(126, 105, 171, 0.1))',
+        'card-gradient': 'linear-gradient(to bottom right, rgba(155, 135, 245, 0.05), rgba(110, 89, 165, 0.05))',
       },
     },
   },
