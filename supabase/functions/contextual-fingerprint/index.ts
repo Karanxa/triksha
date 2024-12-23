@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { provider, model, prompt } = await req.json();
-    console.log('Fingerprinting request:', { provider, model, prompt });
+    const { provider, model, prompt, customEndpoint } = await req.json();
+    console.log('Fingerprinting request:', { provider, model, prompt, customEndpoint });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -68,9 +68,14 @@ serve(async (req) => {
         if (!ollamaEndpoint) throw new Error('Ollama endpoint not configured in Settings');
         response = await handleOllamaRequest(prompt, model, ollamaEndpoint);
         break;
+
+      case 'custom':
+        if (!customEndpoint) throw new Error('Custom endpoint configuration is required');
+        response = await handleCustomRequest(prompt, customEndpoint);
+        break;
         
       default:
-        throw new Error(`Unsupported provider: ${provider}. Supported providers are: openai, anthropic, google, ollama`);
+        throw new Error(`Unsupported provider: ${provider}. Supported providers are: openai, anthropic, google, ollama, custom`);
     }
 
     return new Response(
@@ -78,7 +83,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in geraide-fingerprint function:', error);
+    console.error('Error in contextual-fingerprint function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
@@ -176,4 +181,54 @@ async function handleOllamaRequest(prompt: string, model: string, endpoint: stri
 
   const data = await response.json();
   return data.response;
+}
+
+async function handleCustomRequest(prompt: string, customEndpoint: any) {
+  try {
+    // Parse the curl command if provided
+    if (customEndpoint.curlCommand) {
+      const modifiedCommand = customEndpoint.curlCommand
+        .replace(customEndpoint.placeholder || '{PROMPT}', prompt);
+      
+      // Execute the modified curl command
+      // Note: This is a simplified version, you might need to parse headers, method, etc.
+      const response = await fetch(customEndpoint.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {})
+        },
+        body: JSON.stringify({ prompt })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Custom endpoint error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.response || data.text || data.content || JSON.stringify(data);
+    }
+
+    // Default HTTP request if no curl command
+    const response = await fetch(customEndpoint.url, {
+      method: customEndpoint.method || 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {})
+      },
+      body: JSON.stringify({
+        [customEndpoint.placeholder || 'prompt']: prompt
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Custom endpoint error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.response || data.text || data.content || JSON.stringify(data);
+  } catch (error) {
+    console.error('Error in custom request:', error);
+    throw new Error(`Custom endpoint error: ${error.message}`);
+  }
 }
