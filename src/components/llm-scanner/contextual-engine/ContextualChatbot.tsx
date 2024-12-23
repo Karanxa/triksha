@@ -7,6 +7,7 @@ import { ChatMessages } from "../chat/ChatMessages";
 import { Message } from "./types";
 import { ModelSelector } from "./ModelSelector";
 import { AnalysisPhase } from "./components/AnalysisPhase";
+import { Json } from "@/integrations/supabase/types";
 
 interface ContextualChatbotProps {
   onFingerprint?: (results: any) => void;
@@ -27,13 +28,18 @@ export const ContextualChatbot = ({ onFingerprint, isPaused = false }: Contextua
     setConfig(analysisConfig);
     
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
       // Create a new scan record
       const { data: scanData, error: scanError } = await supabase
         .from('contextual_scans')
         .insert({
+          user_id: user.id,
           provider: analysisConfig.provider,
           model: analysisConfig.model,
-          messages: [],
+          messages: [] as Json[],
           is_vulnerable: null
         })
         .select()
@@ -60,10 +66,15 @@ export const ContextualChatbot = ({ onFingerprint, isPaused = false }: Contextua
     if (!scanId) return;
 
     try {
+      const messagesJson = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })) as Json[];
+
       const { error } = await supabase
         .from('contextual_scans')
         .update({ 
-          messages,
+          messages: messagesJson,
           updated_at: new Date().toISOString()
         })
         .eq('id', scanId);
@@ -156,7 +167,6 @@ export const ContextualChatbot = ({ onFingerprint, isPaused = false }: Contextua
 
   const determineVulnerability = (results: any) => {
     // Simple vulnerability check based on responses
-    // You can make this more sophisticated based on your needs
     const vulnerableKeywords = ['vulnerable', 'exploit', 'bypass', 'weakness'];
     const responses = messages
       .filter(m => m.role === 'assistant')
