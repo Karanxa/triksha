@@ -60,7 +60,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card-gradient backdrop-blur-sm border border-primary/10 shadow-lg;
+    @apply bg-card/50 backdrop-blur-sm border border-primary/10 shadow-lg;
   }
   
   .primary-gradient {
@@ -74,4 +74,21 @@
   .hero-section {
     @apply bg-hero-gradient backdrop-blur-sm;
   }
+}
+
+/* Supabase Auth UI Overrides */
+.supabase-auth-ui_ui-container {
+  @apply space-y-6;
+}
+
+.supabase-auth-ui_ui-input {
+  @apply bg-background text-foreground border-input !important;
+}
+
+.supabase-auth-ui_ui-button {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 !important;
+}
+
+.supabase-auth-ui_ui-anchor {
+  @apply text-primary hover:text-primary/90 !important;
 }

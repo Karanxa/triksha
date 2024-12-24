@@ -56,6 +56,9 @@ const Login = () => {
                   colors: {
                     brand: '#9b87f5',
                     brandAccent: '#7E69AB',
+                    inputBackground: 'transparent',
+                    inputText: 'hsl(var(--foreground))',
+                    inputBorder: 'hsl(var(--border))',
                   },
                 },
               },
@@ -65,25 +68,39 @@ const Login = () => {
                   background: '#9b87f5',
                   color: 'white',
                   borderRadius: '0.5rem',
+                  padding: '0.75rem',
+                  height: '2.75rem',
+                  fontSize: '1rem',
                 },
                 input: { 
                   fontFamily: 'inherit',
                   background: 'transparent',
                   borderColor: 'hsl(var(--border))',
                   borderRadius: '0.5rem',
+                  padding: '0.75rem',
+                  height: '2.75rem',
+                  fontSize: '1rem',
+                  color: 'hsl(var(--foreground))',
                 },
                 label: { 
                   fontFamily: 'inherit',
                   color: 'hsl(var(--foreground))',
+                  fontSize: '1rem',
+                  marginBottom: '0.5rem',
                 },
                 anchor: { 
                   fontFamily: 'inherit',
                   color: '#9b87f5',
+                  fontSize: '0.875rem',
                 },
                 message: {
                   fontFamily: 'inherit',
                   color: 'hsl(var(--foreground))',
-                }
+                  fontSize: '0.875rem',
+                },
+                container: {
+                  gap: '1.5rem',
+                },
               }
             }}
             providers={[]}
