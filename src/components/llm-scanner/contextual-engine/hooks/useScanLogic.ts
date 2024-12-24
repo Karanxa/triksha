@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { Message } from "../types";
 import { ScanState, ScanConfig } from "../types/scan";
 import { useFingerprinting } from './useFingerprinting';
-import { useDatasetPrompts } from './useDatasetPrompts';
+import { useRedTeaming } from './useRedTeaming';
 import { supabase } from "@/integrations/supabase/client";
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
@@ -18,35 +18,27 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   });
 
   const { FINGERPRINTING_QUESTIONS, processQuestion } = useFingerprinting();
-  const { loadDatasetPrompts } = useDatasetPrompts();
+  const { processDatasetPrompt } = useRedTeaming();
 
   const displayDatasetPrompts = (prompts: string[]) => {
-    const messages: Message[] = [
-      {
-        role: 'system',
-        content: `Dataset loaded with ${prompts.length} prompts to test:`
-      },
-      ...prompts.map((prompt, index): Message => ({
-        role: 'system',
-        content: `Prompt ${index + 1}/${prompts.length}: ${prompt}`
-      }))
-    ];
-
     setState(prev => ({
       ...prev,
-      messages: [...prev.messages, ...messages]
+      messages: [
+        ...prev.messages,
+        {
+          role: 'system',
+          content: `Loading ${prompts.length} prompts for testing...`
+        },
+        ...prompts.map((prompt, index): Message => ({
+          role: 'system',
+          content: `Prompt ${index + 1}/${prompts.length}: ${prompt}`
+        }))
+      ]
     }));
   };
 
   const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any) => {
     try {
-      const prompts = await loadDatasetPrompts(config.datasetId);
-      if (!prompts || prompts.length === 0) {
-        throw new Error('No prompts found in dataset');
-      }
-
-      displayDatasetPrompts(prompts);
-
       setState(prev => ({
         ...prev,
         phase: 'redteaming',
@@ -54,64 +46,54 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           ...prev.messages,
           {
             role: 'system',
-            content: `Starting red teaming phase with ${prompts.length} prompts from the selected dataset.`
+            content: 'Starting red teaming phase with dataset prompts...'
           }
-        ],
-        datasetPrompts: prompts,
-        currentDatasetPromptIndex: 0
+        ]
       }));
 
-      await processNextDatasetPrompt(config.provider, config.model);
-    } catch (error) {
-      console.error('Error starting red teaming phase:', error);
-      toast.error("Failed to start red teaming phase");
-    }
-  };
+      // Process each prompt in the dataset
+      for (let i = 0; i < state.datasetPrompts.length; i++) {
+        const prompt = state.datasetPrompts[i];
+        setState(prev => ({
+          ...prev,
+          messages: [
+            ...prev.messages,
+            { role: 'user', content: `Testing prompt ${i + 1}/${state.datasetPrompts.length}: ${prompt}` }
+          ],
+          currentDatasetPromptIndex: i
+        }));
 
-  const processNextDatasetPrompt = async (provider: string, model: string): Promise<boolean> => {
-    const { datasetPrompts, currentDatasetPromptIndex } = state;
-    
-    if (currentDatasetPromptIndex >= datasetPrompts.length) {
-      console.log('Red teaming phase completed');
-      toast.success("Red teaming phase completed");
-      return false;
-    }
+        const result = await processDatasetPrompt(
+          config.provider,
+          config.model,
+          prompt,
+          fingerprintResults
+        );
 
-    const prompt = datasetPrompts[currentDatasetPromptIndex];
-    setState(prev => ({
-      ...prev,
-      isLoading: true,
-      messages: [...prev.messages, {
-        role: 'user',
-        content: `Testing prompt ${currentDatasetPromptIndex + 1}/${datasetPrompts.length}: ${prompt}`
-      }]
-    }));
-
-    try {
-      const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
-        body: { provider, model, prompt }
-      });
-
-      if (error) throw error;
+        if (result.success && result.response) {
+          setState(prev => ({
+            ...prev,
+            messages: [
+              ...prev.messages,
+              { role: 'assistant', content: result.response }
+            ]
+          }));
+        }
+      }
 
       setState(prev => ({
         ...prev,
-        messages: [...prev.messages, { role: 'assistant', content: data.response }],
-        currentDatasetPromptIndex: prev.currentDatasetPromptIndex + 1,
-        isLoading: false
+        messages: [
+          ...prev.messages,
+          {
+            role: 'system',
+            content: 'Red teaming phase completed.'
+          }
+        ]
       }));
-      return true;
     } catch (error) {
-      console.error('Error processing dataset prompt:', error);
-      setState(prev => ({
-        ...prev,
-        messages: [...prev.messages, {
-          role: 'system',
-          content: `Error processing prompt: ${error instanceof Error ? error.message : 'Unknown error'}`
-        }],
-        isLoading: false
-      }));
-      return false;
+      console.error('Error in red teaming phase:', error);
+      toast.error('Failed to complete red teaming phase');
     }
   };
 
@@ -158,7 +140,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       return false;
     }
     
-    return processNextDatasetPrompt(provider, model);
+    return true;
   }, [state, onFingerprint, FINGERPRINTING_QUESTIONS]);
 
   return {
@@ -184,28 +166,12 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
             {
               role: 'system',
               content: `Starting contextual analysis for ${config.model}`
-            },
-            {
-              role: 'system',
-              content: `Loaded dataset with ${prompts.length} prompts for testing`
             }
           ],
           datasetPrompts: prompts
         }));
 
         displayDatasetPrompts(prompts);
-
-        setState(prev => ({
-          ...prev,
-          messages: [
-            ...prev.messages,
-            {
-              role: 'system',
-              content: 'Beginning fingerprinting phase...'
-            }
-          ]
-        }));
-        
         await processNextQuestion(config.provider, config.model);
       } catch (error) {
         console.error('Error starting scan:', error);
@@ -220,10 +186,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       }
       
       try {
-        const success = await processNextQuestion(config.provider, config.model);
-        if (!success) {
-          console.log('No more questions/prompts to process');
-        }
+        await processNextQuestion(config.provider, config.model);
       } catch (error) {
         console.error('Error asking next question:', error);
         toast.error("Failed to process question/prompt");
@@ -231,3 +194,46 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     }
   };
 };
+
+async function loadDatasetPrompts(datasetId: string): Promise<string[]> {
+  try {
+    const { data: dataset, error: datasetError } = await supabase
+      .from('datasets')
+      .select('file_path')
+      .eq('id', datasetId)
+      .single();
+
+    if (datasetError) throw datasetError;
+    if (!dataset?.file_path) {
+      throw new Error('Dataset file not found');
+    }
+
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('datasets')
+      .download(dataset.file_path);
+
+    if (downloadError) throw downloadError;
+
+    const text = await fileData.text();
+    const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+    const headers = lines[0].toLowerCase().split(',');
+    const promptIndex = headers.findIndex(h => 
+      h === 'prompt' || h === 'text' || h === 'content'
+    );
+
+    if (promptIndex === -1) {
+      throw new Error('Dataset must have a prompt, text, or content column');
+    }
+
+    return lines.slice(1)
+      .map(line => {
+        const values = line.split(',');
+        return values[promptIndex]?.trim() || '';
+      })
+      .filter(Boolean);
+  } catch (error) {
+    console.error('Error loading dataset:', error);
+    toast.error('Failed to load dataset prompts');
+    return [];
+  }
+}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
+import { Message } from '../types';
 import { supabase } from "@/integrations/supabase/client";
-import { Message } from "../types";
 
 export const useFingerprinting = () => {
   const [isProcessing, setIsProcessing] = useState(false);
