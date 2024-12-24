@@ -19,7 +19,7 @@ const Index = () => {
             <h1 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent animate-fade-in">
               Welcome to Triksha
             </h1>
-            <p className="text-xl text-foreground/80 max-w-2xl mx-auto animate-fade-in">
+            <p className="text-xl text-[#000000e6] max-w-2xl mx-auto animate-fade-in">
               Your comprehensive platform for LLM security testing and enhancement
             </p>
             <div className="flex justify-center animate-fade-in">
@@ -64,28 +64,28 @@ const Index = () => {
 
         {/* Features Section */}
         <div className="space-y-8">
-          <h2 className="text-2xl font-semibold text-center text-foreground">Why Choose Triksha?</h2>
+          <h2 className="text-2xl font-semibold text-center text-[#000000e6]">Why Choose Triksha?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Shield className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Comprehensive Testing</h3>
-              <p className="text-sm text-foreground/60 text-center">
+              <h3 className="font-medium text-center text-[#000000e6]">Comprehensive Testing</h3>
+              <p className="text-sm text-[#000000e6] text-center">
                 Test your LLMs against a wide range of security vulnerabilities
               </p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <List className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Detailed Results</h3>
-              <p className="text-sm text-foreground/60 text-center">
+              <h3 className="font-medium text-center text-[#000000e6]">Detailed Results</h3>
+              <p className="text-sm text-[#000000e6] text-center">
                 Get in-depth analysis of scan results and vulnerabilities
               </p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Search className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Contextual Analysis</h3>
-              <p className="text-sm text-foreground/60 text-center">
+              <h3 className="font-medium text-center text-[#000000e6]">Contextual Analysis</h3>
+              <p className="text-sm text-[#000000e6] text-center">
                 Understand model behavior through contextual testing
               </p>
             </div>
