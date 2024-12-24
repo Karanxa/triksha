@@ -16,7 +16,6 @@ import { ScanNotification } from "./ScanNotification";
 import { CustomEndpoint } from "./types/CustomEndpoint";
 import { useScanSubmit } from "./hooks/useScanSubmit";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, AlertCircle } from "lucide-react";
 
 export const ScanForm = () => {
   const navigate = useNavigate();
@@ -30,7 +29,6 @@ export const ScanForm = () => {
   const [isRecurring, setIsRecurring] = useState(false);
   const [qps, setQPS] = useState(5);
   const [scanResult, setScanResult] = useState<any>(null);
-  const [scanProgress, setScanProgress] = useState(0);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
@@ -46,10 +44,22 @@ export const ScanForm = () => {
   const { handleSubmit, isScanning } = useScanSubmit({
     onSubmit: async (data) => {
       try {
+        const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+
+        if (promptsToSubmit.length === 0) {
+          toast.error("Please enter at least one prompt");
+          return;
+        }
+
+        if (!provider) {
+          toast.error("Please select a provider");
+          return;
+        }
+
         const result = await handleSubmit({
           provider,
           customEndpoint,
-          prompts: scanType === "manual" ? [singlePrompt] : prompts,
+          prompts: promptsToSubmit,
           category,
           label,
           schedule,
@@ -64,11 +74,12 @@ export const ScanForm = () => {
           setSchedule("none");
           setIsRecurring(false);
           
-          // For batch scans, show a notification and optionally redirect
+          // For batch scans, show a notification and redirect
           if (scanType === "batch") {
             toast.success('Batch scan started successfully', {
               description: 'You can navigate away - the scan will continue in the background.'
             });
+            navigate('/llm-results');
           }
           
           return result;
@@ -81,40 +92,6 @@ export const ScanForm = () => {
     setResult: setScanResult,
     setScanId: setCurrentScanId
   });
-
-  const onFormSubmit = async () => {
-    const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
-
-    if (promptsToSubmit.length === 0) {
-      toast.error("Please enter at least one prompt");
-      return;
-    }
-
-    if (!provider) {
-      toast.error("Please select a provider");
-      return;
-    }
-
-    if (promptsToSubmit.length > 100000) {
-      toast.error("Maximum batch size is 100,000 prompts");
-      return;
-    }
-
-    if (promptsToSubmit.length > 1000) {
-      toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
-    }
-
-    await handleSubmit({
-      provider,
-      customEndpoint,
-      prompts: promptsToSubmit,
-      category,
-      label,
-      schedule,
-      isRecurring,
-      qps: Math.min(qps, 50)
-    });
-  };
 
   return (
     <div className="space-y-6">
