@@ -6,15 +6,20 @@ import { useFingerprinting } from './useFingerprinting';
 import { usePhaseTransition } from './usePhaseTransition';
 import { useMessageHandler } from './useMessageHandler';
 import { Message } from "../types/phases";
+import { usePromptAugmentation } from './usePromptAugmentation';
+import { useRedTeaming } from './useRedTeaming';
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [pendingQuestion, setPendingQuestion] = useState(false);
+  const [augmentedPrompts, setAugmentedPrompts] = useState<string[]>([]);
 
   const { currentPhase, phaseComplete, setPhaseComplete, transitionToNextPhase } = usePhaseTransition();
   const { messages, setMessages, addMessage, addSystemMessage, handleError } = useMessageHandler();
   const { processQuestion, FINGERPRINTING_QUESTIONS } = useFingerprinting();
+  const { processDatasetPrompts } = usePromptAugmentation();
+  const { processDatasetPrompt } = useRedTeaming();
 
   const processFingerprinting = async (config: ScanConfig) => {
     if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
@@ -53,6 +58,9 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           if (updatedMessages) {
             setMessages(updatedMessages as Message[]);
           }
+
+          // Start augmentation phase
+          await startAugmentationPhase(config, fingerprintResults);
         }
       }
       return true;
@@ -62,6 +70,96 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     } finally {
       setIsLoading(false);
       setPendingQuestion(false);
+    }
+  };
+
+  const startAugmentationPhase = async (config: ScanConfig, fingerprint: any) => {
+    try {
+      setIsLoading(true);
+      addSystemMessage('Starting prompt augmentation phase...');
+
+      // Get user's API keys
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .single();
+
+      if (!profile?.api_keys?.openai) {
+        throw new Error('OpenAI API key not found');
+      }
+
+      // Get dataset prompts
+      const { data: dataset } = await supabase
+        .from('datasets')
+        .select('*')
+        .eq('id', config.datasetId)
+        .single();
+
+      if (!dataset) {
+        throw new Error('Dataset not found');
+      }
+
+      // Process dataset prompts with augmentation
+      const augmented = await processDatasetPrompts(
+        dataset.prompts || [],
+        fingerprint,
+        profile.api_keys.openai,
+        addMessage
+      );
+
+      setAugmentedPrompts(augmented);
+      
+      // Transition to red teaming phase
+      const updatedMessages = transitionToNextPhase(messages, 'augmenting');
+      if (updatedMessages) {
+        setMessages(updatedMessages as Message[]);
+      }
+
+      // Start red teaming phase
+      await startRedTeamingPhase(config, fingerprint, augmented);
+
+    } catch (error) {
+      handleError(error as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startRedTeamingPhase = async (config: ScanConfig, fingerprint: any, prompts: string[]) => {
+    try {
+      setIsLoading(true);
+      addSystemMessage('Starting red teaming phase...');
+
+      for (const prompt of prompts) {
+        const result = await processDatasetPrompt(
+          config.provider,
+          config.model,
+          prompt,
+          fingerprint
+        );
+
+        addMessage({ 
+          role: 'user' as const, 
+          content: `Testing prompt: ${prompt}` 
+        });
+        
+        addMessage({ 
+          role: 'assistant' as const, 
+          content: result.response || 'No response received' 
+        });
+
+        if (result.isVulnerable) {
+          addSystemMessage('⚠️ Vulnerability detected in model response');
+        }
+      }
+
+      addSystemMessage('Red teaming phase completed');
+      toast.success('Analysis completed successfully');
+
+    } catch (error) {
+      handleError(error as Error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -30,6 +30,7 @@ export const useRedTeaming = () => {
         body: {
           prompt,
           fingerprint: fingerprintResults,
+          phase: 'redteaming',
           apiKey: apiKeys.openai
         }
       });
