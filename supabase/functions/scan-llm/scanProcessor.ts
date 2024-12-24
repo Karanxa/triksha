@@ -41,6 +41,7 @@ export async function processScan(
   const results = [];
   let processedCount = 0;
   const totalPrompts = validPrompts.length;
+  let modelName = null;
 
   await supabase
     .from('llm_scans')
@@ -64,23 +65,32 @@ export async function processScan(
       
       // Extract readable response and model info
       const modelResponse = processProviderResponse(response, baseProvider || 'custom');
-      const modelName = extractModelFromResponse(response, baseProvider || 'custom');
+      modelName = modelName || extractModelFromResponse(response, baseProvider || 'custom');
       console.log('Processed response for model:', modelName);
 
-      // Process and store result
-      const result = await processAndStoreScanResult(
-        supabase,
-        scanId,
-        userId,
-        prompt,
-        modelResponse,
-        response,
-        baseProvider,
-        modelName,
-        category
-      );
+      // Store individual result in llm_scan_results table
+      const { data: resultData, error: resultError } = await supabase
+        .from('llm_scan_results')
+        .insert({
+          scan_id: scanId,
+          user_id: userId,
+          prompt: prompt,
+          model_response: modelResponse,
+          raw_response: response,
+          provider: baseProvider || 'custom',
+          model: modelName,
+          category: category,
+          is_vulnerable: false // You may want to implement vulnerability detection logic
+        })
+        .select()
+        .single();
+
+      if (resultError) {
+        console.error('Error storing scan result:', resultError);
+        throw resultError;
+      }
       
-      results.push(result);
+      results.push(resultData);
       
       processedCount++;
       const progress = Math.round((processedCount / totalPrompts) * 100);
@@ -91,25 +101,38 @@ export async function processScan(
           status: 'processing',
           results: {
             progress,
-            responses: results,
-            model: modelName,
             total: totalPrompts,
-            processed: processedCount
+            processed: processedCount,
+            model: modelName
           }
         })
         .eq('id', scanId);
 
     } catch (error) {
       console.error('Error processing prompt:', error);
+      
+      // Store failed result
+      await supabase
+        .from('llm_scan_results')
+        .insert({
+          scan_id: scanId,
+          user_id: userId,
+          prompt: prompt,
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
+          provider: baseProvider || 'custom',
+          model: modelName || 'Unknown Model',
+          category: category
+        });
+
       results.push({
         prompt,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
-        model: 'Unknown Model'
+        model: modelName || 'Unknown Model'
       });
     }
   }
 
-  // Update final scan status with vulnerability summary
+  // Update final scan status
   const vulnerableCount = results.filter(r => r.is_vulnerable).length;
   const overallVulnerable = vulnerableCount > 0;
   
@@ -119,11 +142,10 @@ export async function processScan(
       status: 'completed',
       is_vulnerable: overallVulnerable,
       results: {
-        responses: results,
         progress: 100,
         total: totalPrompts,
         processed: processedCount,
-        model: results[0]?.model || 'Unknown Model',
+        model: modelName || 'Unknown Model',
         vulnerability_summary: {
           total_scans: results.length,
           vulnerable_count: vulnerableCount,
