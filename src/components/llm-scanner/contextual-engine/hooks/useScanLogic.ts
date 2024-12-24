@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ScanConfig } from '../types/phases';
@@ -40,7 +40,6 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         content: `Loaded ${prompts.length} prompts for testing...`
       });
 
-      // Process each prompt
       for (let i = 0; i < prompts.length; i++) {
         setCurrentDatasetPromptIndex(i);
         const prompt = prompts[i];
