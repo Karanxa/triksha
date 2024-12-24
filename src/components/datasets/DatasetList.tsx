@@ -26,21 +26,21 @@ export const DatasetList = ({ datasets, onView, onDownload, downloading }: Datas
       {datasets.map((dataset) => (
         <Card key={dataset.id} className="flex flex-col">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-[#000000e6]">
               <Database className="h-5 w-5" />
               {dataset.name}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-grow">
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-[#000000e6] mb-4">
               {dataset.description || "No description provided"}
             </p>
             {dataset.category && (
-              <p className="text-sm">
+              <p className="text-sm text-[#000000e6]">
                 <span className="font-medium">Category:</span> {dataset.category}
               </p>
             )}
-            <p className="text-sm">
+            <p className="text-sm text-[#000000e6]">
               <span className="font-medium">Created:</span>{" "}
               {new Date(dataset.created_at).toLocaleDateString()}
             </p>
