@@ -1,30 +1,85 @@
-import { FingerPrintResult } from "../types";
+import { useState } from 'react';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from 'sonner';
 
-export const processRedTeaming = async (
-  provider: string,
-  model: string,
-  fingerprint: FingerPrintResult
-) => {
-  try {
-    const response = await fetch('/api/process-red-team', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        provider,
-        model,
-        fingerprint,
-      }),
-    });
+export const useRedTeaming = () => {
+  const [isProcessing, setIsProcessing] = useState(false);
 
-    if (!response.ok) {
-      throw new Error('Failed to process red teaming');
+  const loadDatasetPrompts = async (datasetId: string): Promise<string[]> => {
+    try {
+      // Fetch dataset content
+      const { data: dataset, error: datasetError } = await supabase
+        .from('datasets')
+        .select('file_path')
+        .eq('id', datasetId)
+        .single();
+
+      if (datasetError) throw datasetError;
+
+      // Download dataset content
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('datasets')
+        .download(dataset.file_path);
+
+      if (downloadError) throw downloadError;
+
+      // Parse CSV content
+      const text = await fileData.text();
+      const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+      const headers = lines[0].toLowerCase().split(',');
+      const promptIndex = headers.findIndex(h => 
+        h === 'prompt' || h === 'text' || h === 'content'
+      );
+
+      if (promptIndex === -1) {
+        throw new Error('Dataset must have a prompt, text, or content column');
+      }
+
+      // Extract prompts
+      return lines.slice(1)
+        .map(line => {
+          const values = line.split(',');
+          return values[promptIndex]?.trim() || '';
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error('Error loading dataset:', error);
+      toast.error('Failed to load dataset prompts');
+      return [];
     }
+  };
 
-    return await response.json();
-  } catch (error) {
-    console.error('Error in red teaming:', error);
-    throw error;
-  }
+  const processPrompt = async (
+    provider: string,
+    model: string,
+    prompt: string
+  ): Promise<{ success: boolean; response?: string }> => {
+    setIsProcessing(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
+        body: {
+          provider,
+          model,
+          prompt
+        }
+      });
+
+      if (error) throw error;
+
+      return { success: true, response: data.response };
+    } catch (error) {
+      console.error('Error processing red team prompt:', error);
+      toast.error("Failed to process dataset prompt");
+      return { success: false };
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return {
+    loadDatasetPrompts,
+    processPrompt,
+    isProcessing
+  };
 };
