@@ -1,27 +1,29 @@
-import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ModelSelect } from "@/components/fine-tuning/ModelSelect"
-import { DatasetSelect } from "@/components/fine-tuning/DatasetSelect"
+import { ModelSelect } from "./components/ModelSelect"
+import { DatasetSelect } from "./components/DatasetSelect"
 import { TaskSelect } from "@/components/fine-tuning/TaskSelect"
+import { LanguageSelect } from "@/components/fine-tuning/LanguageSelect"
 import { ParameterTabs } from "@/components/fine-tuning/ParameterTabs"
-import { generateScript } from "@/components/fine-tuning/utils/scriptGenerator"
+import { useState } from "react"
 import { GeneratedScript } from "@/components/fine-tuning/GeneratedScript"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
+import { useSession } from "@supabase/auth-helpers-react"
 
 interface CreateFineTuningJobProps {
   onScriptGenerated: (script: string, model: string, parameters: any) => void;
 }
 
 export const CreateFineTuningJob = ({ onScriptGenerated }: CreateFineTuningJobProps) => {
+  const { toast } = useToast()
+  const session = useSession()
   const [model, setModel] = useState("")
-  const [dataset, setDataset] = useState("")
+  const [datasetId, setDatasetId] = useState("")
   const [taskType, setTaskType] = useState("")
   const [scriptLanguage, setScriptLanguage] = useState("python")
   const [generatedScript, setGeneratedScript] = useState<string | null>(null)
-
-  // Basic parameters
+  
+  // Basic parameters state
   const [learningRate, setLearningRate] = useState("0.0001")
   const [batchSize, setBatchSize] = useState("8")
   const [epochs, setEpochs] = useState("3")
@@ -34,15 +36,33 @@ export const CreateFineTuningJob = ({ onScriptGenerated }: CreateFineTuningJobPr
   const [saveStrategy, setSaveStrategy] = useState("steps")
   const [randomSeed, setRandomSeed] = useState("42")
 
-  // Advanced parameters
+  // Advanced parameters state
   const [precision, setPrecision] = useState("fp16")
-  const [gradientAccumulation, setGradientAccumulation] = useState("1")
+  const [gradientAccumulation, setGradientAccumulation] = useState("4")
   const [useDeepSpeed, setUseDeepSpeed] = useState(false)
   const [useFlashAttention, setUseFlashAttention] = useState(false)
   const [useMemoryOptimization, setUseMemoryOptimization] = useState(false)
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
-  const handleGenerateScript = () => {
+  const handleGenerateScript = async () => {
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to generate scripts"
+      })
+      return
+    }
+
+    if (!model || !taskType) {
+      toast({
+        variant: "destructive",
+        title: "Missing required fields",
+        description: "Please select a model and task type"
+      })
+      return
+    }
+
     const parameters = {
       learningRate,
       batchSize,
@@ -60,93 +80,116 @@ export const CreateFineTuningJob = ({ onScriptGenerated }: CreateFineTuningJobPr
       useDeepSpeed,
       useFlashAttention,
       useMemoryOptimization,
-      hardwareAcceleration,
+      hardwareAcceleration
     }
 
-    const script = generateScript({
-      model,
-      datasetId: dataset,
-      taskType,
-      scriptLanguage,
-      parameters,
-    })
+    try {
+      console.log("Generating script with parameters:", { model, taskType, parameters })
+      
+      const script = generateScript({
+        model,
+        datasetId,
+        taskType,
+        scriptLanguage,
+        parameters
+      })
 
-    setGeneratedScript(script)
-    onScriptGenerated(script, model, parameters)
+      setGeneratedScript(script)
+
+      // Store in database
+      const { data, error } = await supabase
+        .from('fine_tuning_jobs')
+        .insert({
+          user_id: session.user.id,
+          model,
+          dataset_id: datasetId || null,
+          status: 'script_generated',
+          parameters,
+          script_content: script
+        })
+        .select()
+
+      if (error) {
+        console.error('Error saving script:', error)
+        throw error
+      }
+
+      console.log('Fine-tuning job created:', data)
+
+      onScriptGenerated(script, model, parameters)
+
+      toast({
+        title: "Script generated successfully",
+        description: "You can view it in the Job History tab"
+      })
+
+    } catch (error: any) {
+      console.error('Error in script generation:', error)
+      toast({
+        variant: "destructive",
+        title: "Failed to generate script",
+        description: error.message || "Please try again"
+      })
+    }
   }
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 bg-white/5 backdrop-blur-sm border-white/10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ModelSelect value={model} onValueChange={setModel} />
-          <DatasetSelect value={dataset} onValueChange={setDataset} />
-          <TaskSelect value={taskType} onValueChange={setTaskType} />
-          <div className="space-y-2">
-            <Label>Script Language</Label>
-            <Select value={scriptLanguage} onValueChange={setScriptLanguage}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="python">Python</SelectItem>
-                <SelectItem value="pytorch">PyTorch</SelectItem>
-                <SelectItem value="tensorflow">TensorFlow</SelectItem>
-              </SelectContent>
-            </Select>
+      <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+        <div className="p-6 space-y-8">
+          <div className="grid gap-6 md:grid-cols-2">
+            <ModelSelect value={model} onValueChange={setModel} />
+            <DatasetSelect value={datasetId} onValueChange={setDatasetId} />
+            <TaskSelect value={taskType} onValueChange={setTaskType} />
+            <LanguageSelect value={scriptLanguage} onValueChange={setScriptLanguage} />
           </div>
+
+          <ParameterTabs
+            learningRate={learningRate}
+            setLearningRate={setLearningRate}
+            batchSize={batchSize}
+            setBatchSize={setBatchSize}
+            epochs={epochs}
+            setEpochs={setEpochs}
+            warmupSteps={warmupSteps}
+            setWarmupSteps={setWarmupSteps}
+            weightDecay={weightDecay}
+            setWeightDecay={setWeightDecay}
+            optimizer={optimizer}
+            setOptimizer={setOptimizer}
+            scheduler={scheduler}
+            setScheduler={setScheduler}
+            maxSteps={maxSteps}
+            setMaxSteps={setMaxSteps}
+            evaluationStrategy={evaluationStrategy}
+            setEvaluationStrategy={setEvaluationStrategy}
+            saveStrategy={saveStrategy}
+            setSaveStrategy={setSaveStrategy}
+            randomSeed={randomSeed}
+            setRandomSeed={setRandomSeed}
+            precision={precision}
+            setPrecision={setPrecision}
+            gradientAccumulation={gradientAccumulation}
+            setGradientAccumulation={setGradientAccumulation}
+            useDeepSpeed={useDeepSpeed}
+            setUseDeepSpeed={setUseDeepSpeed}
+            useFlashAttention={useFlashAttention}
+            setUseFlashAttention={setUseFlashAttention}
+            useMemoryOptimization={useMemoryOptimization}
+            setUseMemoryOptimization={setUseMemoryOptimization}
+            hardwareAcceleration={hardwareAcceleration}
+            setHardwareAcceleration={setHardwareAcceleration}
+          />
+
+          <Button 
+            onClick={handleGenerateScript}
+            disabled={!model || !taskType}
+            className="w-full"
+          >
+            Generate Script
+          </Button>
         </div>
       </Card>
-
-      <Card className="p-6 bg-white/5 backdrop-blur-sm border-white/10">
-        <ParameterTabs
-          // Basic Parameters
-          learningRate={learningRate}
-          setLearningRate={setLearningRate}
-          batchSize={batchSize}
-          setBatchSize={setBatchSize}
-          epochs={epochs}
-          setEpochs={setEpochs}
-          warmupSteps={warmupSteps}
-          setWarmupSteps={setWarmupSteps}
-          weightDecay={weightDecay}
-          setWeightDecay={setWeightDecay}
-          optimizer={optimizer}
-          setOptimizer={setOptimizer}
-          scheduler={scheduler}
-          setScheduler={setScheduler}
-          maxSteps={maxSteps}
-          setMaxSteps={setMaxSteps}
-          evaluationStrategy={evaluationStrategy}
-          setEvaluationStrategy={setEvaluationStrategy}
-          saveStrategy={saveStrategy}
-          setSaveStrategy={setSaveStrategy}
-          randomSeed={randomSeed}
-          setRandomSeed={setRandomSeed}
-          // Advanced Parameters
-          precision={precision}
-          setPrecision={setPrecision}
-          gradientAccumulation={gradientAccumulation}
-          setGradientAccumulation={setGradientAccumulation}
-          useDeepSpeed={useDeepSpeed}
-          setUseDeepSpeed={setUseDeepSpeed}
-          useFlashAttention={useFlashAttention}
-          setUseFlashAttention={setUseFlashAttention}
-          useMemoryOptimization={useMemoryOptimization}
-          setUseMemoryOptimization={setUseMemoryOptimization}
-          hardwareAcceleration={hardwareAcceleration}
-          setHardwareAcceleration={setHardwareAcceleration}
-        />
-      </Card>
-
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleGenerateScript}
-          className="bg-primary hover:bg-primary-dark text-white"
-        >
-          Generate Script
-        </Button>
-      </div>
 
       {generatedScript && (
         <GeneratedScript script={generatedScript} />
@@ -154,5 +197,3 @@ export const CreateFineTuningJob = ({ onScriptGenerated }: CreateFineTuningJobPr
     </div>
   )
 }
-
-export default CreateFineTuningJob

@@ -1,5 +1,5 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 interface ModelSelectProps {
   value: string;
@@ -9,9 +9,9 @@ interface ModelSelectProps {
 export const ModelSelect = ({ value, onValueChange }: ModelSelectProps) => {
   return (
     <div className="space-y-2">
-      <Label>Base Model</Label>
+      <Label className="text-white">Base Model</Label>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger>
+        <SelectTrigger className="bg-white/5 border-white/10 text-white">
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
         <SelectContent>
@@ -21,5 +21,5 @@ export const ModelSelect = ({ value, onValueChange }: ModelSelectProps) => {
         </SelectContent>
       </Select>
     </div>
-  );
-};
+  )
+}

@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query"
+import { supabase } from "@/integrations/supabase/client"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Loader2 } from "lucide-react"
 
 interface DatasetSelectProps {
   value: string;
@@ -26,10 +26,10 @@ export const DatasetSelect = ({ value, onValueChange }: DatasetSelectProps) => {
   if (isLoading) {
     return (
       <div className="space-y-2">
-        <Label>Dataset</Label>
+        <Label className="text-white">Dataset</Label>
         <div className="flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm text-muted-foreground">Loading datasets...</span>
+          <Loader2 className="h-4 w-4 animate-spin text-white" />
+          <span className="text-sm text-white/60">Loading datasets...</span>
         </div>
       </div>
     );
@@ -37,9 +37,9 @@ export const DatasetSelect = ({ value, onValueChange }: DatasetSelectProps) => {
 
   return (
     <div className="space-y-2">
-      <Label>Dataset</Label>
+      <Label className="text-white">Dataset</Label>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger>
+        <SelectTrigger className="bg-white/5 border-white/10 text-white">
           <SelectValue placeholder="Select a dataset" />
         </SelectTrigger>
         <SelectContent>
@@ -58,7 +58,7 @@ export const DatasetSelect = ({ value, onValueChange }: DatasetSelectProps) => {
         </SelectContent>
       </Select>
       {datasets?.length === 0 && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-white/60">
           No datasets found. Please create a dataset first.
         </p>
       )}
