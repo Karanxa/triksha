@@ -59,10 +59,16 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   };
 
   const askNextQuestion = async (config: any, isPaused: boolean) => {
-    if (isPaused) return;
+    if (isPaused) {
+      console.log('Scan is paused, skipping next question');
+      return;
+    }
     
     try {
-      await processNextQuestion(config.provider, config.model);
+      const success = await processNextQuestion(config.provider, config.model);
+      if (!success) {
+        console.log('No more questions to process');
+      }
     } catch (error) {
       console.error('Error asking next question:', error);
       toast.error("Failed to process question");

@@ -22,7 +22,7 @@ export const ContextualEngine = () => {
   };
 
   const handlePauseResume = () => {
-    setIsPaused(!isPaused);
+    setIsPaused(prev => !prev);
     toast.success(isPaused ? "Scan resumed" : "Scan paused");
   };
 
@@ -68,6 +68,7 @@ export const ContextualEngine = () => {
       <ContextualChatbot 
         onFingerprint={handleFingerprint} 
         isPaused={isPaused}
+        onPauseResume={handlePauseResume}
       />
       
       {fingerprintResults && config && (
