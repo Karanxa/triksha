@@ -82,14 +82,6 @@ npm install
 npm run dev
 ```
 
-## 🌐 Deployment
-
-### Quick Deploy
-Simply open [Lovable](https://lovable.dev/projects/be33e0b7-385f-407c-bc6c-36be439fca6f) and click on Share -> Publish.
-
-### Custom Domain
-While we don't currently support custom domains directly, you can deploy your project using Netlify. Visit our [Custom Domains Documentation](https://docs.lovable.dev/tips-tricks/custom-domain/) for detailed instructions.
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -105,5 +97,5 @@ If you have any questions or need help, please open an issue in the repository o
 ---
 
 <div align="center">
-  Made with ❤️ using <a href="https://lovable.dev">Lovable</a>
+ Developed by <a href="https://x.com/itskaranxa">Karan Arora</a>
 </div>
