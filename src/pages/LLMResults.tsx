@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 import { ResultsContainer } from "@/components/llm-results/ResultsContainer";
+import { Shield } from "lucide-react";
 
 const LLMResults = () => {
   // Custom scans filters
@@ -79,13 +80,21 @@ const LLMResults = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-dataset-pattern">
       <div className="container py-8 space-y-8 animate-fade-in">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Results</h1>
-          <p className="text-muted-foreground">
-            View and analyze the results of your LLM security scans.
-          </p>
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
+          <div className="relative p-6 md:p-8 rounded-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                Scan Results
+              </h1>
+            </div>
+            <p className="text-white/80 max-w-2xl">
+              View and analyze the results of your LLM security scans. Track vulnerabilities and monitor model behavior.
+            </p>
+          </div>
         </div>
         
         <ResultsContainer
@@ -119,6 +128,9 @@ const LLMResults = () => {
           }}
         />
       </div>
+      
+      {/* Background Pattern */}
+      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
   );
 };

@@ -6,15 +6,21 @@ import { Database, FileSpreadsheet, Plus } from "lucide-react"
 
 const Datasets = () => {
   return (
-    <div className="min-h-screen bg-dataset-pattern dark">
+    <div className="min-h-screen bg-dataset-pattern">
       <div className="container py-8 space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-            Datasets
-          </h1>
-          <p className="text-white/80 text-lg max-w-2xl">
-            Manage and explore datasets for LLM testing and fine-tuning. Create, analyze, and share datasets to improve your models.
-          </p>
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
+          <div className="relative p-6 md:p-8 rounded-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <Database className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                Datasets
+              </h1>
+            </div>
+            <p className="text-white/80 text-lg max-w-2xl">
+              Manage and explore datasets for LLM testing and fine-tuning. Create, analyze, and share datasets to improve your models.
+            </p>
+          </div>
         </div>
         
         <Tabs defaultValue="dashboard" className="space-y-8">
@@ -46,6 +52,9 @@ const Datasets = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      {/* Background Pattern */}
+      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
   );
 };

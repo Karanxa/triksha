@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Loader2 } from "lucide-react"
+import { Settings, History, Loader2 } from "lucide-react"
 
 export const FineTuning = () => {
   const session = useSession()
@@ -71,27 +71,49 @@ export const FineTuning = () => {
   }
 
   return (
-    <div className="container py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Fine-Tuning</h1>
+    <div className="min-h-screen bg-dataset-pattern">
+      <div className="container py-8 space-y-8">
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
+          <div className="relative p-6 md:p-8 rounded-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <Settings className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
+                Fine-Tuning
+              </h1>
+            </div>
+            <p className="text-white/80 text-lg max-w-2xl">
+              Fine-tune language models with your custom datasets and parameters. Monitor training progress and manage your fine-tuning jobs.
+            </p>
+          </div>
+        </div>
+        
+        <Tabs defaultValue="generate" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-[400px] p-1 bg-white/5 backdrop-blur-sm">
+            <TabsTrigger value="generate" className="flex items-center gap-2 data-[state=active]:bg-white/10">
+              <Settings className="h-4 w-4" />
+              Generate Script
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-white/10">
+              <History className="h-4 w-4" />
+              Job History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="generate">
+            <GenerateScript onScriptGenerated={handleScriptGenerated} />
+          </TabsContent>
+
+          <TabsContent value="history">
+            <JobHistory />
+          </TabsContent>
+        </Tabs>
       </div>
       
-      <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-          <TabsTrigger value="generate">Generate Script</TabsTrigger>
-          <TabsTrigger value="history">Job History</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="generate">
-          <GenerateScript onScriptGenerated={handleScriptGenerated} />
-        </TabsContent>
-
-        <TabsContent value="history">
-          <JobHistory />
-        </TabsContent>
-      </Tabs>
+      {/* Background Pattern */}
+      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
-  )
+  );
 }
 
-export default FineTuning
+export default FineTuning;
