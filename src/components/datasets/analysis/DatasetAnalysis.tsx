@@ -64,7 +64,7 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
 
         if (error) throw error;
 
-        // Update phase to red teaming
+        // Update phase to red teaming and add transition message
         setPhase('redteaming');
         setMessages(prev => [
           ...prev,
