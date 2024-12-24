@@ -80,18 +80,19 @@ const LLMResults = () => {
   });
 
   return (
-    <div className="min-h-screen bg-dataset-pattern">
+    <div className="min-h-screen bg-background">
       <div className="container py-8 space-y-8 animate-fade-in">
+        {/* Hero Section */}
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
-          <div className="relative p-6 md:p-8 rounded-lg">
+          <div className="relative p-6 md:p-8 rounded-lg glass-card">
             <div className="flex items-center gap-3 mb-3">
               <Shield className="w-8 h-8 text-primary" />
               <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
                 Scan Results
               </h1>
             </div>
-            <p className="text-white/80 max-w-2xl">
+            <p className="text-muted-foreground text-lg max-w-2xl">
               View and analyze the results of your LLM security scans. Track vulnerabilities and monitor model behavior.
             </p>
           </div>

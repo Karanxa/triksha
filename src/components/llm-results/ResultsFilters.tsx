@@ -1,8 +1,6 @@
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ATTACK_CATEGORIES } from "../datasets/AttackCategorySelect"
-import { ScanType } from "./types"
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface ResultsFiltersProps {
   searchQuery: string;
@@ -17,13 +15,6 @@ interface ResultsFiltersProps {
   setSelectedModel: (value: string) => void;
 }
 
-const SCAN_TYPES = [
-  { value: 'manual_scan', label: 'Manual Scan' },
-  { value: 'batch_scan', label: 'Batch Scan' },
-  { value: 'garak', label: 'Garak' },
-  { value: 'prompt_fuzzer', label: 'Prompt Fuzzer' }
-];
-
 export const ResultsFilters = ({
   searchQuery,
   setSearchQuery,
@@ -34,11 +25,11 @@ export const ResultsFilters = ({
   vulnerabilityStatus,
   setVulnerabilityStatus,
   selectedModel,
-  setSelectedModel
+  setSelectedModel,
 }: ResultsFiltersProps) => {
   return (
-    <div className="space-y-6 p-6 animate-filter-slide">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="space-y-6 animate-filter-slide">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium">Search</Label>
           <Input
@@ -57,11 +48,10 @@ export const ResultsFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              {ATTACK_CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
+              <SelectItem value="prompt-injection">Prompt Injection</SelectItem>
+              <SelectItem value="jailbreaking">Jailbreaking</SelectItem>
+              <SelectItem value="data-leakage">Data Leakage</SelectItem>
+              <SelectItem value="model-behavior">Model Behavior</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -70,15 +60,13 @@ export const ResultsFilters = ({
           <Label className="text-sm font-medium">Scan Type</Label>
           <Select value={selectedScanType} onValueChange={setSelectedScanType}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select scan type" />
+              <SelectValue placeholder="Select type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              {SCAN_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
+              <SelectItem value="manual_scan">Manual Scan</SelectItem>
+              <SelectItem value="batch_scan">Batch Scan</SelectItem>
+              <SelectItem value="scheduled_scan">Scheduled Scan</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -105,19 +93,14 @@ export const ResultsFilters = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Models</SelectItem>
-              <SelectItem value="gpt-4-0125-preview">GPT-4 Opus</SelectItem>
-              <SelectItem value="gpt-3.5-turbo-0125">GPT-4 Opus Mini</SelectItem>
-              <SelectItem value="claude-3-opus-20240229">Claude 3 Opus</SelectItem>
-              <SelectItem value="claude-3-sonnet-20240229">Claude 3 Sonnet</SelectItem>
-              <SelectItem value="gemini-1.0-pro">Gemini Pro</SelectItem>
-              <SelectItem value="gemini-1.0-ultra">Gemini Ultra</SelectItem>
-              <SelectItem value="llama2">Llama 2</SelectItem>
-              <SelectItem value="mistral">Mistral</SelectItem>
-              <SelectItem value="codellama">Code Llama</SelectItem>
+              <SelectItem value="gpt-4">GPT-4</SelectItem>
+              <SelectItem value="gpt-3.5-turbo">GPT-3.5</SelectItem>
+              <SelectItem value="claude-2">Claude 2</SelectItem>
+              <SelectItem value="llama-2">Llama 2</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
     </div>
   );
-}
+};

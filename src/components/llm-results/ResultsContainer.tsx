@@ -77,9 +77,9 @@ export const ResultsContainer = ({
   };
 
   return (
-    <Card className="glass-card overflow-hidden border-0 p-8">
+    <Card className="glass-card overflow-hidden border-0">
       <Tabs defaultValue="scans" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent mb-8">
+        <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent p-1">
           <TabsTrigger 
             value="scans" 
             className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
@@ -94,22 +94,24 @@ export const ResultsContainer = ({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="scans" className="mt-0 animate-fade-in space-y-6">
-          <ResultsFilters {...searchProps} />
-          {renderContent('scans')}
-        </TabsContent>
+        <div className="p-6">
+          <TabsContent value="scans" className="mt-0 animate-fade-in space-y-6">
+            <ResultsFilters {...searchProps} />
+            {renderContent('scans')}
+          </TabsContent>
 
-        <TabsContent value="contextual" className="mt-0 animate-fade-in space-y-6">
-          <ContextualFilters
-            searchQuery={contextualProps.contextSearchQuery}
-            setSearchQuery={contextualProps.setContextSearchQuery}
-            selectedModel={contextualProps.contextModel}
-            setSelectedModel={contextualProps.setContextModel}
-            vulnerabilityStatus={contextualProps.contextVulnerabilityStatus}
-            setVulnerabilityStatus={contextualProps.setContextVulnerabilityStatus}
-          />
-          {renderContent('contextual')}
-        </TabsContent>
+          <TabsContent value="contextual" className="mt-0 animate-fade-in space-y-6">
+            <ContextualFilters
+              searchQuery={contextualProps.contextSearchQuery}
+              setSearchQuery={contextualProps.setContextSearchQuery}
+              selectedModel={contextualProps.contextModel}
+              setSelectedModel={contextualProps.setContextModel}
+              vulnerabilityStatus={contextualProps.contextVulnerabilityStatus}
+              setVulnerabilityStatus={contextualProps.setContextVulnerabilityStatus}
+            />
+            {renderContent('contextual')}
+          </TabsContent>
+        </div>
       </Tabs>
     </Card>
   );
