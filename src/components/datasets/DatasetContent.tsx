@@ -69,31 +69,18 @@ const parseCSVContent = (rawText: string) => {
   const lines = rawText.split(/\r?\n/).filter(line => line.trim())
   const headers = parseCSVLine(lines[0])
   
-  // Find the prompt column index (case-insensitive)
-  const promptIndex = headers.findIndex(header => 
-    header.toLowerCase().includes('prompt')
-  )
-
-  console.log('Headers:', headers)
-  console.log('Found prompt column at index:', promptIndex)
-
-  if (promptIndex === -1) {
-    console.error('No prompt column found')
-    return { headers: ['prompt'], data: [] }
-  }
-
-  // Only process rows that have a value in the prompt column
+  // Skip the first row since it's just column titles
   const data = lines.slice(1)
     .map(line => {
       const values = parseCSVLine(line)
-      // Return an array with just the prompt value
-      return [values[promptIndex]].filter(Boolean)
+      return values.filter(Boolean) // Filter out empty values
     })
-    .filter(row => row.length > 0 && row[0]?.trim())
+    .filter(row => row.length > 0)
   
-  console.log('Number of valid prompts:', data.length)
+  console.log('Headers:', headers)
+  console.log('Number of valid rows:', data.length)
   
-  return { headers: ['prompt'], data }
+  return { headers, data }
 }
 
 export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
