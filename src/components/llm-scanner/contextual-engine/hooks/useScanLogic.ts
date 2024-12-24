@@ -1,15 +1,15 @@
-import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { ScanConfig, ApiKeys } from '../types/phases';
+import { useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { ScanConfig } from "../types/scan";
 import { useFingerprinting, FINGERPRINTING_QUESTIONS } from './useFingerprinting';
 import { useRedTeaming } from './useRedTeaming';
 import { usePhaseManagement } from './usePhaseManagement';
 import { useDatasetProcessing } from './useDatasetProcessing';
+import { useContextualScan } from "./useContextualScan";
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [scanId, setScanId] = useState<string | null>(null);
   
   const {
     messages,
@@ -24,57 +24,13 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
 
   const { processQuestion } = useFingerprinting();
   const { processDatasetPrompt } = useRedTeaming();
+  const { storeContextualScan } = useContextualScan();
   const {
     datasetPrompts,
     currentDatasetPromptIndex,
     setCurrentDatasetPromptIndex,
     loadDatasetPrompts
   } = useDatasetProcessing();
-
-  const storeContextualScan = async (
-    config: ScanConfig,
-    fingerprintResults: any,
-    isVulnerable: boolean | null = null
-  ) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      if (!scanId) {
-        // Create new scan record
-        const { data, error } = await supabase
-          .from('contextual_scans')
-          .insert({
-            user_id: user.id,
-            provider: config.provider,
-            model: config.model,
-            messages: messages,
-            is_vulnerable: isVulnerable,
-            fingerprint_results: fingerprintResults,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        setScanId(data.id);
-      } else {
-        // Update existing scan
-        const { error } = await supabase
-          .from('contextual_scans')
-          .update({
-            messages: messages,
-            is_vulnerable: isVulnerable,
-            fingerprint_results: fingerprintResults,
-          })
-          .eq('id', scanId);
-
-        if (error) throw error;
-      }
-    } catch (error) {
-      console.error('Error storing contextual scan:', error);
-      toast.error('Failed to store scan results');
-    }
-  };
 
   const augmentPrompt = async (prompt: string, fingerprint: any) => {
     try {
@@ -83,7 +39,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         .select('api_keys')
         .single();
 
-      const apiKeys = profile?.api_keys as ApiKeys;
+      const apiKeys = profile?.api_keys as { openai?: string } | null;
       
       if (!apiKeys?.openai) {
         throw new Error('OpenAI API key not configured');
@@ -165,14 +121,12 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         if (result.success && result.response) {
           addMessage({ role: 'assistant', content: result.response });
           
-          // Check if any response indicates vulnerability
           if (result.isVulnerable) {
             vulnerabilityDetected = true;
           }
         }
 
-        // Store progress after each prompt
-        await storeContextualScan(config, fingerprintResults, vulnerabilityDetected);
+        await storeContextualScan(config, messages, fingerprintResults, vulnerabilityDetected);
       }
 
       addMessage({
@@ -180,15 +134,14 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         content: 'Red teaming analysis completed.'
       });
 
-      // Final update with vulnerability status
-      await storeContextualScan(config, fingerprintResults, vulnerabilityDetected);
+      await storeContextualScan(config, messages, fingerprintResults, vulnerabilityDetected);
     } catch (error) {
       console.error('Error in red teaming phase:', error);
       toast.error('Failed to complete red teaming phase');
     }
   };
 
-  const processNextQuestion = useCallback(async (config: ScanConfig) => {
+  const processNextQuestion = async (config: ScanConfig) => {
     if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
       return false;
     }
@@ -216,8 +169,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           safety: messages[10]?.content || ''
         };
         
-        // Store initial fingerprint results
-        await storeContextualScan(config, fingerprintResults);
+        await storeContextualScan(config, messages, fingerprintResults);
         
         if (onFingerprint) {
           onFingerprint(fingerprintResults);
@@ -237,7 +189,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     setIsLoading(false);
     setPendingQuestion(false);
     return false;
-  }, [currentStep, messages, onFingerprint]);
+  };
 
   return {
     messages,
