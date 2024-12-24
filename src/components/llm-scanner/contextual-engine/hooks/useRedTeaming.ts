@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { DatasetPromptResult } from "../types/datasetPrompt";
 
 export const useRedTeaming = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -10,24 +10,43 @@ export const useRedTeaming = () => {
     model: string,
     prompt: string,
     fingerprintResults: any
-  ): Promise<{ success: boolean; response?: string }> => {
-    setIsProcessing(true);
+  ): Promise<DatasetPromptResult> => {
     try {
-      const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
+      setIsProcessing(true);
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .single();
+
+      const apiKeys = profile?.api_keys as { openai?: string } | null;
+      
+      if (!apiKeys?.openai) {
+        throw new Error('OpenAI API key not configured');
+      }
+
+      // Call analyze-vulnerability function
+      const response = await supabase.functions.invoke('analyze-vulnerability', {
         body: {
-          provider,
-          model,
           prompt,
-          fingerprint: fingerprintResults
+          fingerprint: fingerprintResults,
+          apiKey: apiKeys.openai
         }
       });
 
-      if (error) throw error;
-      return { success: true, response: data.response };
+      if (response.error) throw response.error;
+
+      return {
+        success: true,
+        response: response.data?.response,
+        isVulnerable: response.data?.vulnerability_status === 'vulnerable'
+      };
     } catch (error) {
-      console.error('Error processing red team prompt:', error);
-      toast.error('Failed to process dataset prompt');
-      return { success: false };
+      console.error('Error processing dataset prompt:', error);
+      return {
+        success: false,
+        response: `Error: ${error.message}`
+      };
     } finally {
       setIsProcessing(false);
     }
