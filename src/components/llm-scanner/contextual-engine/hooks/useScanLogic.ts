@@ -1,71 +1,51 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { ScanState, ScanConfig, Message } from '../types/phases';
+import { supabase } from '@/integrations/supabase/client';
+import { ScanConfig } from '../types/phases';
 import { useFingerprinting, FINGERPRINTING_QUESTIONS } from './useFingerprinting';
 import { useRedTeaming } from './useRedTeaming';
-import { useDatasetPrompts } from './useDatasetPrompts';
+import { usePhaseManagement } from './usePhaseManagement';
+import { useDatasetProcessing } from './useDatasetProcessing';
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
-  const [state, setState] = useState<ScanState>({
-    messages: [],
-    isLoading: false,
-    currentStep: 0,
-    pendingQuestion: false,
-    phase: 'fingerprinting',
-    datasetPrompts: [],
-    currentDatasetPromptIndex: 0
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const {
+    messages,
+    phase,
+    currentStep,
+    pendingQuestion,
+    setCurrentStep,
+    setPendingQuestion,
+    addMessage,
+    transitionToRedTeaming
+  } = usePhaseManagement();
 
   const { processQuestion } = useFingerprinting();
   const { processDatasetPrompt } = useRedTeaming();
-  const { loadDatasetPrompts } = useDatasetPrompts();
-
-  const addMessage = (message: Message) => {
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, message]
-    }));
-  };
+  const {
+    datasetPrompts,
+    currentDatasetPromptIndex,
+    setCurrentDatasetPromptIndex,
+    loadDatasetPrompts
+  } = useDatasetProcessing();
 
   const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any) => {
     try {
-      setState(prev => ({
-        ...prev,
-        phase: 'redteaming',
-        messages: [
-          ...prev.messages,
-          {
-            role: 'system',
-            content: 'Starting red teaming phase with dataset prompts...'
-          }
-        ]
-      }));
-
-      // Load dataset prompts
+      transitionToRedTeaming();
       const prompts = await loadDatasetPrompts(config.datasetId);
-      setState(prev => ({
-        ...prev,
-        datasetPrompts: prompts,
-        messages: [
-          ...prev.messages,
-          {
-            role: 'system',
-            content: `Loaded ${prompts.length} prompts for testing...`
-          }
-        ]
-      }));
+      
+      addMessage({
+        role: 'system',
+        content: `Loaded ${prompts.length} prompts for testing...`
+      });
 
       // Process each prompt
       for (let i = 0; i < prompts.length; i++) {
+        setCurrentDatasetPromptIndex(i);
         const prompt = prompts[i];
-        setState(prev => ({
-          ...prev,
-          currentDatasetPromptIndex: i,
-          messages: [
-            ...prev.messages,
-            { role: 'user', content: prompt }
-          ]
-        }));
+        
+        addMessage({ role: 'user', content: prompt });
 
         const result = await processDatasetPrompt(
           config.provider,
@@ -75,26 +55,14 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         );
 
         if (result.success && result.response) {
-          setState(prev => ({
-            ...prev,
-            messages: [
-              ...prev.messages,
-              { role: 'assistant', content: result.response }
-            ]
-          }));
+          addMessage({ role: 'assistant', content: result.response });
         }
       }
 
-      setState(prev => ({
-        ...prev,
-        messages: [
-          ...prev.messages,
-          {
-            role: 'system',
-            content: 'Red teaming phase completed.'
-          }
-        ]
-      }));
+      addMessage({
+        role: 'system',
+        content: 'Red teaming phase completed.'
+      });
     } catch (error) {
       console.error('Error in red teaming phase:', error);
       toast.error('Failed to complete red teaming phase');
@@ -102,12 +70,13 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   };
 
   const processNextQuestion = useCallback(async (provider: string, model: string) => {
-    if (state.currentStep >= FINGERPRINTING_QUESTIONS.length) {
+    if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
       return false;
     }
 
-    setState(prev => ({ ...prev, isLoading: true, pendingQuestion: true }));
-    const question = FINGERPRINTING_QUESTIONS[state.currentStep];
+    setIsLoading(true);
+    setPendingQuestion(true);
+    const question = FINGERPRINTING_QUESTIONS[currentStep];
     
     addMessage({ role: 'user', content: question });
 
@@ -115,21 +84,17 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     if (result.success && result.response) {
       addMessage({ role: 'assistant', content: result.response });
       
-      setState(prev => ({
-        ...prev,
-        currentStep: prev.currentStep + 1,
-        isLoading: false,
-        pendingQuestion: false
-      }));
+      setCurrentStep(prev => prev + 1);
+      setIsLoading(false);
+      setPendingQuestion(false);
 
-      // If this was the last fingerprinting question, prepare for red teaming
-      if (state.currentStep === FINGERPRINTING_QUESTIONS.length - 1) {
+      if (currentStep === FINGERPRINTING_QUESTIONS.length - 1) {
         const fingerprintResults = {
-          capabilities: state.messages[2]?.content || '',
-          boundaries: state.messages[4]?.content || '',
-          training: state.messages[6]?.content || '',
-          languages: state.messages[8]?.content || '',
-          safety: state.messages[10]?.content || ''
+          capabilities: messages[2]?.content || '',
+          boundaries: messages[4]?.content || '',
+          training: messages[6]?.content || '',
+          languages: messages[8]?.content || '',
+          safety: messages[10]?.content || ''
         };
         
         if (onFingerprint) {
@@ -139,31 +104,27 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       return true;
     }
     
-    setState(prev => ({ ...prev, isLoading: false, pendingQuestion: false }));
+    setIsLoading(false);
+    setPendingQuestion(false);
     return false;
-  }, [state.currentStep, state.messages]);
+  }, [currentStep, messages, onFingerprint]);
 
   return {
-    messages: state.messages,
-    isLoading: state.isLoading,
-    currentStep: state.currentStep,
-    pendingQuestion: state.pendingQuestion,
+    messages,
+    isLoading,
+    currentStep,
+    pendingQuestion,
     questions: FINGERPRINTING_QUESTIONS,
-    phase: state.phase,
+    phase,
     startScan: async (config: ScanConfig) => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("User not authenticated");
 
-        setState(prev => ({
-          ...prev,
-          messages: [
-            {
-              role: 'system',
-              content: `Starting contextual analysis for ${config.model}`
-            }
-          ]
-        }));
+        addMessage({
+          role: 'system',
+          content: `Starting contextual analysis for ${config.model}`
+        });
 
         await processNextQuestion(config.provider, config.model);
       } catch (error) {
@@ -179,15 +140,15 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       }
       
       try {
-        if (state.phase === 'fingerprinting') {
+        if (phase === 'fingerprinting') {
           const success = await processNextQuestion(config.provider, config.model);
-          if (!success && state.currentStep >= FINGERPRINTING_QUESTIONS.length) {
+          if (!success && currentStep >= FINGERPRINTING_QUESTIONS.length) {
             const fingerprintResults = {
-              capabilities: state.messages[2]?.content || '',
-              boundaries: state.messages[4]?.content || '',
-              training: state.messages[6]?.content || '',
-              languages: state.messages[8]?.content || '',
-              safety: state.messages[10]?.content || ''
+              capabilities: messages[2]?.content || '',
+              boundaries: messages[4]?.content || '',
+              training: messages[6]?.content || '',
+              languages: messages[8]?.content || '',
+              safety: messages[10]?.content || ''
             };
             await startRedTeamingPhase(config, fingerprintResults);
           }
