@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
-import { LLMScan, GeraideScan } from "@/components/llm-results/types";
-import { ResultsContainer } from "@/components/llm-results/ResultsContainer";
 import { Shield } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import PageHeader from "@/components/PageHeader";
+import { ResultsContainer } from "@/components/llm-results/ResultsContainer";
+import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 
 const LLMResults = () => {
-  // Custom scans filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedScanType, setSelectedScanType] = useState("all");
@@ -80,24 +81,14 @@ const LLMResults = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container py-8 space-y-8 animate-fade-in">
-        {/* Hero Section */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
-          <div className="relative p-6 md:p-8 rounded-lg glass-card">
-            <div className="flex items-center gap-3 mb-3">
-              <Shield className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">
-                Scan Results
-              </h1>
-            </div>
-            <p className="text-muted-foreground text-lg max-w-2xl">
-              View and analyze the results of your LLM security scans. Track vulnerabilities and monitor model behavior.
-            </p>
-          </div>
-        </div>
-        
+    <div className="container py-4 md:py-8">
+      <PageHeader
+        icon={Shield}
+        title="Scan Results"
+        description="View and analyze the results of your LLM security scans. Track vulnerabilities and monitor model behavior."
+      />
+      
+      <Card className="w-full mx-auto border border-border/50 shadow-lg">
         <ResultsContainer
           scans={scans}
           geraidScans={geraidScans}
@@ -128,8 +119,8 @@ const LLMResults = () => {
             setContextVulnerabilityStatus,
           }}
         />
-      </div>
-      
+      </Card>
+
       {/* Background Pattern */}
       <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
