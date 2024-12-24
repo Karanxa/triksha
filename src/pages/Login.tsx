@@ -25,7 +25,7 @@ const Login = () => {
           <div className="flex items-center justify-center space-x-2">
             <Shield className="w-12 h-12 text-primary" />
             <h1 className="text-6xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">
-              Geraid
+              Triksha AI
             </h1>
           </div>
           <div className="space-y-2">
