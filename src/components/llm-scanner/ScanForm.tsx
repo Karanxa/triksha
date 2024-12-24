@@ -1,219 +1,118 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
-import { ScanFormProvider } from "./ScanFormProvider";
-import { ScanFormSchedule } from "./ScanFormSchedule";
-import { QPSControl } from "./QPSControl";
-import { ScanResults } from "./ScanResults";
-import { ScanTypeSelect } from "./ScanTypeSelect";
-import { ScanPromptInput } from "./ScanPromptInput";
+import { useNavigate } from "react-router-dom";
 import { ScanProgress } from "./ScanProgress";
 import { ScanFormActions } from "./ScanFormActions";
 import { ScanStatusHandler } from "./ScanStatusHandler";
 import { ScanNotification } from "./ScanNotification";
-import { BatchScanDataset } from "./components/BatchScanDataset";
-import { useScanSubmit } from "./hooks/useScanSubmit";
+import { useScanFormState } from "./scan-form/ScanFormState";
+import { ScanFormCards } from "./scan-form/ScanFormCards";
+import { ManualScanResults } from "./scan-form/ManualScanResults";
+import { BatchScanResults } from "./scan-form/BatchScanResults";
 
 export const ScanForm = () => {
   const navigate = useNavigate();
-  const [scanType, setScanType] = useState("manual");
-  const [provider, setProvider] = useState("");
-  const [singlePrompt, setSinglePrompt] = useState("");
-  const [prompts, setPrompts] = useState<string[]>([]);
-  const [category, setCategory] = useState("");
-  const [label, setLabel] = useState("");
-  const [schedule, setSchedule] = useState("none");
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [qps, setQPS] = useState(5);
-  const [scanResult, setScanResult] = useState<any>(null);
-  const [scanProgress, setScanProgress] = useState(0);
-  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
-  const [customEndpoint, setCustomEndpoint] = useState({
-    url: '',
-    apiKey: '',
-    headers: '',
-    placeholder: '{PROMPT}',
-    curlCommand: '',
-    httpRequest: '',
-    inputType: 'manual',
-    method: 'POST'
-  });
+  const {
+    scanType,
+    setScanType,
+    provider,
+    setProvider,
+    singlePrompt,
+    setSinglePrompt,
+    prompts,
+    setPrompts,
+    category,
+    setCategory,
+    label,
+    setLabel,
+    schedule,
+    setSchedule,
+    isRecurring,
+    setIsRecurring,
+    qps,
+    setQPS,
+    scanResult,
+    setScanResult,
+    scanProgress,
+    setScanProgress,
+    currentScanId,
+    customEndpoint,
+    setCustomEndpoint,
+    handleSubmit,
+    isScanning
+  } = useScanFormState();
 
-  const { handleSubmit, isScanning } = useScanSubmit({
-    onSubmit: async (data) => {
-      try {
-        console.log('[ScanForm] Starting scan with data:', {
-          scanType,
-          promptCount: scanType === "manual" ? 1 : prompts.length,
-          provider,
-          category
-        });
-        
-        setScanProgress(0);
-        
-        const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
-        if (promptsToSubmit.length === 0) {
-          toast.error("Please enter at least one prompt");
-          return;
-        }
+  const handleScanSubmit = async () => {
+    const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+    console.log('[ScanForm] Form submission - prompts:', promptsToSubmit.length);
 
-        if (!provider) {
-          toast.error("Please select a provider");
-          return;
-        }
+    if (promptsToSubmit.length === 0) {
+      toast.error("Please enter at least one prompt");
+      return;
+    }
 
-        console.log('[ScanForm] Submitting scan with prompts:', promptsToSubmit.length);
-        toast.info(`Processing ${promptsToSubmit.length} prompts...`);
+    if (!provider) {
+      toast.error("Please select a provider");
+      return;
+    }
 
-        const result = await handleSubmit({
-          provider,
-          customEndpoint,
-          prompts: promptsToSubmit,
-          category,
-          label,
-          schedule,
-          isRecurring,
-          qps: Math.min(qps, 50)
-        });
+    if (promptsToSubmit.length > 100000) {
+      toast.error("Maximum batch size is 100,000 prompts");
+      return;
+    }
 
-        if (result) {
-          setSinglePrompt("");
-          setPrompts([]);
-          setLabel("");
-          setSchedule("none");
-          setIsRecurring(false);
-          
-          if (scanType === "batch") {
-            console.log('[ScanForm] Batch scan completed, navigating to results');
-            toast.success('Batch scan started successfully');
-            navigate('/llm-results');
-          }
-          
-          return result;
-        }
-      } catch (error) {
-        console.error("[ScanForm] Scan submission error:", error);
-        toast.error("Failed to start scan: " + (error instanceof Error ? error.message : "Unknown error"));
-      }
-    },
-    setResult: setScanResult,
-    setScanId: setCurrentScanId
-  });
+    if (promptsToSubmit.length > 1000) {
+      toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
+    }
+
+    console.log('[ScanForm] Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
+    setScanProgress(0);
+
+    await handleSubmit({
+      provider,
+      customEndpoint,
+      prompts: promptsToSubmit,
+      category,
+      label,
+      schedule,
+      isRecurring,
+      qps: Math.min(qps, 50)
+    });
+  };
 
   return (
     <div className="space-y-6">
       <ScanNotification />
       
       <div className="grid gap-6">
-        {/* Move ScanProgress to top for better visibility */}
         {(isScanning || scanProgress > 0) && (
           <ScanProgress isScanning={isScanning} progress={scanProgress} />
         )}
 
-        <Card className="border border-border/50">
-          <CardContent className="p-6">
-            <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border/50">
-          <CardContent className="p-6">
-            <ScanFormProvider 
-              provider={provider}
-              onProviderChange={setProvider}
-              customEndpoint={customEndpoint}
-              onCustomEndpointChange={(endpoint) => {
-                setCustomEndpoint(prev => ({
-                  ...prev,
-                  ...endpoint
-                }));
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        {scanType === "manual" ? (
-          <Card className="border border-border/50">
-            <CardContent className="p-6">
-              <ScanPromptInput
-                scanType={scanType}
-                singlePrompt={singlePrompt}
-                onSinglePromptChange={setSinglePrompt}
-                prompts={prompts}
-                onPromptsExtracted={setPrompts}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <BatchScanDataset
-            prompts={prompts}
-            onPromptsExtracted={setPrompts}
-          />
-        )}
-
-        <Card className="border border-border/50">
-          <CardContent className="p-6 space-y-6">
-            <AttackCategorySelect
-              value={category}
-              onValueChange={setCategory}
-            />
-
-            {scanType === "batch" && (
-              <QPSControl qps={qps} onQPSChange={setQPS} />
-            )}
-
-            <ScanFormSchedule
-              schedule={schedule}
-              onScheduleChange={setSchedule}
-              isRecurring={isRecurring}
-              onRecurringChange={setIsRecurring}
-            />
-          </CardContent>
-        </Card>
+        <ScanFormCards 
+          scanType={scanType}
+          onScanTypeChange={setScanType}
+          provider={provider}
+          onProviderChange={setProvider}
+          customEndpoint={customEndpoint}
+          onCustomEndpointChange={setCustomEndpoint}
+          singlePrompt={singlePrompt}
+          onSinglePromptChange={setSinglePrompt}
+          prompts={prompts}
+          onPromptsChange={setPrompts}
+          category={category}
+          onCategoryChange={setCategory}
+          qps={qps}
+          onQPSChange={setQPS}
+          schedule={schedule}
+          onScheduleChange={setSchedule}
+          isRecurring={isRecurring}
+          onRecurringChange={setIsRecurring}
+        />
 
         <div className="space-y-4">
           <ScanFormActions 
             isScanning={isScanning} 
-            onSubmit={async () => {
-              const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
-              console.log('[ScanForm] Form submission - prompts:', promptsToSubmit.length);
-
-              if (promptsToSubmit.length === 0) {
-                toast.error("Please enter at least one prompt");
-                return;
-              }
-
-              if (!provider) {
-                toast.error("Please select a provider");
-                return;
-              }
-
-              if (promptsToSubmit.length > 100000) {
-                toast.error("Maximum batch size is 100,000 prompts");
-                return;
-              }
-
-              if (promptsToSubmit.length > 1000) {
-                toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
-              }
-
-              console.log('[ScanForm] Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
-              setScanProgress(0);
-
-              await handleSubmit({
-                provider,
-                customEndpoint,
-                prompts: promptsToSubmit,
-                category,
-                label,
-                schedule,
-                isRecurring,
-                qps: Math.min(qps, 50)
-              });
-            }} 
+            onSubmit={handleScanSubmit}
           />
 
           <ScanStatusHandler
@@ -223,23 +122,12 @@ export const ScanForm = () => {
             onResultUpdate={setScanResult}
           />
 
-          {scanType === "manual" && scanResult && (
-            <Card className="border-border/50 mt-8">
-              <CardContent className="p-6">
-                <ScanResults result={scanResult} />
-              </CardContent>
-            </Card>
+          {scanType === "manual" && (
+            <ManualScanResults scanResult={scanResult} />
           )}
 
-          {scanType === "batch" && scanResult && (
-            <div className="mt-8 flex justify-center">
-              <Button 
-                onClick={() => navigate('/llm-results')}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                View Results
-              </Button>
-            </div>
+          {scanType === "batch" && (
+            <BatchScanResults scanResult={scanResult} />
           )}
         </div>
       </div>
