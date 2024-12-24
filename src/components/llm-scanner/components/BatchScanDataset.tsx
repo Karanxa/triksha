@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CSVUpload } from "../CSVUpload";
 import { DatasetSelector } from "../DatasetSelector";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface BatchScanDatasetProps {
   prompts: string[];
@@ -30,14 +31,26 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
     <Card className="border border-border/50">
       <CardContent className="p-6">
         <div className="space-y-4">
-          <DatasetSelector 
-            selectedDataset={selectedDataset}
-            onDatasetSelect={handleDatasetSelect}
-          />
-          <CSVUpload 
-            onPromptsExtracted={onPromptsExtracted}
-            selectedDataset={selectedDataset}
-          />
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">Upload CSV</TabsTrigger>
+              <TabsTrigger value="select">Select Dataset</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="upload">
+              <CSVUpload 
+                onPromptsExtracted={onPromptsExtracted}
+              />
+            </TabsContent>
+            
+            <TabsContent value="select">
+              <DatasetSelector 
+                selectedDataset={selectedDataset}
+                onDatasetSelect={handleDatasetSelect}
+              />
+            </TabsContent>
+          </Tabs>
+
           {prompts.length > 0 && (
             <p className="text-sm text-muted-foreground">
               {prompts.length} prompts loaded
