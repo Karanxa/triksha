@@ -54,25 +54,40 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground min-h-screen;
+    @apply bg-background text-foreground min-h-screen relative;
+  }
+  
+  /* Add the polka dot pattern to the body */
+  body::before {
+    content: '';
+    @apply fixed inset-0 w-full h-full pointer-events-none;
+    background-image: radial-gradient(#1c1c1c 1px, transparent 1px);
+    background-size: 16px 16px;
+    opacity: 0.25;
+    z-index: 0;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg;
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg relative z-10;
   }
   
   .primary-gradient {
-    @apply bg-gradient-to-r from-primary to-primary-dark;
+    @apply bg-gradient-to-r from-primary to-primary-dark relative z-10;
   }
   
   .secondary-gradient {
-    @apply bg-gradient-to-r from-primary-dark to-primary-darker;
+    @apply bg-gradient-to-r from-primary-dark to-primary-darker relative z-10;
   }
   
   .hero-section {
-    @apply bg-hero-gradient backdrop-blur-sm;
+    @apply bg-hero-gradient backdrop-blur-sm relative z-10;
+  }
+
+  /* Add container class to ensure content stays above the pattern */
+  .content-container {
+    @apply relative z-10;
   }
 }
 

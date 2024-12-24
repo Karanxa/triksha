@@ -6,11 +6,8 @@ import { Database, FileSpreadsheet, Plus } from "lucide-react"
 
 const Datasets = () => {
   return (
-    <div className="min-h-screen bg-[#0D1117] relative">
-      {/* Background dot pattern */}
-      <div className="absolute inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
-      
-      <div className="container py-8 space-y-8 relative">
+    <div className="min-h-screen">
+      <div className="container py-8 space-y-8 content-container">
         {/* Hero Section */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
