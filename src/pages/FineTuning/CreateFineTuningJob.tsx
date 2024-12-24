@@ -1,18 +1,14 @@
 import { useState } from "react"
-import { BasicParameters } from "./components/BasicParameters"
-import { ModelSelect } from "./components/ModelSelect"
-import { DatasetSelect } from "./components/DatasetSelect"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+import { BasicParameters } from "@/components/fine-tuning/BasicParameters"
+import { ModelSelect } from "./components/ModelSelect"
+import { DatasetSelect } from "./components/DatasetSelect"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { Loader2 } from "lucide-react"
 
-export const CreateFineTuningJob = ({ 
-  onScriptGenerated 
-}: { 
-  onScriptGenerated: (script: string, model: string, parameters: any) => void 
-}) => {
+export const CreateFineTuningJob = () => {
   const { toast } = useToast()
   const [isGenerating, setIsGenerating] = useState(false)
   const [model, setModel] = useState("")
@@ -22,14 +18,13 @@ export const CreateFineTuningJob = ({
     batchSize: 32,
     learningRate: 0.0001
   })
-  const [generatedScript, setGeneratedScript] = useState("")
 
   const handleSubmit = async () => {
-    if (!model || !datasetId) {
+    if (!model) {
       toast({
         variant: "destructive",
         title: "Missing required fields",
-        description: "Please select a model and dataset"
+        description: "Please select a model"
       })
       return
     }
@@ -37,28 +32,26 @@ export const CreateFineTuningJob = ({
     setIsGenerating(true)
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-finetuning-script', {
-        body: {
+      const { error } = await supabase
+        .from('fine_tuning_jobs')
+        .insert({
           model,
-          datasetId,
-          parameters
-        }
-      })
+          dataset_id: datasetId || null,
+          parameters,
+          status: 'script_generated'
+        })
 
       if (error) throw error
 
-      setGeneratedScript(data.script)
-      onScriptGenerated(data.script, model, parameters)
-
       toast({
-        title: "Script generated successfully",
-        description: "You can now view and edit the generated script"
+        title: "Job created successfully",
+        description: "You can view it in the Job History tab"
       })
     } catch (error: any) {
-      console.error('Error generating script:', error)
+      console.error('Error creating job:', error)
       toast({
         variant: "destructive",
-        title: "Failed to generate script",
+        title: "Failed to create job",
         description: error.message
       })
     } finally {
@@ -72,7 +65,10 @@ export const CreateFineTuningJob = ({
         <div className="space-y-6">
           <ModelSelect value={model} onValueChange={setModel} />
           <DatasetSelect value={datasetId} onValueChange={setDatasetId} />
-          <BasicParameters value={parameters} onChange={setParameters} />
+          <BasicParameters 
+            value={parameters}
+            onChange={setParameters}
+          />
           
           <Button 
             onClick={handleSubmit} 
@@ -80,7 +76,7 @@ export const CreateFineTuningJob = ({
             disabled={isGenerating}
           >
             {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Generate Script
+            Create Fine-Tuning Job
           </Button>
         </div>
       </Card>
