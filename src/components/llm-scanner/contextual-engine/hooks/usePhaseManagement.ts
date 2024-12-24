@@ -15,7 +15,7 @@ export const usePhaseManagement = () => {
     setPhase('redteaming');
     addMessage({
       role: 'system',
-      content: 'Starting red teaming phase with dataset prompts...'
+      content: 'Fingerprinting phase completed. Initiating red teaming analysis...'
     });
   };
 

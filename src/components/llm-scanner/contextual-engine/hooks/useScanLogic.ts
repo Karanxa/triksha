@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ScanConfig } from '../types/phases';
@@ -37,7 +37,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       
       addMessage({
         role: 'system',
-        content: `Loaded ${prompts.length} prompts for testing...`
+        content: `Starting red teaming analysis with ${prompts.length} dataset prompts...`
       });
 
       for (let i = 0; i < prompts.length; i++) {
@@ -60,7 +60,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
 
       addMessage({
         role: 'system',
-        content: 'Red teaming phase completed.'
+        content: 'Red teaming analysis completed.'
       });
     } catch (error) {
       console.error('Error in red teaming phase:', error);
@@ -87,6 +87,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       setIsLoading(false);
       setPendingQuestion(false);
 
+      // Check if fingerprinting is complete
       if (currentStep === FINGERPRINTING_QUESTIONS.length - 1) {
         const fingerprintResults = {
           capabilities: messages[2]?.content || '',
