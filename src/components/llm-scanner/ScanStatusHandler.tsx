@@ -43,10 +43,13 @@ export const ScanStatusHandler = ({
           if (payload.new.status === 'processing') {
             const progress = payload.new.results?.progress || 0;
             onProgressUpdate(progress);
+            if (payload.new.results?.responses) {
+              onResultUpdate(payload.new.results.responses);
+            }
           } else if (payload.new.status === 'completed') {
             onProgressUpdate(100);
             if (scanType === 'batch') {
-              console.log('[ScanStatusHandler] Batch scan completed, results:', payload.new.results);
+              console.log('[ScanStatusHandler] Batch scan completed');
               toast.success('Batch scan completed! View results in the Results page.');
               navigate('/llm-results');
             } else {

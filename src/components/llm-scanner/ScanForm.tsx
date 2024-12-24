@@ -67,16 +67,28 @@ export const ScanForm = () => {
     console.log('[ScanForm] Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
     setScanProgress(0);
 
-    await handleSubmit({
-      provider,
-      customEndpoint,
-      prompts: promptsToSubmit,
-      category,
-      label,
-      schedule,
-      isRecurring,
-      qps: Math.min(qps, 50)
-    });
+    try {
+      const result = await handleSubmit({
+        provider,
+        customEndpoint,
+        prompts: promptsToSubmit,
+        category,
+        label,
+        schedule,
+        isRecurring,
+        qps: Math.min(qps, 50)
+      });
+
+      if (result) {
+        setScanResult(result);
+        if (scanType === "batch") {
+          toast.success("Batch scan started successfully");
+        }
+      }
+    } catch (error) {
+      console.error('[ScanForm] Error during scan:', error);
+      toast.error("Failed to start scan: " + (error instanceof Error ? error.message : "Unknown error"));
+    }
   };
 
   return (
