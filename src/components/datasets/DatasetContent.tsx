@@ -69,9 +69,18 @@ const parseCSVContent = (rawText: string) => {
   const lines = rawText.split(/\r?\n/).filter(line => line.trim())
   const headers = parseCSVLine(lines[0])
   
+  // Find the prompt column index
+  const promptIndex = headers.findIndex(header => 
+    header.toLowerCase() === 'prompt'
+  )
+
+  // Only process rows that have a value in the prompt column
   const data = lines.slice(1)
     .map(line => parseCSVLine(line))
-    .filter(row => row.length === headers.length)
+    .filter(row => row.length === headers.length && row[promptIndex]?.trim())
+  
+  console.log('Found prompt column at index:', promptIndex)
+  console.log('Number of valid prompts:', data.length)
   
   return { headers, data }
 }
