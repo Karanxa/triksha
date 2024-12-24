@@ -1,28 +1,15 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { GenerateScript } from "./FineTuning/CreateFineTuningJob"
+import { CreateFineTuningJob } from "./FineTuning/CreateFineTuningJob"
 import { JobHistory } from "./FineTuning/JobHistory"
 import { useSession } from "@supabase/auth-helpers-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { Settings, History, Loader2 } from "lucide-react"
 
 export const FineTuning = () => {
   const session = useSession()
   const { toast } = useToast()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        navigate('/login')
-      }
-    }
-    checkAuth()
-  }, [navigate])
 
   const handleScriptGenerated = async (script: string, model: string, parameters: any) => {
     if (!session?.user?.id) {
@@ -71,7 +58,6 @@ export const FineTuning = () => {
 
   return (
     <div className="min-h-screen bg-[#0D1117] relative">
-      {/* Background dot pattern */}
       <div className="absolute inset-0 [background-size:24px_24px] bg-dot-pattern opacity-25 pointer-events-none" />
       
       <div className="container py-8 space-y-8 relative">
@@ -109,7 +95,7 @@ export const FineTuning = () => {
           </TabsList>
 
           <TabsContent value="generate">
-            <GenerateScript onScriptGenerated={handleScriptGenerated} />
+            <CreateFineTuningJob onScriptGenerated={handleScriptGenerated} />
           </TabsContent>
 
           <TabsContent value="history">
