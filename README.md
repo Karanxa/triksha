@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80" alt="Triksha Banner" width="800"/>
+  <img src="public/lovable-uploads/7ea940e7-ad73-466f-b3ee-0f1bc8d4a88e.png" alt="Triksha Interface" width="800"/>
 
   # Triksha - LLM Security Testing Platform
 
@@ -13,10 +13,6 @@
 ## 🚀 Overview
 
 Triksha is a comprehensive platform for testing and enhancing the security of Large Language Models (LLMs). With advanced scanning capabilities, contextual analysis, and customizable security tests, Triksha helps ensure your AI models are robust and secure.
-
-<div align="center">
-  <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80" alt="Features Preview" width="800"/>
-</div>
 
 ## ✨ Key Features
 
