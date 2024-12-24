@@ -9,9 +9,9 @@ interface ModelSelectProps {
 export const ModelSelect = ({ value, onValueChange }: ModelSelectProps) => {
   return (
     <div className="space-y-2">
-      <Label>Base Model</Label>
+      <Label className="text-foreground">Base Model</Label>
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger>
+        <SelectTrigger className="bg-background text-foreground border-input">
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
         <SelectContent>

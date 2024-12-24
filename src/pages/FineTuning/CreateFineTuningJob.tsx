@@ -1,9 +1,9 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BasicParameters, type BasicParameterValues } from "./components/BasicParameters"
-import { ModelSelect } from "./components/ModelSelect"
-import { DatasetSelect } from "./components/DatasetSelect"
+import { BasicParameters, type BasicParameterValues } from "@/components/fine-tuning/BasicParameters"
+import { ModelSelect } from "@/components/fine-tuning/ModelSelect"
+import { DatasetSelect } from "@/components/fine-tuning/DatasetSelect"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useSession } from "@supabase/auth-helpers-react"
@@ -49,7 +49,7 @@ export const CreateFineTuningJob = () => {
           user_id: session.user.id,
           model,
           dataset_id: datasetId || null,
-          parameters,
+          parameters: parameters as any,
           status: 'script_generated'
         })
 
