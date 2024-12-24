@@ -62,10 +62,14 @@ interface ResultsTableRowProps {
 
 export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRowProps) => {
   const results = scan.results || {};
-  const modelResponse = results.model_response || results.responses?.[0]?.model_response;
-  const prompt = results.prompt || results.responses?.[0]?.prompt;
-  const rawResponse = results.raw_response || results.responses?.[0]?.raw_response;
-  const model = results.model || 'Unknown Model';
+  const responses = results.responses || [];
+  const firstResponse = responses[0] || {};
+  
+  // Extract values, ensuring we handle both single and batch scan formats
+  const modelResponse = results.model_response || firstResponse.model_response || 'No response available';
+  const prompt = results.prompt || firstResponse.prompt || 'No prompt available';
+  const rawResponse = results.raw_response || firstResponse.raw_response;
+  const model = results.model || firstResponse.model || 'Unknown Model';
   
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
@@ -80,6 +84,24 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
     }
     return JSON.stringify(rawResponse, null, 2);
   };
+
+  // If this is a batch scan, format all responses for display
+  const formatBatchResponses = () => {
+    if (responses.length > 0) {
+      return responses.map((response: any) => ({
+        prompt: response.prompt,
+        response: response.model_response,
+        model: response.model
+      }));
+    }
+    return [{
+      prompt,
+      response: modelResponse,
+      model
+    }];
+  };
+
+  const batchResponses = formatBatchResponses();
 
   return (
     <TableRow>
@@ -102,16 +124,26 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
         </Badge>
       </TableCell>
       <TableCell className="border-l">
-        <TruncatedCell
-          content={prompt || 'No prompt available'}
-          onContentClick={() => onContentClick("Prompt", prompt || 'No prompt available')}
-        />
+        <div className="space-y-2">
+          {batchResponses.map((response, index) => (
+            <TruncatedCell
+              key={index}
+              content={response.prompt}
+              onContentClick={() => onContentClick("Prompt", response.prompt)}
+            />
+          ))}
+        </div>
       </TableCell>
       <TableCell>
-        <TruncatedCell
-          content={modelResponse || 'No response available'}
-          onContentClick={() => onContentClick("Response", modelResponse || 'No response available')}
-        />
+        <div className="space-y-2">
+          {batchResponses.map((response, index) => (
+            <TruncatedCell
+              key={index}
+              content={response.response}
+              onContentClick={() => onContentClick("Response", response.response)}
+            />
+          ))}
+        </div>
       </TableCell>
       <TableCell className="w-[100px] text-center">
         <div className="flex items-center justify-center gap-2">
