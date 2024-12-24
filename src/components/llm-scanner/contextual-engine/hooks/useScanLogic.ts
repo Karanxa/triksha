@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ScanConfig } from '../types/phases';
+import { ScanConfig, ApiKeys } from '../types/phases';
 import { useFingerprinting, FINGERPRINTING_QUESTIONS } from './useFingerprinting';
 import { useRedTeaming } from './useRedTeaming';
 import { usePhaseManagement } from './usePhaseManagement';
@@ -37,7 +37,9 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         .select('api_keys')
         .single();
 
-      if (!profile?.api_keys?.openai) {
+      const apiKeys = profile?.api_keys as ApiKeys;
+      
+      if (!apiKeys?.openai) {
         throw new Error('OpenAI API key not configured');
       }
 
@@ -45,7 +47,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         body: {
           prompt,
           fingerprint,
-          apiKey: profile.api_keys.openai
+          apiKey: apiKeys.openai
         }
       });
 
@@ -148,12 +150,10 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     if (result.success && result.response) {
       addMessage({ role: 'assistant', content: result.response });
       
-      // Increment step
       setCurrentStep(prev => prev + 1);
       setIsLoading(false);
       setPendingQuestion(false);
 
-      // Check if fingerprinting is complete
       if (currentStep === FINGERPRINTING_QUESTIONS.length - 1) {
         const fingerprintResults = {
           capabilities: messages[2]?.content || '',
@@ -167,16 +167,12 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           onFingerprint(fingerprintResults);
         }
 
-        // Load dataset prompts
         const prompts = await loadDatasetPrompts(config.datasetId);
         
-        // Transition to augmentation phase
         transitionToPhase('augmenting');
         
-        // Augment the prompts
         const augmentedPrompts = await augmentDatasetPrompts(prompts, fingerprintResults);
         
-        // Start red teaming phase with augmented prompts
         await startRedTeamingPhase(config, fingerprintResults, augmentedPrompts);
       }
       return true;
