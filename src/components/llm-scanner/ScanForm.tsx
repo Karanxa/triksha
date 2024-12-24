@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // Added missing import
+import { Button } from "@/components/ui/button";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormSchedule } from "./ScanFormSchedule";
@@ -45,8 +45,10 @@ export const ScanForm = () => {
   const { handleSubmit, isScanning } = useScanSubmit({
     onSubmit: async (data) => {
       try {
+        console.log('Starting scan with data:', data);
+        setScanProgress(0); // Reset progress
+        
         const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
-
         if (promptsToSubmit.length === 0) {
           toast.error("Please enter at least one prompt");
           return;
@@ -58,6 +60,7 @@ export const ScanForm = () => {
         }
 
         console.log('Submitting scan with prompts:', promptsToSubmit.length);
+        toast.info(`Processing ${promptsToSubmit.length} prompts...`);
 
         const result = await handleSubmit({
           provider,
@@ -78,9 +81,7 @@ export const ScanForm = () => {
           setIsRecurring(false);
           
           if (scanType === "batch") {
-            toast.success('Batch scan started successfully', {
-              description: 'You can navigate away - the scan will continue in the background.'
-            });
+            toast.success('Batch scan started successfully');
             navigate('/llm-results');
           }
           
@@ -97,6 +98,7 @@ export const ScanForm = () => {
 
   const onFormSubmit = async () => {
     const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+    console.log('Form submission - prompts:', promptsToSubmit.length);
 
     if (promptsToSubmit.length === 0) {
       toast.error("Please enter at least one prompt");
@@ -118,6 +120,7 @@ export const ScanForm = () => {
     }
 
     console.log('Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
+    setScanProgress(0);
 
     await handleSubmit({
       provider,
@@ -198,7 +201,9 @@ export const ScanForm = () => {
         </Card>
 
         <div className="space-y-4">
-          <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
+          {(isScanning || scanProgress > 0) && (
+            <ScanProgress isScanning={isScanning} progress={scanProgress} />
+          )}
 
           <ScanFormActions 
             isScanning={isScanning} 
