@@ -17,8 +17,7 @@ export const useFingerprinting = () => {
   const processQuestion = async (
     provider: string,
     model: string,
-    question: string,
-    currentStep: number
+    question: string
   ): Promise<{ success: boolean; response?: string }> => {
     setIsProcessing(true);
     
@@ -32,7 +31,6 @@ export const useFingerprinting = () => {
       });
 
       if (error) throw error;
-
       return { success: true, response: data.response };
     } catch (error) {
       console.error('Error in fingerprinting:', error);

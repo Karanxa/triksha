@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
+import { Message } from "../types";
 
 export const useRedTeaming = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -9,7 +10,7 @@ export const useRedTeaming = () => {
     try {
       console.log('Loading dataset with ID:', datasetId);
       
-      // Fetch dataset content
+      // Get dataset details
       const { data: dataset, error: datasetError } = await supabase
         .from('datasets')
         .select('file_path')
@@ -17,8 +18,11 @@ export const useRedTeaming = () => {
         .single();
 
       if (datasetError) throw datasetError;
+      if (!dataset?.file_path) {
+        throw new Error('Dataset file not found');
+      }
 
-      // Download dataset content
+      // Download file content
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('datasets')
         .download(dataset.file_path);
@@ -71,7 +75,6 @@ export const useRedTeaming = () => {
       });
 
       if (error) throw error;
-
       return { success: true, response: data.response };
     } catch (error) {
       console.error('Error processing red team prompt:', error);

@@ -47,7 +47,7 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
       setProgress(prev => Math.min(50, prev + progressIncrement));
     });
 
-    // Mark fingerprinting as complete
+    // Mark fingerprinting as complete and transition to red teaming
     setFingerprintingComplete(true);
     setMessages(prev => [
       ...prev,

@@ -17,7 +17,6 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     currentDatasetPromptIndex: 0
   });
 
-  const [scanId, setScanId] = useState<string | null>(null);
   const { processQuestion, FINGERPRINTING_QUESTIONS } = useFingerprinting();
   const { loadDatasetPrompts, processPrompt } = useRedTeaming();
 
@@ -37,10 +36,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     }));
 
     try {
-      console.log('Loading dataset prompts for ID:', config.datasetId);
       const prompts = await loadDatasetPrompts(config.datasetId);
-      console.log('Loaded prompts:', prompts);
-
       if (!prompts || prompts.length === 0) {
         throw new Error('No prompts found in dataset');
       }
@@ -97,7 +93,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const processNextQuestion = useCallback(async (provider: string, model: string) => {
     if (state.phase === 'fingerprinting') {
       if (state.currentStep >= FINGERPRINTING_QUESTIONS.length) {
-        // Process fingerprinting results when all questions are answered
+        // Process fingerprinting results
         const fingerprintResults = {
           capabilities: state.messages[2]?.content || '',
           boundaries: state.messages[4]?.content || '',
@@ -123,8 +119,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         messages: [...prev.messages, { role: 'user', content: question }]
       }));
 
-      const result = await processQuestion(provider, model, question, state.currentStep);
-
+      const result = await processQuestion(provider, model, question);
       if (result.success && result.response) {
         setState(prev => ({
           ...prev,
@@ -144,48 +139,6 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     }
   }, [state, onFingerprint, FINGERPRINTING_QUESTIONS]);
 
-  const startScan = async (config: ScanConfig) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
-
-      const { data: scanData, error: scanError } = await supabase
-        .from('contextual_scans')
-        .insert({
-          user_id: user.id,
-          provider: config.provider,
-          model: config.model,
-          messages: [],
-          is_vulnerable: null
-        })
-        .select()
-        .single();
-
-      if (scanError) throw scanError;
-      setScanId(scanData.id);
-
-      // Add initial system message
-      setState(prev => ({
-        ...prev,
-        messages: [
-          {
-            role: 'system',
-            content: `Starting contextual analysis for ${config.model} - Fingerprinting Phase`
-          }
-        ]
-      }));
-      
-      // Process the first question immediately
-      await processNextQuestion(config.provider, config.model);
-      
-      return scanData.id;
-    } catch (error) {
-      console.error('Error starting scan:', error);
-      toast.error("Failed to start scan");
-      return null;
-    }
-  };
-
   return {
     messages: state.messages,
     isLoading: state.isLoading,
@@ -193,7 +146,29 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     pendingQuestion: state.pendingQuestion,
     questions: FINGERPRINTING_QUESTIONS,
     phase: state.phase,
-    startScan,
+    startScan: async (config: ScanConfig) => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("User not authenticated");
+
+        // Add initial system message
+        setState(prev => ({
+          ...prev,
+          messages: [
+            {
+              role: 'system',
+              content: `Starting contextual analysis for ${config.model} - Fingerprinting Phase`
+            }
+          ]
+        }));
+        
+        // Process the first question immediately
+        await processNextQuestion(config.provider, config.model);
+      } catch (error) {
+        console.error('Error starting scan:', error);
+        toast.error("Failed to start scan");
+      }
+    },
     processNextQuestion,
     askNextQuestion: async (config: ScanConfig, isPaused: boolean) => {
       if (isPaused) {
