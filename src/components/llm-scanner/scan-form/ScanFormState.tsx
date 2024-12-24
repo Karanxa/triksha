@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useScanSubmit } from "../hooks/useScanSubmit";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export const useScanFormState = () => {
+  const navigate = useNavigate();
   const [scanType, setScanType] = useState("manual");
   const [provider, setProvider] = useState("");
   const [singlePrompt, setSinglePrompt] = useState("");
