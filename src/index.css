@@ -89,6 +89,20 @@
   .content-container {
     @apply relative z-10;
   }
+
+  /* Add text color utilities for better contrast */
+  .text-on-light {
+    @apply text-gray-900;
+  }
+
+  .text-on-dark {
+    @apply text-gray-50;
+  }
+
+  /* Card specific styles to ensure proper contrast */
+  .card-content {
+    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50;
+  }
 }
 
 /* Supabase Auth UI Overrides */
