@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from 'sonner';
-import { Message } from '../types';
+import { toast } from "sonner";
 
 export const useRedTeaming = () => {
   const [isProcessing, setIsProcessing] = useState(false);
