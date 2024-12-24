@@ -8,12 +8,19 @@ import ProviderSelect from "@/components/augment-prompt/ProviderSelect";
 import FileUpload from "@/components/augment-prompt/FileUpload";
 import Results from "@/components/augment-prompt/Results";
 
+interface Result {
+  original: string;
+  augmented?: string;
+  response?: string;
+  error?: string;
+}
+
 const AugmentPrompt = () => {
   const [prompts, setPrompts] = useState("");
   const [keyword, setKeyword] = useState("");
   const [provider, setProvider] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<Array<{ original: string; augmented?: string; error?: string }>>([]);
+  const [results, setResults] = useState<Result[]>([]);
 
   const handleAugment = async () => {
     if (!provider) {

@@ -3,9 +3,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Result {
   original: string;
-  augmented: string;
-  response?: string;
-  error?: string;
+  augmented?: string;  // Made optional since it might not be available immediately
+  response?: string;   // Optional as it comes after augmentation
+  error?: string;      // Optional as it only exists if there's an error
 }
 
 interface ResultsProps {
