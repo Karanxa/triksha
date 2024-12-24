@@ -20,17 +20,38 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const { processQuestion, FINGERPRINTING_QUESTIONS } = useFingerprinting();
   const { loadDatasetPrompts, processPrompt } = useRedTeaming();
 
+  // Display dataset prompts in conversation before processing
+  const displayDatasetPrompts = (prompts: string[]) => {
+    setState(prev => ({
+      ...prev,
+      messages: [
+        ...prev.messages,
+        {
+          role: 'system',
+          content: `Dataset loaded with ${prompts.length} prompts to test:`
+        },
+        ...prompts.map((prompt, index) => ({
+          role: 'system',
+          content: `Prompt ${index + 1}: ${prompt}`
+        }))
+      ]
+    }));
+  };
+
   const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any) => {
     console.log('Starting red teaming phase with config:', config);
     
     try {
-      // Load dataset prompts first
+      // Load and display dataset prompts first
       const prompts = await loadDatasetPrompts(config.datasetId);
       if (!prompts || prompts.length === 0) {
         throw new Error('No prompts found in dataset');
       }
 
-      // Add transition messages
+      // Display prompts in conversation
+      displayDatasetPrompts(prompts);
+
+      // Add transition message
       setState(prev => ({
         ...prev,
         phase: 'redteaming',
@@ -38,7 +59,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           ...prev.messages,
           { 
             role: 'system', 
-            content: `Fingerprinting phase complete. Starting red teaming phase with ${prompts.length} prompts from the selected dataset.` 
+            content: `Starting red teaming phase with ${prompts.length} prompts from the selected dataset.` 
           }
         ],
         datasetPrompts: prompts,
@@ -68,7 +89,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       isLoading: true,
       messages: [...prev.messages, { 
         role: 'user', 
-        content: `[Dataset Prompt ${currentDatasetPromptIndex + 1}/${datasetPrompts.length}]: ${prompt}` 
+        content: `Testing prompt ${currentDatasetPromptIndex + 1}/${datasetPrompts.length}: ${prompt}` 
       }]
     }));
 
@@ -166,7 +187,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           throw new Error('No prompts found in dataset');
         }
 
-        // Add initial system messages
+        // Add initial system messages and display dataset prompts
         setState(prev => ({
           ...prev,
           messages: [
@@ -176,17 +197,28 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
             },
             {
               role: 'system',
-              content: `Loaded dataset with ${prompts.length} prompts for red teaming phase`
-            },
-            {
-              role: 'system',
-              content: 'Beginning fingerprinting phase...'
+              content: `Loaded dataset with ${prompts.length} prompts for testing`
             }
           ],
           datasetPrompts: prompts
         }));
+
+        // Display dataset prompts
+        displayDatasetPrompts(prompts);
+
+        // Add fingerprinting phase message
+        setState(prev => ({
+          ...prev,
+          messages: [
+            ...prev.messages,
+            {
+              role: 'system',
+              content: 'Beginning fingerprinting phase...'
+            }
+          ]
+        }));
         
-        // Process the first question immediately
+        // Process the first question
         await processNextQuestion(config.provider, config.model);
       } catch (error) {
         console.error('Error starting scan:', error);
@@ -196,7 +228,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     processNextQuestion,
     askNextQuestion: async (config: ScanConfig, isPaused: boolean) => {
       if (isPaused) {
-        console.log('Scan is paused, skipping next question');
+        console.log('Scan is paused, skipping next question/prompt');
         return;
       }
       

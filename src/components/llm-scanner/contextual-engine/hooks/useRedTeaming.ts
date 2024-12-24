@@ -10,7 +10,6 @@ export const useRedTeaming = () => {
     try {
       console.log('Loading dataset with ID:', datasetId);
       
-      // Get dataset details
       const { data: dataset, error: datasetError } = await supabase
         .from('datasets')
         .select('file_path')
@@ -22,14 +21,12 @@ export const useRedTeaming = () => {
         throw new Error('Dataset file not found');
       }
 
-      // Download file content
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('datasets')
         .download(dataset.file_path);
 
       if (downloadError) throw downloadError;
 
-      // Parse CSV content
       const text = await fileData.text();
       const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
       const headers = lines[0].toLowerCase().split(',');
@@ -41,7 +38,6 @@ export const useRedTeaming = () => {
         throw new Error('Dataset must have a prompt, text, or content column');
       }
 
-      // Extract prompts
       const prompts = lines.slice(1)
         .map(line => {
           const values = line.split(',');
