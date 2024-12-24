@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from 'sonner';
 import { Message } from "../types";
 import { processFingerprinting } from './useFingerprinting';
-import { processRedTeaming } from './useRedTeaming';
 
 const FINGERPRINTING_QUESTIONS = [
   "What are your core capabilities and primary functions?",
@@ -20,43 +19,166 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [pendingQuestion, setPendingQuestion] = useState<boolean>(false);
   const [scanId, setScanId] = useState<string | null>(null);
   const [phase, setPhase] = useState<'fingerprinting' | 'redteaming'>('fingerprinting');
+  const [datasetPrompts, setDatasetPrompts] = useState<string[]>([]);
+  const [currentDatasetPromptIndex, setCurrentDatasetPromptIndex] = useState(0);
 
   const startRedTeamingPhase = async (config: any, fingerprintResults: any) => {
+    console.log('Starting red teaming phase');
     setPhase('redteaming');
+    
+    // Add transition message
     setMessages(prev => [
       ...prev,
       { 
         role: 'system', 
-        content: "Fingerprinting phase complete. Starting red teaming phase with augmented prompts." 
+        content: "Fingerprinting phase complete. Starting red teaming phase with dataset prompts." 
       }
     ]);
 
     try {
-      const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
+      // Fetch dataset prompts
+      const { data: dataset, error: datasetError } = await supabase
+        .from('datasets')
+        .select('file_path')
+        .eq('id', config.datasetId)
+        .single();
+
+      if (datasetError) throw datasetError;
+
+      // Download dataset content
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('datasets')
+        .download(dataset.file_path);
+
+      if (downloadError) throw downloadError;
+
+      // Parse CSV content
+      const text = await fileData.text();
+      const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+      const headers = lines[0].toLowerCase().split(',');
+      const promptIndex = headers.findIndex(h => 
+        h === 'prompt' || h === 'text' || h === 'content'
+      );
+
+      if (promptIndex === -1) {
+        throw new Error('Dataset must have a prompt, text, or content column');
+      }
+
+      // Extract prompts from dataset
+      const prompts = lines.slice(1)
+        .map(line => {
+          const values = line.split(',');
+          return values[promptIndex]?.trim() || '';
+        })
+        .filter(Boolean);
+
+      setDatasetPrompts(prompts);
+      
+      // Process first dataset prompt
+      if (prompts.length > 0) {
+        await processDatasetPrompt(config.provider, config.model, prompts[0]);
+      }
+
+    } catch (error) {
+      console.error('Error in red teaming phase:', error);
+      toast.error("Failed to process dataset prompts");
+    }
+  };
+
+  const processDatasetPrompt = async (provider: string, model: string, prompt: string) => {
+    if (!prompt) return false;
+
+    setIsLoading(true);
+    setMessages(prev => [...prev, { role: 'user', content: prompt }]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
         body: {
-          datasetId: config.datasetId,
-          provider: config.provider,
-          model: config.model,
-          fingerprint: fingerprintResults
+          provider,
+          model,
+          prompt
         }
       });
 
       if (error) throw error;
 
-      // Update messages with red teaming results
-      analysisData.results.forEach((result: any) => {
-        setMessages(prev => [
-          ...prev,
-          { role: 'user', content: result.augmentedPrompt },
-          { role: 'assistant', content: result.modelResponse }
-        ]);
-      });
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: data.response }
+      ]);
 
+      setCurrentDatasetPromptIndex(prev => prev + 1);
+      return true;
     } catch (error) {
-      console.error('Error in red teaming phase:', error);
-      toast.error("Failed to complete red teaming analysis");
+      console.error('Error processing dataset prompt:', error);
+      toast.error("Failed to process prompt");
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const processNextQuestion = useCallback(async (provider: string, model: string) => {
+    if (phase === 'fingerprinting') {
+      if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
+        // Process fingerprinting results when all questions are answered
+        const fingerprintResults = processFingerprinting(messages);
+        
+        if (onFingerprint) {
+          onFingerprint(fingerprintResults);
+        }
+        
+        // Start red teaming phase
+        await startRedTeamingPhase({ provider, model }, fingerprintResults);
+        return false;
+      }
+
+      setIsLoading(true);
+      setPendingQuestion(true);
+
+      const question = FINGERPRINTING_QUESTIONS[currentStep];
+      setMessages(prev => [...prev, { role: 'user', content: question }]);
+
+      try {
+        const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
+          body: {
+            provider,
+            model,
+            prompt: question
+          }
+        });
+
+        if (error) throw error;
+
+        setMessages(prev => [
+          ...prev,
+          { role: 'assistant', content: data.response }
+        ]);
+        
+        setCurrentStep(prev => prev + 1);
+        return true;
+      } catch (error) {
+        console.error('Error in fingerprinting:', error);
+        toast.error("Failed to process question");
+        return false;
+      } finally {
+        setIsLoading(false);
+        setPendingQuestion(false);
+      }
+    } else {
+      // Red teaming phase
+      if (currentDatasetPromptIndex >= datasetPrompts.length) {
+        toast.success("Red teaming phase completed");
+        return false;
+      }
+
+      return await processDatasetPrompt(
+        provider, 
+        model, 
+        datasetPrompts[currentDatasetPromptIndex]
+      );
+    }
+  }, [currentStep, messages, phase, currentDatasetPromptIndex, datasetPrompts, onFingerprint]);
 
   const askNextQuestion = async (config: any, isPaused: boolean) => {
     if (isPaused) {
@@ -67,64 +189,13 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     try {
       const success = await processNextQuestion(config.provider, config.model);
       if (!success) {
-        console.log('No more questions to process');
+        console.log('No more questions/prompts to process');
       }
     } catch (error) {
       console.error('Error asking next question:', error);
-      toast.error("Failed to process question");
+      toast.error("Failed to process question/prompt");
     }
   };
-
-  const processNextQuestion = useCallback(async (provider: string, model: string) => {
-    if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
-      // Process fingerprinting results when all questions are answered
-      const fingerprintResults = processFingerprinting(messages);
-      
-      if (onFingerprint) {
-        onFingerprint(fingerprintResults);
-      }
-      
-      // Start red teaming phase
-      await startRedTeamingPhase({ provider, model }, fingerprintResults);
-      return false;
-    }
-
-    setIsLoading(true);
-    setPendingQuestion(true);
-
-    const question = FINGERPRINTING_QUESTIONS[currentStep];
-
-    setMessages(prev => [...prev, { role: 'user', content: question }]);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('contextual-fingerprint', {
-        body: {
-          provider,
-          model,
-          prompt: question
-        }
-      });
-
-      if (error) throw error;
-
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: data.response }
-      ]);
-      
-      setCurrentStep(prev => prev + 1);
-      setIsLoading(false);
-      setPendingQuestion(false);
-
-      return true;
-    } catch (error) {
-      console.error('Error in fingerprinting:', error);
-      toast.error("Failed to process question");
-      setIsLoading(false);
-      setPendingQuestion(false);
-      return false;
-    }
-  }, [currentStep, messages, onFingerprint]);
 
   return {
     messages,
