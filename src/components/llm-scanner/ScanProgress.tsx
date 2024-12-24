@@ -16,8 +16,8 @@ export const ScanProgress = ({ isScanning, progress }: ScanProgressProps) => {
         <div className="space-y-4">
           <div className="flex items-center justify-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <p className="text-sm font-medium">
-              Processing scan...
+            <p className="text-sm font-medium text-black">
+              {progress === 100 ? 'Scan completed!' : 'Processing scan...'}
             </p>
           </div>
           
@@ -26,7 +26,7 @@ export const ScanProgress = ({ isScanning, progress }: ScanProgressProps) => {
             className="h-2 transition-all"
           />
           
-          <p className="text-sm text-center text-muted-foreground">
+          <p className="text-sm text-center text-black">
             {progress}% complete
           </p>
         </div>

@@ -103,49 +103,16 @@ export const ScanForm = () => {
     setScanId: setCurrentScanId
   });
 
-  const onFormSubmit = async () => {
-    const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
-    console.log('[ScanForm] Form submission - prompts:', promptsToSubmit.length);
-
-    if (promptsToSubmit.length === 0) {
-      toast.error("Please enter at least one prompt");
-      return;
-    }
-
-    if (!provider) {
-      toast.error("Please select a provider");
-      return;
-    }
-
-    if (promptsToSubmit.length > 100000) {
-      toast.error("Maximum batch size is 100,000 prompts");
-      return;
-    }
-
-    if (promptsToSubmit.length > 1000) {
-      toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
-    }
-
-    console.log('[ScanForm] Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
-    setScanProgress(0);
-
-    await handleSubmit({
-      provider,
-      customEndpoint,
-      prompts: promptsToSubmit,
-      category,
-      label,
-      schedule,
-      isRecurring,
-      qps: Math.min(qps, 50)
-    });
-  };
-
   return (
     <div className="space-y-6">
       <ScanNotification />
       
       <div className="grid gap-6">
+        {/* Move ScanProgress to top for better visibility */}
+        {(isScanning || scanProgress > 0) && (
+          <ScanProgress isScanning={isScanning} progress={scanProgress} />
+        )}
+
         <Card className="border border-border/50">
           <CardContent className="p-6">
             <ScanTypeSelect scanType={scanType} onScanTypeChange={setScanType} />
@@ -208,15 +175,46 @@ export const ScanForm = () => {
         </Card>
 
         <div className="space-y-4">
-          {(isScanning || scanProgress > 0) && (
-            <ScanProgress isScanning={isScanning} progress={scanProgress} />
-          )}
-
           <ScanFormActions 
             isScanning={isScanning} 
-            onSubmit={onFormSubmit} 
+            onSubmit={async () => {
+              const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+              console.log('[ScanForm] Form submission - prompts:', promptsToSubmit.length);
+
+              if (promptsToSubmit.length === 0) {
+                toast.error("Please enter at least one prompt");
+                return;
+              }
+
+              if (!provider) {
+                toast.error("Please select a provider");
+                return;
+              }
+
+              if (promptsToSubmit.length > 100000) {
+                toast.error("Maximum batch size is 100,000 prompts");
+                return;
+              }
+
+              if (promptsToSubmit.length > 1000) {
+                toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
+              }
+
+              console.log('[ScanForm] Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
+              setScanProgress(0);
+
+              await handleSubmit({
+                provider,
+                customEndpoint,
+                prompts: promptsToSubmit,
+                category,
+                label,
+                schedule,
+                isRecurring,
+                qps: Math.min(qps, 50)
+              });
+            }} 
           />
-        </div>
 
         <ScanStatusHandler
           scanId={currentScanId}
