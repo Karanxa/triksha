@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormSchedule } from "./ScanFormSchedule";
@@ -13,9 +13,8 @@ import { ScanProgress } from "./ScanProgress";
 import { ScanFormActions } from "./ScanFormActions";
 import { ScanStatusHandler } from "./ScanStatusHandler";
 import { ScanNotification } from "./ScanNotification";
-import { CustomEndpoint } from "./types/CustomEndpoint";
+import { BatchScanDataset } from "./components/BatchScanDataset";
 import { useScanSubmit } from "./hooks/useScanSubmit";
-import { Card, CardContent } from "@/components/ui/card";
 
 export const ScanForm = () => {
   const navigate = useNavigate();
@@ -31,7 +30,7 @@ export const ScanForm = () => {
   const [scanResult, setScanResult] = useState<any>(null);
   const [scanProgress, setScanProgress] = useState(0);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
-  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
+  const [customEndpoint, setCustomEndpoint] = useState({
     url: '',
     apiKey: '',
     headers: '',
@@ -75,7 +74,6 @@ export const ScanForm = () => {
           setSchedule("none");
           setIsRecurring(false);
           
-          // For batch scans, show a notification and redirect
           if (scanType === "batch") {
             toast.success('Batch scan started successfully', {
               description: 'You can navigate away - the scan will continue in the background.'
@@ -145,7 +143,7 @@ export const ScanForm = () => {
               provider={provider}
               onProviderChange={setProvider}
               customEndpoint={customEndpoint}
-              onCustomEndpointChange={(endpoint: Partial<CustomEndpoint>) => {
+              onCustomEndpointChange={(endpoint) => {
                 setCustomEndpoint(prev => ({
                   ...prev,
                   ...endpoint
@@ -155,17 +153,24 @@ export const ScanForm = () => {
           </CardContent>
         </Card>
 
-        <Card className="border border-border/50">
-          <CardContent className="p-6">
-            <ScanPromptInput
-              scanType={scanType}
-              singlePrompt={singlePrompt}
-              onSinglePromptChange={setSinglePrompt}
-              prompts={prompts}
-              onPromptsExtracted={setPrompts}
-            />
-          </CardContent>
-        </Card>
+        {scanType === "manual" ? (
+          <Card className="border border-border/50">
+            <CardContent className="p-6">
+              <ScanPromptInput
+                scanType={scanType}
+                singlePrompt={singlePrompt}
+                onSinglePromptChange={setSinglePrompt}
+                prompts={prompts}
+                onPromptsExtracted={setPrompts}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <BatchScanDataset
+            prompts={prompts}
+            onPromptsExtracted={setPrompts}
+          />
+        )}
 
         <Card className="border border-border/50">
           <CardContent className="p-6 space-y-6">
@@ -187,7 +192,6 @@ export const ScanForm = () => {
           </CardContent>
         </Card>
 
-        {/* Progress and Actions */}
         <div className="space-y-4">
           <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
 
@@ -204,7 +208,6 @@ export const ScanForm = () => {
           onResultUpdate={setScanResult}
         />
 
-        {/* Results Section */}
         {scanType === "manual" && scanResult && (
           <Card className="border-border/50 mt-8">
             <CardContent className="p-6">
