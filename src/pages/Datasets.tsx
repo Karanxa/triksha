@@ -8,12 +8,13 @@ const Datasets = () => {
   return (
     <div className="min-h-screen bg-[#0D1117] relative">
       {/* Background dot pattern */}
-      <div className="absolute inset-0 [background-size:24px_24px] bg-dot-pattern opacity-25 pointer-events-none" />
+      <div className="absolute inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
       
       <div className="container py-8 space-y-8 relative">
+        {/* Hero Section */}
         <div className="relative">
-          <div className="absolute inset-0 bg-hero-gradient rounded-lg" />
-          <div className="relative p-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
+          <div className="relative p-8 rounded-lg glass-card">
             <div className="flex items-center gap-3 mb-4">
               <Database className="w-8 h-8 text-primary" />
               <h1 className="text-3xl font-bold text-white">
