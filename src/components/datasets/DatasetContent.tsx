@@ -69,20 +69,31 @@ const parseCSVContent = (rawText: string) => {
   const lines = rawText.split(/\r?\n/).filter(line => line.trim())
   const headers = parseCSVLine(lines[0])
   
-  // Find the prompt column index
+  // Find the prompt column index (case-insensitive)
   const promptIndex = headers.findIndex(header => 
-    header.toLowerCase() === 'prompt'
+    header.toLowerCase().includes('prompt')
   )
+
+  console.log('Headers:', headers)
+  console.log('Found prompt column at index:', promptIndex)
+
+  if (promptIndex === -1) {
+    console.error('No prompt column found')
+    return { headers: ['prompt'], data: [] }
+  }
 
   // Only process rows that have a value in the prompt column
   const data = lines.slice(1)
-    .map(line => parseCSVLine(line))
-    .filter(row => row.length === headers.length && row[promptIndex]?.trim())
+    .map(line => {
+      const values = parseCSVLine(line)
+      // Return an array with just the prompt value
+      return [values[promptIndex]].filter(Boolean)
+    })
+    .filter(row => row.length > 0 && row[0]?.trim())
   
-  console.log('Found prompt column at index:', promptIndex)
   console.log('Number of valid prompts:', data.length)
   
-  return { headers, data }
+  return { headers: ['prompt'], data }
 }
 
 export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
@@ -106,20 +117,14 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
           <TableBody>
             {data.map((row, i) => (
               <TableRow key={i}>
-                {row.map((cell, j) => {
-                  // Format only the prompt column
-                  const isPromptColumn = headers[j].toLowerCase() === 'prompt';
-                  const formattedCell = isPromptColumn ? formatPromptText(cell) : cell;
-                  
-                  return (
-                    <TableCell 
-                      key={j} 
-                      className="max-w-xl break-words whitespace-pre-wrap"
-                    >
-                      {formattedCell}
-                    </TableCell>
-                  );
-                })}
+                {row.map((cell, j) => (
+                  <TableCell 
+                    key={j} 
+                    className="max-w-xl break-words whitespace-pre-wrap"
+                  >
+                    {formatPromptText(cell)}
+                  </TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>
