@@ -27,27 +27,34 @@ export const DeleteDatasetButton = ({ datasetId, filePath }: DeleteDatasetButton
 
   const { mutate: deleteDataset, isPending } = useMutation({
     mutationFn: async () => {
-      // If there's a file, delete it first
-      if (filePath) {
-        const { error: storageError } = await supabase.storage
-          .from('datasets')
-          .remove([filePath])
+      try {
+        // If there's a file, delete it first
+        if (filePath) {
+          const { error: storageError } = await supabase.storage
+            .from('datasets')
+            .remove([filePath])
 
-        if (storageError) {
-          console.error("Storage error:", storageError)
-          throw new Error("Failed to delete dataset file")
+          if (storageError) {
+            console.error("Storage error:", storageError)
+            throw new Error("Failed to delete dataset file")
+          }
         }
-      }
 
-      // Then delete the dataset record
-      const { error: deleteError } = await supabase
-        .from('datasets')
-        .delete()
-        .eq('id', datasetId)
+        // Then delete the dataset record
+        const { error: deleteError } = await supabase
+          .from('datasets')
+          .delete()
+          .eq('id', datasetId)
 
-      if (deleteError) {
-        console.error("Database error:", deleteError)
-        throw new Error("Failed to delete dataset record")
+        if (deleteError) {
+          console.error("Database error:", deleteError)
+          throw new Error("Failed to delete dataset record")
+        }
+
+        return { success: true }
+      } catch (error: any) {
+        console.error("Delete error:", error)
+        throw new Error(error.message || "Failed to delete dataset")
       }
     },
     onSuccess: () => {
@@ -84,7 +91,10 @@ export const DeleteDatasetButton = ({ datasetId, filePath }: DeleteDatasetButton
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => deleteDataset()}
+            onClick={(e) => {
+              e.preventDefault()
+              deleteDataset()
+            }}
             className="bg-destructive hover:bg-destructive/90"
             disabled={isPending}
           >
