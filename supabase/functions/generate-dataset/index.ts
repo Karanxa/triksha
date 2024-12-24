@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { augmentPrompts } from './promptAugmenter.ts'
-import { testPromptsWithModel } from './modelTester.ts'
+import { generateRecipePrompts } from './recipeGenerator.ts'
+import { generateAdversarialPrompts } from './adversarialGenerator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,8 +29,8 @@ serve(async (req) => {
     } = await req.json()
 
     // Validate required fields
-    if (!name || !originalPrompts || !Array.isArray(originalPrompts)) {
-      throw new Error('Invalid input: name and originalPrompts array are required')
+    if (!name) {
+      throw new Error('Invalid input: name is required')
     }
 
     const supabase = createClient(
@@ -47,7 +48,26 @@ serve(async (req) => {
 
     if (userError || !user) throw userError || new Error('User not found')
 
-    // Get user's API key only if OpenAI enhancement is enabled
+    // Generate prompts based on method
+    let generatedPrompts: string[] = []
+    
+    if (method === 'manual') {
+      generatedPrompts = originalPrompts
+    } else if (method === 'recipe') {
+      console.log('Generating recipe prompts:', { recipe, targetModel, numSamples });
+      generatedPrompts = await generateRecipePrompts({
+        recipe,
+        targetModel,
+        numSamples: parseInt(numSamples)
+      })
+    } else if (method === 'adversarial') {
+      generatedPrompts = await generateAdversarialPrompts(
+        adversarialConfig,
+        parseInt(numSamples)
+      )
+    }
+
+    // Use original prompts if OpenAI is disabled, otherwise enhance them
     let apiKey = undefined
     if (useOpenAI) {
       const { data: profile } = await supabase
@@ -62,12 +82,11 @@ serve(async (req) => {
       apiKey = profile.api_keys.openai
     }
 
-    // Use original prompts if OpenAI is disabled, otherwise enhance them
     const augmentedPrompts = useOpenAI && apiKey
-      ? await augmentPrompts(originalPrompts, fingerprintResults, apiKey)
-      : originalPrompts
+      ? await augmentPrompts(generatedPrompts, fingerprintResults, apiKey)
+      : generatedPrompts
 
-    // Create CSV content with only prompt and category columns
+    // Create CSV content
     const csvContent = 'prompt,category\n' +
       augmentedPrompts.map((prompt: string) => {
         return `"${prompt.replace(/"/g, '""')}","${method}"`
