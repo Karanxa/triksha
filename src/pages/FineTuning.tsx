@@ -14,7 +14,6 @@ export const FineTuning = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Check authentication status when component mounts
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
@@ -61,7 +60,6 @@ export const FineTuning = () => {
     }
   }
 
-  // Show loading state while checking session
   if (session === undefined) {
     return (
       <div className="container py-8 flex items-center justify-center">
@@ -71,18 +69,21 @@ export const FineTuning = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
-      <div className="container py-8 space-y-8">
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
-          <div className="relative p-6 md:p-8 rounded-lg glass-card">
-            <div className="flex items-center gap-3 mb-3">
+    <div className="min-h-screen bg-[#0D1117] relative">
+      {/* Background dot pattern */}
+      <div className="absolute inset-0 [background-size:24px_24px] bg-dot-pattern opacity-25 pointer-events-none" />
+      
+      <div className="container py-8 space-y-8 relative">
+        <div className="relative">
+          <div className="absolute inset-0 bg-hero-gradient rounded-lg" />
+          <div className="relative p-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+            <div className="flex items-center gap-3 mb-4">
               <Settings className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl md:text-3xl font-bold text-white">
+              <h1 className="text-3xl font-bold text-white">
                 Fine-Tuning
               </h1>
             </div>
-            <p className="text-white/80 text-lg max-w-2xl">
+            <p className="text-white/80 text-lg max-w-2xl leading-relaxed">
               Fine-tune language models with your custom datasets and parameters. Monitor training progress and manage your fine-tuning jobs.
             </p>
           </div>
@@ -90,11 +91,17 @@ export const FineTuning = () => {
         
         <Tabs defaultValue="generate" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 max-w-[400px] p-1 bg-white/5 backdrop-blur-sm">
-            <TabsTrigger value="generate" className="flex items-center gap-2 data-[state=active]:bg-white/10">
+            <TabsTrigger 
+              value="generate" 
+              className="flex items-center gap-2 data-[state=active]:bg-white/10"
+            >
               <Settings className="h-4 w-4" />
               Generate Script
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-white/10">
+            <TabsTrigger 
+              value="history" 
+              className="flex items-center gap-2 data-[state=active]:bg-white/10"
+            >
               <History className="h-4 w-4" />
               Job History
             </TabsTrigger>
@@ -109,9 +116,6 @@ export const FineTuning = () => {
           </TabsContent>
         </Tabs>
       </div>
-      
-      {/* Background Pattern */}
-      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
   )
 }

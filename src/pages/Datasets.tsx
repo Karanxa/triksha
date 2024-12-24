@@ -6,18 +6,21 @@ import { Database, FileSpreadsheet, Plus } from "lucide-react"
 
 const Datasets = () => {
   return (
-    <div className="min-h-screen bg-[#0D1117]">
-      <div className="container py-8 space-y-8">
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
-          <div className="relative p-6 md:p-8 rounded-lg glass-card">
-            <div className="flex items-center gap-3 mb-3">
+    <div className="min-h-screen bg-[#0D1117] relative">
+      {/* Background dot pattern */}
+      <div className="absolute inset-0 [background-size:24px_24px] bg-dot-pattern opacity-25 pointer-events-none" />
+      
+      <div className="container py-8 space-y-8 relative">
+        <div className="relative">
+          <div className="absolute inset-0 bg-hero-gradient rounded-lg" />
+          <div className="relative p-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
+            <div className="flex items-center gap-3 mb-4">
               <Database className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl md:text-3xl font-bold text-white">
+              <h1 className="text-3xl font-bold text-white">
                 Datasets
               </h1>
             </div>
-            <p className="text-white/80 text-lg max-w-2xl">
+            <p className="text-white/80 text-lg max-w-2xl leading-relaxed">
               Manage and explore datasets for LLM testing and fine-tuning. Create, analyze, and share datasets to improve your models.
             </p>
           </div>
@@ -25,15 +28,24 @@ const Datasets = () => {
         
         <Tabs defaultValue="dashboard" className="space-y-8">
           <TabsList className="grid w-full grid-cols-3 max-w-[600px] p-1 bg-white/5 backdrop-blur-sm">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2 data-[state=active]:bg-white/10">
+            <TabsTrigger 
+              value="dashboard" 
+              className="flex items-center gap-2 data-[state=active]:bg-white/10"
+            >
               <Database className="h-4 w-4" />
               My Datasets
             </TabsTrigger>
-            <TabsTrigger value="existing" className="flex items-center gap-2 data-[state=active]:bg-white/10">
+            <TabsTrigger 
+              value="existing" 
+              className="flex items-center gap-2 data-[state=active]:bg-white/10"
+            >
               <FileSpreadsheet className="h-4 w-4" />
               Public Datasets
             </TabsTrigger>
-            <TabsTrigger value="create" className="flex items-center gap-2 data-[state=active]:bg-white/10">
+            <TabsTrigger 
+              value="create" 
+              className="flex items-center gap-2 data-[state=active]:bg-white/10"
+            >
               <Plus className="h-4 w-4" />
               Create Dataset
             </TabsTrigger>
@@ -52,9 +64,6 @@ const Datasets = () => {
           </TabsContent>
         </Tabs>
       </div>
-      
-      {/* Background Pattern */}
-      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
   )
 }
