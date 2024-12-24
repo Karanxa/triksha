@@ -1,25 +1,36 @@
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BasicParameters } from "@/components/fine-tuning/BasicParameters"
+import { BasicParameters, type BasicParameterValues } from "./components/BasicParameters"
 import { ModelSelect } from "./components/ModelSelect"
 import { DatasetSelect } from "./components/DatasetSelect"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useSession } from "@supabase/auth-helpers-react"
 import { Loader2 } from "lucide-react"
 
 export const CreateFineTuningJob = () => {
   const { toast } = useToast()
+  const session = useSession()
   const [isGenerating, setIsGenerating] = useState(false)
   const [model, setModel] = useState("")
   const [datasetId, setDatasetId] = useState("")
-  const [parameters, setParameters] = useState({
+  const [parameters, setParameters] = useState<BasicParameterValues>({
     epochs: 3,
     batchSize: 32,
     learningRate: 0.0001
   })
 
   const handleSubmit = async () => {
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to create a fine-tuning job"
+      })
+      return
+    }
+
     if (!model) {
       toast({
         variant: "destructive",
@@ -35,6 +46,7 @@ export const CreateFineTuningJob = () => {
       const { error } = await supabase
         .from('fine_tuning_jobs')
         .insert({
+          user_id: session.user.id,
           model,
           dataset_id: datasetId || null,
           parameters,
