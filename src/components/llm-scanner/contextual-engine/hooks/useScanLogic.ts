@@ -52,7 +52,11 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         setCurrentDatasetPromptIndex(i);
         const prompt = prompts[i];
         
-        addMessage({ role: 'user', content: prompt });
+        // Add the dataset prompt as a user message
+        addMessage({ 
+          role: 'user', 
+          content: prompt.trim() // Ensure the prompt is clean
+        });
 
         const result = await processDatasetPrompt(
           config.provider,
@@ -62,7 +66,11 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         );
 
         if (result.success && result.response) {
-          addMessage({ role: 'assistant', content: result.response });
+          // Add the model's response as an assistant message
+          addMessage({ 
+            role: 'assistant', 
+            content: result.response.trim() // Ensure the response is clean
+          });
         }
       }
 
