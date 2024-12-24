@@ -153,12 +153,20 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         if (scanError) throw scanError;
         setScanId(scanData.id);
 
+        // Add initial system message and first question
         setMessages([
           {
             role: 'system',
             content: `Starting contextual analysis for ${config.model} - Fingerprinting Phase`
+          },
+          {
+            role: 'user',
+            content: FINGERPRINTING_QUESTIONS[0]
           }
         ]);
+        
+        // Process the first question immediately
+        await processNextQuestion(config.provider, config.model);
         
         return scanData.id;
       } catch (error) {
