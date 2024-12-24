@@ -29,6 +29,7 @@ export const ScanForm = () => {
   const [isRecurring, setIsRecurring] = useState(false);
   const [qps, setQPS] = useState(5);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [scanProgress, setScanProgress] = useState(0);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint>({
     url: '',
@@ -92,6 +93,40 @@ export const ScanForm = () => {
     setResult: setScanResult,
     setScanId: setCurrentScanId
   });
+
+  const onFormSubmit = async () => {
+    const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+
+    if (promptsToSubmit.length === 0) {
+      toast.error("Please enter at least one prompt");
+      return;
+    }
+
+    if (!provider) {
+      toast.error("Please select a provider");
+      return;
+    }
+
+    if (promptsToSubmit.length > 100000) {
+      toast.error("Maximum batch size is 100,000 prompts");
+      return;
+    }
+
+    if (promptsToSubmit.length > 1000) {
+      toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
+    }
+
+    await handleSubmit({
+      provider,
+      customEndpoint,
+      prompts: promptsToSubmit,
+      category,
+      label,
+      schedule,
+      isRecurring,
+      qps: Math.min(qps, 50)
+    });
+  };
 
   return (
     <div className="space-y-6">
