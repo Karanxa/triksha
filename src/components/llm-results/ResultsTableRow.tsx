@@ -60,22 +60,33 @@ interface ResultsTableRowProps {
   onHide: (scanId: string) => void;
 }
 
+interface ScanResponse {
+  prompt?: string;
+  model_response?: string;
+  response?: string;
+  raw_response?: any;
+  model?: string;
+}
+
 export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRowProps) => {
   const results = scan.results || {};
-  const responses = results.responses || [];
-  const firstResponse = responses[0] || {};
+  const responses = (results.responses || []) as ScanResponse[];
   
-  // Extract values, ensuring we handle both single and batch scan formats
-  const modelResponse = results.model_response || firstResponse.model_response || 'No response available';
-  const prompt = results.prompt || firstResponse.prompt || 'No prompt available';
-  const rawResponse = results.raw_response || firstResponse.raw_response;
-  const model = results.model || firstResponse.model || 'Unknown Model';
-  
+  // If it's a single scan, create a single response object
+  if (!responses.length && (results.prompt || results.model_response)) {
+    responses.push({
+      prompt: results.prompt,
+      model_response: results.model_response,
+      raw_response: results.raw_response,
+      model: results.model
+    });
+  }
+
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();
 
   // Format verbose Ollama data if available
-  const formatVerboseData = () => {
+  const formatVerboseData = (rawResponse: any) => {
     if (rawResponse?.request && rawResponse?.response) {
       return JSON.stringify({
         request: rawResponse.request,
@@ -85,99 +96,97 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
     return JSON.stringify(rawResponse, null, 2);
   };
 
-  // If this is a batch scan, format all responses for display
-  const formatBatchResponses = () => {
-    if (responses.length > 0) {
-      return responses.map((response: any) => ({
-        prompt: response.prompt,
-        response: response.model_response,
-        model: response.model
-      }));
-    }
-    return [{
-      prompt,
-      response: modelResponse,
-      model
-    }];
-  };
-
-  const batchResponses = formatBatchResponses();
-
   return (
-    <TableRow>
-      <TableCell>{formatScanType(scan.scan_type)}</TableCell>
-      <TableCell>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger className="cursor-default">
-              {dateOnly}
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{fullDateTime}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="cursor-default">
-          {model}
-        </Badge>
-      </TableCell>
-      <TableCell className="border-l">
-        <div className="space-y-2">
-          {batchResponses.map((response, index) => (
-            <TruncatedCell
-              key={index}
-              content={response.prompt}
-              onContentClick={() => onContentClick("Prompt", response.prompt)}
-            />
-          ))}
-        </div>
-      </TableCell>
-      <TableCell>
-        <div className="space-y-2">
-          {batchResponses.map((response, index) => (
-            <TruncatedCell
-              key={index}
-              content={response.response}
-              onContentClick={() => onContentClick("Response", response.response)}
-            />
-          ))}
-        </div>
-      </TableCell>
-      <TableCell className="w-[100px] text-center">
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() => onContentClick("Raw Data", formatVerboseData())}
-          >
-            <FileJson className="h-4 w-4" />
-          </Button>
-          {model.toLowerCase().includes('ollama') && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => onContentClick("Verbose Ollama Details", formatVerboseData())}
-            >
-              <Terminal className="h-4 w-4" />
-            </Button>
+    <>
+      {responses.map((response, index) => (
+        <TableRow key={`${scan.id}-${index}`}>
+          {index === 0 && (
+            <>
+              <TableCell>{formatScanType(scan.scan_type)}</TableCell>
+              <TableCell>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger className="cursor-default">
+                      {dateOnly}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{fullDateTime}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="cursor-default">
+                  {response.model || results.model || 'Unknown Model'}
+                </Badge>
+              </TableCell>
+            </>
           )}
-        </div>
-      </TableCell>
-      <TableCell className="border-l">
-        <CategoryBadge category={scan.category || 'Uncategorized'} />
-      </TableCell>
-      <TableCell>
-        <VulnerabilityStatus isVulnerable={scan.is_vulnerable} />
-      </TableCell>
-      <TableCell>
-        <div className="flex items-center">
-          <HideButton scanId={scan.id} onHide={onHide} />
-        </div>
-      </TableCell>
-    </TableRow>
+          {index !== 0 && (
+            <>
+              <TableCell />
+              <TableCell />
+              <TableCell />
+            </>
+          )}
+          <TableCell className="border-l">
+            <TruncatedCell
+              content={response.prompt || 'No prompt available'}
+              onContentClick={() => onContentClick("Prompt", response.prompt || 'No prompt available')}
+            />
+          </TableCell>
+          <TableCell>
+            <TruncatedCell
+              content={response.model_response || response.response || 'No response available'}
+              onContentClick={() => onContentClick("Response", response.model_response || response.response || 'No response available')}
+            />
+          </TableCell>
+          <TableCell className="w-[100px] text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => onContentClick("Raw Data", formatVerboseData(response.raw_response))}
+              >
+                <FileJson className="h-4 w-4" />
+              </Button>
+              {(response.model || results.model || '').toLowerCase().includes('ollama') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => onContentClick("Verbose Ollama Details", formatVerboseData(response.raw_response))}
+                >
+                  <Terminal className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </TableCell>
+          {index === 0 && (
+            <>
+              <TableCell className="border-l">
+                <CategoryBadge category={scan.category || 'Uncategorized'} />
+              </TableCell>
+              <TableCell>
+                <VulnerabilityStatus isVulnerable={scan.is_vulnerable} />
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center">
+                  <HideButton scanId={scan.id} onHide={onHide} />
+                </div>
+              </TableCell>
+            </>
+          )}
+          {index !== 0 && (
+            <>
+              <TableCell />
+              <TableCell />
+              <TableCell />
+            </>
+          )}
+        </TableRow>
+      ))}
+    </>
   );
 };
