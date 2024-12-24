@@ -7,7 +7,7 @@ import { Shield, History } from "lucide-react";
 
 const LLMScanner = () => {
   return (
-    <div className="container py-4 md:py-8 px-4 md:px-8">
+    <div className="container py-4 md:py-8">
       {/* Hero Section */}
       <div className="relative mb-8">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 rounded-lg" />
@@ -31,7 +31,7 @@ const LLMScanner = () => {
         </div>
       </div>
       
-      <Card className="w-full max-w-3xl mx-auto border border-border/50 shadow-lg">
+      <Card className="w-full mx-auto border border-border/50 shadow-lg">
         <CardContent className="p-6">
           <Tabs defaultValue="basic" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50">
