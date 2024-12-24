@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CSVUpload } from "../CSVUpload";
 import { DatasetSelector } from "../DatasetSelector";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BatchScanDatasetProps {
   prompts: string[];
@@ -12,6 +13,51 @@ interface BatchScanDatasetProps {
 
 export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps) => {
   const [selectedDataset, setSelectedDataset] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const loadDatasetPrompts = async (datasetId: string) => {
+    try {
+      setIsLoading(true);
+      console.log('Loading prompts from dataset:', datasetId);
+      
+      const { data: dataset, error } = await supabase
+        .from('datasets')
+        .select('*')
+        .eq('id', datasetId)
+        .single();
+
+      if (error) throw error;
+
+      if (!dataset.file_path) {
+        throw new Error('Dataset file path not found');
+      }
+
+      // Download the dataset file
+      const { data: fileData, error: downloadError } = await supabase
+        .storage
+        .from('datasets')
+        .download(dataset.file_path);
+
+      if (downloadError) throw downloadError;
+
+      // Read the file content
+      const text = await fileData.text();
+      const lines = text.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      console.log(`Loaded ${lines.length} prompts from dataset`);
+      onPromptsExtracted(lines);
+      toast.success(`Loaded ${lines.length} prompts from dataset`);
+
+    } catch (error) {
+      console.error('Error loading dataset:', error);
+      toast.error('Failed to load dataset prompts');
+      onPromptsExtracted([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDatasetSelect = async (datasetId: string) => {
     try {
@@ -19,7 +65,9 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
       
       if (datasetId) {
         console.log('Dataset selected:', datasetId);
-        onPromptsExtracted([]); // Clear existing prompts before loading new ones
+        await loadDatasetPrompts(datasetId);
+      } else {
+        onPromptsExtracted([]);
       }
     } catch (error) {
       console.error('Error selecting dataset:', error);
@@ -51,7 +99,9 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
             </TabsContent>
           </Tabs>
 
-          {prompts.length > 0 && (
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading prompts...</p>
+          ) : prompts.length > 0 && (
             <p className="text-sm text-muted-foreground">
               {prompts.length} prompts loaded
             </p>
