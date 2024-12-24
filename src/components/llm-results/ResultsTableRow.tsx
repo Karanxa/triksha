@@ -78,7 +78,7 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
   if (scan.scan_type === 'batch_scan') {
     // For batch scans, get the first response from the responses array
     const responses = results.responses || [];
-    const firstResponse = responses[0] || {};
+    const firstResponse = responses[0] as ScanResponse || {};
     modelResponse = firstResponse.model_response;
     prompt = firstResponse.prompt;
     rawResponse = firstResponse.raw_response;
