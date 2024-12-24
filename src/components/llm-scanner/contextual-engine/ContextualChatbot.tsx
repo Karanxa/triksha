@@ -36,12 +36,7 @@ export const ContextualChatbot = ({
   useEffect(() => {
     // Only proceed if scan is started, not loading, not paused, and there's no pending question
     if (isStarted && !isLoading && !isPaused && !pendingQuestion && currentStep < questions.length) {
-      console.log('Setting up next question timer. isPaused:', isPaused);
-      const timer = setTimeout(() => {
-        console.log('Timer fired. isPaused:', isPaused);
-        askNextQuestion(config, isPaused);
-      }, 1500);
-      return () => clearTimeout(timer);
+      askNextQuestion(config, isPaused);
     }
   }, [currentStep, isLoading, isStarted, isPaused, pendingQuestion, config, questions.length]);
 

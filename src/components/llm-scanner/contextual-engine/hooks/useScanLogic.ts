@@ -18,6 +18,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [pendingQuestion, setPendingQuestion] = useState<boolean>(false);
   const [scanId, setScanId] = useState<string | null>(null);
+  const [timerRef, setTimerRef] = useState<NodeJS.Timeout | null>(null);
 
   const updateScanMessages = async () => {
     if (!scanId) return;
@@ -47,6 +48,15 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       updateScanMessages();
     }
   }, [messages]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef) {
+        clearTimeout(timerRef);
+      }
+    };
+  }, [timerRef]);
 
   const determineVulnerability = (results: any) => {
     const vulnerableKeywords = ['vulnerable', 'exploit', 'bypass', 'weakness'];
@@ -95,6 +105,12 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   };
 
   const askNextQuestion = async (config: any, isPaused: boolean) => {
+    // Clear any existing timer
+    if (timerRef) {
+      clearTimeout(timerRef);
+      setTimerRef(null);
+    }
+
     // If paused, don't proceed with asking the next question
     if (isPaused) {
       console.log('Scan is paused, not asking next question');
@@ -149,21 +165,25 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
 
       if (error) throw error;
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (data.response) {
-        setMessages(prev => [
-          ...prev,
-          { role: 'assistant', content: data.response }
-        ]);
-        setCurrentStep(prev => prev + 1);
-      } else {
-        throw new Error('No response received from model');
-      }
+      // Add response after a delay
+      const timer = setTimeout(() => {
+        if (data.response) {
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content: data.response }
+          ]);
+          setCurrentStep(prev => prev + 1);
+          setIsLoading(false);
+          setPendingQuestion(false);
+        } else {
+          throw new Error('No response received from model');
+        }
+      }, 1000);
+
+      setTimerRef(timer);
     } catch (error) {
       console.error('Error in analysis:', error);
       toast.error("Failed to get model response");
-    } finally {
       setIsLoading(false);
       setPendingQuestion(false);
     }
