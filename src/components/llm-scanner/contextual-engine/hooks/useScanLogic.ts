@@ -9,6 +9,7 @@ import { useDatasetProcessing } from './useDatasetProcessing';
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [scanId, setScanId] = useState<string | null>(null);
   
   const {
     messages,
@@ -29,6 +30,51 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     setCurrentDatasetPromptIndex,
     loadDatasetPrompts
   } = useDatasetProcessing();
+
+  const storeContextualScan = async (
+    config: ScanConfig,
+    fingerprintResults: any,
+    isVulnerable: boolean | null = null
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (!scanId) {
+        // Create new scan record
+        const { data, error } = await supabase
+          .from('contextual_scans')
+          .insert({
+            user_id: user.id,
+            provider: config.provider,
+            model: config.model,
+            messages: messages,
+            is_vulnerable: isVulnerable,
+            fingerprint_results: fingerprintResults,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setScanId(data.id);
+      } else {
+        // Update existing scan
+        const { error } = await supabase
+          .from('contextual_scans')
+          .update({
+            messages: messages,
+            is_vulnerable: isVulnerable,
+            fingerprint_results: fingerprintResults,
+          })
+          .eq('id', scanId);
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error storing contextual scan:', error);
+      toast.error('Failed to store scan results');
+    }
+  };
 
   const augmentPrompt = async (prompt: string, fingerprint: any) => {
     try {
@@ -72,7 +118,6 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       const augmentedPrompt = await augmentPrompt(prompt, fingerprintResults);
       augmentedPrompts.push(augmentedPrompt);
       
-      // Only add the augmented prompt as a message
       addMessage({ role: 'user', content: augmentedPrompt });
     }
 
@@ -84,7 +129,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     return augmentedPrompts;
   };
 
-  const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any, augmentedPrompts: string[]) => {
+  const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any, augmentedPrompts: string[], isPaused: boolean) => {
     try {
       transitionToPhase('redteaming');
       
@@ -97,11 +142,17 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         content: `Starting red teaming analysis with ${augmentedPrompts.length} prompts...`
       });
 
+      let vulnerabilityDetected = false;
+
       for (let i = 0; i < augmentedPrompts.length; i++) {
+        if (isPaused) {
+          console.log('Red teaming phase paused');
+          return;
+        }
+
         setCurrentDatasetPromptIndex(i);
         const prompt = augmentedPrompts[i];
         
-        // Add the prompt as a user message
         addMessage({ role: 'user', content: prompt });
 
         const result = await processDatasetPrompt(
@@ -112,15 +163,25 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         );
 
         if (result.success && result.response) {
-          // Add the model's response
           addMessage({ role: 'assistant', content: result.response });
+          
+          // Check if any response indicates vulnerability
+          if (result.isVulnerable) {
+            vulnerabilityDetected = true;
+          }
         }
+
+        // Store progress after each prompt
+        await storeContextualScan(config, fingerprintResults, vulnerabilityDetected);
       }
 
       addMessage({
         role: 'system',
         content: 'Red teaming analysis completed.'
       });
+
+      // Final update with vulnerability status
+      await storeContextualScan(config, fingerprintResults, vulnerabilityDetected);
     } catch (error) {
       console.error('Error in red teaming phase:', error);
       toast.error('Failed to complete red teaming phase');
@@ -155,6 +216,9 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           safety: messages[10]?.content || ''
         };
         
+        // Store initial fingerprint results
+        await storeContextualScan(config, fingerprintResults);
+        
         if (onFingerprint) {
           onFingerprint(fingerprintResults);
         }
@@ -165,7 +229,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         
         const augmentedPrompts = await augmentDatasetPrompts(prompts, fingerprintResults);
         
-        await startRedTeamingPhase(config, fingerprintResults, augmentedPrompts);
+        await startRedTeamingPhase(config, fingerprintResults, augmentedPrompts, false);
       }
       return true;
     }
