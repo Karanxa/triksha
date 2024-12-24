@@ -98,9 +98,9 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
             {data.map((row, i) => (
               <TableRow key={i}>
                 {row.map((cell, j) => {
-                  // Format the prompt column if it exists
-                  const isPromptColumn = headers[j].toLowerCase() === 'prompt'
-                  const formattedCell = isPromptColumn ? formatPromptText(cell) : cell
+                  // Format only the prompt column
+                  const isPromptColumn = headers[j].toLowerCase() === 'prompt';
+                  const formattedCell = isPromptColumn ? formatPromptText(cell) : cell;
                   
                   return (
                     <TableCell 
@@ -109,7 +109,7 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
                     >
                       {formattedCell}
                     </TableCell>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
