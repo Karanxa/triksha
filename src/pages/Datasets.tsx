@@ -1,8 +1,10 @@
 import { Database, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from "@/components/PageHeader";
 import { DatasetsDashboard } from "@/components/datasets/DatasetsDashboard";
+import { ExistingDatasets } from "@/components/datasets/ExistingDatasets";
 
 const Datasets = () => {
   return (
@@ -23,7 +25,20 @@ const Datasets = () => {
       />
       
       <Card className="w-full mx-auto border border-border/50 shadow-lg">
-        <DatasetsDashboard />
+        <Tabs defaultValue="your-datasets" className="w-full p-6">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="your-datasets">Your Datasets</TabsTrigger>
+            <TabsTrigger value="explore">Explore</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="your-datasets">
+            <DatasetsDashboard />
+          </TabsContent>
+
+          <TabsContent value="explore">
+            <ExistingDatasets />
+          </TabsContent>
+        </Tabs>
       </Card>
 
       {/* Background Pattern */}
