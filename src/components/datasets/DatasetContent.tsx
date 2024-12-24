@@ -67,19 +67,12 @@ const parseCSVLine = (line: string): string[] => {
 
 const parseCSVContent = (rawText: string) => {
   const lines = rawText.split(/\r?\n/).filter(line => line.trim())
-  
-  // Parse headers and data
   const headers = parseCSVLine(lines[0])
-  console.log('CSV Headers:', headers)
   
-  // Process all rows after headers
-  const data = lines.slice(1).map(line => {
-    const values = parseCSVLine(line)
-    console.log('Processing row:', values)
-    return values
-  }).filter(row => row.some(cell => cell.trim().length > 0)) // Filter out completely empty rows
+  const data = lines.slice(1)
+    .map(line => parseCSVLine(line))
+    .filter(row => row.length === headers.length)
   
-  console.log('Total rows processed:', data.length)
   return { headers, data }
 }
 
@@ -104,14 +97,20 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
           <TableBody>
             {data.map((row, i) => (
               <TableRow key={i}>
-                {row.map((cell, j) => (
-                  <TableCell 
-                    key={j} 
-                    className="max-w-xl break-words whitespace-pre-wrap"
-                  >
-                    {formatPromptText(cell)}
-                  </TableCell>
-                ))}
+                {row.map((cell, j) => {
+                  // Format the prompt column if it exists
+                  const isPromptColumn = headers[j].toLowerCase() === 'prompt'
+                  const formattedCell = isPromptColumn ? formatPromptText(cell) : cell
+                  
+                  return (
+                    <TableCell 
+                      key={j} 
+                      className="max-w-xl break-words whitespace-pre-wrap"
+                    >
+                      {formattedCell}
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             ))}
           </TableBody>

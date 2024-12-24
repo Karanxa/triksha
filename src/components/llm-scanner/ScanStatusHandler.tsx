@@ -21,7 +21,7 @@ export const ScanStatusHandler = ({
   useEffect(() => {
     if (!scanId) return;
 
-    console.log('[ScanStatusHandler] Setting up subscription for scan:', scanId);
+    console.log('Setting up subscription for scan:', scanId);
 
     const subscription = supabase
       .channel(`scan_${scanId}`)
@@ -34,31 +34,21 @@ export const ScanStatusHandler = ({
           filter: `id=eq.${scanId}`,
         },
         (payload) => {
-          console.log('[ScanStatusHandler] Received update for scan:', {
-            status: payload.new.status,
-            progress: payload.new.results?.progress,
-            responses: payload.new.results?.responses?.length
-          });
+          console.log('Received update for scan:', payload);
 
           if (payload.new.status === 'processing') {
             const progress = payload.new.results?.progress || 0;
             onProgressUpdate(progress);
-            if (payload.new.results?.responses) {
-              onResultUpdate(payload.new.results.responses);
-            }
           } else if (payload.new.status === 'completed') {
             onProgressUpdate(100);
-            if (scanType === 'batch') {
-              console.log('[ScanStatusHandler] Batch scan completed');
+            if (scanType === 'batch_scan') {
               toast.success('Batch scan completed! View results in the Results page.');
               navigate('/llm-results');
             } else {
-              console.log('[ScanStatusHandler] Manual scan completed');
               toast.success('Scan completed successfully');
               onResultUpdate(payload.new.results?.responses || []);
             }
           } else if (payload.new.status === 'failed') {
-            console.error('[ScanStatusHandler] Scan failed:', payload.new.results?.error);
             toast.error('Scan failed: ' + (payload.new.results?.error || 'Unknown error'));
           }
         }
@@ -66,7 +56,7 @@ export const ScanStatusHandler = ({
       .subscribe();
 
     return () => {
-      console.log('[ScanStatusHandler] Cleaning up subscription for scan:', scanId);
+      console.log('Cleaning up subscription for scan:', scanId);
       subscription.unsubscribe();
     };
   }, [scanId, scanType, navigate, onProgressUpdate, onResultUpdate]);

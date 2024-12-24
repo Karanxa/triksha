@@ -2,7 +2,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, FileJson, Terminal } from "lucide-react";
-import { LLMScan, ScanResponse } from "./types";
+import { LLMScan } from "./types";
 import {
   Tooltip,
   TooltipContent,
@@ -61,35 +61,11 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRowProps) => {
-  const results = scan.results as {
-    responses?: ScanResponse[];
-    model_response?: string;
-    prompt?: string;
-    raw_response?: any;
-    model?: string;
-  } || {};
-  
-  // Extract data based on scan type
-  let modelResponse: string | undefined,
-      prompt: string | undefined,
-      rawResponse: any,
-      model: string;
-  
-  if (scan.scan_type === 'batch_scan') {
-    // For batch scans, get the first response from the responses array
-    const responses = results.responses || [];
-    const firstResponse = responses[0] as ScanResponse || {};
-    modelResponse = firstResponse.model_response;
-    prompt = firstResponse.prompt;
-    rawResponse = firstResponse.raw_response;
-    model = firstResponse.model || results.model || 'Unknown Model';
-  } else {
-    // For manual scans and others
-    modelResponse = results.model_response;
-    prompt = results.prompt;
-    rawResponse = results.raw_response;
-    model = results.model || 'Unknown Model';
-  }
+  const results = scan.results || {};
+  const modelResponse = results.model_response || results.responses?.[0]?.model_response;
+  const prompt = results.prompt || results.responses?.[0]?.prompt;
+  const rawResponse = results.raw_response || results.responses?.[0]?.raw_response;
+  const model = results.model || 'Unknown Model';
   
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
   const fullDateTime = new Date(scan.created_at).toLocaleString();

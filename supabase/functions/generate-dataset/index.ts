@@ -67,10 +67,10 @@ serve(async (req) => {
       ? await augmentPrompts(originalPrompts, fingerprintResults, apiKey)
       : originalPrompts
 
-    // Create CSV content with only prompt column
-    const csvContent = 'prompt\n' +
+    // Create CSV content with only prompt and category columns
+    const csvContent = 'prompt,category\n' +
       augmentedPrompts.map((prompt: string) => {
-        return `"${prompt.replace(/"/g, '""')}"`
+        return `"${prompt.replace(/"/g, '""')}","${method}"`
       }).join('\n')
 
     // Upload to storage
@@ -107,12 +107,6 @@ serve(async (req) => {
       .single()
 
     if (datasetError) throw datasetError
-
-    console.log('Dataset created successfully:', {
-      id: dataset.id,
-      name: dataset.name,
-      promptCount: augmentedPrompts.length
-    })
 
     return new Response(
       JSON.stringify({ 
