@@ -67,19 +67,19 @@ const parseCSVLine = (line: string): string[] => {
 
 const parseCSVContent = (rawText: string) => {
   const lines = rawText.split(/\r?\n/).filter(line => line.trim())
+  
+  // Parse headers and data
   const headers = parseCSVLine(lines[0])
+  console.log('CSV Headers:', headers)
   
-  // Skip the first row since it's just column titles
-  const data = lines.slice(1)
-    .map(line => {
-      const values = parseCSVLine(line)
-      return values.filter(Boolean) // Filter out empty values
-    })
-    .filter(row => row.length > 0)
+  // Process all rows after headers
+  const data = lines.slice(1).map(line => {
+    const values = parseCSVLine(line)
+    console.log('Processing row:', values)
+    return values
+  }).filter(row => row.some(cell => cell.trim().length > 0)) // Filter out completely empty rows
   
-  console.log('Headers:', headers)
-  console.log('Number of valid rows:', data.length)
-  
+  console.log('Total rows processed:', data.length)
   return { headers, data }
 }
 
