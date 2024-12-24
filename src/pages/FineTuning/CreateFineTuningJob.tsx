@@ -16,9 +16,17 @@ export const CreateFineTuningJob = () => {
   const [model, setModel] = useState("")
   const [datasetId, setDatasetId] = useState("")
   const [parameters, setParameters] = useState<BasicParameterValues>({
-    epochs: 3,
-    batchSize: 32,
-    learningRate: 0.0001
+    learningRate: "0.0001",
+    batchSize: "32",
+    epochs: "3",
+    warmupSteps: "500",
+    weightDecay: "0.01",
+    optimizer: "adamw",
+    scheduler: "linear",
+    maxSteps: "1000",
+    evaluationStrategy: "steps",
+    saveStrategy: "steps",
+    randomSeed: "42"
   })
 
   const handleSubmit = async () => {
