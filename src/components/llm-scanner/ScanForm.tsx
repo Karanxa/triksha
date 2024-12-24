@@ -216,31 +216,32 @@ export const ScanForm = () => {
             }} 
           />
 
-        <ScanStatusHandler
-          scanId={currentScanId}
-          scanType={scanType}
-          onProgressUpdate={setScanProgress}
-          onResultUpdate={setScanResult}
-        />
+          <ScanStatusHandler
+            scanId={currentScanId}
+            scanType={scanType}
+            onProgressUpdate={setScanProgress}
+            onResultUpdate={setScanResult}
+          />
 
-        {scanType === "manual" && scanResult && (
-          <Card className="border-border/50 mt-8">
-            <CardContent className="p-6">
-              <ScanResults result={scanResult} />
-            </CardContent>
-          </Card>
-        )}
+          {scanType === "manual" && scanResult && (
+            <Card className="border-border/50 mt-8">
+              <CardContent className="p-6">
+                <ScanResults result={scanResult} />
+              </CardContent>
+            </Card>
+          )}
 
-        {scanType === "batch" && scanResult && (
-          <div className="mt-8 flex justify-center">
-            <Button 
-              onClick={() => navigate('/llm-results')}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              View Results
-            </Button>
-          </div>
-        )}
+          {scanType === "batch" && scanResult && (
+            <div className="mt-8 flex justify-center">
+              <Button 
+                onClick={() => navigate('/llm-results')}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                View Results
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
