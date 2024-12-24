@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 import { 
   Shield, 
-  Bot, 
-  Brain,
-  Settings
+  Search,
+  List,
 } from "lucide-react";
 import ToolCard from "@/components/ToolCard";
 
@@ -41,20 +40,20 @@ const Index = () => {
           />
         </Link>
 
-        <Link to="/datasets">
+        <Link to="/llm-results">
           <ToolCard
-            icon={Bot}
-            title="Datasets"
-            description="Manage and create datasets for testing and fine-tuning"
+            icon={List}
+            title="Scan Results"
+            description="View and analyze detailed security scan results"
             className="h-full"
           />
         </Link>
 
-        <Link to="/augment-prompt">
+        <Link to="/llm-scanner?tab=contextual">
           <ToolCard
-            icon={Brain}
-            title="Prompt Augmentation"
-            description="Enhance your prompts with security-focused improvements"
+            icon={Search}
+            title="Contextual Analysis"
+            description="Deep dive into model behavior with contextual testing"
             className="h-full"
           />
         </Link>
@@ -65,7 +64,7 @@ const Index = () => {
         <h2 className="text-2xl font-semibold text-center">Why Choose Geraid?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="p-6 rounded-xl border bg-card/50 backdrop-blur-sm space-y-4">
-            <Bot className="w-8 h-8 text-primary mx-auto" />
+            <Shield className="w-8 h-8 text-primary mx-auto" />
             <h3 className="font-medium text-center">Comprehensive Testing</h3>
             <p className="text-sm text-muted-foreground text-center">
               Test your LLMs against a wide range of security vulnerabilities
@@ -73,18 +72,18 @@ const Index = () => {
           </div>
           
           <div className="p-6 rounded-xl border bg-card/50 backdrop-blur-sm space-y-4">
-            <Brain className="w-8 h-8 text-primary mx-auto" />
-            <h3 className="font-medium text-center">Advanced Analysis</h3>
+            <List className="w-8 h-8 text-primary mx-auto" />
+            <h3 className="font-medium text-center">Detailed Results</h3>
             <p className="text-sm text-muted-foreground text-center">
-              Get detailed insights into potential security risks
+              Get in-depth analysis of scan results and vulnerabilities
             </p>
           </div>
           
           <div className="p-6 rounded-xl border bg-card/50 backdrop-blur-sm space-y-4">
-            <Settings className="w-8 h-8 text-primary mx-auto" />
-            <h3 className="font-medium text-center">Model Enhancement</h3>
+            <Search className="w-8 h-8 text-primary mx-auto" />
+            <h3 className="font-medium text-center">Contextual Analysis</h3>
             <p className="text-sm text-muted-foreground text-center">
-              Improve your models with security-focused fine-tuning
+              Understand model behavior through contextual testing
             </p>
           </div>
         </div>
