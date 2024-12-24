@@ -5,6 +5,7 @@ import { ScanConfig } from "../types/scan";
 import { useFingerprinting } from './useFingerprinting';
 import { usePhaseTransition } from './usePhaseTransition';
 import { useMessageHandler } from './useMessageHandler';
+import { Message } from "../types/phases";
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,12 +26,12 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
 
     try {
       const question = FINGERPRINTING_QUESTIONS[currentStep];
-      addMessage({ role: 'user', content: question });
+      addMessage({ role: 'user' as const, content: question });
 
       const result = await processQuestion(config.provider, config.model, question);
       
       if (result.success && result.response) {
-        addMessage({ role: 'assistant', content: result.response });
+        addMessage({ role: 'assistant' as const, content: result.response });
         setCurrentStep(prev => prev + 1);
 
         // Check if fingerprinting phase is complete
@@ -50,7 +51,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           setPhaseComplete(true);
           const updatedMessages = transitionToNextPhase(messages, 'fingerprinting');
           if (updatedMessages) {
-            setMessages(updatedMessages);
+            setMessages(updatedMessages as Message[]);
           }
         }
       }
