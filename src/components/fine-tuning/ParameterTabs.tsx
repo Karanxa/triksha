@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BasicParameters } from "./BasicParameters"
+import { BasicParameters, type BasicParameterValues } from "./BasicParameters"
 import { AdvancedParameters } from "./AdvancedParameters"
 
 interface ParameterTabsProps {
@@ -81,6 +81,34 @@ export const ParameterTabs = ({
   hardwareAcceleration,
   setHardwareAcceleration,
 }: ParameterTabsProps) => {
+  const basicParameterValues: BasicParameterValues = {
+    learningRate,
+    batchSize,
+    epochs,
+    warmupSteps,
+    weightDecay,
+    optimizer,
+    scheduler,
+    maxSteps,
+    evaluationStrategy,
+    saveStrategy,
+    randomSeed
+  };
+
+  const handleBasicParametersChange = (newValues: BasicParameterValues) => {
+    setLearningRate(newValues.learningRate);
+    setBatchSize(newValues.batchSize);
+    setEpochs(newValues.epochs);
+    setWarmupSteps(newValues.warmupSteps);
+    setWeightDecay(newValues.weightDecay);
+    setOptimizer(newValues.optimizer);
+    setScheduler(newValues.scheduler);
+    setMaxSteps(newValues.maxSteps);
+    setEvaluationStrategy(newValues.evaluationStrategy);
+    setSaveStrategy(newValues.saveStrategy);
+    setRandomSeed(newValues.randomSeed);
+  };
+
   return (
     <Tabs defaultValue="basic" className="w-full">
       <TabsList className="grid w-full grid-cols-2">
@@ -90,28 +118,8 @@ export const ParameterTabs = ({
 
       <TabsContent value="basic" className="space-y-4 pt-4">
         <BasicParameters
-          learningRate={learningRate}
-          setLearningRate={setLearningRate}
-          batchSize={batchSize}
-          setBatchSize={setBatchSize}
-          epochs={epochs}
-          setEpochs={setEpochs}
-          warmupSteps={warmupSteps}
-          setWarmupSteps={setWarmupSteps}
-          weightDecay={weightDecay}
-          setWeightDecay={setWeightDecay}
-          optimizer={optimizer}
-          setOptimizer={setOptimizer}
-          scheduler={scheduler}
-          setScheduler={setScheduler}
-          maxSteps={maxSteps}
-          setMaxSteps={setMaxSteps}
-          evaluationStrategy={evaluationStrategy}
-          setEvaluationStrategy={setEvaluationStrategy}
-          saveStrategy={saveStrategy}
-          setSaveStrategy={setSaveStrategy}
-          randomSeed={randomSeed}
-          setRandomSeed={setRandomSeed}
+          value={basicParameterValues}
+          onChange={handleBasicParametersChange}
         />
       </TabsContent>
 

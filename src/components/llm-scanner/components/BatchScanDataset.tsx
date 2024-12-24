@@ -11,11 +11,9 @@ interface BatchScanDatasetProps {
 
 export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps) => {
   const [selectedDataset, setSelectedDataset] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleDatasetSelect = async (datasetId: string) => {
     try {
-      setIsLoading(true);
       setSelectedDataset(datasetId);
       
       if (datasetId) {
@@ -25,8 +23,6 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
     } catch (error) {
       console.error('Error selecting dataset:', error);
       toast.error('Failed to load dataset');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -41,7 +37,6 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
           <CSVUpload 
             onPromptsExtracted={onPromptsExtracted}
             selectedDataset={selectedDataset}
-            isLoading={isLoading}
           />
           {prompts.length > 0 && (
             <p className="text-sm text-muted-foreground">
