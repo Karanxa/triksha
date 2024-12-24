@@ -19,9 +19,9 @@ export async function processBatchWithProgress(
   let processedCount = 0;
   let failedCount = 0;
   
-  // Calculate delay between requests based on QPS
-  const delayMs = Math.ceil(1000 / qps); // Convert QPS to milliseconds between requests
-  console.log(`Processing with QPS: ${qps}, delay between requests: ${delayMs}ms`);
+  // Process prompts in batches based on QPS
+  const batchSize = Math.min(qps, totalPrompts);
+  console.log(`Processing with QPS: ${qps}, batch size: ${batchSize}`);
   
   const updateProgress = async (progress: number, failed: number) => {
     await supabase
@@ -40,33 +40,41 @@ export async function processBatchWithProgress(
   };
 
   try {
-    // Process prompts with rate limiting
-    for (let i = 0; i < prompts.length; i++) {
-      const prompt = prompts[i];
-      console.log(`Processing prompt ${i + 1}/${prompts.length}`);
-      
-      try {
-        const result = await processPrompt(prompt);
-        results.push(result);
-        processedCount++;
-      } catch (error) {
-        console.error(`Error processing prompt: ${prompt}`, error);
-        failedCount++;
-        processedCount++;
-        results.push({
-          error: error instanceof Error ? error.message : 'Unknown error occurred',
-          prompt,
-          status: 'failed'
-        });
-      }
+    // Process prompts in batches
+    for (let i = 0; i < prompts.length; i += batchSize) {
+      const batch = prompts.slice(i, Math.min(i + batchSize, prompts.length));
+      console.log(`Processing batch ${i / batchSize + 1}, size: ${batch.length}`);
 
+      // Process batch concurrently
+      const batchResults = await Promise.all(
+        batch.map(async (prompt) => {
+          try {
+            const result = await processPrompt(prompt);
+            processedCount++;
+            return result;
+          } catch (error) {
+            console.error(`Error processing prompt: ${prompt}`, error);
+            failedCount++;
+            processedCount++;
+            return {
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+              prompt,
+              status: 'failed'
+            };
+          }
+        })
+      );
+
+      results.push(...batchResults);
+      
       const progress = Math.floor((processedCount / totalPrompts) * 100);
       await updateProgress(progress, failedCount);
 
-      // Apply rate limiting delay if not the last prompt
-      if (i < prompts.length - 1) {
-        console.log(`Waiting ${delayMs}ms before next request (QPS: ${qps})`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+      // If this isn't the last batch, wait for 1 second before processing the next batch
+      // This helps prevent rate limiting while maintaining desired QPS
+      if (i + batchSize < prompts.length) {
+        console.log('Waiting 1 second before processing next batch...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
