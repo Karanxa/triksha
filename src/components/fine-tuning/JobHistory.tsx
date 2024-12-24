@@ -17,22 +17,28 @@ export const JobHistory = () => {
   const { data: jobs, isLoading } = useQuery({
     queryKey: ['fine-tuning-jobs'],
     queryFn: async () => {
+      console.log('Fetching fine-tuning jobs...')
       const { data, error } = await supabase
         .from('fine_tuning_jobs')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Error fetching jobs:', error)
+        throw error
+      }
+
+      console.log('Fetched jobs:', data)
+      return data
     }
-  });
+  })
 
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    );
+    )
   }
 
   if (!jobs?.length) {
@@ -40,7 +46,7 @@ export const JobHistory = () => {
       <Card className="p-12 text-center text-muted-foreground">
         No fine-tuning jobs found
       </Card>
-    );
+    )
   }
 
   return (
@@ -91,5 +97,5 @@ export const JobHistory = () => {
         </Card>
       ))}
     </div>
-  );
-};
+  )
+}

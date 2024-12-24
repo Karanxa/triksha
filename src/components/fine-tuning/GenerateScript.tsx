@@ -10,6 +10,7 @@ import { generateScript } from "./utils/scriptGenerator"
 import { useToast } from "@/hooks/use-toast"
 import { useSession } from "@supabase/auth-helpers-react"
 import { supabase } from "@/integrations/supabase/client"
+import { GeneratedScript } from "./GeneratedScript"
 
 interface GenerateScriptProps {
   onScriptGenerated: (script: string, model: string, parameters: any) => void;
@@ -22,6 +23,7 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
   const [datasetId, setDatasetId] = useState("")
   const [taskType, setTaskType] = useState("")
   const [scriptLanguage, setScriptLanguage] = useState("python")
+  const [generatedScript, setGeneratedScript] = useState<string | null>(null)
   
   // Basic parameters state
   const [learningRate, setLearningRate] = useState("0.0001")
@@ -45,6 +47,15 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
   const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
   const handleGenerateScript = async () => {
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to generate scripts"
+      })
+      return
+    }
+
     if (!model || !taskType) {
       toast({
         variant: "destructive",
@@ -75,6 +86,8 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
     }
 
     try {
+      console.log("Generating script with parameters:", { model, taskType, parameters })
+      
       const script = generateScript({
         model,
         datasetId,
@@ -83,6 +96,28 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
         parameters
       })
 
+      setGeneratedScript(script)
+
+      // Store in database
+      const { data, error } = await supabase
+        .from('fine_tuning_jobs')
+        .insert({
+          user_id: session.user.id,
+          model,
+          dataset_id: datasetId || null,
+          status: 'script_generated',
+          parameters,
+          script_content: script
+        })
+        .select()
+
+      if (error) {
+        console.error('Error saving script:', error)
+        throw error
+      }
+
+      console.log('Fine-tuning job created:', data)
+
       onScriptGenerated(script, model, parameters)
 
       toast({
@@ -90,12 +125,12 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
         description: "You can view it in the Job History tab"
       })
 
-    } catch (error) {
-      console.error('Error generating script:', error)
+    } catch (error: any) {
+      console.error('Error in script generation:', error)
       toast({
         variant: "destructive",
         title: "Failed to generate script",
-        description: "Please try again"
+        description: error.message || "Please try again"
       })
     }
   }
@@ -157,6 +192,10 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
           </Button>
         </div>
       </Card>
+
+      {generatedScript && (
+        <GeneratedScript script={generatedScript} />
+      )}
     </div>
   )
 }
