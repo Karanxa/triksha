@@ -55,7 +55,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       return response.data.augmentedPrompt;
     } catch (error) {
       console.error('Error augmenting prompt:', error);
-      return prompt; // Return original prompt if augmentation fails
+      return prompt;
     }
   };
 
@@ -72,9 +72,8 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       const augmentedPrompt = await augmentPrompt(prompt, fingerprintResults);
       augmentedPrompts.push(augmentedPrompt);
       
-      // Add messages to show the augmentation process
-      addMessage({ role: 'user', content: `Original: ${prompt}` });
-      addMessage({ role: 'assistant', content: `Augmented: ${augmentedPrompt}` });
+      // Only add the augmented prompt as a message
+      addMessage({ role: 'user', content: augmentedPrompt });
     }
 
     addMessage({
@@ -95,19 +94,15 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
 
       addMessage({
         role: 'system',
-        content: `Starting red teaming analysis with ${augmentedPrompts.length} augmented prompts...`
+        content: `Starting red teaming analysis with ${augmentedPrompts.length} prompts...`
       });
 
-      // Process each augmented prompt
       for (let i = 0; i < augmentedPrompts.length; i++) {
         setCurrentDatasetPromptIndex(i);
         const prompt = augmentedPrompts[i];
         
-        // Add the augmented prompt as a user message
-        addMessage({ 
-          role: 'user', 
-          content: prompt.trim()
-        });
+        // Add the prompt as a user message
+        addMessage({ role: 'user', content: prompt });
 
         const result = await processDatasetPrompt(
           config.provider,
@@ -117,11 +112,8 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         );
 
         if (result.success && result.response) {
-          // Add the model's response as an assistant message
-          addMessage({ 
-            role: 'assistant', 
-            content: result.response.trim()
-          });
+          // Add the model's response
+          addMessage({ role: 'assistant', content: result.response });
         }
       }
 
