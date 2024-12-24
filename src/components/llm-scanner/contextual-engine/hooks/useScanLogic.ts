@@ -76,7 +76,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     }
   };
 
-  const processNextQuestion = useCallback(async (provider: string, model: string) => {
+  const processNextQuestion = useCallback(async (config: ScanConfig) => {
     if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
       return false;
     }
@@ -87,7 +87,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     
     addMessage({ role: 'user', content: question });
 
-    const result = await processQuestion(provider, model, question);
+    const result = await processQuestion(config.provider, config.model, question);
     if (result.success && result.response) {
       addMessage({ role: 'assistant', content: result.response });
       
@@ -110,8 +110,8 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           onFingerprint(fingerprintResults);
         }
 
-        // Start red teaming phase
-        await startRedTeamingPhase({ provider, model }, fingerprintResults);
+        // Start red teaming phase with complete config
+        await startRedTeamingPhase(config, fingerprintResults);
       }
       return true;
     }
@@ -138,7 +138,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
           content: `Starting contextual analysis for ${config.model}`
         });
 
-        await processNextQuestion(config.provider, config.model);
+        await processNextQuestion(config);
       } catch (error) {
         console.error('Error starting scan:', error);
         toast.error("Failed to start scan");
@@ -153,7 +153,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       
       try {
         if (phase === 'fingerprinting') {
-          await processNextQuestion(config.provider, config.model);
+          await processNextQuestion(config);
         }
       } catch (error) {
         console.error('Error asking next question:', error);
