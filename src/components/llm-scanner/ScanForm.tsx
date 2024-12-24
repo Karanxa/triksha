@@ -45,8 +45,14 @@ export const ScanForm = () => {
   const { handleSubmit, isScanning } = useScanSubmit({
     onSubmit: async (data) => {
       try {
-        console.log('Starting scan with data:', data);
-        setScanProgress(0); // Reset progress
+        console.log('[ScanForm] Starting scan with data:', {
+          scanType,
+          promptCount: scanType === "manual" ? 1 : prompts.length,
+          provider,
+          category
+        });
+        
+        setScanProgress(0);
         
         const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
         if (promptsToSubmit.length === 0) {
@@ -59,7 +65,7 @@ export const ScanForm = () => {
           return;
         }
 
-        console.log('Submitting scan with prompts:', promptsToSubmit.length);
+        console.log('[ScanForm] Submitting scan with prompts:', promptsToSubmit.length);
         toast.info(`Processing ${promptsToSubmit.length} prompts...`);
 
         const result = await handleSubmit({
@@ -81,6 +87,7 @@ export const ScanForm = () => {
           setIsRecurring(false);
           
           if (scanType === "batch") {
+            console.log('[ScanForm] Batch scan completed, navigating to results');
             toast.success('Batch scan started successfully');
             navigate('/llm-results');
           }
@@ -88,7 +95,7 @@ export const ScanForm = () => {
           return result;
         }
       } catch (error) {
-        console.error("Scan submission error:", error);
+        console.error("[ScanForm] Scan submission error:", error);
         toast.error("Failed to start scan: " + (error instanceof Error ? error.message : "Unknown error"));
       }
     },
@@ -98,7 +105,7 @@ export const ScanForm = () => {
 
   const onFormSubmit = async () => {
     const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
-    console.log('Form submission - prompts:', promptsToSubmit.length);
+    console.log('[ScanForm] Form submission - prompts:', promptsToSubmit.length);
 
     if (promptsToSubmit.length === 0) {
       toast.error("Please enter at least one prompt");
@@ -119,7 +126,7 @@ export const ScanForm = () => {
       toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
     }
 
-    console.log('Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
+    console.log('[ScanForm] Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
     setScanProgress(0);
 
     await handleSubmit({
