@@ -22,7 +22,8 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const { loadDatasetPrompts, processPrompt } = useRedTeaming();
 
   const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any) => {
-    console.log('Starting red teaming phase');
+    console.log('Starting red teaming phase with config:', config);
+    
     setState(prev => ({
       ...prev,
       phase: 'redteaming',
@@ -36,19 +37,61 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     }));
 
     try {
+      console.log('Loading dataset prompts for ID:', config.datasetId);
       const prompts = await loadDatasetPrompts(config.datasetId);
+      console.log('Loaded prompts:', prompts);
+
+      if (!prompts || prompts.length === 0) {
+        throw new Error('No prompts found in dataset');
+      }
+
       setState(prev => ({
         ...prev,
-        datasetPrompts: prompts
+        datasetPrompts: prompts,
+        currentDatasetPromptIndex: 0
       }));
 
-      if (prompts.length > 0) {
-        await processNextQuestion(config.provider, config.model);
-      }
+      // Start processing the first dataset prompt
+      await processNextDatasetPrompt(config.provider, config.model);
     } catch (error) {
       console.error('Error starting red teaming phase:', error);
       toast.error("Failed to start red teaming phase");
     }
+  };
+
+  const processNextDatasetPrompt = async (provider: string, model: string) => {
+    const { datasetPrompts, currentDatasetPromptIndex } = state;
+    
+    if (currentDatasetPromptIndex >= datasetPrompts.length) {
+      console.log('Red teaming phase completed');
+      toast.success("Red teaming phase completed");
+      return false;
+    }
+
+    const prompt = datasetPrompts[currentDatasetPromptIndex];
+    setState(prev => ({
+      ...prev,
+      isLoading: true,
+      messages: [...prev.messages, { role: 'user', content: prompt }]
+    }));
+
+    try {
+      const result = await processPrompt(provider, model, prompt);
+      if (result.success && result.response) {
+        setState(prev => ({
+          ...prev,
+          messages: [...prev.messages, { role: 'assistant', content: result.response }],
+          currentDatasetPromptIndex: prev.currentDatasetPromptIndex + 1,
+          isLoading: false
+        }));
+        return true;
+      }
+    } catch (error) {
+      console.error('Error processing dataset prompt:', error);
+    }
+
+    setState(prev => ({ ...prev, isLoading: false }));
+    return false;
   };
 
   const processNextQuestion = useCallback(async (provider: string, model: string) => {
@@ -97,32 +140,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       return false;
     } else {
       // Red teaming phase
-      if (state.currentDatasetPromptIndex >= state.datasetPrompts.length) {
-        toast.success("Red teaming phase completed");
-        return false;
-      }
-
-      const prompt = state.datasetPrompts[state.currentDatasetPromptIndex];
-      setState(prev => ({
-        ...prev,
-        isLoading: true,
-        messages: [...prev.messages, { role: 'user', content: prompt }]
-      }));
-
-      const result = await processPrompt(provider, model, prompt);
-
-      if (result.success && result.response) {
-        setState(prev => ({
-          ...prev,
-          messages: [...prev.messages, { role: 'assistant', content: result.response }],
-          currentDatasetPromptIndex: prev.currentDatasetPromptIndex + 1,
-          isLoading: false
-        }));
-        return true;
-      }
-
-      setState(prev => ({ ...prev, isLoading: false }));
-      return false;
+      return processNextDatasetPrompt(provider, model);
     }
   }, [state, onFingerprint, FINGERPRINTING_QUESTIONS]);
 

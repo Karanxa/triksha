@@ -7,6 +7,8 @@ export const useRedTeaming = () => {
 
   const loadDatasetPrompts = async (datasetId: string): Promise<string[]> => {
     try {
+      console.log('Loading dataset with ID:', datasetId);
+      
       // Fetch dataset content
       const { data: dataset, error: datasetError } = await supabase
         .from('datasets')
@@ -36,12 +38,15 @@ export const useRedTeaming = () => {
       }
 
       // Extract prompts
-      return lines.slice(1)
+      const prompts = lines.slice(1)
         .map(line => {
           const values = line.split(',');
           return values[promptIndex]?.trim() || '';
         })
         .filter(Boolean);
+
+      console.log(`Loaded ${prompts.length} prompts from dataset`);
+      return prompts;
     } catch (error) {
       console.error('Error loading dataset:', error);
       toast.error('Failed to load dataset prompts');
