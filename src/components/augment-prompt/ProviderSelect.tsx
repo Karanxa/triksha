@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 interface ProviderSelectProps {
   value: string;
@@ -76,8 +77,12 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="openai">OpenAI</SelectItem>
-            <SelectItem value="anthropic">Anthropic</SelectItem>
-            <SelectItem value="google">Google AI</SelectItem>
+            <SelectItem value="anthropic" disabled className="flex items-center justify-between">
+              Anthropic <Badge variant="outline" className="ml-2">Coming Soon</Badge>
+            </SelectItem>
+            <SelectItem value="google" disabled className="flex items-center justify-between">
+              Google AI <Badge variant="outline" className="ml-2">Coming Soon</Badge>
+            </SelectItem>
             <SelectItem value="custom">Custom Endpoint</SelectItem>
           </SelectContent>
         </Select>
