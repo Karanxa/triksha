@@ -39,13 +39,13 @@ const LLMScanner = () => {
                 value="basic"
                 className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
               >
-                Custom Scan
+                Static Scan
               </TabsTrigger>
               <TabsTrigger 
                 value="contextual"
                 className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
               >
-                Contextual Analysis
+                Contextual Scan
               </TabsTrigger>
             </TabsList>
 
