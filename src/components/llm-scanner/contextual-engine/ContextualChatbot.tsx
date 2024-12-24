@@ -38,7 +38,7 @@ export const ContextualChatbot = ({
     if (isStarted && !isLoading && !isPaused && !pendingQuestion && currentStep < questions.length) {
       askNextQuestion(config, isPaused);
     }
-  }, [currentStep, isLoading, isStarted, isPaused, pendingQuestion, config, questions.length]);
+  }, [currentStep, isLoading, isStarted, isPaused, pendingQuestion, config, questions.length, askNextQuestion]);
 
   if (!isStarted) {
     return <ModelSelector onStart={handleStart} />;

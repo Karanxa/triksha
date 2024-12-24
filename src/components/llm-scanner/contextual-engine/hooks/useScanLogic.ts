@@ -58,6 +58,17 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     }
   };
 
+  const askNextQuestion = async (config: any, isPaused: boolean) => {
+    if (isPaused) return;
+    
+    try {
+      await processNextQuestion(config.provider, config.model);
+    } catch (error) {
+      console.error('Error asking next question:', error);
+      toast.error("Failed to process question");
+    }
+  };
+
   const processNextQuestion = useCallback(async (provider: string, model: string) => {
     if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
       // Process fingerprinting results when all questions are answered
@@ -150,6 +161,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         return null;
       }
     },
-    processNextQuestion
+    processNextQuestion,
+    askNextQuestion
   };
 };
