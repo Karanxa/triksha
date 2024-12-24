@@ -10,7 +10,7 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 250 83% 74%;
+    --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
@@ -25,99 +25,73 @@
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
   }
-
+ 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 250 83% 74%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground min-h-screen relative;
-  }
-  
-  /* Add the polka dot pattern to the body */
-  body::before {
-    content: '';
-    @apply fixed inset-0 w-full h-full pointer-events-none;
-    background-image: radial-gradient(#1c1c1c 1px, transparent 1px);
-    background-size: 16px 16px;
-    opacity: 0.1;
-    z-index: 0;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/40 backdrop-blur-sm border border-white/20 shadow-lg relative z-10;
-  }
-  
-  .primary-gradient {
-    @apply bg-gradient-to-r from-primary to-primary-dark relative z-10;
-  }
-  
-  .secondary-gradient {
-    @apply bg-gradient-to-r from-primary-dark to-primary-darker relative z-10;
-  }
-  
-  .hero-section {
-    @apply bg-hero-gradient backdrop-blur-sm relative z-10;
+    @apply bg-white/5 backdrop-blur-sm;
   }
 
-  /* Add container class to ensure content stays above the pattern */
   .content-container {
     @apply relative z-10;
   }
 
-  /* Add text color utilities for better contrast */
-  .text-on-light {
-    @apply text-gray-900;
+  /* Prose overrides for chat messages */
+  .prose {
+    @apply text-card-foreground;
   }
 
-  .text-on-dark {
-    @apply text-gray-50;
+  .prose strong {
+    @apply text-card-foreground font-semibold;
+  }
+
+  .prose p {
+    @apply mb-4 leading-relaxed;
+  }
+
+  /* Ensure proper spacing for numbered lists */
+  .prose ol {
+    @apply pl-6 space-y-2;
+  }
+
+  .prose ol > li {
+    @apply relative pl-2;
   }
 
   /* Card specific styles to ensure proper contrast */
   .card-content {
-    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50;
+    @apply bg-card text-card-foreground;
   }
-}
-
-/* Supabase Auth UI Overrides */
-.supabase-auth-ui_ui-container {
-  @apply space-y-6;
-}
-
-.supabase-auth-ui_ui-input {
-  @apply bg-background text-foreground border-input !important;
-}
-
-.supabase-auth-ui_ui-button {
-  @apply bg-primary text-primary-foreground hover:bg-primary/90 !important;
-}
-
-.supabase-auth-ui_ui-anchor {
-  @apply text-primary hover:text-primary/90 !important;
 }
