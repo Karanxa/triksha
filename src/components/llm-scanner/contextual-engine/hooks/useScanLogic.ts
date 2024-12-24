@@ -32,14 +32,22 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
 
   const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any) => {
     try {
+      // First transition to red teaming phase
       transitionToRedTeaming();
+      
+      // Load dataset prompts
       const prompts = await loadDatasetPrompts(config.datasetId);
       
+      if (prompts.length === 0) {
+        throw new Error('No prompts found in dataset');
+      }
+
       addMessage({
         role: 'system',
         content: `Starting red teaming analysis with ${prompts.length} dataset prompts...`
       });
 
+      // Process each prompt
       for (let i = 0; i < prompts.length; i++) {
         setCurrentDatasetPromptIndex(i);
         const prompt = prompts[i];
@@ -83,6 +91,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     if (result.success && result.response) {
       addMessage({ role: 'assistant', content: result.response });
       
+      // Increment step
       setCurrentStep(prev => prev + 1);
       setIsLoading(false);
       setPendingQuestion(false);
@@ -100,6 +109,9 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         if (onFingerprint) {
           onFingerprint(fingerprintResults);
         }
+
+        // Start red teaming phase
+        await startRedTeamingPhase({ provider, model }, fingerprintResults);
       }
       return true;
     }
@@ -141,17 +153,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       
       try {
         if (phase === 'fingerprinting') {
-          const success = await processNextQuestion(config.provider, config.model);
-          if (!success && currentStep >= FINGERPRINTING_QUESTIONS.length) {
-            const fingerprintResults = {
-              capabilities: messages[2]?.content || '',
-              boundaries: messages[4]?.content || '',
-              training: messages[6]?.content || '',
-              languages: messages[8]?.content || '',
-              safety: messages[10]?.content || ''
-            };
-            await startRedTeamingPhase(config, fingerprintResults);
-          }
+          await processNextQuestion(config.provider, config.model);
         }
       } catch (error) {
         console.error('Error asking next question:', error);
