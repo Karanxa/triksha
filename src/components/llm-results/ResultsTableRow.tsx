@@ -100,35 +100,24 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
     <>
       {responses.map((response, index) => (
         <TableRow key={`${scan.id}-${index}`}>
-          {index === 0 && (
-            <>
-              <TableCell>{formatScanType(scan.scan_type)}</TableCell>
-              <TableCell>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger className="cursor-default">
-                      {dateOnly}
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{fullDateTime}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="cursor-default">
-                  {response.model || results.model || 'Unknown Model'}
-                </Badge>
-              </TableCell>
-            </>
-          )}
-          {index !== 0 && (
-            <>
-              <TableCell />
-              <TableCell />
-              <TableCell />
-            </>
-          )}
+          <TableCell>{formatScanType(scan.scan_type)}</TableCell>
+          <TableCell>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger className="cursor-default">
+                  {dateOnly}
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{fullDateTime}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </TableCell>
+          <TableCell>
+            <Badge variant="outline" className="cursor-default">
+              {response.model || results.model || 'Unknown Model'}
+            </Badge>
+          </TableCell>
           <TableCell className="border-l">
             <TruncatedCell
               content={response.prompt || 'No prompt available'}
@@ -163,28 +152,17 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
               )}
             </div>
           </TableCell>
-          {index === 0 && (
-            <>
-              <TableCell className="border-l">
-                <CategoryBadge category={scan.category || 'Uncategorized'} />
-              </TableCell>
-              <TableCell>
-                <VulnerabilityStatus isVulnerable={scan.is_vulnerable} />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center">
-                  <HideButton scanId={scan.id} onHide={onHide} />
-                </div>
-              </TableCell>
-            </>
-          )}
-          {index !== 0 && (
-            <>
-              <TableCell />
-              <TableCell />
-              <TableCell />
-            </>
-          )}
+          <TableCell className="border-l">
+            <CategoryBadge category={scan.category || 'Uncategorized'} />
+          </TableCell>
+          <TableCell>
+            <VulnerabilityStatus isVulnerable={scan.is_vulnerable} />
+          </TableCell>
+          <TableCell>
+            <div className="flex items-center">
+              <HideButton scanId={scan.id} onHide={onHide} />
+            </div>
+          </TableCell>
         </TableRow>
       ))}
     </>
