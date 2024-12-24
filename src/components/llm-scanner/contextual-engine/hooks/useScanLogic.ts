@@ -23,26 +23,24 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const startRedTeamingPhase = async (config: ScanConfig, fingerprintResults: any) => {
     console.log('Starting red teaming phase with config:', config);
     
-    setState(prev => ({
-      ...prev,
-      phase: 'redteaming',
-      messages: [
-        ...prev.messages,
-        { 
-          role: 'system', 
-          content: "Fingerprinting phase complete. Starting red teaming phase with dataset prompts." 
-        }
-      ]
-    }));
-
     try {
+      // Load dataset prompts first
       const prompts = await loadDatasetPrompts(config.datasetId);
       if (!prompts || prompts.length === 0) {
         throw new Error('No prompts found in dataset');
       }
 
+      // Add transition messages
       setState(prev => ({
         ...prev,
+        phase: 'redteaming',
+        messages: [
+          ...prev.messages,
+          { 
+            role: 'system', 
+            content: `Fingerprinting phase complete. Starting red teaming phase with ${prompts.length} prompts from the selected dataset.` 
+          }
+        ],
         datasetPrompts: prompts,
         currentDatasetPromptIndex: 0
       }));
@@ -68,7 +66,10 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
     setState(prev => ({
       ...prev,
       isLoading: true,
-      messages: [...prev.messages, { role: 'user', content: prompt }]
+      messages: [...prev.messages, { 
+        role: 'user', 
+        content: `[Dataset Prompt ${currentDatasetPromptIndex + 1}/${datasetPrompts.length}]: ${prompt}` 
+      }]
     }));
 
     try {
@@ -84,6 +85,14 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       }
     } catch (error) {
       console.error('Error processing dataset prompt:', error);
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, { 
+          role: 'system', 
+          content: `Error processing prompt: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        }],
+        isLoading: false
+      }));
     }
 
     setState(prev => ({ ...prev, isLoading: false }));
@@ -151,15 +160,30 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("User not authenticated");
 
-        // Add initial system message
+        // Load dataset prompts first to validate
+        const prompts = await loadDatasetPrompts(config.datasetId);
+        if (!prompts || prompts.length === 0) {
+          throw new Error('No prompts found in dataset');
+        }
+
+        // Add initial system messages
         setState(prev => ({
           ...prev,
           messages: [
             {
               role: 'system',
-              content: `Starting contextual analysis for ${config.model} - Fingerprinting Phase`
+              content: `Starting contextual analysis for ${config.model}`
+            },
+            {
+              role: 'system',
+              content: `Loaded dataset with ${prompts.length} prompts for red teaming phase`
+            },
+            {
+              role: 'system',
+              content: 'Beginning fingerprinting phase...'
             }
-          ]
+          ],
+          datasetPrompts: prompts
         }));
         
         // Process the first question immediately
