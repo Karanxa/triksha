@@ -61,7 +61,13 @@ interface ResultsTableRowProps {
 }
 
 export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRowProps) => {
-  const results = scan.results || {};
+  const results = scan.results as {
+    responses?: ScanResponse[];
+    model_response?: string;
+    prompt?: string;
+    raw_response?: any;
+    model?: string;
+  } || {};
   
   // Extract data based on scan type
   let modelResponse: string | undefined,
@@ -71,18 +77,18 @@ export const ResultsTableRow = ({ scan, onContentClick, onHide }: ResultsTableRo
   
   if (scan.scan_type === 'batch_scan') {
     // For batch scans, get the first response from the responses array
-    const responses = results.responses as ScanResponse[] | undefined;
-    const firstResponse = responses?.[0] || {};
+    const responses = results.responses || [];
+    const firstResponse = responses[0] || {};
     modelResponse = firstResponse.model_response;
     prompt = firstResponse.prompt;
     rawResponse = firstResponse.raw_response;
     model = firstResponse.model || results.model || 'Unknown Model';
   } else {
     // For manual scans and others
-    modelResponse = results.model_response as string | undefined;
-    prompt = results.prompt as string | undefined;
+    modelResponse = results.model_response;
+    prompt = results.prompt;
     rawResponse = results.raw_response;
-    model = (results.model as string) || 'Unknown Model';
+    model = results.model || 'Unknown Model';
   }
   
   const dateOnly = new Date(scan.created_at).toLocaleDateString();
