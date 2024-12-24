@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DatasetPromptResult } from "../types/datasetPrompt";
+import { ApiKeys } from "../types/apiKeys";
 
 export const useRedTeaming = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -19,7 +20,7 @@ export const useRedTeaming = () => {
         .select('api_keys')
         .single();
 
-      const apiKeys = profile?.api_keys as { openai?: string } | null;
+      const apiKeys = profile?.api_keys as ApiKeys | null;
       
       if (!apiKeys?.openai) {
         throw new Error('OpenAI API key not configured');

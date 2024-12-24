@@ -8,6 +8,7 @@ import { useMessageHandler } from './useMessageHandler';
 import { Message } from "../types/phases";
 import { usePromptAugmentation } from './usePromptAugmentation';
 import { useRedTeaming } from './useRedTeaming';
+import { ApiKeys } from "../types/apiKeys";
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -78,17 +79,19 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       setIsLoading(true);
       addSystemMessage('Starting prompt augmentation phase...');
 
-      // Get user's API keys
+      // Get user's API keys with proper typing
       const { data: profile } = await supabase
         .from('profiles')
         .select('api_keys')
         .single();
 
-      if (!profile?.api_keys?.openai) {
+      const apiKeys = profile?.api_keys as ApiKeys | null;
+      
+      if (!apiKeys?.openai) {
         throw new Error('OpenAI API key not found');
       }
 
-      // Get dataset prompts
+      // Get dataset with proper typing
       const { data: dataset } = await supabase
         .from('datasets')
         .select('*')
@@ -99,11 +102,24 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         throw new Error('Dataset not found');
       }
 
+      // Load dataset prompts from storage
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('datasets')
+        .download(dataset.file_path || '');
+
+      if (downloadError || !fileData) {
+        throw new Error('Failed to load dataset file');
+      }
+
+      const text = await fileData.text();
+      const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+      const prompts = lines.slice(1); // Skip header row
+
       // Process dataset prompts with augmentation
       const augmented = await processDatasetPrompts(
-        dataset.prompts || [],
+        prompts,
         fingerprint,
-        profile.api_keys.openai,
+        apiKeys.openai,
         addMessage
       );
 
