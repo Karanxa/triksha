@@ -23,6 +23,7 @@ export const ContextualChatbot = ({
     currentStep,
     pendingQuestion,
     questions,
+    phase,
     startScan,
     askNextQuestion
   } = useScanLogic(onFingerprint);
@@ -34,7 +35,6 @@ export const ContextualChatbot = ({
   };
 
   useEffect(() => {
-    // Only proceed if scan is started, not loading, not paused, and there's no pending question
     if (isStarted && !isLoading && !isPaused && !pendingQuestion && currentStep < questions.length) {
       askNextQuestion(config, isPaused);
     }
@@ -50,6 +50,7 @@ export const ContextualChatbot = ({
       isLoading={isLoading}
       currentStep={currentStep}
       questionsLength={questions.length}
+      phase={phase}
       isPaused={isPaused}
       onPauseResume={onPauseResume}
     />
