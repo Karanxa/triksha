@@ -6,6 +6,9 @@ import { AnalysisProgress } from "./AnalysisProgress";
 import { ModelInteraction } from "./ModelInteraction";
 import { FingerPrintResult } from "@/components/llm-scanner/geraid-engine/types";
 import { ApiKeys } from "@/integrations/supabase/types/common";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle, Fingerprint, ShieldAlert } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DatasetAnalysisProps {
   config: {
@@ -18,7 +21,7 @@ interface DatasetAnalysisProps {
 
 export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) => {
   const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState<'augmenting' | 'testing'>('augmenting');
+  const [phase, setPhase] = useState<'fingerprinting' | 'redteaming'>('fingerprinting');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,10 +40,10 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
 
-        // Initial system message
+        // Initial system message for fingerprinting phase
         setMessages([{
           role: 'system',
-          content: `Starting dataset analysis for ${config.model}`
+          content: `Starting model fingerprinting phase for ${config.model}`
         }]);
 
         // Process dataset with fingerprint results
@@ -55,9 +58,17 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
 
         if (error) throw error;
 
-        // Update messages and progress as prompts are processed
-        setPhase('testing');
+        // Update phase to red teaming
+        setPhase('redteaming');
+        setMessages(prev => [
+          ...prev,
+          { 
+            role: 'system', 
+            content: "Fingerprinting phase complete. Starting red teaming phase with augmented prompts." 
+          }
+        ]);
         
+        // Update messages and progress as prompts are processed
         analysisData.results.forEach((result: any) => {
           setMessages(prev => [
             ...prev,
@@ -78,8 +89,50 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
     analyzeDataset();
   }, [config, fingerprint]);
 
+  const renderPhaseInfo = () => {
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {phase === 'fingerprinting' ? (
+                <>
+                  <Fingerprint className="h-5 w-5 text-blue-500" />
+                  <span className="font-medium">Fingerprinting Phase</span>
+                </>
+              ) : (
+                <>
+                  <ShieldAlert className="h-5 w-5 text-red-500" />
+                  <span className="font-medium">Red Teaming Phase</span>
+                </>
+              )}
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm">
+                  {phase === 'fingerprinting' 
+                    ? "We're analyzing the model's capabilities, boundaries, and safety measures to understand its behavior."
+                    : "Using insights from fingerprinting, we're testing the model with augmented prompts to identify potential vulnerabilities. Please note that results may include false positives due to the early stage of our detection system."}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            {phase === 'fingerprinting'
+              ? "Gathering information about the model's characteristics and limitations..."
+              : "Testing model responses with context-aware prompts based on fingerprinting results..."}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-4">
+      {renderPhaseInfo()}
       <AnalysisProgress progress={progress} phase={phase} />
       <ModelInteraction messages={messages} isLoading={isLoading} />
     </div>
