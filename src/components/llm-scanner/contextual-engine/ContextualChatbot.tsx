@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ModelSelector } from "./ModelSelector";
 import { AnalysisPhase } from "./components/AnalysisPhase";
 import { useScanLogic } from "./hooks/useScanLogic";
+import { ScanPhase } from "./types/phases";
 
 interface ContextualChatbotProps {
   onFingerprint?: (results: any) => void;

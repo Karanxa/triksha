@@ -20,3 +20,9 @@ export interface ScanConfig {
   model: string;
   datasetId: string;
 }
+
+export interface ApiKeys {
+  openai?: string;
+  anthropic?: string;
+  gemini?: string;
+}
