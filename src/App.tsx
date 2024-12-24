@@ -16,7 +16,7 @@ import Login from "@/pages/Login";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="ui-theme" forcedTheme="dark" enableSystem={false}>
+    <ThemeProvider defaultTheme="dark" storageKey="ui-theme">
       <ErrorBoundary>
         <Router>
           <Routes>

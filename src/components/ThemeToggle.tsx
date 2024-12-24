@@ -1,25 +1,23 @@
-import { Moon } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Button } from "./ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useTheme } from "next-themes";
 
 const ThemeToggle = () => {
-  const { toast } = useToast();
-
-  const handleClick = () => {
-    toast({
-      description: "Dark mode is enforced in this application",
-    });
-  };
+  const { theme, setTheme } = useTheme();
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={handleClick}
+      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
       className="w-9 h-9 rounded-full"
     >
-      <Moon className="h-5 w-5" />
-      <span className="sr-only">Theme is locked to dark mode</span>
+      {theme === "light" ? (
+        <Moon className="h-5 w-5" />
+      ) : (
+        <Sun className="h-5 w-5" />
+      )}
+      <span className="sr-only">Toggle theme</span>
     </Button>
   );
 };
