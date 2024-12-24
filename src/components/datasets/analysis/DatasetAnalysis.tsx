@@ -41,10 +41,16 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
         }
 
         // Initial system message for fingerprinting phase
-        setMessages([{
-          role: 'system',
-          content: `Starting model fingerprinting phase for ${config.model}`
-        }]);
+        setMessages([
+          {
+            role: 'system',
+            content: `Starting model fingerprinting phase for ${config.model}`
+          },
+          {
+            role: 'user',
+            content: 'What are your core capabilities and primary functions?'
+          }
+        ]);
 
         // Process dataset with fingerprint results
         const { data: analysisData, error } = await supabase.functions.invoke('process-geraide-scan', {
