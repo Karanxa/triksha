@@ -25,10 +25,10 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#ea384c",
-          dark: "#c4293b",
-          darker: "#a31f2f",
-          light: "#ff6b7d",
+          DEFAULT: "#4F46E5",
+          dark: "#3730A3",
+          darker: "#312E81",
+          light: "#818CF8",
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
@@ -100,8 +100,8 @@ export default {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'hero-gradient': 'linear-gradient(to right, rgba(234, 56, 76, 0.1), rgba(196, 41, 59, 0.1))',
-        'card-gradient': 'linear-gradient(to bottom right, rgba(234, 56, 76, 0.05), rgba(163, 31, 47, 0.05))',
+        'hero-gradient': 'linear-gradient(to right, rgba(79, 70, 229, 0.1), rgba(55, 48, 163, 0.1))',
+        'card-gradient': 'linear-gradient(to bottom right, rgba(79, 70, 229, 0.05), rgba(49, 46, 129, 0.05))',
         'dot-pattern': 'radial-gradient(circle, #1c1c1c 1px, transparent 1px)',
       },
     },
