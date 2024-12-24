@@ -1,93 +1,113 @@
-# Welcome to Geraid
+<div align="center">
+  <img src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=800&q=80" alt="Triksha Banner" width="800"/>
 
-## Project info
+  # Triksha - LLM Security Testing Platform
 
-## Supabase Setup (Required)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+  [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+</div>
+
+## 🚀 Overview
+
+Triksha is a comprehensive platform for testing and enhancing the security of Large Language Models (LLMs). With advanced scanning capabilities, contextual analysis, and customizable security tests, Triksha helps ensure your AI models are robust and secure.
+
+<div align="center">
+  <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80" alt="Features Preview" width="800"/>
+</div>
+
+## ✨ Key Features
+
+- 🔒 **LLM Security Scanning**: Comprehensive security testing for language models
+- 🎯 **Contextual Analysis**: Deep dive into model behavior patterns
+- 📊 **Detailed Results**: In-depth analysis and vulnerability reporting
+- 🔄 **Custom Testing**: Create and manage your own security test suites
+- 📈 **Fine-tuning**: Enhance model security through targeted training
+- 📆 **Scheduled Scans**: Automated security monitoring
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Backend**: Supabase
+- **Containerization**: Docker
+- **Authentication**: Supabase Auth
+
+## 🚦 Getting Started
+
+### Prerequisites
 
 Before running this project, you need to set up your own Supabase project:
 
 1. Create a new Supabase project at [https://supabase.com](https://supabase.com)
-2. Once created, go to Project Settings -> API to find your:
+2. Go to Project Settings -> API to find your:
    - Project URL (VITE_SUPABASE_URL)
    - Project API Key (VITE_SUPABASE_ANON_KEY)
-3. Create a `.env` file in the root directory with these values:
+3. Create a `.env` file in the root directory:
+
 ```sh
 VITE_SUPABASE_URL=your_project_url
 VITE_SUPABASE_ANON_KEY=your_project_anon_key
 ```
 
-## How can I run this project?
+### Installation Options
 
-There are several ways to run this application:
-
-**Using Docker (Recommended)**
-
-1. Make sure you have Docker installed on your machine
-2. Clone this repository
-3. Set up Supabase as described above
-4. Navigate to the project directory
-5. Build and run the Docker container:
+#### 🐳 Using Docker (Recommended)
 
 ```sh
 # Build the Docker image
-docker build -t geraid-app .
+docker build -t triksha-app .
 
 # Run the container
 docker run -p 5173:5173 \
   -e VITE_SUPABASE_URL=your_supabase_url \
   -e VITE_SUPABASE_ANON_KEY=your_supabase_anon_key \
-  geraid-app
+  triksha-app
 ```
 
-6. Open your browser and visit `http://localhost:5173`
-
-**Use your preferred IDE**
+#### 💻 Local Development
 
 Requirements:
-- Node.js & npm - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+- Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Set up Supabase as described in the Supabase Setup section
-# Create a .env file with your Supabase credentials
-
-# Step 4: Install the necessary dependencies
+# Install dependencies
 npm install
 
-# Step 5: Start the development server
+# Start development server
 npm run dev
 ```
 
-## Required Environment Variables
+## 🌐 Deployment
 
-The following environment variables are required to run the application:
-
-- `VITE_SUPABASE_URL`: Your Supabase project URL (found in Project Settings -> API)
-- `VITE_SUPABASE_ANON_KEY`: Your Supabase project's anonymous key (found in Project Settings -> API)
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- Supabase (Backend & Authentication)
-- Docker
-
-## How can I deploy this project?
-
+### Quick Deploy
 Simply open [Lovable](https://lovable.dev/projects/be33e0b7-385f-407c-bc6c-36be439fca6f) and click on Share -> Publish.
 
-## I want to use a custom domain - is that possible?
+### Custom Domain
+While we don't currently support custom domains directly, you can deploy your project using Netlify. Visit our [Custom Domains Documentation](https://docs.lovable.dev/tips-tricks/custom-domain/) for detailed instructions.
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📞 Support
+
+If you have any questions or need help, please open an issue in the repository or contact our support team.
+
+---
+
+<div align="center">
+  Made with ❤️ using <a href="https://lovable.dev">Lovable</a>
+</div>
