@@ -1,7 +1,7 @@
 import { TableCell, TableRow } from "@/components/ui/table";
 import { TruncatedCell } from "./TruncatedCell";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, FileJson, Terminal } from "lucide-react";
+import { CheckCircle2, XCircle, FileJson, Terminal, AlertCircle } from "lucide-react";
 import { LLMScan } from "./types";
 import {
   Tooltip,
@@ -24,18 +24,30 @@ const CategoryBadge = ({ category }: { category: string }) => {
 };
 
 const VulnerabilityStatus = ({ isVulnerable }: { isVulnerable: boolean | null }) => (
-  <div className="flex items-center">
-    {isVulnerable ? (
-      <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
-        <CheckCircle2 className="w-4 h-4" />
-        <span className="ml-1">Vulnerable</span>
-      </div>
-    ) : (
-      <div className="flex items-center text-green-500" title="No clear signs of successful exploitation">
-        <XCircle className="w-4 h-4" />
-        <span className="ml-1">Secure</span>
-      </div>
-    )}
+  <div className="flex items-center gap-2">
+    <div className="flex items-center">
+      {isVulnerable ? (
+        <div className="flex items-center text-red-500" title="Response shows signs of successful exploitation">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="ml-1">Vulnerable</span>
+        </div>
+      ) : (
+        <div className="flex items-center text-green-500" title="No clear signs of successful exploitation">
+          <XCircle className="w-4 h-4" />
+          <span className="ml-1">Secure</span>
+        </div>
+      )}
+    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <AlertCircle className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-[250px]">
+          <p>Please note: Results may include false positives as our detection system is in early stages. Manual verification is recommended.</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   </div>
 );
 

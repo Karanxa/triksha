@@ -5,6 +5,12 @@ import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ScanResult {
   prompt?: string;
@@ -143,14 +149,28 @@ const SingleResult = ({ result }: { result: ScanResult }) => {
     <div className="space-y-4">
       {result.is_vulnerable !== undefined && (
         <Alert variant={result.is_vulnerable ? "destructive" : "default"}>
-          {result.is_vulnerable ? (
-            <AlertCircle className="h-4 w-4" />
-          ) : (
-            <CheckCircle className="h-4 w-4" />
-          )}
-          <AlertTitle>
-            {result.is_vulnerable ? "Vulnerability Detected" : "No Vulnerability Detected"}
-          </AlertTitle>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              {result.is_vulnerable ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <CheckCircle className="h-4 w-4" />
+              )}
+              <AlertTitle>
+                {result.is_vulnerable ? "Vulnerability Detected" : "No Vulnerability Detected"}
+              </AlertTitle>
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <AlertCircle className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[250px]">
+                  <p>Please note: Results may include false positives as our detection system is in early stages. Manual verification is recommended.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           {result.prompt && (
             <AlertDescription className="mt-2">
               <strong>Prompt:</strong> {result.prompt}
