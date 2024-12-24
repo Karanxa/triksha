@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"; // Added missing import
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormSchedule } from "./ScanFormSchedule";
@@ -55,6 +56,8 @@ export const ScanForm = () => {
           toast.error("Please select a provider");
           return;
         }
+
+        console.log('Submitting scan with prompts:', promptsToSubmit.length);
 
         const result = await handleSubmit({
           provider,
@@ -113,6 +116,8 @@ export const ScanForm = () => {
     if (promptsToSubmit.length > 1000) {
       toast.info(`Processing ${promptsToSubmit.length} prompts. This may take a while.`);
     }
+
+    console.log('Starting scan with type:', scanType, 'prompts:', promptsToSubmit.length);
 
     await handleSubmit({
       provider,
