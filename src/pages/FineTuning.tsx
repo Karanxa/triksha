@@ -57,10 +57,8 @@ export const FineTuning = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D1117] relative">
-      <div className="absolute inset-0 [background-size:24px_24px] bg-dot-pattern opacity-25 pointer-events-none" />
-      
-      <div className="container py-8 space-y-8 relative">
+    <div className="min-h-screen bg-[#0D1117]">
+      <div className="container py-8 space-y-8">
         <div className="relative">
           <div className="absolute inset-0 bg-hero-gradient rounded-lg" />
           <div className="relative p-8 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10">
@@ -94,11 +92,11 @@ export const FineTuning = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="generate">
+          <TabsContent value="generate" className="animate-fade-in">
             <CreateFineTuningJob onScriptGenerated={handleScriptGenerated} />
           </TabsContent>
 
-          <TabsContent value="history">
+          <TabsContent value="history" className="animate-fade-in">
             <JobHistory />
           </TabsContent>
         </Tabs>
