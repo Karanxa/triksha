@@ -6,6 +6,7 @@ import { handleGeminiRequest } from "./providers/gemini.ts";
 import { handleOllamaRequest } from "./providers/ollama.ts";
 import { handleCustomEndpoint } from "./customEndpoint.ts";
 import { processAndStoreScanResult } from "./utils/resultProcessor.ts";
+import { processBatchWithProgress } from "./batchProcessor.ts";
 
 export async function processScan(
   scanId: string,
@@ -15,12 +16,14 @@ export async function processScan(
   apiKeys: any,
   supabase: any,
   userId: string,
-  category: string = 'jailbreaking'
+  category: string = 'jailbreaking',
+  qps: number = 5 // Default to 5 QPS if not specified
 ) {
   const [baseProvider] = provider ? provider.split('-') : [null];
   
   console.log('Processing scan with provider:', baseProvider);
   console.log('Initial prompts received:', prompts?.length || 0);
+  console.log('Using QPS:', qps);
 
   if (!Array.isArray(prompts)) {
     console.error('Invalid prompts format:', typeof prompts);
@@ -38,76 +41,42 @@ export async function processScan(
     throw new Error('No valid prompts found after cleaning. Please check your input.');
   }
 
-  const results = [];
-  let processedCount = 0;
-  const totalPrompts = validPrompts.length;
+  // Process prompts using the batch processor with QPS control
+  const results = await processBatchWithProgress(
+    validPrompts,
+    qps,
+    async (prompt) => {
+      try {
+        console.log('Processing prompt:', prompt);
+        
+        // Get response from provider
+        const response = await getProviderResponse(prompt, baseProvider, null, customEndpoint, apiKeys);
+        console.log('Raw provider response received');
+        
+        // Extract readable response and model info
+        const modelResponse = processProviderResponse(response, baseProvider || 'custom');
+        const modelName = extractModelFromResponse(response, baseProvider || 'custom');
+        console.log('Processed response for model:', modelName);
 
-  await supabase
-    .from('llm_scans')
-    .update({
-      status: 'processing',
-      results: {
-        progress: 0,
-        total: totalPrompts,
-        processed: 0
+        // Process and store result
+        return await processAndStoreScanResult(
+          supabase,
+          scanId,
+          userId,
+          prompt,
+          modelResponse,
+          response,
+          baseProvider,
+          modelName,
+          category
+        );
+      } catch (error) {
+        console.error('Error processing prompt:', error);
+        throw error;
       }
-    })
-    .eq('id', scanId);
-
-  for (const prompt of validPrompts) {
-    try {
-      console.log('Processing prompt:', prompt);
-      
-      // Get response from provider
-      const response = await getProviderResponse(prompt, baseProvider, null, customEndpoint, apiKeys);
-      console.log('Raw provider response received');
-      
-      // Extract readable response and model info
-      const modelResponse = processProviderResponse(response, baseProvider || 'custom');
-      const modelName = extractModelFromResponse(response, baseProvider || 'custom');
-      console.log('Processed response for model:', modelName);
-
-      // Process and store result
-      const result = await processAndStoreScanResult(
-        supabase,
-        scanId,
-        userId,
-        prompt,
-        modelResponse,
-        response,
-        baseProvider,
-        modelName,
-        category
-      );
-      
-      results.push(result);
-      
-      processedCount++;
-      const progress = Math.round((processedCount / totalPrompts) * 100);
-      
-      await supabase
-        .from('llm_scans')
-        .update({
-          status: 'processing',
-          results: {
-            progress,
-            responses: results,
-            model: modelName,
-            total: totalPrompts,
-            processed: processedCount
-          }
-        })
-        .eq('id', scanId);
-
-    } catch (error) {
-      console.error('Error processing prompt:', error);
-      results.push({
-        prompt,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        model: 'Unknown Model'
-      });
-    }
-  }
+    },
+    { scanId, supabase, user: userId, baseProvider, model: null, category }
+  );
 
   // Update final scan status with vulnerability summary
   const vulnerableCount = results.filter(r => r.is_vulnerable).length;
@@ -121,8 +90,8 @@ export async function processScan(
       results: {
         responses: results,
         progress: 100,
-        total: totalPrompts,
-        processed: processedCount,
+        total: validPrompts.length,
+        processed: results.length,
         model: results[0]?.model || 'Unknown Model',
         vulnerability_summary: {
           total_scans: results.length,

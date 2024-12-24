@@ -9,7 +9,7 @@ interface ProcessBatchOptions {
 
 export async function processBatchWithProgress(
   prompts: string[],
-  batchSize: number,
+  qps: number,
   processPrompt: (prompt: string) => Promise<any>,
   options: ProcessBatchOptions
 ): Promise<any[]> {
@@ -18,6 +18,10 @@ export async function processBatchWithProgress(
   const totalPrompts = prompts.length;
   let processedCount = 0;
   let failedCount = 0;
+  
+  // Calculate delay between requests based on QPS
+  const delayMs = Math.ceil(1000 / qps); // Convert QPS to milliseconds between requests
+  console.log(`Processing with QPS: ${qps}, delay between requests: ${delayMs}ms`);
   
   const updateProgress = async (progress: number, failed: number) => {
     await supabase
@@ -36,55 +40,33 @@ export async function processBatchWithProgress(
   };
 
   try {
-    // Process prompts in batches
-    for (let i = 0; i < prompts.length; i += batchSize) {
-      const batch = prompts.slice(i, i + batchSize);
-      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(prompts.length / batchSize)}`);
+    // Process prompts with rate limiting
+    for (let i = 0; i < prompts.length; i++) {
+      const prompt = prompts[i];
+      console.log(`Processing prompt ${i + 1}/${prompts.length}`);
       
-      const batchPromises = batch.map(async (prompt) => {
-        try {
-          const result = await processPrompt(prompt);
-          processedCount++;
-          const progress = Math.floor((processedCount / totalPrompts) * 100);
-          await updateProgress(progress, failedCount);
-          return result;
-        } catch (error) {
-          console.error(`Error processing prompt: ${prompt}`, error);
-          failedCount++;
-          processedCount++;
-          const progress = Math.floor((processedCount / totalPrompts) * 100);
-          await updateProgress(progress, failedCount);
-          
-          // Return error result to be stored
-          return {
-            error: error instanceof Error ? error.message : 'Unknown error occurred',
-            prompt,
-            status: 'failed'
-          };
-        }
-      });
+      try {
+        const result = await processPrompt(prompt);
+        results.push(result);
+        processedCount++;
+      } catch (error) {
+        console.error(`Error processing prompt: ${prompt}`, error);
+        failedCount++;
+        processedCount++;
+        results.push({
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
+          prompt,
+          status: 'failed'
+        });
+      }
 
-      // Wait for all promises in the batch to settle
-      const batchResults = await Promise.allSettled(batchPromises);
-      
-      // Process results, including both successful and failed ones
-      const processedResults = batchResults.map(result => {
-        if (result.status === 'fulfilled') {
-          return result.value;
-        } else {
-          failedCount++;
-          return {
-            error: result.reason instanceof Error ? result.reason.message : 'Unknown error occurred',
-            status: 'failed'
-          };
-        }
-      });
-      
-      results.push(...processedResults);
+      const progress = Math.floor((processedCount / totalPrompts) * 100);
+      await updateProgress(progress, failedCount);
 
-      // Add delay between batches to respect rate limits
-      if (i + batchSize < prompts.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      // Apply rate limiting delay if not the last prompt
+      if (i < prompts.length - 1) {
+        console.log(`Waiting ${delayMs}ms before next request (QPS: ${qps})`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
 
