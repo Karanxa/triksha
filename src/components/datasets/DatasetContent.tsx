@@ -70,24 +70,16 @@ const parseCSVContent = (rawText: string) => {
   const headers = parseCSVLine(lines[0])
   
   const data = lines.slice(1)
-    .map((line, index) => {
-      const values = parseCSVLine(line)
-      // Add sequence number as first column
-      return [String(index + 1), ...values]
-    })
-    .filter(row => row.length === headers.length + 1) // +1 for sequence number
+    .map(line => parseCSVLine(line))
+    .filter(row => row.length === headers.length)
   
-  // Add sequence number header
-  const updatedHeaders = ['#', ...headers]
-  
-  return { headers: updatedHeaders, data }
+  return { headers, data }
 }
 
 export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
   if (!content) return null
 
   if (viewType === 'table' && content.type === 'csv') {
-    // Re-parse the raw content to handle multi-line cells properly
     const { headers, data } = parseCSVContent(content.raw)
 
     return (
@@ -107,7 +99,7 @@ export const DatasetContent = ({ viewType, content }: DatasetContentProps) => {
               <TableRow key={i}>
                 {row.map((cell, j) => {
                   // Format the prompt column if it exists
-                  const isPromptColumn = headers[j].toLowerCase().includes('prompt')
+                  const isPromptColumn = headers[j].toLowerCase() === 'prompt'
                   const formattedCell = isPromptColumn ? formatPromptText(cell) : cell
                   
                   return (

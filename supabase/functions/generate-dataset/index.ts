@@ -62,35 +62,15 @@ serve(async (req) => {
       apiKey = profile.api_keys.openai
     }
 
-    // Ensure fingerprint has default values if not provided
-    const safeFingerprint = {
-      capabilities: "",
-      boundaries: "",
-      training: "",
-      languages: "",
-      safety: "",
-      ...fingerprintResults
-    }
-
     // Use original prompts if OpenAI is disabled, otherwise enhance them
     const augmentedPrompts = useOpenAI && apiKey
-      ? await augmentPrompts(originalPrompts, safeFingerprint, apiKey)
+      ? await augmentPrompts(originalPrompts, fingerprintResults, apiKey)
       : originalPrompts
 
-    // Test augmented prompts with target model
-    const testResults = await testPromptsWithModel(
-      augmentedPrompts,
-      targetModel?.split('-')[0],
-      targetModel?.split('-')[1],
-      apiKey
-    )
-
-    // Create CSV content
-    const csvContent = 'original_prompt,augmented_prompt,model_response,error\n' +
-      originalPrompts.map((original: string, index: number) => {
-        const result = testResults[index]
-        const augmented = augmentedPrompts[index]
-        return `"${original.replace(/"/g, '""')}","${augmented.replace(/"/g, '""')}","${(result.response || '').replace(/"/g, '""')}","${(result.error || '').replace(/"/g, '""')}"`
+    // Create CSV content with only prompt and category columns
+    const csvContent = 'prompt,category\n' +
+      augmentedPrompts.map((prompt: string) => {
+        return `"${prompt.replace(/"/g, '""')}","${method}"`
       }).join('\n')
 
     // Upload to storage
@@ -116,10 +96,7 @@ serve(async (req) => {
         file_path: filePath,
         category: method,
         metadata: {
-          fingerprintResults: useOpenAI ? safeFingerprint : null,
-          originalCount: originalPrompts.length,
-          augmentedCount: augmentedPrompts.length,
-          testResults: testResults.map((r: any) => ({ error: r.error || null })),
+          promptCount: augmentedPrompts.length,
           useOpenAI,
           method,
           recipe,
@@ -134,8 +111,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        dataset,
-        testResults 
+        dataset
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
