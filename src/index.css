@@ -63,14 +63,14 @@
     @apply fixed inset-0 w-full h-full pointer-events-none;
     background-image: radial-gradient(#1c1c1c 1px, transparent 1px);
     background-size: 16px 16px;
-    opacity: 0.25;
+    opacity: 0.1;
     z-index: 0;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg relative z-10;
+    @apply bg-white/40 backdrop-blur-sm border border-white/20 shadow-lg relative z-10;
   }
   
   .primary-gradient {
