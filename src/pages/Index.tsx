@@ -14,7 +14,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-3xl" />
         <div className="relative px-6 py-12 sm:py-20 text-center space-y-6 max-w-4xl mx-auto">
           <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Welcome to Geraid
+            Welcome to Triksha
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Your comprehensive platform for LLM security testing and enhancement
@@ -61,7 +61,7 @@ const Index = () => {
 
       {/* Features Section */}
       <div className="space-y-8">
-        <h2 className="text-2xl font-semibold text-center">Why Choose Geraid?</h2>
+        <h2 className="text-2xl font-semibold text-center">Why Choose Triksha?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="p-6 rounded-xl border bg-card/50 backdrop-blur-sm space-y-4">
             <Shield className="w-8 h-8 text-primary mx-auto" />
