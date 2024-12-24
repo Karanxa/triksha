@@ -1,4 +1,4 @@
-export type ScanPhase = 'fingerprinting' | 'redteaming';
+export type ScanPhase = 'fingerprinting' | 'augmenting' | 'redteaming';
 
 export interface Message {
   role: 'system' | 'user' | 'assistant';

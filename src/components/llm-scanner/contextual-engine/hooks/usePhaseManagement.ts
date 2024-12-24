@@ -11,11 +11,11 @@ export const usePhaseManagement = () => {
     setMessages(prev => [...prev, message]);
   };
 
-  const transitionToRedTeaming = () => {
-    setPhase('redteaming');
+  const transitionToPhase = (newPhase: ScanPhase) => {
+    setPhase(newPhase);
     addMessage({
       role: 'system',
-      content: 'Fingerprinting phase completed. Initiating red teaming analysis...'
+      content: `${phase} phase completed. Starting ${newPhase} phase...`
     });
   };
 
@@ -27,6 +27,6 @@ export const usePhaseManagement = () => {
     setCurrentStep,
     setPendingQuestion,
     addMessage,
-    transitionToRedTeaming
+    transitionToPhase
   };
 };
