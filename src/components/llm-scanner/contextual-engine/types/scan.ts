@@ -1,16 +1,9 @@
-import { Message } from "../types";
-import { Json } from "@/integrations/supabase/types";
+import { Json } from "@/integrations/supabase/types/common";
 
 export interface ScanConfig {
   provider: string;
   model: string;
-  datasetId: string;
-}
-
-export interface DatasetPromptResult {
-  success: boolean;
-  response?: string;
-  isVulnerable?: boolean;
+  datasetId?: string;
 }
 
 export interface ContextualScanData {
@@ -18,14 +11,24 @@ export interface ContextualScanData {
   provider: string;
   model: string;
   messages: Json;
-  is_vulnerable?: boolean | null;
-  fingerprint_results?: Json | null;
+  is_vulnerable: boolean | null;
+  fingerprint_results: any;
 }
 
-// Helper function to convert Message[] to Json
-export const messagesToJson = (messages: Message[]): Json => {
+export interface AugmentedPrompt {
+  original: string;
+  augmented: string;
+}
+
+export interface ModelResponse {
+  prompt: string;
+  response: string;
+  isVulnerable: boolean;
+}
+
+export const messagesToJson = (messages: any[]): Json => {
   return messages.map(msg => ({
     role: msg.role,
     content: msg.content
-  })) as Json;
+  }));
 };
