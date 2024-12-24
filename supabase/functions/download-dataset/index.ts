@@ -41,13 +41,46 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    const { data: profile, error: profileError } = await supabase
+    // First check if this is a local dataset
+    const { data: dataset, error: datasetError } = await supabase
+      .from('datasets')
+      .select('*')
+      .eq('id', datasetId)
+      .single()
+
+    if (datasetError) throw datasetError
+    if (!dataset) throw new Error('Dataset not found')
+
+    // If it's a local dataset (has file_path), fetch from storage
+    if (dataset.file_path) {
+      console.log('Fetching local dataset:', dataset.file_path)
+      const { data: fileData, error: downloadError } = await supabase
+        .storage
+        .from('datasets')
+        .download(dataset.file_path)
+
+      if (downloadError) throw downloadError
+
+      const content = await fileData.text()
+      const filename = dataset.file_path.split('/').pop() || 'dataset.csv'
+
+      return new Response(content, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+        },
+      })
+    }
+    
+    // If no file_path, try Hugging Face
+    const { data: profile } = await supabase
       .from('profiles')
       .select('api_keys')
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile?.api_keys?.huggingface) {
+    if (!profile?.api_keys?.huggingface) {
       throw new Error('Hugging Face API key not configured')
     }
 
