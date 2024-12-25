@@ -1,5 +1,9 @@
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Maximize2 } from "lucide-react";
 
 interface Result {
   original: string;
@@ -15,15 +19,11 @@ interface ResultsProps {
 }
 
 const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
+  const [selectedContent, setSelectedContent] = useState<{title: string, content: string} | null>(null);
+  
   if (!results.length && !totalPrompts) return null;
 
   const progress = totalPrompts ? Math.round((processedPrompts || 0) / totalPrompts * 100) : 0;
-
-  // Helper function to truncate long text
-  const truncateText = (text: string, maxLength: number = 100) => {
-    if (!text) return '';
-    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-  };
 
   return (
     <div className="mt-8 space-y-6">
@@ -45,8 +45,8 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
           <div className="grid grid-cols-12 gap-4 px-4 py-3 bg-muted/50 border-b">
             <div className="col-span-1 font-medium">#</div>
             <div className="col-span-4 font-medium">Original Prompt</div>
-            <div className="col-span-4 font-medium">Model Response</div>
-            <div className="col-span-3 font-medium">Status</div>
+            <div className="col-span-6 font-medium">Model Response</div>
+            <div className="col-span-1 font-medium">Status</div>
           </div>
 
           {/* Results */}
@@ -57,14 +57,40 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
                   {(index + 1).toString().padStart(2, '0')}
                 </div>
                 <div className="col-span-4">
-                  <div className="text-sm break-words">
-                    {truncateText(result.original)}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-sm break-words line-clamp-3">
+                      {result.original}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="flex-shrink-0"
+                      onClick={() => setSelectedContent({
+                        title: "Original Prompt",
+                        content: result.original
+                      })}
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                <div className="col-span-4">
+                <div className="col-span-6">
                   {result.response ? (
-                    <div className="text-sm break-words">
-                      {truncateText(result.response)}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="text-sm break-words line-clamp-3">
+                        {result.response}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="flex-shrink-0"
+                        onClick={() => setSelectedContent({
+                          title: "Model Response",
+                          content: result.response || ""
+                        })}
+                      >
+                        <Maximize2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   ) : (
                     <div className="italic text-muted-foreground text-sm">
@@ -72,9 +98,9 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
                     </div>
                   )}
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-1">
                   {result.error ? (
-                    <span className="text-sm text-destructive">{result.error}</span>
+                    <span className="text-sm text-destructive">Error</span>
                   ) : result.response ? (
                     <span className="text-sm text-green-500">Complete</span>
                   ) : (
@@ -86,6 +112,17 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
           </div>
         </div>
       </ScrollArea>
+
+      <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <ScrollArea className="h-full max-h-[70vh]">
+            <h3 className="text-lg font-semibold mb-2">{selectedContent?.title}</h3>
+            <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md text-sm">
+              {selectedContent?.content}
+            </pre>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
