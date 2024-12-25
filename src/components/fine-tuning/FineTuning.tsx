@@ -1,51 +1,24 @@
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { GenerateScript } from "./GenerateScript"
-import { JobHistory } from "./JobHistory"
-import { useSession } from "@supabase/auth-helpers-react"
-import { useToast } from "@/hooks/use-toast"
+import { Lock } from "lucide-react"
+import { Card } from "@/components/ui/card"
 
 export const FineTuning = () => {
-  const session = useSession()
-  const { toast } = useToast()
-
-  const handleScriptGenerated = async (script: string, model: string, parameters: any) => {
-    if (!session?.user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Authentication required",
-        description: "Please sign in to save your fine-tuning job"
-      })
-      return
-    }
-
-    // We'll just show a success message here since GenerateScript.tsx handles the database insertion
-    toast({
-      title: "Script generated successfully",
-      description: "You can view it in the Job History tab"
-    })
-  }
-
   return (
     <div className="container py-8 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Fine-Tuning</h1>
       </div>
       
-      <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
-          <TabsTrigger value="generate">Generate Script</TabsTrigger>
-          <TabsTrigger value="history">Job History</TabsTrigger>
-        </TabsList>
+      <Card className="p-12 flex flex-col items-center justify-center text-center space-y-4">
+        <Lock className="h-12 w-12 text-muted-foreground" />
+        <h2 className="text-2xl font-semibold">Coming Soon</h2>
+        <p className="text-muted-foreground max-w-md">
+          The fine-tuning module is currently being enhanced and will be available in the next few days. 
+          Stay tuned for powerful model customization capabilities!
+        </p>
+      </Card>
 
-        <TabsContent value="generate">
-          <GenerateScript onScriptGenerated={handleScriptGenerated} />
-        </TabsContent>
-
-        <TabsContent value="history">
-          <JobHistory />
-        </TabsContent>
-      </Tabs>
+      {/* Background Pattern */}
+      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
   )
 }
