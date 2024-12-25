@@ -21,12 +21,60 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
       
       if (datasetId) {
         console.log('Dataset selected:', datasetId);
-        // Clear existing prompts before loading new ones
-        onPromptsExtracted([]);
+        
+        // Get dataset details
+        const { data: dataset, error: datasetError } = await supabase
+          .from('datasets')
+          .select('file_path')
+          .eq('id', datasetId)
+          .single();
+
+        if (datasetError) throw datasetError;
+        if (!dataset?.file_path) {
+          throw new Error('Dataset file not found');
+        }
+
+        // Download the file content
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from('datasets')
+          .download(dataset.file_path);
+
+        if (downloadError) throw downloadError;
+
+        // Parse CSV content
+        const text = await fileData.text();
+        const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+        const headers = lines[0].toLowerCase().split(',');
+        
+        // Find prompt column
+        const promptIndex = headers.findIndex(header => 
+          header === 'prompts' || header === 'prompt' || header === 'text'
+        );
+
+        if (promptIndex === -1) {
+          throw new Error('Dataset must have a prompts, prompt, or text column');
+        }
+
+        // Extract prompts from CSV
+        const extractedPrompts = lines.slice(1)
+          .map(line => {
+            const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
+            return values[promptIndex];
+          })
+          .filter(Boolean);
+
+        if (extractedPrompts.length === 0) {
+          throw new Error('No valid prompts found in dataset');
+        }
+
+        console.log(`Extracted ${extractedPrompts.length} prompts from dataset`);
+        onPromptsExtracted(extractedPrompts);
+        toast.success(`${extractedPrompts.length} prompts loaded from dataset`);
       }
     } catch (error) {
       console.error('Error selecting dataset:', error);
-      toast.error('Failed to load dataset');
+      toast.error(error instanceof Error ? error.message : 'Failed to load dataset');
+      onPromptsExtracted([]);
     }
   };
 
