@@ -14,6 +14,8 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
     if (!datasetId) return;
 
     try {
+      console.log('Loading dataset content for:', datasetId);
+      
       // First, get the dataset details
       const { data: dataset, error: datasetError } = await supabase
         .from('datasets')
@@ -66,6 +68,7 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
         return;
       }
 
+      console.log(`Extracted ${prompts.length} prompts from dataset`);
       onPromptsExtracted(prompts);
       toast.success(`${prompts.length} prompts extracted from dataset`);
 
@@ -120,6 +123,7 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
         return;
       }
 
+      console.log(`Extracted ${prompts.length} prompts from uploaded file`);
       onPromptsExtracted(prompts);
       toast.success(`${prompts.length} prompts extracted successfully`);
       

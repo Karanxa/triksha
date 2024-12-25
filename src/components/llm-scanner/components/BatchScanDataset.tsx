@@ -4,6 +4,8 @@ import { CSVUpload } from "../CSVUpload";
 import { DatasetSelector } from "../DatasetSelector";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BatchScanDatasetProps {
   prompts: string[];
@@ -19,7 +21,8 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
       
       if (datasetId) {
         console.log('Dataset selected:', datasetId);
-        onPromptsExtracted([]); // Clear existing prompts before loading new ones
+        // Clear existing prompts before loading new ones
+        onPromptsExtracted([]);
       }
     } catch (error) {
       console.error('Error selecting dataset:', error);
