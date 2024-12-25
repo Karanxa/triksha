@@ -77,27 +77,29 @@ export const ResultsContainer = ({
   };
 
   return (
-    <Card className="glass-card overflow-hidden border-0">
+    <Card className="overflow-hidden border-0 bg-background/50 backdrop-blur-sm">
       <Tabs defaultValue="scans" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent p-1">
+        <TabsList className="w-full grid grid-cols-2 gap-4 bg-transparent p-4 border-b">
           <TabsTrigger 
             value="scans" 
-            className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
+            className="w-full bg-background/50 hover:bg-primary/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors rounded-lg py-3"
           >
             Custom Scans
           </TabsTrigger>
           <TabsTrigger 
             value="contextual" 
-            className="w-full bg-neutral-light hover:bg-neutral-gray/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors"
+            className="w-full bg-background/50 hover:bg-primary/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-colors rounded-lg py-3"
           >
             Contextual Analysis
           </TabsTrigger>
         </TabsList>
 
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           <TabsContent value="scans" className="mt-0 animate-fade-in space-y-6">
             <ResultsFilters {...searchProps} />
-            {renderContent('scans')}
+            <div className="rounded-lg overflow-hidden border bg-card">
+              {renderContent('scans')}
+            </div>
           </TabsContent>
 
           <TabsContent value="contextual" className="mt-0 animate-fade-in space-y-6">
@@ -109,7 +111,9 @@ export const ResultsContainer = ({
               vulnerabilityStatus={contextualProps.contextVulnerabilityStatus}
               setVulnerabilityStatus={contextualProps.setContextVulnerabilityStatus}
             />
-            {renderContent('contextual')}
+            <div className="rounded-lg overflow-hidden border bg-card">
+              {renderContent('contextual')}
+            </div>
           </TabsContent>
         </div>
       </Tabs>

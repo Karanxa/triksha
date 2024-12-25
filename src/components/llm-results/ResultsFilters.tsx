@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 
 interface ResultsFiltersProps {
   searchQuery: string;
@@ -28,8 +29,8 @@ export const ResultsFilters = ({
   setSelectedModel,
 }: ResultsFiltersProps) => {
   return (
-    <div className="space-y-6 animate-filter-slide">
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    <Card className="p-4 animate-filter-slide bg-card/50 backdrop-blur-sm border border-border/50">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium">Search</Label>
           <Input
@@ -101,6 +102,6 @@ export const ResultsFilters = ({
           </Select>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
