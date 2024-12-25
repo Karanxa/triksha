@@ -3,12 +3,10 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
+import { CustomEndpointInput } from "./CustomEndpointInput";
 
 interface ProviderSelectProps {
   value: string;
@@ -26,8 +25,6 @@ interface ProviderSelectProps {
 }
 
 const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
-  const [curlCommand, setCurlCommand] = useState("");
-  const [placeholder, setPlaceholder] = useState("{PROMPT}");
   const [apiKeys, setApiKeys] = useState<any>(null);
   const session = useSession();
   const navigate = useNavigate();
@@ -51,7 +48,6 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
   };
 
   const handleProviderChange = (newValue: string) => {
-    // Check if API key is configured for selected provider
     if (newValue !== 'custom') {
       const keyName = getApiKeyName(newValue);
       if (!apiKeys?.[keyName]) {
@@ -60,13 +56,7 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
         return;
       }
     }
-
-    if (newValue === "custom") {
-      onValueChange(`custom-${curlCommand}`);
-    } else {
-      onValueChange(newValue);
-      setCurlCommand("");
-    }
+    onValueChange(newValue);
   };
 
   const getApiKeyName = (provider: string): string => {
@@ -80,11 +70,6 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
 
   const handleModelChange = (model: string) => {
     onValueChange(`${value.split('-')[0]}-${model}`);
-  };
-
-  const handleCurlCommandChange = (command: string) => {
-    setCurlCommand(command);
-    onValueChange(`custom-${command}`);
   };
 
   const getModelsForProvider = () => {
@@ -172,28 +157,10 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
         )}
 
         {selectedProvider === "custom" && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>cURL Command</Label>
-              <Textarea
-                placeholder="Enter your cURL command here"
-                value={curlCommand}
-                onChange={(e) => handleCurlCommandChange(e.target.value)}
-                className="font-mono text-sm min-h-[100px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Prompt Placeholder</Label>
-              <Input
-                placeholder="{PROMPT}"
-                value={placeholder}
-                onChange={(e) => setPlaceholder(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Replace the text in your cURL command that should be replaced with the prompt
-              </p>
-            </div>
-          </div>
+          <CustomEndpointInput
+            value={value}
+            onValueChange={onValueChange}
+          />
         )}
       </div>
     </div>
