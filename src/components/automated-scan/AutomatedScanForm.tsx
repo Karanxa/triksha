@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import ProviderSelect from "@/components/augment-prompt/ProviderSelect";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
+import { ScheduleConfig } from "./schedule/ScheduleConfig";
 
 export const AutomatedScanForm = () => {
   const session = useSession();
@@ -21,12 +22,11 @@ export const AutomatedScanForm = () => {
   const [isActive, setIsActive] = useState(true);
   const [prompts, setPrompts] = useState("");
   
-  // New state for specific time scheduling
+  // Schedule-specific state
   const [scheduleHour, setScheduleHour] = useState(0);
   const [scheduleMinute, setScheduleMinute] = useState(0);
   const [scheduleDay, setScheduleDay] = useState(1);
   const [scheduleWeekday, setScheduleWeekday] = useState(0);
-  const [scheduleMonth, setScheduleMonth] = useState(1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,58 +164,17 @@ export const AutomatedScanForm = () => {
           </Select>
         </div>
 
-        <div className="grid gap-4">
-          {schedule !== 'hourly' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Hour (0-23)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={23}
-                  value={scheduleHour}
-                  onChange={(e) => setScheduleHour(parseInt(e.target.value))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Minute (0-59)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={59}
-                  value={scheduleMinute}
-                  onChange={(e) => setScheduleMinute(parseInt(e.target.value))}
-                />
-              </div>
-            </div>
-          )}
-
-          {schedule === 'weekly' && (
-            <div className="space-y-2">
-              <Label>Day of Week (0-6, Sunday is 0)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={6}
-                value={scheduleWeekday}
-                onChange={(e) => setScheduleWeekday(parseInt(e.target.value))}
-              />
-            </div>
-          )}
-
-          {schedule === 'monthly' && (
-            <div className="space-y-2">
-              <Label>Day of Month (1-31)</Label>
-              <Input
-                type="number"
-                min={1}
-                max={31}
-                value={scheduleDay}
-                onChange={(e) => setScheduleDay(parseInt(e.target.value))}
-              />
-            </div>
-          )}
-        </div>
+        <ScheduleConfig
+          schedule={schedule}
+          scheduleHour={scheduleHour}
+          scheduleMinute={scheduleMinute}
+          scheduleDay={scheduleDay}
+          scheduleWeekday={scheduleWeekday}
+          onScheduleHourChange={setScheduleHour}
+          onScheduleMinuteChange={setScheduleMinute}
+          onScheduleDayChange={setScheduleDay}
+          onScheduleWeekdayChange={setScheduleWeekday}
+        />
       </div>
 
       <div className="space-y-2">

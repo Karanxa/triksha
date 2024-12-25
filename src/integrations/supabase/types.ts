@@ -700,6 +700,11 @@ export type Database = {
           prompts: Json
           provider: string
           schedule: string
+          schedule_day: number | null
+          schedule_hour: number | null
+          schedule_minute: number | null
+          schedule_month: number | null
+          schedule_weekday: number | null
           updated_at: string
           user_id: string
         }
@@ -716,6 +721,11 @@ export type Database = {
           prompts: Json
           provider: string
           schedule: string
+          schedule_day?: number | null
+          schedule_hour?: number | null
+          schedule_minute?: number | null
+          schedule_month?: number | null
+          schedule_weekday?: number | null
           updated_at?: string
           user_id: string
         }
@@ -732,6 +742,11 @@ export type Database = {
           prompts?: Json
           provider?: string
           schedule?: string
+          schedule_day?: number | null
+          schedule_hour?: number | null
+          schedule_minute?: number | null
+          schedule_month?: number | null
+          schedule_weekday?: number | null
           updated_at?: string
           user_id?: string
         }
