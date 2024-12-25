@@ -10,6 +10,7 @@ import { Dataset } from "@/types/dataset";
 import { cn } from "@/lib/utils";
 import { CSVUpload } from "../CSVUpload";
 import { ContextualConfig } from "./types";
+import { Label } from "@/components/ui/label";
 
 interface ModelSelectorProps {
   onStart: (config: ContextualConfig) => void;
@@ -61,9 +62,9 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
       <CardContent className="p-6">
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-medium mb-2">Contextual Analysis</h3>
+            <h3 className="text-lg font-medium mb-2">Dataset Selection</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Select a target model and dataset to begin. This will help understand the model's capabilities and test it against your dataset.
+              Choose an existing dataset or upload a new one to test against the selected model.
             </p>
           </div>
           
@@ -108,13 +109,6 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
                 </Select>
               </div>
             )}
-
-            <div className="space-y-2">
-              <h4 className="font-medium">Dataset Selection</h4>
-              <p className="text-sm text-muted-foreground">
-                Choose an existing dataset or upload a new one to test against the selected model.
-              </p>
-            </div>
 
             <Card>
               <CardContent className="p-6">
