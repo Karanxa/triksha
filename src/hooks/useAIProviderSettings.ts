@@ -1,17 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-export interface AIProviderSettings {
-  provider: string;
-  model: string;
-  customEndpoint?: {
-    url: string;
-    apiKey: string;
-    headers: string;
-    method: string;
-  } | null;
-}
+import { AIProviderSettings } from "@/types/aiProvider";
+import { Json } from "@/integrations/supabase/types/common";
 
 export const useAIProviderSettings = () => {
   const [settings, setSettings] = useState<AIProviderSettings | null>(null);
@@ -29,7 +20,10 @@ export const useAIProviderSettings = () => {
         .single();
 
       if (error) throw error;
-      setSettings(data?.ai_provider_settings || {
+      
+      // Parse the JSON data with type checking
+      const aiSettings = data?.ai_provider_settings as AIProviderSettings | null;
+      setSettings(aiSettings || {
         provider: 'openai',
         model: 'gpt-4o-mini',
         customEndpoint: null
@@ -44,10 +38,17 @@ export const useAIProviderSettings = () => {
 
   const updateSettings = async (newSettings: AIProviderSettings) => {
     try {
+      // Convert AIProviderSettings to Json type for Supabase
+      const settingsJson: Json = {
+        provider: newSettings.provider,
+        model: newSettings.model,
+        customEndpoint: newSettings.customEndpoint || null
+      };
+
       const { error } = await supabase
         .from('integration_settings')
         .upsert({
-          ai_provider_settings: newSettings,
+          ai_provider_settings: settingsJson,
           user_id: (await supabase.auth.getUser()).data.user?.id
         });
 

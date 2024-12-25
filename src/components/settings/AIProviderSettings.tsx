@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAIProviderSettings } from "@/hooks/useAIProviderSettings";
 import { useState } from "react";
 import { toast } from "sonner";
+import { AIProviderSettings as AIProviderSettingsType } from "@/types/aiProvider";
 
 export const AIProviderSettings = () => {
   const { settings, isLoading, updateSettings } = useAIProviderSettings();
@@ -15,11 +16,12 @@ export const AIProviderSettings = () => {
 
   const handleSave = async () => {
     try {
-      await updateSettings({
+      const newSettings: AIProviderSettingsType = {
         provider,
         model,
         customEndpoint: provider === 'custom' ? customEndpoint : null
-      });
+      };
+      await updateSettings(newSettings);
     } catch (error) {
       toast.error('Failed to save settings');
     }
