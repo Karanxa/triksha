@@ -3,6 +3,7 @@ import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import { parseCSVContent } from "./utils/datasetParser";
 
 interface CSVUploadProps {
   onPromptsExtracted: (prompts: string[]) => void;
@@ -37,17 +38,10 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
 
       if (downloadError) throw downloadError;
 
-      // Read the file content
+      // Read and parse the file content
       const text = await fileData.text();
-      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const { headers, data } = parseCSVContent(text);
       
-      if (lines.length === 0) {
-        toast.error("Dataset is empty");
-        return;
-      }
-
-      // Assume first line is header
-      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
       const promptIndex = headers.findIndex(header => 
         header === "prompts" || header === "prompt" || header === "text"
       );
@@ -57,11 +51,7 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
         return;
       }
 
-      const prompts = lines.slice(1).map(line => {
-        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
-        return cleanedValues[promptIndex];
-      }).filter(Boolean);
+      const prompts = data.map(row => row[promptIndex]).filter(Boolean);
 
       if (prompts.length === 0) {
         toast.error("No valid prompts found in the dataset");
@@ -95,14 +85,8 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
 
     try {
       const text = await file.text();
-      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const { headers, data } = parseCSVContent(text);
       
-      if (lines.length === 0) {
-        toast.error("CSV file is empty");
-        return;
-      }
-
-      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
       const promptIndex = headers.findIndex(header => 
         header === "prompts" || header === "prompt" || header === "text"
       );
@@ -112,11 +96,7 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
         return;
       }
 
-      const prompts = lines.slice(1).map(line => {
-        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
-        return cleanedValues[promptIndex];
-      }).filter(Boolean);
+      const prompts = data.map(row => row[promptIndex]).filter(Boolean);
 
       if (prompts.length === 0) {
         toast.error("No valid prompts found in the CSV file");
