@@ -1,6 +1,6 @@
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Maximize2 } from "lucide-react";
@@ -24,6 +24,24 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
   if (!results.length && !totalPrompts) return null;
 
   const progress = totalPrompts ? Math.round((processedPrompts || 0) / totalPrompts * 100) : 0;
+
+  const formatResponse = (response: any): string => {
+    if (typeof response === 'string') return response;
+    try {
+      // If it's an object (like the GPT response structure), try to extract the actual message
+      if (typeof response === 'object') {
+        if (response.choices?.[0]?.message?.content) {
+          return response.choices[0].message.content;
+        }
+        // Fallback to stringifying the entire response
+        return JSON.stringify(response, null, 2);
+      }
+      return String(response);
+    } catch (e) {
+      console.error('Error formatting response:', e);
+      return String(response);
+    }
+  };
 
   return (
     <div className="mt-8 space-y-6">
@@ -78,7 +96,7 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
                   {result.response ? (
                     <div className="flex items-start justify-between gap-2">
                       <div className="text-sm break-words line-clamp-3">
-                        {result.response}
+                        {formatResponse(result.response)}
                       </div>
                       <Button
                         variant="ghost"
@@ -86,7 +104,9 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
                         className="flex-shrink-0"
                         onClick={() => setSelectedContent({
                           title: "Model Response",
-                          content: result.response || ""
+                          content: typeof result.response === 'string' 
+                            ? result.response 
+                            : JSON.stringify(result.response, null, 2)
                         })}
                       >
                         <Maximize2 className="h-4 w-4" />
@@ -115,8 +135,8 @@ const Results = ({ results, totalPrompts, processedPrompts }: ResultsProps) => {
 
       <Dialog open={!!selectedContent} onOpenChange={() => setSelectedContent(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogTitle>{selectedContent?.title}</DialogTitle>
           <ScrollArea className="h-full max-h-[70vh]">
-            <h3 className="text-lg font-semibold mb-2">{selectedContent?.title}</h3>
             <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md text-sm">
               {selectedContent?.content}
             </pre>
