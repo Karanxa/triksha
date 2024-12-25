@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, fingerprint, apiKey } = await req.json();
+    const { prompt, fingerprint, apiKey, customEndpoint } = await req.json();
 
-    if (!prompt || !fingerprint || !apiKey) {
+    if (!prompt || !fingerprint) {
       throw new Error('Missing required parameters');
     }
 
@@ -55,7 +55,29 @@ Return only the enhanced prompt without explanations.`;
 
     let augmentedPrompt;
 
-    if (providerSettings.provider === 'openai') {
+    if (customEndpoint) {
+      // Handle custom endpoint
+      const response = await fetch(customEndpoint.url, {
+        method: customEndpoint.method || 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(customEndpoint.headers ? JSON.parse(customEndpoint.headers) : {})
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Custom endpoint error: ${await response.text()}`);
+      }
+
+      const data = await response.json();
+      augmentedPrompt = data.choices?.[0]?.message?.content || data.response || data.text;
+    } else if (providerSettings.provider === 'openai') {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -79,28 +101,6 @@ Return only the enhanced prompt without explanations.`;
 
       const data = await response.json();
       augmentedPrompt = data.choices[0].message.content;
-    } else if (providerSettings.customEndpoint) {
-      // Handle custom endpoint
-      const response = await fetch(providerSettings.customEndpoint.url, {
-        method: providerSettings.customEndpoint.method || 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(providerSettings.customEndpoint.headers ? JSON.parse(providerSettings.customEndpoint.headers) : {})
-        },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ]
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Custom endpoint error: ${await response.text()}`);
-      }
-
-      const data = await response.json();
-      augmentedPrompt = data.choices?.[0]?.message?.content || data.response || data.text;
     } else {
       throw new Error('Invalid provider configuration');
     }

@@ -747,6 +747,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      process_scheduled_scans: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       reset_database: {
         Args: Record<PropertyKey, never>
         Returns: undefined

@@ -15,6 +15,12 @@ interface DatasetAnalysisProps {
     datasetId: string;
     provider: string;
     model: string;
+    customEndpoint?: {
+      url: string;
+      apiKey: string;
+      headers: string;
+      method: string;
+    };
   };
   fingerprint: FingerPrintResult;
 }
@@ -67,7 +73,8 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
           datasetId: config.datasetId,
           provider: config.provider,
           model: config.model,
-          fingerprint
+          fingerprint,
+          customEndpoint: config.customEndpoint
         }
       });
 
@@ -102,7 +109,9 @@ export const DatasetAnalysis = ({ config, fingerprint }: DatasetAnalysisProps) =
           .single();
 
         const apiKeys = profile?.api_keys as ApiKeys;
-        if (!apiKeys?.openai) {
+        
+        // Only check for OpenAI key if not using custom endpoint
+        if (!config.customEndpoint && !apiKeys?.openai) {
           throw new Error('OpenAI API key not found. Please add it in Settings.');
         }
 
