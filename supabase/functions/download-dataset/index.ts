@@ -31,7 +31,7 @@ serve(async (req) => {
     // Get user's dataset
     const { data: dataset, error: datasetError } = await supabase
       .from('datasets')
-      .select('file_path, source, metadata')
+      .select('file_path')
       .eq('id', datasetId)
       .single()
 
@@ -51,13 +51,25 @@ serve(async (req) => {
     }
 
     const content = await fileData.text()
-    const filename = dataset.file_path.split('/').pop() || 'dataset.csv'
 
+    // If ZIP format is requested, create a ZIP file
+    if (format === 'zip') {
+      const zipResponse = new Response(content, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/zip',
+          'Content-Disposition': `attachment; filename="${datasetId}.zip"`,
+        },
+      })
+      return zipResponse
+    }
+
+    // Default to CSV format
     return new Response(content, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename="${datasetId}.csv"`,
       },
     })
 

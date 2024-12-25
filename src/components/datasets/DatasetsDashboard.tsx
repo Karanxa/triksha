@@ -44,16 +44,6 @@ export const DatasetsDashboard = () => {
     try {
       setDownloading(datasetId)
       
-      const { data: dataset } = await supabase
-        .from('datasets')
-        .select('*')
-        .eq('id', datasetId)
-        .single()
-
-      if (!dataset?.file_path) {
-        throw new Error('Dataset file not found')
-      }
-
       const { data, error } = await supabase.functions.invoke('download-dataset', {
         body: { datasetId, format }
       })
@@ -64,13 +54,12 @@ export const DatasetsDashboard = () => {
       }
 
       // Create blob and trigger download
-      const blob = new Blob([data], { 
-        type: format === 'csv' ? 'text/csv' : 'application/zip' 
-      })
+      const contentType = format === 'csv' ? 'text/csv' : 'application/zip'
+      const blob = new Blob([data], { type: contentType })
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${dataset.name}.${format}`
+      a.download = `dataset.${format}`
       document.body.appendChild(a)
       a.click()
       window.URL.revokeObjectURL(url)
