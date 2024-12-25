@@ -12,74 +12,76 @@ interface CSVUploadProps {
 }
 
 export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProps) => {
-  useEffect(() => {
-    const loadDatasetContent = async () => {
-      if (!selectedDataset) return;
+  const loadDatasetContent = async (datasetId: string) => {
+    if (!datasetId) return;
 
-      try {
-        // First, get the dataset details
-        const { data: dataset, error: datasetError } = await supabase
-          .from('datasets')
-          .select('file_path')
-          .eq('id', selectedDataset)
-          .single();
+    try {
+      // First, get the dataset details
+      const { data: dataset, error: datasetError } = await supabase
+        .from('datasets')
+        .select('file_path')
+        .eq('id', datasetId)
+        .single();
 
-        if (datasetError) throw datasetError;
-        if (!dataset?.file_path) {
-          toast.error("Dataset file not found");
-          return;
-        }
-
-        // Download the file content
-        const { data: fileData, error: downloadError } = await supabase
-          .storage
-          .from('datasets')
-          .download(dataset.file_path);
-
-        if (downloadError) throw downloadError;
-
-        // Read the file content
-        const text = await fileData.text();
-        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-        
-        if (lines.length === 0) {
-          toast.error("Dataset is empty");
-          return;
-        }
-
-        // Assume first line is header
-        const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
-        const promptIndex = headers.findIndex(header => 
-          header === "prompts" || header === "prompt" || header === "text"
-        );
-
-        if (promptIndex === -1) {
-          toast.error("Dataset must have a 'prompts', 'prompt', or 'text' column");
-          return;
-        }
-
-        const prompts = lines.slice(1).map(line => {
-          const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-          const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
-          return cleanedValues[promptIndex];
-        }).filter(Boolean);
-
-        if (prompts.length === 0) {
-          toast.error("No valid prompts found in the dataset");
-          return;
-        }
-
-        onPromptsExtracted(prompts);
-        toast.success(`${prompts.length} prompts extracted from dataset`);
-
-      } catch (error) {
-        console.error("Dataset processing error:", error);
-        toast.error("Error processing dataset: " + (error instanceof Error ? error.message : "Unknown error"));
+      if (datasetError) throw datasetError;
+      if (!dataset?.file_path) {
+        toast.error("Dataset file not found");
+        return;
       }
-    };
 
-    loadDatasetContent();
-  }, [selectedDataset, onPromptsExtracted]);
+      // Download the file content
+      const { data: fileData, error: downloadError } = await supabase
+        .storage
+        .from('datasets')
+        .download(dataset.file_path);
+
+      if (downloadError) throw downloadError;
+
+      // Read the file content
+      const text = await fileData.text();
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      
+      if (lines.length === 0) {
+        toast.error("Dataset is empty");
+        return;
+      }
+
+      // Assume first line is header
+      const headers = lines[0].toLowerCase().split(",").map(header => header.trim());
+      const promptIndex = headers.findIndex(header => 
+        header === "prompts" || header === "prompt" || header === "text"
+      );
+
+      if (promptIndex === -1) {
+        toast.error("Dataset must have a 'prompts', 'prompt', or 'text' column");
+        return;
+      }
+
+      const prompts = lines.slice(1).map(line => {
+        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+        const cleanedValues = values.map(val => val.replace(/^"|"$/g, '').trim());
+        return cleanedValues[promptIndex];
+      }).filter(Boolean);
+
+      if (prompts.length === 0) {
+        toast.error("No valid prompts found in the dataset");
+        return;
+      }
+
+      onPromptsExtracted(prompts);
+      toast.success(`${prompts.length} prompts extracted from dataset`);
+
+    } catch (error) {
+      console.error("Dataset processing error:", error);
+      toast.error("Error processing dataset: " + (error instanceof Error ? error.message : "Unknown error"));
+    }
+  };
+
+  useEffect(() => {
+    if (selectedDataset) {
+      loadDatasetContent(selectedDataset);
+    }
+  }, [selectedDataset]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -167,7 +169,7 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
             selectedDataset={selectedDataset || ""}
             onDatasetSelect={(value) => {
               if (value) {
-                loadDatasetContent();
+                loadDatasetContent(value);
               }
             }}
           />
