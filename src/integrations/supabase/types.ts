@@ -312,6 +312,7 @@ export type Database = {
       }
       integration_settings: {
         Row: {
+          ai_provider_settings: Json | null
           created_at: string
           id: string
           provider: string
@@ -320,6 +321,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_provider_settings?: Json | null
           created_at?: string
           id?: string
           provider: string
@@ -328,6 +330,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_provider_settings?: Json | null
           created_at?: string
           id?: string
           provider?: string
