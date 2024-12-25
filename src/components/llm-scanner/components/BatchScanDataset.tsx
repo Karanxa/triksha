@@ -16,8 +16,9 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
   const [selectedDataset, setSelectedDataset] = useState("");
   const [activeTab, setActiveTab] = useState<"upload" | "select">("upload");
 
-  const { data: dataset } = useQuery({
-    queryKey: ['dataset', selectedDataset],
+  // Query for loading dataset content when a dataset is selected
+  const { data: datasetContent } = useQuery({
+    queryKey: ['dataset-content', selectedDataset],
     queryFn: async () => {
       if (!selectedDataset) return null;
 

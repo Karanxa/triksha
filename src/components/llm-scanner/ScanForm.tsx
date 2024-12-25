@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button"; // Added missing import
+import { Button } from "@/components/ui/button";
 import { AttackCategorySelect } from "@/components/datasets/AttackCategorySelect";
 import { ScanFormProvider } from "./ScanFormProvider";
 import { ScanFormSchedule } from "./ScanFormSchedule";
