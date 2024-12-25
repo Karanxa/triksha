@@ -21,7 +21,7 @@ const Index = () => {
               <span className="text-primary">Triksha</span>
             </h1>
             <p className="text-xl text-foreground/60 max-w-2xl mx-auto animate-fade-in">
-              Your LLM red teaming platform
+              Your end to end LLM red teaming platform
             </p>
             <div className="flex justify-center animate-fade-in">
               <Link to="/llm-scanner">
@@ -65,10 +65,8 @@ const Index = () => {
 
         {/* Roadmap Section - Updated styling */}
         <div className="space-y-8">
-          <h2 className="text-2xl font-semibold text-center">
-            <span className="bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-              🛠️ Roadmap
-            </span>
+          <h2 className="text-2xl font-semibold text-center text-primary">
+            Roadmap
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
