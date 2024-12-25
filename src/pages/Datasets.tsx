@@ -1,5 +1,4 @@
-import { Database, History } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Database } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from "@/components/PageHeader";
@@ -14,15 +13,6 @@ const Datasets = () => {
         icon={Database}
         title="Datasets"
         description="Manage and analyze your datasets for LLM security testing and fine-tuning."
-        action={
-          <Link 
-            to="/datasets/history" 
-            className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-          >
-            <History className="w-4 h-4" />
-            View History
-          </Link>
-        }
       />
       
       <Card className="w-full mx-auto border border-border/50 shadow-lg">
