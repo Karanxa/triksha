@@ -12,13 +12,11 @@ function App() {
     <BrowserRouter>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <ErrorBoundary>
-          <div className="min-h-screen">
-            <AuthGuard>
-              <Navigation />
-              <OnboardingTutorial />
-              <Toaster />
-            </AuthGuard>
-          </div>
+          <AuthGuard>
+            <Navigation />
+            <OnboardingTutorial />
+            <Toaster />
+          </AuthGuard>
         </ErrorBoundary>
       </ThemeProvider>
     </BrowserRouter>

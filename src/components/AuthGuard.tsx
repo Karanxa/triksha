@@ -1,11 +1,15 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-const AuthGuard = () => {
+interface AuthGuardProps {
+  children: React.ReactNode;
+}
+
+const AuthGuard = ({ children }: AuthGuardProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -69,7 +73,7 @@ const AuthGuard = () => {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return <div className="min-h-screen">{children}</div>;
 };
 
 export default AuthGuard;
