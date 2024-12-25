@@ -15,12 +15,12 @@ const Index = () => {
       <div className="container mx-auto py-12 space-y-16 relative">
         {/* Hero Section */}
         <div className="relative">
-          <div className="relative px-12 py-16 text-center space-y-8 max-w-4xl mx-auto glass-card rounded-xl">
+          <div className="relative px-6 py-24 md:py-32 text-center space-y-8 max-w-4xl mx-auto glass-card rounded-xl">
             <h1 className="text-4xl sm:text-6xl font-bold animate-fade-in">
               <span className="text-foreground/80">Secure AI Models with </span>
               <span className="text-primary">Triksha</span>
             </h1>
-            <p className="text-lg text-foreground/60 max-w-2xl mx-auto animate-fade-in">
+            <p className="text-xl text-foreground/60 max-w-2xl mx-auto animate-fade-in">
               Your end to end LLM red teaming platform
             </p>
             <div className="flex justify-center animate-fade-in">
@@ -40,7 +40,7 @@ const Index = () => {
               icon={Shield}
               title="Security Scanner"
               description="Run static and contextual scans to detect vulnerabilities in your LLMs"
-              className="h-full bg-white/30 backdrop-blur-sm border-white/20 px-12 py-16"
+              className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
 
@@ -49,7 +49,7 @@ const Index = () => {
               icon={List}
               title="Analysis Dashboard"
               description="Track and visualize security metrics in real-time"
-              className="h-full bg-white/30 backdrop-blur-sm border-white/20 px-12 py-16"
+              className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
 
@@ -58,18 +58,18 @@ const Index = () => {
               icon={Database}
               title="Dataset Generation"
               description="Create adversarial datasets to test LLM boundaries"
-              className="h-full bg-white/30 backdrop-blur-sm border-white/20 px-12 py-16"
+              className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
         </div>
 
-        {/* Roadmap Section */}
+        {/* Roadmap Section - Updated styling */}
         <div className="space-y-8">
           <h2 className="text-2xl font-semibold text-center text-primary">
             Roadmap
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="px-12 py-16 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Shield className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Contextual Scans</h3>
               <p className="text-sm text-foreground/60 text-center">
@@ -77,7 +77,7 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="px-12 py-16 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <List className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Enhanced Datasets</h3>
               <p className="text-sm text-foreground/60 text-center">
@@ -85,7 +85,7 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="px-12 py-16 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Database className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Automated Defense</h3>
               <p className="text-sm text-foreground/60 text-center">
