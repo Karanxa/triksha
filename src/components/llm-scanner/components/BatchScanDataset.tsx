@@ -72,15 +72,17 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
       return null;
     },
     enabled: !!selectedDataset,
-    onSuccess: (data) => {
-      if (data?.prompts) {
-        onPromptsExtracted(data.prompts);
-        toast.success(`Loaded ${data.prompts.length} prompts from dataset`);
+    meta: {
+      onSuccess: (data: { dataset: any; prompts: string[] } | null) => {
+        if (data?.prompts) {
+          onPromptsExtracted(data.prompts);
+          toast.success(`Loaded ${data.prompts.length} prompts from dataset`);
+        }
+      },
+      onError: (error: Error) => {
+        toast.error("Failed to load dataset: " + error.message);
+        setSelectedDataset("");
       }
-    },
-    onError: (error) => {
-      toast.error("Failed to load dataset: " + (error as Error).message);
-      setSelectedDataset("");
     }
   });
 
