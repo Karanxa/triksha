@@ -319,7 +319,6 @@ export type Database = {
           settings: Json
           updated_at: string
           user_id: string
-          vulnerability_detection_settings: Json | null
         }
         Insert: {
           ai_provider_settings?: Json | null
@@ -329,7 +328,6 @@ export type Database = {
           settings?: Json
           updated_at?: string
           user_id: string
-          vulnerability_detection_settings?: Json | null
         }
         Update: {
           ai_provider_settings?: Json | null
@@ -339,7 +337,6 @@ export type Database = {
           settings?: Json
           updated_at?: string
           user_id?: string
-          vulnerability_detection_settings?: Json | null
         }
         Relationships: []
       }
@@ -700,11 +697,6 @@ export type Database = {
           prompts: Json
           provider: string
           schedule: string
-          schedule_day: number | null
-          schedule_hour: number | null
-          schedule_minute: number | null
-          schedule_month: number | null
-          schedule_weekday: number | null
           updated_at: string
           user_id: string
         }
@@ -721,11 +713,6 @@ export type Database = {
           prompts: Json
           provider: string
           schedule: string
-          schedule_day?: number | null
-          schedule_hour?: number | null
-          schedule_minute?: number | null
-          schedule_month?: number | null
-          schedule_weekday?: number | null
           updated_at?: string
           user_id: string
         }
@@ -742,11 +729,6 @@ export type Database = {
           prompts?: Json
           provider?: string
           schedule?: string
-          schedule_day?: number | null
-          schedule_hour?: number | null
-          schedule_minute?: number | null
-          schedule_month?: number | null
-          schedule_weekday?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -809,7 +791,6 @@ export type Database = {
         | "safety_bounds"
         | "system_prompt"
         | "performance"
-      vulnerability_detection_mode: "default" | "custom"
     }
     CompositeTypes: {
       [_ in never]: never

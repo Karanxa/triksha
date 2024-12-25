@@ -1,10 +1,17 @@
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,10 +19,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
-import { CustomEndpointConfig } from "./providers/CustomEndpointConfig";
-import { ModelSelector } from "./providers/ModelSelector";
 
 interface ProviderSelectProps {
   value: string;
@@ -48,6 +51,7 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
   };
 
   const handleProviderChange = (newValue: string) => {
+    // Check if API key is configured for selected provider
     if (newValue !== 'custom') {
       const keyName = getApiKeyName(newValue);
       if (!apiKeys?.[keyName]) {
@@ -81,6 +85,29 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
   const handleCurlCommandChange = (command: string) => {
     setCurlCommand(command);
     onValueChange(`custom-${command}`);
+  };
+
+  const getModelsForProvider = () => {
+    const provider = value.split('-')[0];
+    switch (provider) {
+      case "openai":
+        return [
+          { value: "gpt-4o", label: "GPT-4 Opus" },
+          { value: "gpt-4o-mini", label: "GPT-4 Opus Mini" }
+        ];
+      case "anthropic":
+        return [
+          { value: "claude-3-opus-20240229", label: "Claude 3 Opus" },
+          { value: "claude-3-sonnet-20240229", label: "Claude 3 Sonnet" }
+        ];
+      case "google":
+        return [
+          { value: "gemini-1.0-pro", label: "Gemini Pro" },
+          { value: "gemini-1.0-ultra", label: "Gemini Ultra" }
+        ];
+      default:
+        return [];
+    }
   };
 
   const selectedProvider = value.split('-')[0];
@@ -127,20 +154,46 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
         </Select>
 
         {selectedProvider && selectedProvider !== "custom" && (
-          <ModelSelector
-            provider={selectedProvider}
-            model={value.split('-')[1] || ""}
-            onModelChange={handleModelChange}
-          />
+          <Select 
+            value={value.split('-')[1] || ""} 
+            onValueChange={handleModelChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select model" />
+            </SelectTrigger>
+            <SelectContent>
+              {getModelsForProvider().map((model) => (
+                <SelectItem key={model.value} value={model.value}>
+                  {model.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         {selectedProvider === "custom" && (
-          <CustomEndpointConfig
-            curlCommand={curlCommand}
-            placeholder={placeholder}
-            onCurlCommandChange={handleCurlCommandChange}
-            onPlaceholderChange={setPlaceholder}
-          />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>cURL Command</Label>
+              <Textarea
+                placeholder="Enter your cURL command here"
+                value={curlCommand}
+                onChange={(e) => handleCurlCommandChange(e.target.value)}
+                className="font-mono text-sm min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Prompt Placeholder</Label>
+              <Input
+                placeholder="{PROMPT}"
+                value={placeholder}
+                onChange={(e) => setPlaceholder(e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Replace the text in your cURL command that should be replaced with the prompt
+              </p>
+            </div>
+          </div>
         )}
       </div>
     </div>

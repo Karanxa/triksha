@@ -2,32 +2,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAIProviderSettings } from "@/hooks/useAIProviderSettings";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AIProviderSettings as AIProviderSettingsType } from "@/types/aiProvider";
+import { AIProviderSettings as AIProviderSettingsType, CustomEndpoint } from "@/types/aiProvider";
 
 export const AIProviderSettings = () => {
   const { settings, isLoading, updateSettings } = useAIProviderSettings();
   const [provider, setProvider] = useState(settings?.provider || 'openai');
   const [model, setModel] = useState(settings?.model || 'gpt-4o-mini');
-  const [curlCommand, setCurlCommand] = useState(settings?.customEndpoint?.curlCommand || '');
-  const [placeholder, setPlaceholder] = useState(settings?.customEndpoint?.placeholder || '{PROMPT}');
+  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint | null>(settings?.customEndpoint || null);
 
   const handleSave = async () => {
     try {
       const newSettings: AIProviderSettingsType = {
         provider,
         model,
-        customEndpoint: provider === 'custom' ? {
-          curlCommand,
-          placeholder
-        } : null
+        customEndpoint: provider === 'custom' ? customEndpoint : null
       };
       await updateSettings(newSettings);
-      toast.success('Settings saved successfully');
     } catch (error) {
       toast.error('Failed to save settings');
     }
@@ -77,27 +71,29 @@ export const AIProviderSettings = () => {
         {provider === 'custom' && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>cURL Command</Label>
-              <Textarea
-                value={curlCommand}
-                onChange={(e) => setCurlCommand(e.target.value)}
-                placeholder="Enter your cURL command here"
-                className="font-mono text-sm min-h-[100px]"
+              <Label>Endpoint URL</Label>
+              <Input
+                value={customEndpoint?.url || ''}
+                onChange={(e) => setCustomEndpoint(prev => ({ ...prev, url: e.target.value }))}
+                placeholder="https://api.example.com/v1/chat/completions"
               />
-              <p className="text-sm text-muted-foreground">
-                Enter the complete cURL command. Use the placeholder below to indicate where the prompt should be inserted.
-              </p>
             </div>
             <div className="space-y-2">
-              <Label>Prompt Placeholder</Label>
+              <Label>API Key</Label>
               <Input
-                value={placeholder}
-                onChange={(e) => setPlaceholder(e.target.value)}
-                placeholder="{PROMPT}"
+                type="password"
+                value={customEndpoint?.apiKey || ''}
+                onChange={(e) => setCustomEndpoint(prev => ({ ...prev, apiKey: e.target.value }))}
+                placeholder="Enter API key"
               />
-              <p className="text-sm text-muted-foreground">
-                This text will be replaced with the actual prompt in your cURL command
-              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Headers (JSON)</Label>
+              <Input
+                value={customEndpoint?.headers || ''}
+                onChange={(e) => setCustomEndpoint(prev => ({ ...prev, headers: e.target.value }))}
+                placeholder='{"Content-Type": "application/json"}'
+              />
             </div>
           </div>
         )}

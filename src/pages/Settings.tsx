@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
 import { ApiKeyForm } from "@/components/settings/ApiKeyForm";
 import { AIProviderSettings } from "@/components/settings/AIProviderSettings";
-import { VulnerabilityDetectionSettings } from "@/components/settings/VulnerabilityDetectionSettings";
 
 const Settings = () => {
   return (
@@ -22,8 +21,6 @@ const Settings = () => {
         </Card>
 
         <AIProviderSettings />
-        
-        <VulnerabilityDetectionSettings />
       </div>
 
       {/* Background Pattern */}
