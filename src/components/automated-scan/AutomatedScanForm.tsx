@@ -20,6 +20,13 @@ export const AutomatedScanForm = () => {
   const [schedule, setSchedule] = useState("daily");
   const [isActive, setIsActive] = useState(true);
   const [prompts, setPrompts] = useState("");
+  
+  // New state for specific time scheduling
+  const [scheduleHour, setScheduleHour] = useState(0);
+  const [scheduleMinute, setScheduleMinute] = useState(0);
+  const [scheduleDay, setScheduleDay] = useState(1);
+  const [scheduleWeekday, setScheduleWeekday] = useState(0);
+  const [scheduleMonth, setScheduleMonth] = useState(1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +36,6 @@ export const AutomatedScanForm = () => {
       return;
     }
 
-    // Extract model from provider string (format: "provider-model")
     const [providerName, model] = provider.split('-');
     if (!model) {
       toast.error("Please select both a provider and a model");
@@ -48,7 +54,11 @@ export const AutomatedScanForm = () => {
           prompts: JSON.parse(JSON.stringify(prompts.split('\n').filter(p => p.trim()))),
           schedule,
           is_active: isActive,
-          next_run: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // Set next run to tomorrow
+          schedule_hour: scheduleHour,
+          schedule_minute: scheduleMinute,
+          schedule_day: scheduleDay,
+          schedule_weekday: scheduleWeekday,
+          next_run: calculateNextRun(schedule, scheduleHour, scheduleMinute, scheduleDay, scheduleWeekday)
         });
 
       if (error) throw error;
@@ -63,6 +73,46 @@ export const AutomatedScanForm = () => {
     } catch (error: any) {
       toast.error("Failed to create automated scan: " + error.message);
     }
+  };
+
+  const calculateNextRun = (
+    schedule: string,
+    hour: number,
+    minute: number,
+    day: number,
+    weekday: number
+  ) => {
+    const now = new Date();
+    let nextRun = new Date();
+
+    switch (schedule) {
+      case 'hourly':
+        nextRun.setMinutes(minute);
+        if (nextRun <= now) {
+          nextRun.setHours(nextRun.getHours() + 1);
+        }
+        break;
+      case 'daily':
+        nextRun.setHours(hour, minute, 0, 0);
+        if (nextRun <= now) {
+          nextRun.setDate(nextRun.getDate() + 1);
+        }
+        break;
+      case 'weekly':
+        nextRun.setHours(hour, minute, 0, 0);
+        const daysUntilWeekday = weekday - now.getDay();
+        nextRun.setDate(now.getDate() + (daysUntilWeekday <= 0 ? 7 + daysUntilWeekday : daysUntilWeekday));
+        break;
+      case 'monthly':
+        nextRun.setDate(day);
+        nextRun.setHours(hour, minute, 0, 0);
+        if (nextRun <= now) {
+          nextRun.setMonth(nextRun.getMonth() + 1);
+        }
+        break;
+    }
+
+    return nextRun.toISOString();
   };
 
   return (
@@ -98,19 +148,74 @@ export const AutomatedScanForm = () => {
         onValueChange={setCategory}
       />
 
-      <div className="space-y-2">
-        <Label htmlFor="schedule">Schedule</Label>
-        <Select value={schedule} onValueChange={setSchedule}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select schedule" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="hourly">Every Hour</SelectItem>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="schedule">Schedule</Label>
+          <Select value={schedule} onValueChange={setSchedule}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select schedule" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hourly">Every Hour</SelectItem>
+              <SelectItem value="daily">Daily</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid gap-4">
+          {schedule !== 'hourly' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Hour (0-23)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={23}
+                  value={scheduleHour}
+                  onChange={(e) => setScheduleHour(parseInt(e.target.value))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Minute (0-59)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={59}
+                  value={scheduleMinute}
+                  onChange={(e) => setScheduleMinute(parseInt(e.target.value))}
+                />
+              </div>
+            </div>
+          )}
+
+          {schedule === 'weekly' && (
+            <div className="space-y-2">
+              <Label>Day of Week (0-6, Sunday is 0)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={6}
+                value={scheduleWeekday}
+                onChange={(e) => setScheduleWeekday(parseInt(e.target.value))}
+              />
+            </div>
+          )}
+
+          {schedule === 'monthly' && (
+            <div className="space-y-2">
+              <Label>Day of Month (1-31)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={scheduleDay}
+                onChange={(e) => setScheduleDay(parseInt(e.target.value))}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
