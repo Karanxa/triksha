@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { 
   Shield, 
-  Search,
+  Database,
   List,
 } from "lucide-react";
 import ToolCard from "@/components/ToolCard";
@@ -39,7 +39,7 @@ const Index = () => {
             <ToolCard
               icon={Shield}
               title="Security Scanner"
-              description="Detect and prevent vulnerabilities in your LLMs"
+              description="Run static and contextual scans to detect vulnerabilities in your LLMs"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -53,11 +53,11 @@ const Index = () => {
             />
           </Link>
 
-          <Link to="/llm-scanner?tab=contextual" className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <Link to="/datasets" className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <ToolCard
-              icon={Search}
-              title="Contextual Analysis"
-              description="Smart threat detection powered by behavioral analysis"
+              icon={Database}
+              title="Dataset Generation"
+              description="Create adversarial datasets to test LLM boundaries"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -84,7 +84,7 @@ const Index = () => {
             </div>
             
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <Search className="w-8 h-8 text-primary mx-auto" />
+              <Database className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Automated Defense</h3>
               <p className="text-sm text-foreground/60 text-center">
                 AI-powered protection against emerging LLM threats
