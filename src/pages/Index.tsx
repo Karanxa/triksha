@@ -21,7 +21,7 @@ const Index = () => {
               <span className="text-primary">Triksha</span>
             </h1>
             <p className="text-xl text-foreground/60 max-w-2xl mx-auto animate-fade-in">
-              Your end to end LLM red teaming platform
+              <span className="text-sm">Your</span> end to end LLM red teaming platform
             </p>
             <div className="flex justify-center animate-fade-in">
               <Link to="/llm-scanner">
