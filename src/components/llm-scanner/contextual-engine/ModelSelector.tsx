@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -110,19 +109,35 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
               </div>
             )}
 
+            <div className="space-y-2">
+              <h4 className="font-medium">Dataset Selection</h4>
+              <p className="text-sm text-muted-foreground">
+                Choose an existing dataset or upload a new one to test against the selected model.
+              </p>
+            </div>
+
             <Card>
               <CardContent className="p-6">
-                <Tabs defaultValue="datasets" className="space-y-4">
+                <Tabs defaultValue="csv" className="space-y-4">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="datasets" className="flex items-center gap-2">
-                      <Database className="h-4 w-4" />
-                      Existing Datasets
-                    </TabsTrigger>
                     <TabsTrigger value="csv" className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
                       Upload CSV
                     </TabsTrigger>
+                    <TabsTrigger value="datasets" className="flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      Existing Datasets
+                    </TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="csv">
+                    <CSVUpload onPromptsExtracted={setPrompts} />
+                    {prompts.length > 0 && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {prompts.length.toLocaleString()} prompts loaded from CSV
+                      </p>
+                    )}
+                  </TabsContent>
 
                   <TabsContent value="datasets" className="space-y-4">
                     <div>
@@ -162,15 +177,6 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
                         )}
                       </div>
                     </div>
-                  </TabsContent>
-
-                  <TabsContent value="csv">
-                    <CSVUpload onPromptsExtracted={setPrompts} />
-                    {prompts.length > 0 && (
-                      <p className="text-sm text-muted-foreground mt-2">
-                        {prompts.length.toLocaleString()} prompts loaded from CSV
-                      </p>
-                    )}
                   </TabsContent>
                 </Tabs>
               </CardContent>
