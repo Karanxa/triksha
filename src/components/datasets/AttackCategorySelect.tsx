@@ -29,7 +29,13 @@ export const ATTACK_CATEGORIES = [
 const formatCategory = (category: string) => {
   return category
     .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(word => {
+      // Special handling for "LLM"
+      if (word.toLowerCase() === "llm") {
+        return "LLM";
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
     .join(' ');
 };
 
