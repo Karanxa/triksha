@@ -81,52 +81,48 @@ const LLMResults = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container py-6 md:py-8 space-y-6">
-        <PageHeader
-          icon={Shield}
-          title="Scan Results"
-          description="View and analyze the results of your LLM security scans. Track vulnerabilities and monitor model behavior."
+    <div className="container py-4 md:py-8">
+      <PageHeader
+        icon={Shield}
+        title="Scan Results"
+        description="View and analyze the results of your LLM security scans. Track vulnerabilities and monitor model behavior."
+      />
+      
+      <Card className="w-full mx-auto border border-border/50 shadow-lg">
+        <ResultsContainer
+          scans={scans}
+          geraidScans={geraidScans}
+          isScansLoading={isScansLoading}
+          isGeraideLoading={isGeraideLoading}
+          scansError={scansError as Error | null}
+          geraideError={geraideError as Error | null}
+          filteredScans={filteredScans}
+          filteredContextualScans={filteredContextualScans}
+          searchProps={{
+            searchQuery,
+            setSearchQuery,
+            selectedCategory,
+            setSelectedCategory,
+            selectedScanType,
+            setSelectedScanType,
+            vulnerabilityStatus,
+            setVulnerabilityStatus,
+            selectedModel,
+            setSelectedModel,
+          }}
+          contextualProps={{
+            contextSearchQuery,
+            setContextSearchQuery,
+            contextModel,
+            setContextModel,
+            contextVulnerabilityStatus,
+            setContextVulnerabilityStatus,
+          }}
         />
-        
-        <div className="grid gap-6">
-          <Card className="border border-border/50 shadow-lg overflow-hidden backdrop-blur-sm bg-background/50">
-            <ResultsContainer
-              scans={scans}
-              geraidScans={geraidScans}
-              isScansLoading={isScansLoading}
-              isGeraideLoading={isGeraideLoading}
-              scansError={scansError as Error | null}
-              geraideError={geraideError as Error | null}
-              filteredScans={filteredScans}
-              filteredContextualScans={filteredContextualScans}
-              searchProps={{
-                searchQuery,
-                setSearchQuery,
-                selectedCategory,
-                setSelectedCategory,
-                selectedScanType,
-                setSelectedScanType,
-                vulnerabilityStatus,
-                setVulnerabilityStatus,
-                selectedModel,
-                setSelectedModel,
-              }}
-              contextualProps={{
-                contextSearchQuery,
-                setContextSearchQuery,
-                contextModel,
-                setContextModel,
-                contextVulnerabilityStatus,
-                setContextVulnerabilityStatus,
-              }}
-            />
-          </Card>
-        </div>
+      </Card>
 
-        {/* Background Pattern */}
-        <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] opacity-25 dark:bg-[radial-gradient(#1c1c1c_1px,transparent_1px)]" />
-      </div>
+      {/* Background Pattern */}
+      <div className="fixed inset-0 -z-10 h-full w-full bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-25" />
     </div>
   );
 };
