@@ -3,7 +3,8 @@ import {
   Shield, 
   Database,
   List,
-  ArrowRight
+  ArrowRight,
+  History
 } from "lucide-react";
 import ToolCard from "@/components/ToolCard";
 import { Button } from "@/components/ui/button";
@@ -44,20 +45,21 @@ const Index = () => {
       <div className="container mx-auto py-12 space-y-16 relative">
         {/* Hero Section */}
         <div className="relative">
-          <div className="relative px-6 py-16 md:py-24 text-center space-y-6 max-w-4xl mx-auto glass-card rounded-xl border border-white/10">
-            <h1 className="text-4xl sm:text-6xl font-bold tracking-tight animate-fade-in">
-              <span className="text-foreground/90">Secure GenAI with </span>
-              <span className="text-primary bg-clip-text bg-gradient-to-r from-primary to-primary-light">Triksha</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in leading-relaxed">
-              Your comprehensive platform for LLM security testing, vulnerability assessment, and model hardening
+          <div className="relative px-6 py-16 md:py-24 text-center space-y-8 max-w-4xl mx-auto glass-card rounded-xl border border-white/10">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Shield className="w-10 h-10 text-primary" />
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-fade-in">
+                <span className="text-foreground/90">Secure GenAI with </span>
+                <span className="text-[#9b87f5]">Triksha</span>
+              </h1>
+            </div>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in leading-relaxed">
+              Your end to end LLM red teaming platform
             </p>
-            <div className="flex justify-center gap-4 pt-4 animate-fade-in">
-              <Link to="/llm-scanner">
-                <Button size="lg" className="gap-2 bg-primary hover:bg-primary-dark">
-                  Start Scanning
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
+            <div className="flex items-center justify-center gap-4 pt-4">
+              <Link to="/llm-results" className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
+                <History className="w-5 h-5" />
+                <span>View Scan History</span>
               </Link>
             </div>
           </div>
