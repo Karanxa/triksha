@@ -85,7 +85,7 @@ export const DatasetsDashboard = () => {
       toast({
         variant: "destructive",
         title: "Download failed",
-        description: error.message
+        description: error.message || "Failed to download dataset"
       })
     } finally {
       setDownloading(null)

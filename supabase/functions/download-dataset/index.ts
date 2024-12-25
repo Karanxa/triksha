@@ -16,11 +16,7 @@ serve(async (req) => {
     const { datasetId, format } = await req.json()
     console.log('Download request:', { datasetId, format })
 
-    if (!datasetId) {
-      throw new Error('Dataset ID is required')
-    }
-
-    // Get user from auth header for API key access
+    // Get user from auth header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       throw new Error('No authorization header')
@@ -32,54 +28,30 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get user's API key
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
-    if (userError || !user) {
-      throw new Error('Unauthorized')
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('api_keys')
-      .eq('id', user.id)
+    // Get user's dataset
+    const { data: dataset, error: datasetError } = await supabase
+      .from('datasets')
+      .select('file_path, source, metadata')
+      .eq('id', datasetId)
       .single()
 
-    if (profileError || !profile?.api_keys?.huggingface) {
-      throw new Error('Hugging Face API key not configured')
+    if (datasetError || !dataset?.file_path) {
+      console.error('Dataset error:', datasetError)
+      throw new Error('Dataset not found')
     }
 
-    // Fetch dataset info from Hugging Face
-    const infoResponse = await fetch(`https://huggingface.co/api/datasets/${datasetId}`, {
-      headers: {
-        'Authorization': `Bearer ${profile.api_keys.huggingface}`
-      }
-    })
+    // Download file from Supabase storage
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from('datasets')
+      .download(dataset.file_path)
 
-    if (!infoResponse.ok) {
-      console.error('Failed to fetch dataset info:', await infoResponse.text())
-      throw new Error('Failed to fetch dataset info from Hugging Face')
+    if (downloadError) {
+      console.error('Storage download error:', downloadError)
+      throw new Error('Failed to download dataset file')
     }
 
-    const datasetInfo = await infoResponse.json()
-    console.log('Dataset info:', datasetInfo)
-
-    // Fetch the dataset content
-    const response = await fetch(`https://huggingface.co/datasets/${datasetId}/raw/main/data.csv`, {
-      headers: {
-        'Authorization': `Bearer ${profile.api_keys.huggingface}`
-      }
-    })
-
-    if (!response.ok) {
-      console.error('Failed to fetch dataset:', await response.text())
-      throw new Error('Failed to fetch dataset from Hugging Face')
-    }
-
-    const content = await response.text()
-    const filename = `${datasetId.split('/').pop()}.csv`
+    const content = await fileData.text()
+    const filename = dataset.file_path.split('/').pop() || 'dataset.csv'
 
     return new Response(content, {
       headers: {
