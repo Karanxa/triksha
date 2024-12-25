@@ -10,7 +10,7 @@ import LLMScanner from "@/pages/LLMScanner";
 import LLMResults from "@/pages/LLMResults";
 import Datasets from "@/pages/Datasets";
 import AugmentPrompt from "@/pages/AugmentPrompt";
-import FineTuning from "@/pages/FineTuning";
+import { FineTuning } from "@/components/fine-tuning/FineTuning";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
 
