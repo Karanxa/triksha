@@ -3,44 +3,74 @@ import {
   Shield, 
   Database,
   List,
+  ArrowRight
 } from "lucide-react";
 import ToolCard from "@/components/ToolCard";
+import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Index = () => {
+  useEffect(() => {
+    const checkApiKeys = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('api_keys')
+        .single();
+
+      if (!profile?.api_keys) {
+        toast.info(
+          "Welcome to Triksha! To get started, please configure your API keys in the Settings.",
+          {
+            action: {
+              label: "Configure Keys",
+              onClick: () => window.location.href = "/settings"
+            },
+            duration: 8000
+          }
+        );
+      }
+    };
+
+    checkApiKeys();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Background dot pattern - increased size and opacity */}
+      {/* Background dot pattern */}
       <div className="absolute inset-0 [background-size:16px_16px] bg-dot-pattern opacity-20 pointer-events-none" />
       
       <div className="container mx-auto py-12 space-y-16 relative">
         {/* Hero Section */}
         <div className="relative">
-          <div className="relative px-6 py-24 md:py-32 text-center space-y-8 max-w-4xl mx-auto glass-card rounded-xl">
-            <h1 className="text-4xl sm:text-6xl font-bold animate-fade-in">
-              <span className="text-foreground/80">Secure GenAI with </span>
-              <span className="text-primary">Triksha</span>
+          <div className="relative px-6 py-16 md:py-24 text-center space-y-6 max-w-4xl mx-auto glass-card rounded-xl border border-white/10">
+            <h1 className="text-4xl sm:text-6xl font-bold tracking-tight animate-fade-in">
+              <span className="text-foreground/90">Secure GenAI with </span>
+              <span className="text-primary bg-clip-text bg-gradient-to-r from-primary to-primary-light">Triksha</span>
             </h1>
-            <p className="text-xl text-foreground/60 max-w-2xl mx-auto animate-fade-in">
-              <span className="text-sm">Your</span> end to end LLM red teaming platform
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in leading-relaxed">
+              Your comprehensive platform for LLM security testing, vulnerability assessment, and model hardening
             </p>
-            <div className="flex justify-center animate-fade-in">
+            <div className="flex justify-center gap-4 pt-4 animate-fade-in">
               <Link to="/llm-scanner">
-                <button className="px-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all duration-300 text-lg font-medium">
+                <Button size="lg" className="gap-2 bg-primary hover:bg-primary-dark">
                   Start Scanning
-                </button>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               </Link>
             </div>
           </div>
         </div>
 
         {/* Main Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Link to="/llm-scanner" className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <ToolCard
               icon={Shield}
               title="Security Scanner"
-              description="Run static and contextual scans to detect vulnerabilities in your LLMs"
-              className="h-full bg-white/30 backdrop-blur-sm border-white/20"
+              description="Run comprehensive static and contextual scans to detect vulnerabilities in your LLMs"
+              className="h-full bg-white/5 backdrop-blur-sm border-white/10"
             />
           </Link>
 
@@ -48,8 +78,8 @@ const Index = () => {
             <ToolCard
               icon={List}
               title="Analysis Dashboard"
-              description="Track and visualize security metrics in real-time"
-              className="h-full bg-white/30 backdrop-blur-sm border-white/20"
+              description="Track, analyze, and visualize security metrics with detailed insights and reporting"
+              className="h-full bg-white/5 backdrop-blur-sm border-white/10"
             />
           </Link>
 
@@ -57,39 +87,39 @@ const Index = () => {
             <ToolCard
               icon={Database}
               title="Dataset Generation"
-              description="Create adversarial datasets to test LLM boundaries"
-              className="h-full bg-white/30 backdrop-blur-sm border-white/20"
+              description="Generate and manage adversarial datasets to thoroughly test LLM boundaries"
+              className="h-full bg-white/5 backdrop-blur-sm border-white/10"
             />
           </Link>
         </div>
 
-        {/* Roadmap Section - Updated styling */}
-        <div className="space-y-8">
+        {/* Roadmap Section */}
+        <div className="space-y-8 pt-8">
           <h2 className="text-2xl font-semibold text-center text-primary">
-            Roadmap
+            Product Roadmap
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Shield className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Contextual Scans</h3>
-              <p className="text-sm text-foreground/60 text-center">
-                Fine-tuned LLM specifically designed for precise red-teaming of target models
+              <h3 className="font-medium text-center text-foreground">Advanced Contextual Analysis</h3>
+              <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                Enhanced LLM security assessment with deep contextual understanding and behavioral analysis
               </p>
             </div>
             
-            <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <List className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Enhanced Datasets</h3>
-              <p className="text-sm text-foreground/60 text-center">
-                Advanced adversarial dataset generation to push LLMs to their limits
+              <h3 className="font-medium text-center text-foreground">Intelligent Dataset Generation</h3>
+              <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                AI-powered creation of sophisticated adversarial datasets for comprehensive security testing
               </p>
             </div>
             
-            <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Database className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Automated Defense</h3>
-              <p className="text-sm text-foreground/60 text-center">
-                AI-powered protection against emerging LLM threats
+              <h3 className="font-medium text-center text-foreground">Automated Defense System</h3>
+              <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                Real-time protection and automated response system against emerging LLM vulnerabilities
               </p>
             </div>
           </div>
