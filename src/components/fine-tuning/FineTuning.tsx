@@ -3,11 +3,7 @@ import { Card } from "@/components/ui/card"
 
 export const FineTuning = () => {
   return (
-    <div className="container py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Fine-Tuning</h1>
-      </div>
-      
+    <div className="container py-8 space-y-6">      
       <Card className="p-12 flex flex-col items-center justify-center text-center space-y-4">
         <Lock className="h-12 w-12 text-muted-foreground" />
         <h2 className="text-2xl font-semibold">Coming Soon</h2>

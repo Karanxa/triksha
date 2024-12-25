@@ -43,7 +43,6 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
 
       if (error) throw error;
       
-      // Transform the data to ensure metadata has the correct shape
       return (data || []).map(item => ({
         ...item,
         metadata: item.metadata as DatasetMetadata
