@@ -1,8 +1,6 @@
-import { Database, History, Plus } from "lucide-react";
+import { Database, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from "@/components/PageHeader";
 import { DatasetsDashboard } from "@/components/datasets/DatasetsDashboard";
@@ -17,38 +15,30 @@ const Datasets = () => {
         title="Datasets"
         description="Manage and analyze your datasets for LLM security testing and fine-tuning."
         action={
-          <div className="flex items-center gap-4">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Dataset
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl">
-                <CreateDataset />
-              </DialogContent>
-            </Dialog>
-            <Link 
-              to="/datasets/history" 
-              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
-            >
-              <History className="w-4 h-4" />
-              View History
-            </Link>
-          </div>
+          <Link 
+            to="/datasets/history" 
+            className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+          >
+            <History className="w-4 h-4" />
+            View History
+          </Link>
         }
       />
       
       <Card className="w-full mx-auto border border-border/50 shadow-lg">
         <Tabs defaultValue="your-datasets" className="w-full p-6">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="your-datasets">Your Datasets</TabsTrigger>
+            <TabsTrigger value="create">Create Dataset</TabsTrigger>
             <TabsTrigger value="explore">Explore</TabsTrigger>
           </TabsList>
 
           <TabsContent value="your-datasets">
             <DatasetsDashboard />
+          </TabsContent>
+
+          <TabsContent value="create">
+            <CreateDataset />
           </TabsContent>
 
           <TabsContent value="explore">
