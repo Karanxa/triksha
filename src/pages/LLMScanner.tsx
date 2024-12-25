@@ -2,8 +2,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScanForm } from "@/components/llm-scanner/ScanForm";
 import { ContextualEngine } from "@/components/llm-scanner/contextual-engine/ContextualEngine";
+import { CreateDataset } from "@/components/datasets/CreateDataset";
 import { Link } from "react-router-dom";
-import { Shield, History } from "lucide-react";
+import { Shield, History, Database, Plus } from "lucide-react";
 
 const LLMScanner = () => {
   return (
@@ -34,7 +35,7 @@ const LLMScanner = () => {
       <Card className="w-full mx-auto border border-border/50 shadow-lg">
         <CardContent className="p-6">
           <Tabs defaultValue="basic" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50">
+            <TabsList className="grid w-full grid-cols-3 p-1 bg-muted/50">
               <TabsTrigger 
                 value="basic"
                 className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
@@ -47,6 +48,12 @@ const LLMScanner = () => {
               >
                 Contextual Scan
               </TabsTrigger>
+              <TabsTrigger 
+                value="dataset"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+              >
+                Create Dataset
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="basic" className="mt-6">
@@ -55,6 +62,25 @@ const LLMScanner = () => {
 
             <TabsContent value="contextual" className="mt-6">
               <ContextualEngine />
+            </TabsContent>
+
+            <TabsContent value="dataset" className="mt-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Database className="h-5 w-5 text-primary" />
+                    <h2 className="text-lg font-semibold">Create New Dataset</h2>
+                  </div>
+                  <Link 
+                    to="/datasets" 
+                    className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    View All Datasets
+                  </Link>
+                </div>
+                <CreateDataset />
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
