@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { useAIProviderSettings } from "@/hooks/useAIProviderSettings";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AIProviderSettings as AIProviderSettingsType } from "@/types/aiProvider";
+import { AIProviderSettings as AIProviderSettingsType, CustomEndpoint } from "@/types/aiProvider";
 
 export const AIProviderSettings = () => {
   const { settings, isLoading, updateSettings } = useAIProviderSettings();
   const [provider, setProvider] = useState(settings?.provider || 'openai');
   const [model, setModel] = useState(settings?.model || 'gpt-4o-mini');
-  const [customEndpoint, setCustomEndpoint] = useState(settings?.customEndpoint || null);
+  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint | null>(settings?.customEndpoint || null);
 
   const handleSave = async () => {
     try {

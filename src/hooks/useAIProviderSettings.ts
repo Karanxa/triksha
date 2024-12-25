@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AIProviderSettings } from "@/types/aiProvider";
+import { AIProviderSettings, AIProviderSettingsJson } from "@/types/aiProvider";
 import { Json } from "@/integrations/supabase/types/common";
 
 export const useAIProviderSettings = () => {
@@ -22,8 +22,14 @@ export const useAIProviderSettings = () => {
       if (error) throw error;
       
       // Parse the JSON data with type checking
-      const aiSettings = data?.ai_provider_settings as AIProviderSettings | null;
-      setSettings(aiSettings || {
+      const aiSettings = data?.ai_provider_settings as AIProviderSettingsJson | null;
+      
+      // Convert to our internal type
+      setSettings(aiSettings ? {
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        customEndpoint: aiSettings.customEndpoint
+      } : {
         provider: 'openai',
         model: 'gpt-4o-mini',
         customEndpoint: null
@@ -38,17 +44,18 @@ export const useAIProviderSettings = () => {
 
   const updateSettings = async (newSettings: AIProviderSettings) => {
     try {
-      // Convert AIProviderSettings to Json type for Supabase
-      const settingsJson: Json = {
+      // Convert AIProviderSettings to Json compatible type
+      const settingsJson: AIProviderSettingsJson = {
         provider: newSettings.provider,
         model: newSettings.model,
-        customEndpoint: newSettings.customEndpoint || null
+        customEndpoint: newSettings.customEndpoint
       };
 
       const { error } = await supabase
         .from('integration_settings')
         .upsert({
-          ai_provider_settings: settingsJson,
+          ai_provider_settings: settingsJson as Json,
+          provider: 'ai', // Required field based on the table schema
           user_id: (await supabase.auth.getUser()).data.user?.id
         });
 
