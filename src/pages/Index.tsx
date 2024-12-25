@@ -63,9 +63,13 @@ const Index = () => {
           </Link>
         </div>
 
-        {/* Roadmap Section */}
+        {/* Roadmap Section - Updated styling */}
         <div className="space-y-8">
-          <h2 className="text-2xl font-semibold text-center text-foreground">🛠️ Roadmap</h2>
+          <h2 className="text-2xl font-semibold text-center">
+            <span className="bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
+              🛠️ Roadmap
+            </span>
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Shield className="w-8 h-8 text-primary mx-auto" />
