@@ -3,6 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
 
 interface ScanFormScheduleProps {
   schedule: string;
@@ -49,8 +51,18 @@ export const ScanFormSchedule = ({
   return (
     <>
       <div className="space-y-4">
-        <Label>Schedule (Optional)</Label>
-        <Select value={schedule} onValueChange={onScheduleChange}>
+        <div className="flex items-center justify-between">
+          <Label>Schedule (Optional)</Label>
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Coming in a few days
+          </Badge>
+        </div>
+        <Select 
+          value={schedule} 
+          onValueChange={onScheduleChange}
+          disabled={true}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select schedule frequency" />
           </SelectTrigger>
@@ -64,7 +76,7 @@ export const ScanFormSchedule = ({
         </Select>
 
         {schedule !== "none" && schedule !== "hourly" && (
-          <div className="space-y-4">
+          <div className="space-y-4 opacity-50">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Hour (24h)</Label>
@@ -74,6 +86,7 @@ export const ScanFormSchedule = ({
                   max={23}
                   value={hour}
                   onChange={(e) => handleTimeChange(parseInt(e.target.value), minute)}
+                  disabled={true}
                 />
               </div>
               <div className="space-y-2">
@@ -84,6 +97,7 @@ export const ScanFormSchedule = ({
                   max={59}
                   value={minute}
                   onChange={(e) => handleTimeChange(hour, parseInt(e.target.value))}
+                  disabled={true}
                 />
               </div>
             </div>
@@ -97,6 +111,7 @@ export const ScanFormSchedule = ({
                   max={31}
                   value={day}
                   onChange={(e) => handleDayChange(parseInt(e.target.value))}
+                  disabled={true}
                 />
               </div>
             )}
@@ -104,7 +119,11 @@ export const ScanFormSchedule = ({
             {schedule === "weekly" && (
               <div className="space-y-2">
                 <Label>Day of Week</Label>
-                <Select value={weekday.toString()} onValueChange={(v) => handleWeekdayChange(parseInt(v))}>
+                <Select 
+                  value={weekday.toString()} 
+                  onValueChange={(v) => handleWeekdayChange(parseInt(v))}
+                  disabled={true}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select day" />
                   </SelectTrigger>
@@ -125,11 +144,12 @@ export const ScanFormSchedule = ({
       </div>
 
       {schedule !== "none" && (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 opacity-50">
           <Switch
             id="recurring"
             checked={isRecurring}
             onCheckedChange={onRecurringChange}
+            disabled={true}
           />
           <Label htmlFor="recurring">Make this scan recurring</Label>
         </div>
