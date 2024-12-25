@@ -16,8 +16,18 @@ const Index = () => {
         {/* Hero Section */}
         <div className="relative">
           <div className="relative px-6 py-20 text-center space-y-6 max-w-4xl mx-auto glass-card">
-            <h1 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent animate-fade-in">
-              Secure Your AI Models with Triksha
+            <h1 className="text-4xl sm:text-6xl font-bold animate-fade-in" style={{
+              background: 'linear-gradient(135deg, #9b87f5 0%, #7E69AB 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 4px 8px rgba(155, 135, 245, 0.2)',
+              transform: 'perspective(1000px) rotateX(5deg)',
+              transition: 'transform 0.3s ease'
+            }}>
+              Secure AI Models with <span className="relative inline-block" style={{
+                transform: 'translateZ(50px)',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+              }}>Triksha</span>
             </h1>
             <p className="text-xl text-foreground/80 max-w-2xl mx-auto animate-fade-in">
               Bulletproof security testing for your LLMs
