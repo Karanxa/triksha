@@ -17,14 +17,13 @@ export const useAIProviderSettings = () => {
       const { data, error } = await supabase
         .from('integration_settings')
         .select('ai_provider_settings')
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       
-      // Parse the JSON data with type checking
+      // If no settings exist, use default values
       const aiSettings = data?.ai_provider_settings as AIProviderSettingsJson | null;
       
-      // Convert to our internal type
       setSettings(aiSettings ? {
         provider: aiSettings.provider,
         model: aiSettings.model,
@@ -65,6 +64,7 @@ export const useAIProviderSettings = () => {
     } catch (error) {
       console.error('Error updating AI provider settings:', error);
       toast.error('Failed to update AI provider settings');
+      throw error;
     }
   };
 
