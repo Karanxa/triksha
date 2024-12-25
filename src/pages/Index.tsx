@@ -17,15 +17,15 @@ const Index = () => {
         <div className="relative">
           <div className="relative px-6 py-20 text-center space-y-6 max-w-4xl mx-auto glass-card">
             <h1 className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent animate-fade-in">
-              Welcome to Triksha
+              Secure Your AI Models with Triksha
             </h1>
             <p className="text-xl text-foreground/80 max-w-2xl mx-auto animate-fade-in">
-              Your comprehensive platform for LLM security testing and enhancement
+              Advanced security testing and vulnerability assessment platform for Large Language Models
             </p>
             <div className="flex justify-center animate-fade-in">
               <Link to="/llm-scanner">
                 <button className="px-8 py-4 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all duration-300 text-lg font-medium">
-                  Get Started
+                  Start Scanning
                 </button>
               </Link>
             </div>
@@ -37,8 +37,8 @@ const Index = () => {
           <Link to="/llm-scanner" className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <ToolCard
               icon={Shield}
-              title="LLM Scanner"
-              description="Test your models against common security vulnerabilities"
+              title="Security Scanner"
+              description="Comprehensive vulnerability assessment for your language models"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -46,8 +46,8 @@ const Index = () => {
           <Link to="/llm-results" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <ToolCard
               icon={List}
-              title="Scan Results"
-              description="View and analyze detailed security scan results"
+              title="Analysis Dashboard"
+              description="In-depth insights and detailed security reports"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -56,7 +56,7 @@ const Index = () => {
             <ToolCard
               icon={Search}
               title="Contextual Analysis"
-              description="Deep dive into model behavior with contextual testing"
+              description="Advanced behavioral analysis and threat detection"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -68,25 +68,25 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Shield className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Comprehensive Testing</h3>
+              <h3 className="font-medium text-center text-foreground">Enterprise-Grade Security</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Test your LLMs against a wide range of security vulnerabilities
+                Industry-leading security testing methodology designed for enterprise LLMs
               </p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <List className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Detailed Results</h3>
+              <h3 className="font-medium text-center text-foreground">Actionable Insights</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Get in-depth analysis of scan results and vulnerabilities
+                Clear, detailed reports with practical recommendations for improvement
               </p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Search className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Contextual Analysis</h3>
+              <h3 className="font-medium text-center text-foreground">Smart Detection</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Understand model behavior through contextual testing
+                Advanced algorithms to identify potential vulnerabilities and security risks
               </p>
             </div>
           </div>
