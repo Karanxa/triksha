@@ -4,7 +4,6 @@ import { GenerateScript } from "./GenerateScript"
 import { JobHistory } from "./JobHistory"
 import { useSession } from "@supabase/auth-helpers-react"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/integrations/supabase/client"
 
 export const FineTuning = () => {
   const session = useSession()
@@ -20,31 +19,11 @@ export const FineTuning = () => {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('fine_tuning_jobs')
-        .insert({
-          user_id: session.user.id,
-          model: model,
-          status: 'script_generated',
-          parameters: parameters,
-          script_content: script
-        })
-
-      if (error) throw error
-
-      toast({
-        title: "Script saved successfully",
-        description: "You can view it in the Job History tab"
-      })
-    } catch (error) {
-      console.error('Error saving script:', error)
-      toast({
-        variant: "destructive",
-        title: "Failed to save script",
-        description: "Please try again"
-      })
-    }
+    // We'll just show a success message here since GenerateScript.tsx handles the database insertion
+    toast({
+      title: "Script generated successfully",
+      description: "You can view it in the Job History tab"
+    })
   }
 
   return (

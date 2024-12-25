@@ -38,6 +38,15 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
       return
     }
 
+    if (!session?.user?.id) {
+      toast({
+        variant: "destructive",
+        title: "Authentication required",
+        description: "Please sign in to generate a script"
+      })
+      return
+    }
+
     try {
       console.log("Generating script with parameters:", { model, taskType, parameters: parameters.getParameters() })
       
@@ -55,7 +64,7 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
       const { data, error } = await supabase
         .from('fine_tuning_jobs')
         .insert({
-          user_id: session?.user?.id,
+          user_id: session.user.id,
           model,
           dataset_id: datasetId || null,
           status: 'script_generated',
