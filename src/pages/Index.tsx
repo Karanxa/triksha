@@ -62,31 +62,31 @@ const Index = () => {
           </Link>
         </div>
 
-        {/* Features Section */}
+        {/* Roadmap Section */}
         <div className="space-y-8">
-          <h2 className="text-2xl font-semibold text-center text-foreground">Why Choose Triksha?</h2>
+          <h2 className="text-2xl font-semibold text-center text-foreground">🛠️ Roadmap</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Shield className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Enterprise-Grade Security</h3>
+              <h3 className="font-medium text-center text-foreground">Contextual Scans</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Military-grade protection for your AI models
+                Fine-tuned LLM specifically designed for precise red-teaming of target models
               </p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <List className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Actionable Insights</h3>
+              <h3 className="font-medium text-center text-foreground">Enhanced Datasets</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Crystal-clear security metrics at your fingertips
+                Advanced adversarial dataset generation to push LLMs to their limits
               </p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/20 bg-white/30 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Search className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Smart Detection</h3>
+              <h3 className="font-medium text-center text-foreground">Automated Defense</h3>
               <p className="text-sm text-foreground/60 text-center">
-                AI-powered threat detection that never sleeps
+                AI-powered protection against emerging LLM threats
               </p>
             </div>
           </div>
