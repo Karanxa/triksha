@@ -73,7 +73,7 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     return <Navigate to="/login" replace />;
   }
 
-  return <div className="min-h-screen">{children}</div>;
+  return children;
 };
 
 export default AuthGuard;

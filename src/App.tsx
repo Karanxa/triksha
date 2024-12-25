@@ -13,9 +13,11 @@ function App() {
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <ErrorBoundary>
           <AuthGuard>
-            <Navigation />
-            <OnboardingTutorial />
-            <Toaster />
+            <div className="min-h-screen">
+              <Navigation />
+              <OnboardingTutorial />
+              <Toaster />
+            </div>
           </AuthGuard>
         </ErrorBoundary>
       </ThemeProvider>
