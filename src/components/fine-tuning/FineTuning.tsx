@@ -4,21 +4,18 @@ import { GenerateScript } from "./GenerateScript"
 import { JobHistory } from "./JobHistory"
 import { useSession } from "@supabase/auth-helpers-react"
 import { useToast } from "@/hooks/use-toast"
+import { Navigate } from "react-router-dom"
 
 export const FineTuning = () => {
   const session = useSession()
   const { toast } = useToast()
 
-  const handleScriptGenerated = async (script: string, model: string, parameters: any) => {
-    if (!session?.user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Authentication required",
-        description: "Please sign in to save your fine-tuning job"
-      })
-      return
-    }
+  // If not authenticated, redirect to login
+  if (!session) {
+    return <Navigate to="/login" replace />
+  }
 
+  const handleScriptGenerated = async (script: string, model: string, parameters: any) => {
     // We'll just show a success message here since GenerateScript.tsx handles the database insertion
     toast({
       title: "Script generated successfully",
