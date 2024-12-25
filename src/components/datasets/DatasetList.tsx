@@ -16,7 +16,7 @@ interface Dataset {
 interface DatasetListProps {
   datasets: Dataset[];
   onView: (id: string) => void;
-  onDownload: (datasetId: string, format: 'csv' | 'zip') => void;
+  onDownload: (datasetId: string, format: 'csv') => void;
   downloading: string | null;
 }
 
@@ -45,7 +45,7 @@ export const DatasetList = ({ datasets, onView, onDownload, downloading }: Datas
               {new Date(dataset.created_at).toLocaleDateString()}
             </p>
           </CardContent>
-          <CardFooter className="grid grid-cols-4 gap-2">
+          <CardFooter className="grid grid-cols-3 gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -63,16 +63,6 @@ export const DatasetList = ({ datasets, onView, onDownload, downloading }: Datas
             >
               <Download className="h-4 w-4" />
               CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => onDownload(dataset.id, 'zip')}
-              disabled={!!downloading}
-            >
-              <Download className="h-4 w-4" />
-              ZIP
             </Button>
             <DeleteDatasetButton 
               datasetId={dataset.id} 

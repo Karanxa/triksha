@@ -19,7 +19,7 @@ interface DatasetGridProps {
   onLoadMore: () => void
   hasMore: boolean
   downloading: string | null
-  onDownload: (datasetId: string, format: 'csv' | 'txt' | 'zip') => void
+  onDownload: (datasetId: string, format: 'csv' | 'txt') => void
   isLoading: boolean
 }
 

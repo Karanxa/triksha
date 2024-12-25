@@ -19,7 +19,7 @@ interface Dataset {
 
 interface DatasetCardProps {
   dataset: Dataset
-  onDownload: (datasetId: string, format: 'csv' | 'txt' | 'zip') => void
+  onDownload: (datasetId: string, format: 'csv' | 'txt') => void
   downloading: string | null
 }
 
@@ -137,7 +137,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
           disabled={isDownloading || !!downloading}
         >
           <Download className="mr-2 h-4 w-4" />
-          Download
+          Download CSV
         </Button>
         <Button
           variant="outline"
