@@ -10,7 +10,7 @@ import LLMScanner from "@/pages/LLMScanner";
 import LLMResults from "@/pages/LLMResults";
 import Datasets from "@/pages/Datasets";
 import AugmentPrompt from "@/pages/AugmentPrompt";
-import { FineTuning } from "@/components/fine-tuning/FineTuning";
+import FineTuning from "@/pages/FineTuning";
 import Settings from "@/pages/Settings";
 import Login from "@/pages/Login";
 
@@ -37,7 +37,7 @@ function App() {
                 <Route path="/llm-results" element={<LLMResults />} />
                 <Route path="/datasets" element={<Datasets />} />
                 <Route path="/augment-prompt" element={<AugmentPrompt />} />
-                <Route path="fine-tuning" element={<FineTuning />} />
+                <Route path="/fine-tuning" element={<FineTuning />} />
                 <Route path="/settings" element={<Settings />} />
               </Route>
             </Route>
