@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { DatasetSelector } from "./DatasetSelector";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Database, FileText } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Dataset } from "@/types/dataset";
+import { cn } from "@/lib/utils";
+import { CSVUpload } from "../CSVUpload";
 import { ContextualConfig } from "./types";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 
 interface ModelSelectorProps {
   onStart: (config: ContextualConfig) => void;
@@ -15,9 +19,21 @@ interface ModelSelectorProps {
 export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
   const [selectedProvider, setSelectedProvider] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
-  const [selectedDataset, setSelectedDataset] = useState("");
-  const [curlCommand, setCurlCommand] = useState("");
-  const [placeholder, setPlaceholder] = useState("{PROMPT}");
+  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
+  const [prompts, setPrompts] = useState<string[]>([]);
+
+  const { data: datasets, isLoading } = useQuery({
+    queryKey: ["datasets"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("datasets")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Dataset[];
+    },
+  });
 
   const getModelsForProvider = (provider: string) => {
     switch (provider) {
@@ -69,35 +85,11 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
                   <SelectItem value="openai">OpenAI</SelectItem>
                   <SelectItem value="anthropic">Anthropic</SelectItem>
                   <SelectItem value="google">Google AI</SelectItem>
-                  <SelectItem value="custom">Custom Provider</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedProvider === 'custom' ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>cURL Command</Label>
-                  <Textarea
-                    placeholder="Enter your cURL command here"
-                    value={curlCommand}
-                    onChange={(e) => setCurlCommand(e.target.value)}
-                    className="font-mono text-sm min-h-[100px]"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Prompt Placeholder</Label>
-                  <Input
-                    placeholder="{PROMPT}"
-                    value={placeholder}
-                    onChange={(e) => setPlaceholder(e.target.value)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Replace the text in your cURL command that should be replaced with the prompt
-                  </p>
-                </div>
-              </div>
-            ) : selectedProvider && (
+            {selectedProvider && (
               <div className="space-y-2">
                 <Label>Model</Label>
                 <Select 
@@ -118,24 +110,82 @@ export const ModelSelector = ({ onStart }: ModelSelectorProps) => {
               </div>
             )}
 
-            <DatasetSelector 
-              selectedDataset={selectedDataset}
-              onDatasetSelect={setSelectedDataset}
-            />
+            <Card>
+              <CardContent className="p-6">
+                <Tabs defaultValue="datasets" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="datasets" className="flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      Existing Datasets
+                    </TabsTrigger>
+                    <TabsTrigger value="csv" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Upload CSV
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="datasets" className="space-y-4">
+                    <div>
+                      <Label className="text-base font-medium">Select Dataset</Label>
+                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {isLoading ? (
+                          <div className="text-center text-muted-foreground col-span-full">Loading datasets...</div>
+                        ) : datasets?.length === 0 ? (
+                          <div className="text-center text-muted-foreground col-span-full">No datasets found</div>
+                        ) : (
+                          datasets?.map((dataset) => (
+                            <div
+                              key={dataset.id}
+                              onClick={() => setSelectedDataset(dataset)}
+                              className={cn(
+                                "group p-4 border rounded-lg cursor-pointer transition-all duration-200",
+                                "hover:shadow-md hover:border-primary/50",
+                                "flex flex-col justify-between min-h-[120px]",
+                                selectedDataset?.id === dataset.id
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border"
+                              )}
+                            >
+                              <div className="space-y-1">
+                                <h4 className="font-medium group-hover:text-primary transition-colors line-clamp-1">
+                                  {dataset.name}
+                                </h4>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                  {dataset.description || "No description provided"}
+                                </p>
+                              </div>
+                              <div className="text-sm font-medium text-muted-foreground mt-2">
+                                {dataset.metadata?.promptCount || 0} prompts
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="csv">
+                    <CSVUpload onPromptsExtracted={setPrompts} />
+                    {prompts.length > 0 && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {prompts.length.toLocaleString()} prompts loaded from CSV
+                      </p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
 
           <Button 
             onClick={() => onStart({
               provider: selectedProvider,
               model: selectedModel,
-              datasetId: selectedDataset,
-              customEndpoint: selectedProvider === 'custom' ? {
-                curlCommand,
-                placeholder
-              } : undefined
+              datasetId: selectedDataset?.id || "",
+              customEndpoint: undefined
             })}
             className="w-full"
-            disabled={!selectedProvider || (!curlCommand && selectedProvider === 'custom') || (selectedProvider !== 'custom' && !selectedModel) || !selectedDataset}
+            disabled={!selectedProvider || !selectedModel || !selectedDataset}
           >
             Start Analysis
           </Button>
