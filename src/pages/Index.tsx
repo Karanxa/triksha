@@ -17,7 +17,7 @@ const Index = () => {
         <div className="relative">
           <div className="relative px-6 py-24 md:py-32 text-center space-y-8 max-w-4xl mx-auto glass-card rounded-xl">
             <h1 className="text-4xl sm:text-6xl font-bold animate-fade-in">
-              <span className="text-foreground/80">Secure AI Models with </span>
+              <span className="text-foreground/80">Secure GenAI with </span>
               <span className="text-primary">Triksha</span>
             </h1>
             <p className="text-xl text-foreground/60 max-w-2xl mx-auto animate-fade-in">
