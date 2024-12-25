@@ -9,6 +9,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Database, FileText, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface DatasetMetadata {
+  promptCount: number;
+  useOpenAI?: boolean;
+  method?: string;
+  recipe?: string;
+  adversarialConfig?: any;
+}
+
+interface Dataset {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  metadata: DatasetMetadata | null;
+}
+
 interface BatchScanDatasetProps {
   prompts: string[];
   onPromptsExtracted: (prompts: string[]) => void;
@@ -22,11 +38,11 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
     queryFn: async () => {
       const { data, error } = await supabase
         .from('datasets')
-        .select('id, name, description, category, file_path, metadata')
+        .select('id, name, description, category, metadata')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Dataset[];
     }
   });
 
