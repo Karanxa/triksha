@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CSVUpload } from "../CSVUpload";
 import { Database, FileText } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BatchScanDatasetProps {
   prompts: string[];
@@ -53,34 +54,35 @@ const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps
           <TabsContent value="datasets" className="space-y-4">
             <div>
               <Label className="text-base font-medium">Select Dataset</Label>
-              <div className="mt-4 grid grid-cols-1 gap-4">
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {isLoading ? (
-                  <div className="text-center text-muted-foreground">Loading datasets...</div>
+                  <div className="text-center text-muted-foreground col-span-full">Loading datasets...</div>
                 ) : datasets?.length === 0 ? (
-                  <div className="text-center text-muted-foreground">No datasets found</div>
+                  <div className="text-center text-muted-foreground col-span-full">No datasets found</div>
                 ) : (
                   datasets?.map((dataset) => (
                     <div
                       key={dataset.id}
-                      className={`group p-4 border rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
+                      onClick={() => handleDatasetSelect(dataset)}
+                      className={cn(
+                        "group p-4 border rounded-lg cursor-pointer transition-all duration-200",
+                        "hover:shadow-md hover:border-primary/50",
+                        "flex flex-col justify-between min-h-[120px]",
                         selectedDataset?.id === dataset.id
                           ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() => handleDatasetSelect(dataset)}
+                          : "border-border"
+                      )}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <h4 className="font-medium group-hover:text-primary transition-colors">
-                            {dataset.name}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">
-                            {dataset.description || "No description provided"}
-                          </p>
-                        </div>
-                        <div className="text-sm font-medium text-muted-foreground">
-                          {dataset.metadata?.promptCount || 0} prompts
-                        </div>
+                      <div className="space-y-1">
+                        <h4 className="font-medium group-hover:text-primary transition-colors line-clamp-1">
+                          {dataset.name}
+                        </h4>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {dataset.description || "No description provided"}
+                        </p>
+                      </div>
+                      <div className="text-sm font-medium text-muted-foreground mt-2">
+                        {dataset.metadata?.promptCount || 0} prompts
                       </div>
                     </div>
                   ))
