@@ -42,7 +42,12 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Dataset[];
+      
+      // Transform the data to ensure metadata has the correct shape
+      return (data || []).map(item => ({
+        ...item,
+        metadata: item.metadata as DatasetMetadata
+      })) as Dataset[];
     }
   });
 
