@@ -319,6 +319,7 @@ export type Database = {
           settings: Json
           updated_at: string
           user_id: string
+          vulnerability_detection_settings: Json | null
         }
         Insert: {
           ai_provider_settings?: Json | null
@@ -328,6 +329,7 @@ export type Database = {
           settings?: Json
           updated_at?: string
           user_id: string
+          vulnerability_detection_settings?: Json | null
         }
         Update: {
           ai_provider_settings?: Json | null
@@ -337,6 +339,7 @@ export type Database = {
           settings?: Json
           updated_at?: string
           user_id?: string
+          vulnerability_detection_settings?: Json | null
         }
         Relationships: []
       }
@@ -791,6 +794,7 @@ export type Database = {
         | "safety_bounds"
         | "system_prompt"
         | "performance"
+      vulnerability_detection_mode: "default" | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
