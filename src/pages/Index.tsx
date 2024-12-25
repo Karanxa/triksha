@@ -9,8 +9,8 @@ import ToolCard from "@/components/ToolCard";
 const Index = () => {
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Background dot pattern */}
-      <div className="absolute inset-0 [background-size:24px_24px] bg-dot-pattern opacity-10 pointer-events-none" />
+      {/* Background dot pattern - increased size and opacity */}
+      <div className="absolute inset-0 [background-size:16px_16px] bg-dot-pattern opacity-20 pointer-events-none" />
       
       <div className="container mx-auto py-12 space-y-16 relative">
         {/* Hero Section */}
@@ -21,7 +21,7 @@ const Index = () => {
               <span className="text-primary">Triksha</span>
             </h1>
             <p className="text-xl text-foreground/60 max-w-2xl mx-auto animate-fade-in">
-              A comprehensive LLM red teaming platform
+              Your LLM red teaming platform
             </p>
             <div className="flex justify-center animate-fade-in">
               <Link to="/llm-scanner">
