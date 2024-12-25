@@ -20,7 +20,7 @@ const Index = () => {
               Secure Your AI Models with Triksha
             </h1>
             <p className="text-xl text-foreground/80 max-w-2xl mx-auto animate-fade-in">
-              Advanced security testing and vulnerability assessment platform for Large Language Models
+              Bulletproof security testing for your LLMs
             </p>
             <div className="flex justify-center animate-fade-in">
               <Link to="/llm-scanner">
@@ -38,7 +38,7 @@ const Index = () => {
             <ToolCard
               icon={Shield}
               title="Security Scanner"
-              description="Comprehensive vulnerability assessment for your language models"
+              description="Detect and prevent vulnerabilities in your LLMs"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -47,7 +47,7 @@ const Index = () => {
             <ToolCard
               icon={List}
               title="Analysis Dashboard"
-              description="In-depth insights and detailed security reports"
+              description="Track and visualize security metrics in real-time"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -56,7 +56,7 @@ const Index = () => {
             <ToolCard
               icon={Search}
               title="Contextual Analysis"
-              description="Advanced behavioral analysis and threat detection"
+              description="Smart threat detection powered by behavioral analysis"
               className="h-full bg-white/30 backdrop-blur-sm border-white/20"
             />
           </Link>
@@ -70,7 +70,7 @@ const Index = () => {
               <Shield className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Enterprise-Grade Security</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Industry-leading security testing methodology designed for enterprise LLMs
+                Military-grade protection for your AI models
               </p>
             </div>
             
@@ -78,7 +78,7 @@ const Index = () => {
               <List className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Actionable Insights</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Clear, detailed reports with practical recommendations for improvement
+                Crystal-clear security metrics at your fingertips
               </p>
             </div>
             
@@ -86,7 +86,7 @@ const Index = () => {
               <Search className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Smart Detection</h3>
               <p className="text-sm text-foreground/60 text-center">
-                Advanced algorithms to identify potential vulnerabilities and security risks
+                AI-powered threat detection that never sleeps
               </p>
             </div>
           </div>
