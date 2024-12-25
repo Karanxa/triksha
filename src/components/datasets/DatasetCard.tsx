@@ -27,6 +27,25 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
   const [isDownloading, setIsDownloading] = useState(false)
   const isGitHub = dataset.source === 'github'
 
+  const handleDownload = async () => {
+    try {
+      setIsDownloading(true)
+      // For Hugging Face datasets, we'll use the dataset ID directly
+      // For GitHub repos, we'll use the last part of the URL as the ID
+      const datasetId = isGitHub 
+        ? dataset.url?.split('/').pop() || dataset.id
+        : dataset.id
+      
+      await onDownload(datasetId, 'csv')
+      toast.success("Dataset downloaded successfully!")
+    } catch (err) {
+      console.error('Download error:', err)
+      toast.error("Failed to download dataset")
+    } finally {
+      setIsDownloading(false)
+    }
+  }
+
   const handleCloneRepo = async () => {
     const repoUrl = isGitHub 
       ? `${dataset.url}.git`
@@ -109,7 +128,17 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
           )}
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full hover:bg-accent transition-colors"
+          onClick={handleDownload}
+          disabled={isDownloading || !!downloading}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Download
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -118,7 +147,7 @@ export const DatasetCard = ({ dataset, onDownload, downloading }: DatasetCardPro
           disabled={isDownloading}
         >
           <GitFork className="mr-2 h-4 w-4" />
-          Clone Repository
+          Clone
         </Button>
       </CardFooter>
     </Card>
