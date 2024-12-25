@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import { DatasetOption } from "./contextual-engine/types";
 
 interface DatasetSelectorProps {
   selectedDataset: string;
@@ -20,12 +19,17 @@ export const DatasetSelector = ({ selectedDataset, onDatasetSelect }: DatasetSel
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as DatasetOption[];
+      return data;
     }
   });
 
   if (isLoading) {
-    return <Loader2 className="h-4 w-4 animate-spin" />;
+    return (
+      <div className="flex items-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="text-sm text-muted-foreground">Loading datasets...</span>
+      </div>
+    );
   }
 
   return (
@@ -37,12 +41,24 @@ export const DatasetSelector = ({ selectedDataset, onDatasetSelect }: DatasetSel
         </SelectTrigger>
         <SelectContent>
           {datasets?.map((dataset) => (
-            <SelectItem key={dataset.id} value={dataset.id}>
-              {dataset.name}
+            <SelectItem 
+              key={dataset.id} 
+              value={dataset.id}
+              className="flex flex-col items-start"
+            >
+              <span>{dataset.name}</span>
+              {dataset.description && (
+                <span className="text-xs text-muted-foreground">{dataset.description}</span>
+              )}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+      {datasets?.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          No datasets found. Please create a dataset first.
+        </p>
+      )}
     </div>
   );
 };

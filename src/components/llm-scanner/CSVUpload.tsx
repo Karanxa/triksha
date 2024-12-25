@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import { DatasetSelector } from "./DatasetSelector";
 
 interface CSVUploadProps {
   onPromptsExtracted: (prompts: string[]) => void;
@@ -158,6 +159,20 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
           />
           <p className="text-sm text-muted-foreground">
             Upload a CSV file with a 'prompts' column
+          </p>
+        </TabsContent>
+
+        <TabsContent value="select" className="space-y-4">
+          <DatasetSelector 
+            selectedDataset={selectedDataset || ""}
+            onDatasetSelect={(value) => {
+              if (value) {
+                loadDatasetContent();
+              }
+            }}
+          />
+          <p className="text-sm text-muted-foreground">
+            Select an existing dataset from your library
           </p>
         </TabsContent>
       </Tabs>
