@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSession } from "@supabase/auth-helpers-react"
 import { supabase } from "@/integrations/supabase/client"
 import { GeneratedScript } from "./GeneratedScript"
+import { useParameterState } from "./hooks/useParameterState"
 
 interface GenerateScriptProps {
   onScriptGenerated: (script: string, model: string, parameters: any) => void;
@@ -19,43 +20,15 @@ interface GenerateScriptProps {
 export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
   const { toast } = useToast()
   const session = useSession()
+  const parameters = useParameterState()
+  
   const [model, setModel] = useState("")
   const [datasetId, setDatasetId] = useState("")
   const [taskType, setTaskType] = useState("")
   const [scriptLanguage, setScriptLanguage] = useState("python")
   const [generatedScript, setGeneratedScript] = useState<string | null>(null)
-  
-  // Basic parameters state
-  const [learningRate, setLearningRate] = useState("0.0001")
-  const [batchSize, setBatchSize] = useState("8")
-  const [epochs, setEpochs] = useState("3")
-  const [warmupSteps, setWarmupSteps] = useState("500")
-  const [weightDecay, setWeightDecay] = useState("0.01")
-  const [optimizer, setOptimizer] = useState("adamw")
-  const [scheduler, setScheduler] = useState("linear")
-  const [maxSteps, setMaxSteps] = useState("1000")
-  const [evaluationStrategy, setEvaluationStrategy] = useState("steps")
-  const [saveStrategy, setSaveStrategy] = useState("steps")
-  const [randomSeed, setRandomSeed] = useState("42")
-
-  // Advanced parameters state
-  const [precision, setPrecision] = useState("fp16")
-  const [gradientAccumulation, setGradientAccumulation] = useState("4")
-  const [useDeepSpeed, setUseDeepSpeed] = useState(false)
-  const [useFlashAttention, setUseFlashAttention] = useState(false)
-  const [useMemoryOptimization, setUseMemoryOptimization] = useState(false)
-  const [hardwareAcceleration, setHardwareAcceleration] = useState("cuda")
 
   const handleGenerateScript = async () => {
-    if (!session?.user?.id) {
-      toast({
-        variant: "destructive",
-        title: "Authentication required",
-        description: "Please sign in to generate scripts"
-      })
-      return
-    }
-
     if (!model || !taskType) {
       toast({
         variant: "destructive",
@@ -65,35 +38,15 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
       return
     }
 
-    const parameters = {
-      learningRate,
-      batchSize,
-      epochs,
-      warmupSteps,
-      weightDecay,
-      optimizer,
-      scheduler,
-      maxSteps,
-      evaluationStrategy,
-      saveStrategy,
-      randomSeed,
-      precision,
-      gradientAccumulation,
-      useDeepSpeed,
-      useFlashAttention,
-      useMemoryOptimization,
-      hardwareAcceleration
-    }
-
     try {
-      console.log("Generating script with parameters:", { model, taskType, parameters })
+      console.log("Generating script with parameters:", { model, taskType, parameters: parameters.getParameters() })
       
       const script = generateScript({
         model,
         datasetId,
         taskType,
         scriptLanguage,
-        parameters
+        parameters: parameters.getParameters()
       })
 
       setGeneratedScript(script)
@@ -102,11 +55,11 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
       const { data, error } = await supabase
         .from('fine_tuning_jobs')
         .insert({
-          user_id: session.user.id,
+          user_id: session?.user?.id,
           model,
           dataset_id: datasetId || null,
           status: 'script_generated',
-          parameters,
+          parameters: parameters.getParameters(),
           script_content: script
         })
         .select()
@@ -118,7 +71,7 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
 
       console.log('Fine-tuning job created:', data)
 
-      onScriptGenerated(script, model, parameters)
+      onScriptGenerated(script, model, parameters.getParameters())
 
       toast({
         title: "Script generated successfully",
@@ -146,42 +99,7 @@ export const GenerateScript = ({ onScriptGenerated }: GenerateScriptProps) => {
             <LanguageSelect value={scriptLanguage} onValueChange={setScriptLanguage} />
           </div>
 
-          <ParameterTabs
-            learningRate={learningRate}
-            setLearningRate={setLearningRate}
-            batchSize={batchSize}
-            setBatchSize={setBatchSize}
-            epochs={epochs}
-            setEpochs={setEpochs}
-            warmupSteps={warmupSteps}
-            setWarmupSteps={setWarmupSteps}
-            weightDecay={weightDecay}
-            setWeightDecay={setWeightDecay}
-            optimizer={optimizer}
-            setOptimizer={setOptimizer}
-            scheduler={scheduler}
-            setScheduler={setScheduler}
-            maxSteps={maxSteps}
-            setMaxSteps={setMaxSteps}
-            evaluationStrategy={evaluationStrategy}
-            setEvaluationStrategy={setEvaluationStrategy}
-            saveStrategy={saveStrategy}
-            setSaveStrategy={setSaveStrategy}
-            randomSeed={randomSeed}
-            setRandomSeed={setRandomSeed}
-            precision={precision}
-            setPrecision={setPrecision}
-            gradientAccumulation={gradientAccumulation}
-            setGradientAccumulation={setGradientAccumulation}
-            useDeepSpeed={useDeepSpeed}
-            setUseDeepSpeed={setUseDeepSpeed}
-            useFlashAttention={useFlashAttention}
-            setUseFlashAttention={setUseFlashAttention}
-            useMemoryOptimization={useMemoryOptimization}
-            setUseMemoryOptimization={setUseMemoryOptimization}
-            hardwareAcceleration={hardwareAcceleration}
-            setHardwareAcceleration={setHardwareAcceleration}
-          />
+          <ParameterTabs {...parameters} />
 
           <Button 
             onClick={handleGenerateScript}
