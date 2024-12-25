@@ -122,7 +122,7 @@ const LLMResults = () => {
                 setContextVulnerabilityStatus,
               }}
             />
-          </div>
+          </Card>
         </div>
 
         {/* Background Pattern */}
