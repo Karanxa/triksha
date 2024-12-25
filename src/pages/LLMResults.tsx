@@ -87,7 +87,6 @@ const LLMResults = () => {
           icon={Shield}
           title="Scan Results"
           description="View and analyze the results of your LLM security scans. Track vulnerabilities and monitor model behavior."
-          className="mb-8"
         />
         
         <div className="grid gap-6">
