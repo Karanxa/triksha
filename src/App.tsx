@@ -1,10 +1,10 @@
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { Navigation } from "@/components/Navigation";
+import Navigation from "@/components/Navigation";
 import { OnboardingTutorial } from "@/components/onboarding/OnboardingTutorial";
-import { AuthGuard } from "@/components/AuthGuard";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import AuthGuard from "@/components/AuthGuard";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import "./App.css";
 
 function App() {
