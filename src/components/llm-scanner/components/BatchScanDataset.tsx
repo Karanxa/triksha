@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CSVUpload } from "../CSVUpload";
-import { DatasetSelector } from "../DatasetSelector";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Database, FileText, FolderOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface BatchScanDatasetProps {
   prompts: string[];
@@ -15,6 +17,19 @@ interface BatchScanDatasetProps {
 export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps) => {
   const [selectedDataset, setSelectedDataset] = useState("");
 
+  const { data: datasets } = useQuery({
+    queryKey: ['user-datasets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('datasets')
+        .select('id, name, description, category, file_path, metadata')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const handleDatasetSelect = async (datasetId: string) => {
     try {
       setSelectedDataset(datasetId);
@@ -22,7 +37,6 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
       if (datasetId) {
         console.log('Dataset selected:', datasetId);
         
-        // Get dataset details
         const { data: dataset, error: datasetError } = await supabase
           .from('datasets')
           .select('file_path')
@@ -34,19 +48,16 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
           throw new Error('Dataset file not found');
         }
 
-        // Download the file content
         const { data: fileData, error: downloadError } = await supabase.storage
           .from('datasets')
           .download(dataset.file_path);
 
         if (downloadError) throw downloadError;
 
-        // Parse CSV content
         const text = await fileData.text();
         const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
         const headers = lines[0].toLowerCase().split(',');
         
-        // Find prompt column
         const promptIndex = headers.findIndex(header => 
           header === 'prompts' || header === 'prompt' || header === 'text'
         );
@@ -55,7 +66,6 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
           throw new Error('Dataset must have a prompts, prompt, or text column');
         }
 
-        // Extract prompts from CSV
         const extractedPrompts = lines.slice(1)
           .map(line => {
             const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
@@ -96,10 +106,50 @@ export const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatas
             </TabsContent>
 
             <TabsContent value="select" className="space-y-4">
-              <DatasetSelector 
-                selectedDataset={selectedDataset}
-                onDatasetSelect={handleDatasetSelect}
-              />
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {datasets?.map((dataset) => (
+                    <Card 
+                      key={dataset.id}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-md",
+                        selectedDataset === dataset.id && "border-primary bg-primary/5"
+                      )}
+                      onClick={() => handleDatasetSelect(dataset.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-md bg-primary/10">
+                            <Database className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="space-y-1 flex-1">
+                            <h3 className="font-medium leading-none">
+                              {dataset.name}
+                            </h3>
+                            {dataset.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {dataset.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 mt-2">
+                              {dataset.category && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <FolderOpen className="h-3 w-3" />
+                                  {dataset.category}
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <FileText className="h-3 w-3" />
+                                {dataset.metadata?.promptCount || 0} prompts
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
             </TabsContent>
           </Tabs>
 
