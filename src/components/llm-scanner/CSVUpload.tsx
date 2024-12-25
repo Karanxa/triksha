@@ -1,79 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
-import { parseCSVContent } from "./utils/datasetParser";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CSVUploadProps {
   onPromptsExtracted: (prompts: string[]) => void;
-  selectedDataset?: string;
 }
 
-export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProps) => {
-  const loadDatasetContent = async (datasetId: string) => {
-    if (!datasetId) return;
-
-    try {
-      console.log('Loading dataset content for:', datasetId);
-      
-      // First, get the dataset details
-      const { data: dataset, error: datasetError } = await supabase
-        .from('datasets')
-        .select('file_path')
-        .eq('id', datasetId)
-        .single();
-
-      if (datasetError) throw datasetError;
-      if (!dataset?.file_path) {
-        toast.error("Dataset file not found");
-        return;
-      }
-
-      // Download the file content
-      const { data: fileData, error: downloadError } = await supabase
-        .storage
-        .from('datasets')
-        .download(dataset.file_path);
-
-      if (downloadError) throw downloadError;
-
-      // Read and parse the file content
-      const text = await fileData.text();
-      const { headers, data } = parseCSVContent(text);
-      
-      const promptIndex = headers.findIndex(header => 
-        header === "prompts" || header === "prompt" || header === "text"
-      );
-
-      if (promptIndex === -1) {
-        toast.error("Dataset must have a 'prompts', 'prompt', or 'text' column");
-        return;
-      }
-
-      const prompts = data.map(row => row[promptIndex]).filter(Boolean);
-
-      if (prompts.length === 0) {
-        toast.error("No valid prompts found in the dataset");
-        return;
-      }
-
-      console.log(`Extracted ${prompts.length} prompts from dataset`);
-      onPromptsExtracted(prompts);
-      toast.success(`${prompts.length} prompts extracted from dataset`);
-
-    } catch (error) {
-      console.error("Dataset processing error:", error);
-      toast.error("Error processing dataset: " + (error instanceof Error ? error.message : "Unknown error"));
-    }
-  };
-
-  useEffect(() => {
-    if (selectedDataset) {
-      loadDatasetContent(selectedDataset);
-    }
-  }, [selectedDataset]);
-
+export const CSVUpload = ({ onPromptsExtracted }: CSVUploadProps) => {
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -85,7 +19,8 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
 
     try {
       const text = await file.text();
-      const { headers, data } = parseCSVContent(text);
+      const lines = text.trim().split('\n');
+      const headers = lines[0].toLowerCase().split(',');
       
       const promptIndex = headers.findIndex(header => 
         header === "prompts" || header === "prompt" || header === "text"
@@ -96,14 +31,18 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
         return;
       }
 
-      const prompts = data.map(row => row[promptIndex]).filter(Boolean);
+      const prompts = lines.slice(1)
+        .map(line => {
+          const values = line.split(',');
+          return values[promptIndex]?.trim().replace(/^"|"$/g, '') || '';
+        })
+        .filter(Boolean);
 
       if (prompts.length === 0) {
         toast.error("No valid prompts found in the CSV file");
         return;
       }
 
-      console.log(`Extracted ${prompts.length} prompts from uploaded file`);
       onPromptsExtracted(prompts);
       toast.success(`${prompts.length} prompts extracted successfully`);
       
@@ -119,12 +58,12 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
       <div className="flex items-center justify-between">
         <Button
           variant="outline"
-          size="sm"
-          className="flex items-center gap-2 w-full"
+          size="lg"
+          className="w-full flex items-center gap-2"
           onClick={() => document.getElementById("csv-upload-scanner")?.click()}
         >
           <Upload className="w-4 h-4" />
-          Upload CSV
+          Upload CSV File
         </Button>
       </div>
       <input
@@ -134,9 +73,11 @@ export const CSVUpload = ({ onPromptsExtracted, selectedDataset }: CSVUploadProp
         className="hidden"
         onChange={handleFileUpload}
       />
-      <p className="text-sm text-muted-foreground">
-        Upload a CSV file with a 'prompts' column
-      </p>
+      <Alert>
+        <AlertDescription>
+          Upload a CSV file with a 'prompts' column. Each row should contain one prompt for testing.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 };
