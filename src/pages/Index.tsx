@@ -45,12 +45,12 @@ const Index = () => {
             <div className="flex items-center justify-center gap-3 mb-4">
               <Shield className="w-10 h-10 text-primary" />
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-fade-in">
-                <span className="text-foreground/90">Secure GenAI with </span>
+                <span className="text-foreground/90">End-to-End LLM Red Teaming with </span>
                 <span className="text-[#9b87f5]">Triksha</span>
               </h1>
             </div>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
-              Your LLM security testing platform
+              Your comprehensive platform for LLM security testing, vulnerability assessment, and red teaming
             </p>
           </div>
         </div>
