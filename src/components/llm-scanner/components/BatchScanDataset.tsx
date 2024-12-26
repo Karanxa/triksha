@@ -1,104 +1,77 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Dataset } from "@/types/dataset";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CSVUpload } from "../CSVUpload";
-import { Database, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface BatchScanDatasetProps {
-  prompts: string[];
-  onPromptsExtracted: (prompts: string[]) => void;
   selectedDataset: string;
   onDatasetSelect: (datasetId: string) => void;
 }
 
 const BatchScanDataset = ({ 
-  prompts, 
-  onPromptsExtracted, 
   selectedDataset,
   onDatasetSelect 
 }: BatchScanDatasetProps) => {
   const { data: datasets, isLoading } = useQuery({
-    queryKey: ["datasets"],
+    queryKey: ['datasets'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("datasets")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .from('datasets')
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Dataset[];
-    },
+      return data;
+    }
   });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardContent className="p-6">
-        <Tabs defaultValue="datasets" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="datasets" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Existing Datasets
-            </TabsTrigger>
-            <TabsTrigger value="csv" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Upload CSV
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="datasets" className="space-y-4">
-            <div>
-              <Label className="text-base font-medium">Select Dataset</Label>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {isLoading ? (
-                  <div className="text-center text-muted-foreground col-span-full">Loading datasets...</div>
-                ) : datasets?.length === 0 ? (
-                  <div className="text-center text-muted-foreground col-span-full">No datasets found</div>
-                ) : (
-                  datasets?.map((dataset) => (
-                    <div
-                      key={dataset.id}
-                      onClick={() => onDatasetSelect(dataset.id)}
-                      className={cn(
-                        "group p-4 border rounded-lg cursor-pointer transition-all duration-200",
-                        "hover:shadow-md hover:border-primary/50",
-                        "flex flex-col justify-between min-h-[120px]",
-                        selectedDataset === dataset.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border"
-                      )}
-                    >
-                      <div className="space-y-1">
-                        <h4 className="font-medium group-hover:text-primary transition-colors line-clamp-1">
-                          {dataset.name}
-                        </h4>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {dataset.description || "No description provided"}
-                        </p>
-                      </div>
-                      <div className="text-sm font-medium text-muted-foreground mt-2">
-                        {dataset.metadata?.promptCount || 0} prompts
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="csv">
-            <CSVUpload onPromptsExtracted={onPromptsExtracted} />
-            {prompts.length > 0 && (
-              <p className="text-sm text-muted-foreground mt-2">
-                {prompts.length.toLocaleString()} prompts loaded from CSV
-              </p>
-            )}
-          </TabsContent>
-        </Tabs>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Select Dataset</Label>
+            <Select value={selectedDataset} onValueChange={onDatasetSelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a dataset" />
+              </SelectTrigger>
+              <SelectContent>
+                {datasets?.map((dataset) => (
+                  <SelectItem 
+                    key={dataset.id} 
+                    value={dataset.id}
+                    className="flex flex-col items-start"
+                  >
+                    <span>{dataset.name}</span>
+                    {dataset.description && (
+                      <span className="text-xs text-muted-foreground">
+                        {dataset.description}
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {datasets?.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No datasets found. Please create a dataset first.
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
