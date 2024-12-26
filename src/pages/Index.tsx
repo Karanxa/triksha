@@ -3,11 +3,8 @@ import {
   Shield, 
   Database,
   List,
-  ArrowRight,
-  History
 } from "lucide-react";
 import ToolCard from "@/components/ToolCard";
-import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,12 +53,6 @@ const Index = () => {
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in leading-relaxed">
               Your end to end LLM red teaming platform
             </p>
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <Link to="/llm-results" className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
-                <History className="w-5 h-5" />
-                <span>View Scan History</span>
-              </Link>
-            </div>
           </div>
         </div>
 
