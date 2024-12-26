@@ -36,7 +36,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background relative">
-      {/* Background dot pattern */}
       <div className="absolute inset-0 [background-size:16px_16px] bg-dot-pattern opacity-20 pointer-events-none" />
       
       <div className="container mx-auto py-12 space-y-16 relative">
@@ -51,7 +50,7 @@ const Index = () => {
               </h1>
             </div>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
-              Your end to end LLM red teaming platform
+              Your LLM security testing platform
             </p>
           </div>
         </div>
@@ -62,8 +61,8 @@ const Index = () => {
             <ToolCard
               icon={Shield}
               title="Security Scanner"
-              description="Detect vulnerabilities in your LLMs through comprehensive static and contextual scans"
-              className="h-full bg-white/5 backdrop-blur-sm border-white/10"
+              description="Comprehensive vulnerability detection for LLM systems"
+              className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
             />
           </Link>
 
@@ -71,8 +70,8 @@ const Index = () => {
             <ToolCard
               icon={List}
               title="Analysis Dashboard"
-              description="Track and analyze security metrics with detailed insights and reporting"
-              className="h-full bg-white/5 backdrop-blur-sm border-white/10"
+              description="Real-time security metrics and insights"
+              className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
             />
           </Link>
 
@@ -80,8 +79,8 @@ const Index = () => {
             <ToolCard
               icon={Database}
               title="Dataset Generation"
-              description="Generate and manage adversarial datasets to test LLM boundaries effectively"
-              className="h-full bg-white/5 backdrop-blur-sm border-white/10"
+              description="Advanced adversarial testing datasets"
+              className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
             />
           </Link>
         </div>
@@ -92,22 +91,22 @@ const Index = () => {
             Product Roadmap
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-              <Shield className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Advanced Contextual Analysis</h3>
-              <p className="text-sm text-muted-foreground text-center">Enhanced LLM security assessment with deep behavioral analysis</p>
+            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in text-left" style={{ animationDelay: '0.4s' }}>
+              <Shield className="w-8 h-8 text-primary" />
+              <h3 className="font-medium text-foreground">Advanced Contextual Analysis</h3>
+              <p className="text-sm text-muted-foreground">Deep behavioral analysis for LLM security</p>
             </div>
             
-            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-              <List className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Intelligent Dataset Generation</h3>
-              <p className="text-sm text-muted-foreground text-center">AI-powered creation of sophisticated adversarial datasets</p>
+            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in text-left" style={{ animationDelay: '0.5s' }}>
+              <List className="w-8 h-8 text-primary" />
+              <h3 className="font-medium text-foreground">Intelligent Dataset Generation</h3>
+              <p className="text-sm text-muted-foreground">AI-powered adversarial dataset creation</p>
             </div>
             
-            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <Database className="w-8 h-8 text-primary mx-auto" />
-              <h3 className="font-medium text-center text-foreground">Automated Defense System</h3>
-              <p className="text-sm text-muted-foreground text-center">Real-time protection against emerging LLM vulnerabilities</p>
+            <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in text-left" style={{ animationDelay: '0.6s' }}>
+              <Database className="w-8 h-8 text-primary" />
+              <h3 className="font-medium text-foreground">Automated Defense System</h3>
+              <p className="text-sm text-muted-foreground">Real-time LLM vulnerability protection</p>
             </div>
           </div>
         </div>
