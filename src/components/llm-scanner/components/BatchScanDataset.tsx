@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CSVUpload } from "../CSVUpload";
 import { Database, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface BatchScanDatasetProps {
   prompts: string[];
@@ -31,9 +32,60 @@ const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps
   });
 
   const handleDatasetSelect = async (dataset: Dataset) => {
-    setSelectedDataset(dataset);
-    // Here you would typically load the prompts from the dataset
-    onPromptsExtracted([]);
+    try {
+      setSelectedDataset(dataset);
+      console.log("Loading dataset:", dataset.id);
+
+      if (!dataset.file_path) {
+        throw new Error("Dataset file path not found");
+      }
+
+      // Download the CSV file from storage
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("datasets")
+        .download(dataset.file_path);
+
+      if (downloadError) throw downloadError;
+
+      // Parse CSV content
+      const text = await fileData.text();
+      const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+      
+      if (lines.length === 0) {
+        throw new Error('CSV file is empty');
+      }
+
+      // Find the prompt column
+      const headers = lines[0].toLowerCase().split(',');
+      const promptIndex = headers.findIndex(header => 
+        header === 'prompts' || header === 'prompt' || header === 'text'
+      );
+
+      if (promptIndex === -1) {
+        throw new Error('No prompt column found in CSV');
+      }
+
+      // Extract prompts from CSV
+      const extractedPrompts = lines.slice(1)
+        .map(line => {
+          const values = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
+          return values[promptIndex];
+        })
+        .filter(Boolean);
+
+      if (extractedPrompts.length === 0) {
+        throw new Error('No valid prompts found in dataset');
+      }
+
+      console.log(`Extracted ${extractedPrompts.length} prompts from dataset`);
+      onPromptsExtracted(extractedPrompts);
+      toast.success(`Loaded ${extractedPrompts.length} prompts from dataset`);
+
+    } catch (error) {
+      console.error('Error processing dataset:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to process dataset');
+      setSelectedDataset(null);
+    }
   };
 
   return (
