@@ -41,16 +41,16 @@ const Index = () => {
       <div className="container mx-auto py-12 space-y-16 relative">
         {/* Hero Section */}
         <div className="relative">
-          <div className="relative px-6 py-16 md:py-24 text-center space-y-8 max-w-4xl mx-auto glass-card rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-lg">
+          <div className="relative px-4 py-10 md:py-16 text-center space-y-6 max-w-4xl mx-auto glass-card rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-lg">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Shield className="w-10 h-10 text-primary" />
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-fade-in">
-                <span className="text-foreground/90">Secure GenAI with </span>
-                <span className="text-[#9b87f5]">Triksha</span>
+                <span className="text-foreground/90">Your End-to-End LLM </span>
+                <span className="text-[#9b87f5]">Red Teaming Platform</span>
               </h1>
             </div>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
-              Your LLM security testing platform
+              Comprehensive security testing and vulnerability assessment for LLM systems
             </p>
           </div>
         </div>
@@ -86,8 +86,8 @@ const Index = () => {
         </div>
 
         {/* Roadmap Section */}
-        <div className="space-y-8 pt-8">
-          <h2 className="text-2xl font-semibold text-center text-primary">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl font-semibold text-center text-primary mb-8">
             Product Roadmap
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
