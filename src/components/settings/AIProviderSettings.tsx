@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAIProviderSettings } from "@/hooks/useAIProviderSettings";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
 
 export const AIProviderSettings = () => {
   const { settings, isLoading, updateSettings } = useAIProviderSettings();
@@ -26,6 +26,7 @@ export const AIProviderSettings = () => {
       });
       toast.success("Settings saved successfully");
     } catch (error) {
+      console.error("Error saving settings:", error);
       toast.error("Failed to save settings");
     }
   };
@@ -36,19 +37,19 @@ export const AIProviderSettings = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-center">
         <CardTitle>AI Provider Settings</CardTitle>
         <CardDescription>
           Configure your AI provider settings
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
+        <div className="space-y-2 text-center">
           <Label>Provider Type</Label>
           <RadioGroup
             value={providerType}
             onValueChange={setProviderType}
-            className="flex flex-col space-y-2"
+            className="flex flex-col items-center space-y-2"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="openai" id="openai" />
@@ -64,7 +65,7 @@ export const AIProviderSettings = () => {
         {providerType === "custom" && (
           <>
             <div className="space-y-2">
-              <Label>cURL Command</Label>
+              <Label className="text-center block">cURL Command</Label>
               <Textarea
                 placeholder="Enter your cURL command here"
                 value={curlCommand}
@@ -73,7 +74,7 @@ export const AIProviderSettings = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Prompt Placeholder</Label>
+              <Label className="text-center block">Prompt Placeholder</Label>
               <Input
                 placeholder="{PROMPT}"
                 value={placeholder}
