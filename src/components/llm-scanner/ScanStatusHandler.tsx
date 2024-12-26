@@ -6,14 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 interface ScanStatusHandlerProps {
   scanId: string | null;
   scanType: string;
-  onProgressUpdate: (progress: number) => void;
   onResultUpdate: (results: any) => void;
 }
 
 export const ScanStatusHandler = ({ 
   scanId, 
   scanType,
-  onProgressUpdate,
   onResultUpdate
 }: ScanStatusHandlerProps) => {
   const navigate = useNavigate();
@@ -36,11 +34,7 @@ export const ScanStatusHandler = ({
         (payload) => {
           console.log('Received update for scan:', payload);
 
-          if (payload.new.status === 'processing') {
-            const progress = payload.new.results?.progress || 0;
-            onProgressUpdate(progress);
-          } else if (payload.new.status === 'completed') {
-            onProgressUpdate(100);
+          if (payload.new.status === 'completed') {
             if (scanType === 'batch_scan') {
               toast.success('Batch scan completed! View results in the Results page.');
               navigate('/llm-results');
@@ -55,11 +49,14 @@ export const ScanStatusHandler = ({
       )
       .subscribe();
 
+    // Keep subscription active even if component unmounts
     return () => {
       console.log('Cleaning up subscription for scan:', scanId);
-      subscription.unsubscribe();
+      if (scanType === 'manual_scan') {
+        subscription.unsubscribe();
+      }
     };
-  }, [scanId, scanType, navigate, onProgressUpdate, onResultUpdate]);
+  }, [scanId, scanType, navigate, onResultUpdate]);
 
   return null;
 };
