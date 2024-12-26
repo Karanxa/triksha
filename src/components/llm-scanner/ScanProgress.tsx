@@ -3,19 +3,18 @@ import { Loader2 } from "lucide-react";
 
 interface ScanProgressProps {
   isScanning: boolean;
-  progress?: number;  // Made optional since not all scans report progress
+  progress: number;
 }
 
-export const ScanProgress = ({ isScanning, progress = 0 }: ScanProgressProps) => {
-  if (!isScanning) return null;
+export const ScanProgress = ({ isScanning, progress }: ScanProgressProps) => {
+  if (!isScanning || progress === 0) return null;
 
   return (
     <div className="space-y-2">
       <Progress value={progress} />
-      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Processing scan... {progress}% complete</span>
-      </div>
+      <p className="text-sm text-muted-foreground text-center">
+        Processing scan... {progress}% complete
+      </p>
     </div>
   );
 };
