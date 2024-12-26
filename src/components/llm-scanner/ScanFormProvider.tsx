@@ -1,15 +1,17 @@
-import { useState } from "react";
-import { Label } from "@/components/ui/label";
-import { CustomEndpointInput } from "./providers/CustomEndpointInput";
-import { ModelSelect } from "./providers/ModelSelect";
-import { useForm, FormProvider } from "react-hook-form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import ProviderSelect from "../augment-prompt/ProviderSelect";
 
 interface ScanFormProviderProps {
   provider: string;
-  onProviderChange: (provider: string) => void;
-  customEndpoint?: any;
-  onCustomEndpointChange?: (endpoint: any) => void;
+  onProviderChange: (value: string) => void;
+  customEndpoint: any;
+  onCustomEndpointChange: (endpoint: any) => void;
 }
 
 export const ScanFormProvider = ({
@@ -18,64 +20,50 @@ export const ScanFormProvider = ({
   customEndpoint,
   onCustomEndpointChange,
 }: ScanFormProviderProps) => {
-  const [selectedProvider, setSelectedProvider] = useState("");
-  const [inputType, setInputType] = useState<'curl' | 'manual' | 'http'>("curl");
-  const form = useForm({
-    defaultValues: {
-      model: "",
-    }
+  const navigate = useNavigate();
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("api_keys")
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const handleProviderChange = (value: string) => {
-    setSelectedProvider(value);
-    onProviderChange(value);
-    // Reset model when provider changes
-    form.reset({ model: "" });
-  };
+  const hasApiKeys = profile?.api_keys && Object.values(profile.api_keys).some(key => key);
 
-  const handleCustomEndpointChange = (endpoint: any) => {
-    if (onCustomEndpointChange) {
-      onCustomEndpointChange(endpoint);
-    }
-  };
+  if (isLoading) {
+    return <div className="animate-pulse h-20 bg-muted rounded-lg" />;
+  }
+
+  if (!hasApiKeys) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>API Keys Required</AlertTitle>
+        <AlertDescription className="flex items-center gap-2">
+          Please configure your API keys in Settings before using the LLM providers.
+          <Button 
+            variant="link" 
+            onClick={() => navigate('/settings')}
+            className="p-0 h-auto font-normal"
+          >
+            Go to Settings
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
-    <FormProvider {...form}>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label>Provider</Label>
-          <Select value={selectedProvider} onValueChange={handleProviderChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select provider" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="anthropic">Anthropic</SelectItem>
-              <SelectItem value="google">Google AI</SelectItem>
-              <SelectItem value="custom">Custom Endpoint</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedProvider === 'custom' && (
-          <CustomEndpointInput
-            customEndpoint={customEndpoint}
-            onCustomEndpointChange={handleCustomEndpointChange}
-            inputType={inputType}
-            onInputTypeChange={setInputType}
-          />
-        )}
-
-        {selectedProvider && selectedProvider !== 'custom' && (
-          <ModelSelect 
-            name="model"
-            label="Model"
-            placeholder="Select a model"
-            provider={selectedProvider}
-            onModelChange={(model) => onProviderChange(`${selectedProvider}-${model}`)}
-          />
-        )}
-      </div>
-    </FormProvider>
+    <ProviderSelect
+      value={provider}
+      onValueChange={onProviderChange}
+    />
   );
 };
