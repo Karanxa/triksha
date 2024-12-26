@@ -1,29 +1,30 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAIProviderSettings } from "@/hooks/useAIProviderSettings";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AIProviderSettings as AIProviderSettingsType, CustomEndpoint } from "@/types/aiProvider";
 
 export const AIProviderSettings = () => {
   const { settings, isLoading, updateSettings } = useAIProviderSettings();
-  const [provider, setProvider] = useState(settings?.provider || 'openai');
-  const [model, setModel] = useState(settings?.model || 'gpt-4o-mini');
-  const [customEndpoint, setCustomEndpoint] = useState<CustomEndpoint | null>(settings?.customEndpoint || null);
+  const [curlCommand, setCurlCommand] = useState(settings?.customEndpoint?.curlCommand || "");
+  const [placeholder, setPlaceholder] = useState(settings?.customEndpoint?.placeholder || "{PROMPT}");
 
   const handleSave = async () => {
     try {
-      const newSettings: AIProviderSettingsType = {
-        provider,
-        model,
-        customEndpoint: provider === 'custom' ? customEndpoint : null
-      };
-      await updateSettings(newSettings);
+      await updateSettings({
+        provider: "custom",
+        model: "custom",
+        customEndpoint: {
+          curlCommand,
+          placeholder
+        }
+      });
+      toast.success("Settings saved successfully");
     } catch (error) {
-      toast.error('Failed to save settings');
+      toast.error("Failed to save settings");
     }
   };
 
@@ -36,67 +37,34 @@ export const AIProviderSettings = () => {
       <CardHeader>
         <CardTitle>AI Provider Settings</CardTitle>
         <CardDescription>
-          Configure the AI provider used for prompt augmentation and enhancement
+          Configure your custom endpoint for LLM interactions
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label>Provider</Label>
-          <Select value={provider} onValueChange={setProvider}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select provider" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="custom">Custom Endpoint</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label>cURL Command</Label>
+          <Textarea
+            placeholder="Enter your cURL command here"
+            value={curlCommand}
+            onChange={(e) => setCurlCommand(e.target.value)}
+            className="font-mono text-sm min-h-[100px]"
+          />
+          <p className="text-sm text-muted-foreground">
+            Paste your complete cURL command. The placeholder text will be replaced with the actual prompt.
+          </p>
         </div>
 
-        {provider === 'openai' && (
-          <div className="space-y-2">
-            <Label>Model</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gpt-4o">GPT-4 Opus</SelectItem>
-                <SelectItem value="gpt-4o-mini">GPT-4 Opus Mini</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {provider === 'custom' && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Endpoint URL</Label>
-              <Input
-                value={customEndpoint?.url || ''}
-                onChange={(e) => setCustomEndpoint(prev => ({ ...prev, url: e.target.value }))}
-                placeholder="https://api.example.com/v1/chat/completions"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>API Key</Label>
-              <Input
-                type="password"
-                value={customEndpoint?.apiKey || ''}
-                onChange={(e) => setCustomEndpoint(prev => ({ ...prev, apiKey: e.target.value }))}
-                placeholder="Enter API key"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Headers (JSON)</Label>
-              <Input
-                value={customEndpoint?.headers || ''}
-                onChange={(e) => setCustomEndpoint(prev => ({ ...prev, headers: e.target.value }))}
-                placeholder='{"Content-Type": "application/json"}'
-              />
-            </div>
-          </div>
-        )}
+        <div className="space-y-2">
+          <Label>Prompt Placeholder</Label>
+          <Input
+            placeholder="{PROMPT}"
+            value={placeholder}
+            onChange={(e) => setPlaceholder(e.target.value)}
+          />
+          <p className="text-sm text-muted-foreground">
+            This text will be replaced with the actual prompt in your cURL command
+          </p>
+        </div>
 
         <Button onClick={handleSave} className="w-full">
           Save Settings
