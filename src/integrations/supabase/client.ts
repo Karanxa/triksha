@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 // Default to empty strings to prevent runtime errors, but we'll validate before creating client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://irdlyshhtwzqjvymilww.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlyZGx5c2hodHd6cWp2eW1pbHd3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDg5NTM2MDAsImV4cCI6MjAyNDUyOTYwMH0.GE-I6enxByHjkEZ3alqrdD0m1ZgBm5CXOLdCaHLqeJE';
 
 // Validate Supabase URL format
 const isValidSupabaseUrl = (url: string) => {
@@ -17,14 +17,6 @@ const isValidSupabaseUrl = (url: string) => {
     return false;
   }
 };
-
-// Validate configuration before creating client
-if (!supabaseUrl || !supabaseAnonKey) {
-  const error = 'Supabase configuration missing. Please set up your project URL and anon key.';
-  console.error(error);
-  toast.error(error);
-  throw new Error(error);
-}
 
 // Validate Supabase URL format
 if (!isValidSupabaseUrl(supabaseUrl)) {
