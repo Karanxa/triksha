@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import ThemeToggle from "./ThemeToggle";
 import { Button } from "./ui/button";
 import { LogOut, Menu } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,7 +94,6 @@ const Navigation = () => {
               Keys
             </Link>
           </div>
-          <ThemeToggle />
           <Button 
             variant="ghost" 
             size="icon"
