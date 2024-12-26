@@ -52,6 +52,17 @@ const Index = () => {
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
               Your end-to-end LLM security testing platform
             </p>
+            <p className="text-sm text-muted-foreground">
+              Developed by{" "}
+              <a 
+                href="https://twitter.com/itskaranxa" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary-dark transition-colors"
+              >
+                Karan Arora
+              </a>
+            </p>
           </div>
         </div>
 
