@@ -17,9 +17,6 @@ RUN npm install
 # Copy the rest of the application
 COPY . .
 
-# Ensure .env file exists with placeholder values
-RUN echo "VITE_SUPABASE_URL=placeholder\nVITE_SUPABASE_ANON_KEY=placeholder" > .env
-
 # Build the application
 RUN npm run build
 

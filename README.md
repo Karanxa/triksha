@@ -35,18 +35,14 @@ Triksha is a comprehensive platform for testing and enhancing the security of La
 
 ### Prerequisites
 
-Before running this project, you need to set up your own Supabase project:
+1. Create a Supabase Project:
+   - Go to [Supabase](https://supabase.com) and create a new project
+   - In your project dashboard, navigate to Project Settings -> API
+   - Copy your Project URL and anon/public key
 
-1. Create a new Supabase project at [https://supabase.com](https://supabase.com)
-2. Go to Project Settings -> API to find your:
-   - Project URL (VITE_SUPABASE_URL)
-   - Project API Key (VITE_SUPABASE_ANON_KEY)
-3. Create a `.env` file in the root directory:
-
-```sh
-VITE_SUPABASE_URL=your_project_url
-VITE_SUPABASE_ANON_KEY=your_project_anon_key
-```
+2. Configure API Keys:
+   - OpenAI API key (Get it from [OpenAI Platform](https://platform.openai.com/api-keys))
+   - Other provider keys as needed
 
 ### Installation Options
 
@@ -56,7 +52,7 @@ VITE_SUPABASE_ANON_KEY=your_project_anon_key
 # Build the Docker image
 docker build -t triksha-app .
 
-# Run the container
+# Run the container with your environment variables
 docker run -p 5173:5173 \
   -e VITE_SUPABASE_URL=your_supabase_url \
   -e VITE_SUPABASE_ANON_KEY=your_supabase_anon_key \
@@ -77,6 +73,10 @@ cd <YOUR_PROJECT_NAME>
 
 # Install dependencies
 npm install
+
+# Create .env file with your Supabase credentials
+echo "VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key" > .env
 
 # Start development server
 npm run dev
