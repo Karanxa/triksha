@@ -13,7 +13,7 @@ const AuthGuard = () => {
     // Initialize auth state
     const initializeAuth = async () => {
       try {
-        // Check for existing session
+        // Get the current session
         const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -21,7 +21,24 @@ const AuthGuard = () => {
           throw sessionError;
         }
 
-        setSession(currentSession);
+        // If no session is found, clear any stale state
+        if (!currentSession) {
+          await supabase.auth.signOut();
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+
+        // Verify the session is still valid
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          console.error("User verification error:", userError);
+          await supabase.auth.signOut();
+          setSession(null);
+        } else {
+          setSession(currentSession);
+        }
       } catch (error) {
         console.error("Auth initialization error:", error);
         // Clear any invalid session state
@@ -38,17 +55,16 @@ const AuthGuard = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log("Auth state changed:", event);
       
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('Token refreshed successfully');
-      }
-
       if (event === 'SIGNED_OUT') {
-        // Clear any stored session data
         setSession(null);
+        setLoading(false);
+        return;
       }
 
-      setSession(currentSession);
-      setLoading(false);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setSession(currentSession);
+        setLoading(false);
+      }
     });
 
     // Cleanup subscription
