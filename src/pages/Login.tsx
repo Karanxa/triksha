@@ -72,6 +72,8 @@ const Login = () => {
                     inputBackground: 'transparent',
                     inputText: 'hsl(var(--foreground))',
                     inputBorder: 'hsl(var(--border))',
+                    messageText: '#E5DEFF', // Updated to use a light purple color for better visibility
+                    messageBackground: 'rgba(155, 135, 245, 0.1)', // Semi-transparent primary color
                   },
                 },
               },
@@ -108,8 +110,14 @@ const Login = () => {
                 },
                 message: {
                   fontFamily: 'inherit',
-                  color: 'hsl(var(--foreground))',
+                  color: '#E5DEFF', // Updated to match messageText color
                   fontSize: '0.875rem',
+                  padding: '0.75rem',
+                  borderRadius: '0.5rem',
+                  backgroundColor: 'rgba(155, 135, 245, 0.1)', // Semi-transparent primary color
+                  border: '1px solid rgba(155, 135, 245, 0.2)',
+                  marginTop: '0.5rem',
+                  marginBottom: '0.5rem',
                 },
                 container: {
                   gap: '1.5rem',
