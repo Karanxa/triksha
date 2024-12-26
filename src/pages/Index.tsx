@@ -50,7 +50,7 @@ const Index = () => {
               </h1>
             </div>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
-              Your LLM security testing platform
+              Your end-to-end LLM security testing platform
             </p>
           </div>
         </div>
