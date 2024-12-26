@@ -12,11 +12,16 @@ import { cn } from "@/lib/utils";
 interface BatchScanDatasetProps {
   prompts: string[];
   onPromptsExtracted: (prompts: string[]) => void;
+  selectedDataset: string;
+  onDatasetSelect: (datasetId: string) => void;
 }
 
-const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps) => {
-  const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
-
+const BatchScanDataset = ({ 
+  prompts, 
+  onPromptsExtracted, 
+  selectedDataset,
+  onDatasetSelect 
+}: BatchScanDatasetProps) => {
   const { data: datasets, isLoading } = useQuery({
     queryKey: ["datasets"],
     queryFn: async () => {
@@ -29,12 +34,6 @@ const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps
       return data as Dataset[];
     },
   });
-
-  const handleDatasetSelect = async (dataset: Dataset) => {
-    setSelectedDataset(dataset);
-    // Here you would typically load the prompts from the dataset
-    onPromptsExtracted([]);
-  };
 
   return (
     <Card>
@@ -63,12 +62,12 @@ const BatchScanDataset = ({ prompts, onPromptsExtracted }: BatchScanDatasetProps
                   datasets?.map((dataset) => (
                     <div
                       key={dataset.id}
-                      onClick={() => handleDatasetSelect(dataset)}
+                      onClick={() => onDatasetSelect(dataset.id)}
                       className={cn(
                         "group p-4 border rounded-lg cursor-pointer transition-all duration-200",
                         "hover:shadow-md hover:border-primary/50",
                         "flex flex-col justify-between min-h-[120px]",
-                        selectedDataset?.id === dataset.id
+                        selectedDataset === dataset.id
                           ? "border-primary bg-primary/5"
                           : "border-border"
                       )}

@@ -15,6 +15,7 @@ import { ScanFormActions } from "./ScanFormActions";
 import { ScanStatusHandler } from "./ScanStatusHandler";
 import BatchScanDataset from "./components/BatchScanDataset";
 import { useScanSubmit } from "./hooks/useScanSubmit";
+import { supabase } from "@/integrations/supabase/client";
 
 export const ScanForm = () => {
   const navigate = useNavigate();
@@ -30,64 +31,106 @@ export const ScanForm = () => {
   const [scanResult, setScanResult] = useState<any>(null);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const [scanProgress, setScanProgress] = useState(0);
+  const [selectedDataset, setSelectedDataset] = useState("");
 
   const { handleSubmit, isScanning } = useScanSubmit({
     onSubmit: async (data) => {
       try {
-        const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+        // If batch scan with dataset, load prompts from dataset
+        if (scanType === "batch" && selectedDataset) {
+          const { data: dataset, error: datasetError } = await supabase
+            .from('datasets')
+            .select('file_path')
+            .eq('id', selectedDataset)
+            .single();
 
-        if (promptsToSubmit.length === 0) {
-          toast.error("Please enter at least one prompt");
-          return;
-        }
+          if (datasetError) throw datasetError;
+          if (!dataset?.file_path) {
+            throw new Error('Dataset file not found');
+          }
 
-        if (!provider) {
-          toast.error("Please select a provider");
-          return;
-        }
+          // Download and process the dataset file
+          const { data: fileData, error: downloadError } = await supabase.storage
+            .from('datasets')
+            .download(dataset.file_path);
 
-        const result = await handleSubmit({
-          provider,
-          customEndpoint: data.customEndpoint,
-          prompts: promptsToSubmit,
-          category,
-          label,
-          schedule,
-          isRecurring,
-          qps: Math.min(qps, 50)
-        });
+          if (downloadError) throw downloadError;
 
-        if (result) {
-          setSinglePrompt("");
-          setPrompts([]);
-          setLabel("");
-          setSchedule("none");
-          setIsRecurring(false);
-          
-          if (scanType === "batch") {
+          const text = await fileData.text();
+          const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+          const headers = lines[0].toLowerCase().split(',');
+          const promptIndex = headers.findIndex(h => 
+            h === 'prompt' || h === 'text' || h === 'content'
+          );
+
+          if (promptIndex === -1) {
+            throw new Error('Dataset must have a prompt, text, or content column');
+          }
+
+          const datasetPrompts = lines.slice(1)
+            .map(line => {
+              const values = line.split(',');
+              return values[promptIndex]?.trim() || '';
+            })
+            .filter(Boolean);
+
+          if (datasetPrompts.length === 0) {
+            throw new Error('No valid prompts found in dataset');
+          }
+
+          // Use dataset prompts for the scan
+          const result = await handleSubmit({
+            provider,
+            prompts: datasetPrompts,
+            category,
+            label,
+            schedule,
+            isRecurring,
+            qps: Math.min(qps, 50)
+          });
+
+          if (result) {
+            setSinglePrompt("");
+            setPrompts([]);
+            setLabel("");
+            setSchedule("none");
+            setIsRecurring(false);
+            
             toast.success('Batch scan started successfully', {
               description: 'You can navigate away - the scan will continue in the background.'
             });
             navigate('/llm-results');
+            
+            return result;
           }
-          
-          return result;
+        } else {
+          // Handle manual scan or CSV upload case
+          const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
+          return await handleSubmit({
+            provider,
+            prompts: promptsToSubmit,
+            category,
+            label,
+            schedule,
+            isRecurring,
+            qps: Math.min(qps, 50)
+          });
         }
       } catch (error) {
         console.error("Scan submission error:", error);
         toast.error("Failed to start scan: " + (error instanceof Error ? error.message : "Unknown error"));
+        return null;
       }
     },
     setResult: setScanResult,
-    setScanId: setCurrentScanId,
-    onProgress: (progress) => setScanProgress(progress)
+    setScanId: setCurrentScanId
   });
 
   const onFormSubmit = async () => {
     const promptsToSubmit = scanType === "manual" ? [singlePrompt] : prompts;
 
-    if (promptsToSubmit.length === 0) {
-      toast.error("Please enter at least one prompt");
+    if (promptsToSubmit.length === 0 && !selectedDataset) {
+      toast.error("Please enter at least one prompt or select a dataset");
       return;
     }
 
@@ -140,6 +183,8 @@ export const ScanForm = () => {
         <BatchScanDataset
           prompts={prompts}
           onPromptsExtracted={setPrompts}
+          selectedDataset={selectedDataset}
+          onDatasetSelect={setSelectedDataset}
         />
       )}
 
