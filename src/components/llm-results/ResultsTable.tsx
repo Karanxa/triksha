@@ -25,7 +25,7 @@ const formatScanType = (scanType: string | null) => {
     .join(' ');
 };
 
-interface ResultsTableProps {
+export interface ResultsTableProps {
   scans: LLMScan[];
 }
 

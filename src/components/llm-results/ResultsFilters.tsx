@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ResultsFiltersProps {
+export interface ResultsFiltersProps {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   selectedCategory: string;
