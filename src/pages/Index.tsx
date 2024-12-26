@@ -56,37 +56,39 @@ const Index = () => {
         </div>
 
         {/* Main Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link to="/llm-scanner" className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <ToolCard
-              icon={Shield}
-              title="Security Scanner"
-              description="Comprehensive vulnerability detection for LLM systems"
-              className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
-            />
-          </Link>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Link to="/llm-scanner" className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <ToolCard
+                icon={Shield}
+                title="Security Scanner"
+                description="Comprehensive vulnerability detection for LLM systems"
+                className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
+              />
+            </Link>
 
-          <Link to="/llm-results" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <ToolCard
-              icon={List}
-              title="Analysis Dashboard"
-              description="Real-time security metrics and insights"
-              className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
-            />
-          </Link>
+            <Link to="/llm-results" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              <ToolCard
+                icon={List}
+                title="Analysis Dashboard"
+                description="Real-time security metrics and insights"
+                className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
+              />
+            </Link>
 
-          <Link to="/datasets" className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <ToolCard
-              icon={Database}
-              title="Dataset Generation"
-              description="Advanced adversarial testing datasets"
-              className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
-            />
-          </Link>
+            <Link to="/datasets" className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <ToolCard
+                icon={Database}
+                title="Dataset Generation"
+                description="Advanced adversarial testing datasets"
+                className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
+              />
+            </Link>
+          </div>
         </div>
 
         {/* Roadmap Section */}
-        <div className="space-y-8 pt-8">
+        <div className="max-w-6xl mx-auto px-4 space-y-8">
           <h2 className="text-2xl font-semibold text-center text-primary">
             Product Roadmap
           </h2>
