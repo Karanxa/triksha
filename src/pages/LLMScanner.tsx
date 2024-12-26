@@ -5,6 +5,8 @@ import { ContextualEngine } from "@/components/llm-scanner/contextual-engine/Con
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import PageHeader from "@/components/PageHeader";
+import { Shield } from "lucide-react";
 
 const LLMScanner = () => {
   useEffect(() => {
@@ -29,7 +31,13 @@ const LLMScanner = () => {
   }, []);
 
   return (
-    <div className="container py-4 md:py-8">
+    <div className="container py-4 md:py-8 space-y-6">
+      <PageHeader
+        icon={Shield}
+        title="LLM Scanner"
+        description="Test your prompts for vulnerabilities and analyze model responses"
+      />
+      
       <Card className="w-full mx-auto border border-border/50 shadow-lg">
         <CardContent className="p-6">
           <Tabs defaultValue="basic" className="space-y-6">
