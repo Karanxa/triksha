@@ -39,18 +39,18 @@ const Index = () => {
       <div className="absolute inset-0 [background-size:16px_16px] bg-dot-pattern opacity-20 pointer-events-none" />
       
       <div className="container mx-auto py-12 space-y-16 relative">
-        {/* Hero Section - Reduced padding */}
+        {/* Hero Section */}
         <div className="relative">
-          <div className="relative px-4 py-10 md:py-16 text-center space-y-6 max-w-4xl mx-auto glass-card rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-lg">
+          <div className="relative px-6 py-16 md:py-24 text-center space-y-8 max-w-4xl mx-auto glass-card rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-lg">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Shield className="w-10 h-10 text-primary" />
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-fade-in">
-                <span className="text-foreground/90">End-to-End LLM Red Teaming with </span>
+                <span className="text-foreground/90">Secure GenAI with </span>
                 <span className="text-[#9b87f5]">Triksha</span>
               </h1>
             </div>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
-              Your comprehensive platform for LLM security testing, vulnerability assessment, and red teaming
+              Your LLM security testing platform
             </p>
           </div>
         </div>
