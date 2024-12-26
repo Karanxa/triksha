@@ -50,7 +50,7 @@ const Index = () => {
                 <span className="text-[#9b87f5]">Triksha</span>
               </h1>
             </div>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in leading-relaxed">
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto animate-fade-in">
               Your end to end LLM red teaming platform
             </p>
           </div>
@@ -62,7 +62,7 @@ const Index = () => {
             <ToolCard
               icon={Shield}
               title="Security Scanner"
-              description="Run comprehensive static and contextual scans to detect vulnerabilities in your LLMs"
+              description="Detect vulnerabilities in your LLMs through comprehensive static and contextual scans"
               className="h-full bg-white/5 backdrop-blur-sm border-white/10"
             />
           </Link>
@@ -71,7 +71,7 @@ const Index = () => {
             <ToolCard
               icon={List}
               title="Analysis Dashboard"
-              description="Track, analyze, and visualize security metrics with detailed insights and reporting"
+              description="Track and analyze security metrics with detailed insights and reporting"
               className="h-full bg-white/5 backdrop-blur-sm border-white/10"
             />
           </Link>
@@ -80,7 +80,7 @@ const Index = () => {
             <ToolCard
               icon={Database}
               title="Dataset Generation"
-              description="Generate and manage adversarial datasets to thoroughly test LLM boundaries"
+              description="Generate and manage adversarial datasets to test LLM boundaries effectively"
               className="h-full bg-white/5 backdrop-blur-sm border-white/10"
             />
           </Link>
@@ -95,25 +95,19 @@ const Index = () => {
             <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Shield className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Advanced Contextual Analysis</h3>
-              <p className="text-sm text-muted-foreground text-center leading-relaxed">
-                Enhanced LLM security assessment with deep contextual understanding and behavioral analysis
-              </p>
+              <p className="text-sm text-muted-foreground text-center">Enhanced LLM security assessment with deep behavioral analysis</p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
               <List className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Intelligent Dataset Generation</h3>
-              <p className="text-sm text-muted-foreground text-center leading-relaxed">
-                AI-powered creation of sophisticated adversarial datasets for comprehensive security testing
-              </p>
+              <p className="text-sm text-muted-foreground text-center">AI-powered creation of sophisticated adversarial datasets</p>
             </div>
             
             <div className="p-6 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4 animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Database className="w-8 h-8 text-primary mx-auto" />
               <h3 className="font-medium text-center text-foreground">Automated Defense System</h3>
-              <p className="text-sm text-muted-foreground text-center leading-relaxed">
-                Real-time protection and automated response system against emerging LLM vulnerabilities
-              </p>
+              <p className="text-sm text-muted-foreground text-center">Real-time protection against emerging LLM vulnerabilities</p>
             </div>
           </div>
         </div>
