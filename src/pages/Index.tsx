@@ -62,7 +62,7 @@ const Index = () => {
               <ToolCard
                 icon={Shield}
                 title="Security Scanner"
-                description="Advanced threat detection for language models"
+                description="Advanced threat detection for LLMs"
                 className="h-full bg-white/5 backdrop-blur-sm border-white/10 text-left"
               />
             </Link>
