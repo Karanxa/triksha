@@ -29,6 +29,7 @@ export const ScanForm = () => {
   const [qps, setQPS] = useState(5);
   const [scanResult, setScanResult] = useState<any>(null);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
+  const [scanProgress, setScanProgress] = useState(0);
 
   const { handleSubmit, isScanning } = useScanSubmit({
     onSubmit: async (data) => {
@@ -64,7 +65,7 @@ export const ScanForm = () => {
           setIsRecurring(false);
           
           if (scanType === "batch") {
-            toast.success('Scan started successfully', {
+            toast.success('Batch scan started successfully', {
               description: 'You can navigate away - the scan will continue in the background.'
             });
             navigate('/llm-results');
@@ -78,7 +79,8 @@ export const ScanForm = () => {
       }
     },
     setResult: setScanResult,
-    setScanId: setCurrentScanId
+    setScanId: setCurrentScanId,
+    onProgress: (progress) => setScanProgress(progress)
   });
 
   const onFormSubmit = async () => {
@@ -162,7 +164,7 @@ export const ScanForm = () => {
       </Card>
 
       <div className="space-y-4">
-        <ScanProgress isScanning={Boolean(currentScanId)} />
+        <ScanProgress isScanning={Boolean(currentScanId)} progress={scanProgress} />
         <ScanFormActions isScanning={isScanning} onSubmit={onFormSubmit} />
       </div>
 
@@ -170,6 +172,7 @@ export const ScanForm = () => {
         scanId={currentScanId}
         scanType={scanType}
         onResultUpdate={setScanResult}
+        onProgress={setScanProgress}
       />
 
       {scanType === "manual" && scanResult && (
