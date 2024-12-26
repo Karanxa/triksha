@@ -5,29 +5,59 @@ import { EmptyState } from "./EmptyState";
 import { ErrorState } from "./ErrorState";
 import { LoadingState } from "./LoadingState";
 import { ResultsFilters } from "./ResultsFilters";
+import { LLMScan, GeraideScan } from "./types";
 
-export const ResultsContainer = () => {
-  const { data: results, isLoading, error } = useQuery({
-    queryKey: ["llm-scan-results"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("llm_scan_results")
-        .select("*")
-        .order("created_at", { ascending: false });
+interface ResultsContainerProps {
+  scans?: LLMScan[];
+  geraidScans?: GeraideScan[];
+  isScansLoading?: boolean;
+  isGeraideLoading?: boolean;
+  scansError?: Error | null;
+  geraideError?: Error | null;
+  filteredScans?: LLMScan[];
+  filteredContextualScans?: GeraideScan[];
+  searchProps: {
+    searchQuery: string;
+    setSearchQuery: (value: string) => void;
+    selectedCategory: string;
+    setSelectedCategory: (value: string) => void;
+    selectedScanType: string;
+    setSelectedScanType: (value: string) => void;
+    vulnerabilityStatus: string;
+    setVulnerabilityStatus: (value: string) => void;
+    selectedModel: string;
+    setSelectedModel: (value: string) => void;
+  };
+  contextualProps: {
+    contextSearchQuery: string;
+    setContextSearchQuery: (value: string) => void;
+    contextModel: string;
+    setContextModel: (value: string) => void;
+    contextVulnerabilityStatus: string;
+    setContextVulnerabilityStatus: (value: string) => void;
+  };
+}
 
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  if (isLoading) return <LoadingState />;
-  if (error) return <ErrorState error={error} />;
-  if (!results?.length) return <EmptyState />;
+export const ResultsContainer = ({
+  scans,
+  geraidScans,
+  isScansLoading,
+  isGeraideLoading,
+  scansError,
+  geraideError,
+  filteredScans,
+  filteredContextualScans,
+  searchProps,
+  contextualProps
+}: ResultsContainerProps) => {
+  if (isScansLoading || isGeraideLoading) return <LoadingState />;
+  if (scansError || geraideError) return <ErrorState error={scansError || geraideError} />;
+  if (!scans?.length && !geraidScans?.length) return <EmptyState />;
 
   return (
     <div className="space-y-6">
-      <ResultsFilters />
-      <ResultsTable results={results} />
+      <ResultsFilters {...searchProps} />
+      <ResultsTable scans={filteredScans || []} />
     </div>
   );
 };
