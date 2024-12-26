@@ -29,6 +29,27 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Create entrypoint script
+RUN echo '#!/bin/sh\n\
+if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then\n\
+    echo "Error: Supabase environment variables are not set"\n\
+    echo "Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"\n\
+    exit 1\n\
+fi\n\
+\n\
+# Replace environment variables in the application\n\
+envsubst < /usr/share/nginx/html/index.html > /usr/share/nginx/html/index.html.tmp\n\
+mv /usr/share/nginx/html/index.html.tmp /usr/share/nginx/html/index.html\n\
+\n\
+# Start nginx\n\
+nginx -g "daemon off;"' > /docker-entrypoint.sh
+
+# Make entrypoint script executable
+RUN chmod +x /docker-entrypoint.sh
+
+# Install envsubst
+RUN apk add --no-cache gettext
+
 # Expose port
 EXPOSE 5173
 
@@ -36,14 +57,5 @@ EXPOSE 5173
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD wget --no-verbose --tries=1 --spider http://localhost:5173/ || exit 1
 
-# Create entrypoint script to handle environment variables
-RUN echo '#!/bin/sh\n\
-if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then\n\
-    echo "Error: Supabase environment variables are not set"\n\
-    echo "Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"\n\
-    exit 1\n\
-fi\n\
-nginx -g "daemon off;"' > /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
-
-# Start nginx using the entrypoint script
+# Set the entrypoint
 ENTRYPOINT ["/docker-entrypoint.sh"]
