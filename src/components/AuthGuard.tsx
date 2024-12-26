@@ -14,33 +14,22 @@ const AuthGuard = () => {
     const initializeAuth = async () => {
       try {
         // Get the current session
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         
-        if (sessionError) {
-          console.error("Session error:", sessionError);
-          throw sessionError;
-        }
-
         // If no session is found, clear any stale state
         if (!currentSession) {
+          console.log('No current session found, clearing state');
           await supabase.auth.signOut();
           setSession(null);
           setLoading(false);
           return;
         }
 
-        // Verify the session is still valid
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError || !user) {
-          console.error("User verification error:", userError);
-          await supabase.auth.signOut();
-          setSession(null);
-        } else {
-          setSession(currentSession);
-        }
+        // Set the session if it exists
+        setSession(currentSession);
+        console.log('Session initialized:', currentSession.user.id);
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error('Auth initialization error:', error);
         // Clear any invalid session state
         await supabase.auth.signOut();
         toast.error("Session expired. Please sign in again.");
@@ -52,10 +41,10 @@ const AuthGuard = () => {
     initializeAuth();
 
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
       console.log("Auth state changed:", event);
       
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         setSession(null);
         setLoading(false);
         return;
