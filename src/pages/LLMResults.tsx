@@ -33,21 +33,27 @@ const LLMResults = () => {
     },
   });
 
-  // Query for contextual scans
+  // Query for contextual scans with proper type handling
   const { data: geraidScans, isLoading: isGeraideLoading, error: geraideError } = useQuery({
     queryKey: ['contextual-scans'],
     queryFn: async () => {
+      console.log('Fetching contextual scans...');
       const { data, error } = await supabase
         .from('contextual_scans')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      console.log('Fetched contextual scans:', data);
+      if (error) {
+        console.error('Error fetching contextual scans:', error);
+        throw error;
+      }
 
-      return (data || []).map(scan => {
+      console.log('Raw contextual scans data:', data);
+
+      // Transform the data to match the GeraideScan type
+      const transformedData = (data || []).map(scan => {
         // Ensure messages are properly typed
-        const messages: Message[] = Array.isArray(scan.messages) 
+        const messages = Array.isArray(scan.messages) 
           ? scan.messages.map((msg: any) => ({
               role: msg.role as Message['role'],
               content: String(msg.content)
@@ -65,8 +71,11 @@ const LLMResults = () => {
           dataset_analysis_results: scan.dataset_analysis_results,
           created_at: scan.created_at,
           updated_at: scan.updated_at
-        } satisfies GeraideScan;
+        } as GeraideScan;
       });
+
+      console.log('Transformed contextual scans:', transformedData);
+      return transformedData;
     },
   });
 
