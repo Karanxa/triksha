@@ -44,7 +44,9 @@ export const ResultsContainer = ({
   return (
     <div className="space-y-6">
       <ResultsFilters {...searchProps} />
-      <ResultsTable scans={filteredScans || []} />
+      <div className="rounded-lg border bg-card">
+        <ResultsTable scans={filteredScans || []} />
+      </div>
     </div>
   );
 };
