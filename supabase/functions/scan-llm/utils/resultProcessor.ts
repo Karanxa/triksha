@@ -22,8 +22,8 @@ export async function processAndStoreScanResult(
   modelName: string,
   category: string
 ): Promise<ScanResult> {
-  console.log('Analyzing vulnerability for category:', category);
-  const vulnerabilityAnalysis = await analyzeVulnerability(modelResponse, category);
+  console.log('Processing scan result:', { prompt, modelResponse, category });
+  const vulnerabilityAnalysis = await analyzeVulnerability(modelResponse, category, prompt);
   console.log('Vulnerability analysis result:', vulnerabilityAnalysis);
 
   // Store result with vulnerability analysis
