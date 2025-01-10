@@ -5,7 +5,7 @@ import { Shield } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
 import { ResultsContainer } from "@/components/llm-results/ResultsContainer";
-import { LLMScan, GeraideScan } from "@/components/llm-results/types";
+import { LLMScan, GeraideScan, Message } from "@/components/llm-results/types";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -33,7 +33,7 @@ const LLMResults = () => {
     },
   });
 
-  // Query for contextual scans (previously named Geraide scans)
+  // Query for contextual scans
   const { data: geraidScans, isLoading: isGeraideLoading, error: geraideError } = useQuery({
     queryKey: ['contextual-scans'],
     queryFn: async () => {
@@ -45,10 +45,28 @@ const LLMResults = () => {
       if (error) throw error;
       console.log('Fetched contextual scans:', data);
 
-      return (data || []).map(scan => ({
-        ...scan,
-        messages: Array.isArray(scan.messages) ? scan.messages : []
-      })) as GeraideScan[];
+      return (data || []).map(scan => {
+        // Ensure messages are properly typed
+        const messages: Message[] = Array.isArray(scan.messages) 
+          ? scan.messages.map((msg: any) => ({
+              role: msg.role as Message['role'],
+              content: String(msg.content)
+            }))
+          : [];
+
+        return {
+          id: scan.id,
+          user_id: scan.user_id,
+          provider: scan.provider,
+          model: scan.model,
+          messages,
+          is_vulnerable: scan.is_vulnerable,
+          fingerprint_results: scan.fingerprint_results,
+          dataset_analysis_results: scan.dataset_analysis_results,
+          created_at: scan.created_at,
+          updated_at: scan.updated_at
+        } satisfies GeraideScan;
+      });
     },
   });
 
