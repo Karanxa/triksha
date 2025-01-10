@@ -3,7 +3,10 @@ import { ErrorState } from "./ErrorState";
 import { LoadingState } from "./LoadingState";
 import { ResultsFilters, ResultsFiltersProps } from "./ResultsFilters";
 import { ResultsTable } from "./ResultsTable";
+import { ContextualFilters } from "./ContextualFilters";
+import { ContextualScanResults } from "./ContextualScanResults";
 import { LLMScan, GeraideScan } from "./types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ResultsContainerProps {
   scans?: LLMScan[];
@@ -43,10 +46,31 @@ export const ResultsContainer = ({
 
   return (
     <div className="space-y-6">
-      <ResultsFilters {...searchProps} />
-      <div className="rounded-lg border bg-card">
-        <ResultsTable scans={filteredScans || []} />
-      </div>
+      <Tabs defaultValue="regular" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="regular">Regular Scans</TabsTrigger>
+          <TabsTrigger value="contextual">Contextual Scans</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="regular" className="space-y-6">
+          <ResultsFilters {...searchProps} />
+          <div className="rounded-lg border bg-card">
+            <ResultsTable scans={filteredScans || []} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="contextual" className="space-y-6">
+          <ContextualFilters
+            searchQuery={contextualProps.contextSearchQuery}
+            setSearchQuery={contextualProps.setContextSearchQuery}
+            selectedModel={contextualProps.contextModel}
+            setSelectedModel={contextualProps.setContextModel}
+            vulnerabilityStatus={contextualProps.contextVulnerabilityStatus}
+            setVulnerabilityStatus={contextualProps.setContextVulnerabilityStatus}
+          />
+          <ContextualScanResults scans={filteredContextualScans || []} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
