@@ -33,9 +33,9 @@ const LLMResults = () => {
     },
   });
 
-  // Query for Geraide scans
+  // Query for contextual scans (previously named Geraide scans)
   const { data: geraidScans, isLoading: isGeraideLoading, error: geraideError } = useQuery({
-    queryKey: ['geraide-scans'],
+    queryKey: ['contextual-scans'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contextual_scans')
@@ -43,13 +43,11 @@ const LLMResults = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched contextual scans:', data);
 
       return (data || []).map(scan => ({
         ...scan,
-        messages: (scan.messages as any[]).map((msg: any) => ({
-          role: msg.role,
-          content: msg.content
-        }))
+        messages: Array.isArray(scan.messages) ? scan.messages : []
       })) as GeraideScan[];
     },
   });

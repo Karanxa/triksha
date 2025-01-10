@@ -48,8 +48,18 @@ export const ResultsContainer = ({
     <div className="space-y-6">
       <Tabs defaultValue="regular" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="regular">Regular Scans</TabsTrigger>
-          <TabsTrigger value="contextual">Contextual Scans</TabsTrigger>
+          <TabsTrigger value="regular" className="flex items-center gap-2">
+            Regular Scans
+            <span className="text-xs text-muted-foreground">
+              ({filteredScans?.length || 0})
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="contextual" className="flex items-center gap-2">
+            Contextual Scans
+            <span className="text-xs text-muted-foreground">
+              ({filteredContextualScans?.length || 0})
+            </span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="regular" className="space-y-6">
@@ -68,7 +78,13 @@ export const ResultsContainer = ({
             vulnerabilityStatus={contextualProps.contextVulnerabilityStatus}
             setVulnerabilityStatus={contextualProps.setContextVulnerabilityStatus}
           />
-          <ContextualScanResults scans={filteredContextualScans || []} />
+          {filteredContextualScans && filteredContextualScans.length > 0 ? (
+            <ContextualScanResults scans={filteredContextualScans} />
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No contextual scan results found
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
