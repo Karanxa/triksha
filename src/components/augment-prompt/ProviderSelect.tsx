@@ -55,8 +55,12 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
         navigate('/settings');
         return;
       }
+      // When changing provider, set a default model
+      const defaultModel = getDefaultModel(newValue);
+      onValueChange(`${newValue}-${defaultModel}`);
+    } else {
+      onValueChange(newValue);
     }
-    onValueChange(newValue);
   };
 
   const getApiKeyName = (provider: string): string => {
@@ -68,8 +72,18 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
     }
   };
 
+  const getDefaultModel = (provider: string): string => {
+    switch (provider) {
+      case 'openai': return 'gpt-4o';
+      case 'anthropic': return 'claude-3-opus-20240229';
+      case 'google': return 'gemini-1.0-pro';
+      default: return '';
+    }
+  };
+
   const handleModelChange = (model: string) => {
-    onValueChange(`${value.split('-')[0]}-${model}`);
+    const provider = value.split('-')[0];
+    onValueChange(`${provider}-${model}`);
   };
 
   const getModelsForProvider = () => {
@@ -96,6 +110,7 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
   };
 
   const selectedProvider = value.split('-')[0];
+  const selectedModel = value.split('-')[1];
 
   if (!apiKeys) {
     return (
@@ -140,7 +155,7 @@ const ProviderSelect = ({ value, onValueChange }: ProviderSelectProps) => {
 
         {selectedProvider && selectedProvider !== "custom" && (
           <Select 
-            value={value.split('-')[1] || ""} 
+            value={selectedModel} 
             onValueChange={handleModelChange}
           >
             <SelectTrigger>
