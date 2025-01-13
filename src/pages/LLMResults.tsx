@@ -23,12 +23,17 @@ const LLMResults = () => {
   const { data: scans, isLoading: isScansLoading, error: scansError } = useQuery({
     queryKey: ['llm-scans'],
     queryFn: async () => {
+      console.log('Fetching LLM scans...');
       const { data, error } = await supabase
         .from('llm_scans')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching LLM scans:', error);
+        throw error;
+      }
+      console.log('LLM scans data:', data);
       return data as LLMScan[];
     },
   });
@@ -79,6 +84,7 @@ const LLMResults = () => {
     },
   });
 
+  // Filter regular scans
   const filteredScans = scans?.filter(scan => {
     const matchesSearch = searchQuery === "" || 
       (scan.results?.prompt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -93,6 +99,7 @@ const LLMResults = () => {
            matchesVulnerability && matchesModel;
   });
 
+  // Filter contextual scans
   const filteredContextualScans = geraidScans?.filter(scan => {
     const matchesSearch = contextSearchQuery === "" || 
       scan.messages.some(msg => 
