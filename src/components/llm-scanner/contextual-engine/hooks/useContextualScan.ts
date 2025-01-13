@@ -14,6 +14,8 @@ export const useContextualScan = () => {
     isVulnerable: boolean | null = null
   ) => {
     try {
+      console.log('Storing contextual scan:', { config, messages, fingerprintResults, isVulnerable });
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -21,10 +23,12 @@ export const useContextualScan = () => {
         user_id: user.id,
         provider: config.provider,
         model: config.model,
-        messages: messagesToJson(messages),
+        messages: messages,  // Store the entire messages array
         is_vulnerable: isVulnerable,
         fingerprint_results: fingerprintResults,
       };
+
+      console.log('Prepared scan data:', scanData);
 
       if (!scanId) {
         // Create new scan record
@@ -34,20 +38,28 @@ export const useContextualScan = () => {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error creating contextual scan:', error);
+          throw error;
+        }
+        console.log('Created new contextual scan:', data);
         setScanId(data.id);
       } else {
         // Update existing scan
         const { error } = await supabase
           .from('contextual_scans')
           .update({
-            messages: messagesToJson(messages),
+            messages: messages,
             is_vulnerable: isVulnerable,
             fingerprint_results: fingerprintResults,
           })
           .eq('id', scanId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating contextual scan:', error);
+          throw error;
+        }
+        console.log('Updated existing contextual scan:', scanId);
       }
     } catch (error) {
       console.error('Error storing contextual scan:', error);

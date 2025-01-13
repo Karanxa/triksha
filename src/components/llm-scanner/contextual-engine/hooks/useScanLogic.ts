@@ -9,6 +9,7 @@ import { Message } from "../types/phases";
 import { usePromptAugmentation } from './usePromptAugmentation';
 import { useRedTeaming } from './useRedTeaming';
 import { ApiKeys } from "../types/apiKeys";
+import { useContextualScan } from './useContextualScan';
 
 export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -21,6 +22,7 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
   const { processQuestion, FINGERPRINTING_QUESTIONS } = useFingerprinting();
   const { processDatasetPrompts } = usePromptAugmentation();
   const { processDatasetPrompt } = useRedTeaming();
+  const { storeContextualScan } = useContextualScan();
 
   const processFingerprinting = async (config: ScanConfig) => {
     if (currentStep >= FINGERPRINTING_QUESTIONS.length) {
@@ -40,6 +42,9 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
         addMessage({ role: 'assistant' as const, content: result.response });
         setCurrentStep(prev => prev + 1);
 
+        // Store the updated conversation after each message
+        await storeContextualScan(config, messages, null);
+
         // Check if fingerprinting phase is complete
         if (currentStep === FINGERPRINTING_QUESTIONS.length - 1) {
           const fingerprintResults = {
@@ -49,6 +54,9 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
             languages: messages[8]?.content || '',
             safety: messages[10]?.content || ''
           };
+
+          // Store final fingerprinting results
+          await storeContextualScan(config, messages, fingerprintResults);
 
           if (onFingerprint) {
             onFingerprint(fingerprintResults);
@@ -185,6 +193,10 @@ export const useScanLogic = (onFingerprint?: (results: any) => void) => {
       if (!user) throw new Error("User not authenticated");
 
       addSystemMessage(`Starting contextual analysis for ${config.model}`);
+      
+      // Initialize the scan in the database
+      await storeContextualScan(config, messages, null);
+      
       await processFingerprinting(config);
     } catch (error) {
       handleError(error as Error);
