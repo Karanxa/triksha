@@ -23,7 +23,7 @@ export const useContextualScan = () => {
         user_id: user.id,
         provider: config.provider,
         model: config.model,
-        messages: messages,  // Store the entire messages array
+        messages: messagesToJson(messages),  // Transform messages to Json type
         is_vulnerable: isVulnerable,
         fingerprint_results: fingerprintResults,
       };
@@ -49,7 +49,7 @@ export const useContextualScan = () => {
         const { error } = await supabase
           .from('contextual_scans')
           .update({
-            messages: messages,
+            messages: messagesToJson(messages),  // Transform messages to Json type
             is_vulnerable: isVulnerable,
             fingerprint_results: fingerprintResults,
           })

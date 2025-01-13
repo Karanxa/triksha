@@ -1,4 +1,5 @@
-import { Json } from "@/integrations/supabase/types/common";
+import { Json } from "@/integrations/supabase/types";
+import { Message } from "./phases";
 
 export interface ScanConfig {
   provider: string;
@@ -26,9 +27,9 @@ export interface ModelResponse {
   isVulnerable: boolean;
 }
 
-export const messagesToJson = (messages: any[]): Json => {
+export const messagesToJson = (messages: Message[]): Json => {
   return messages.map(msg => ({
     role: msg.role,
     content: msg.content
-  }));
+  })) as Json;
 };
