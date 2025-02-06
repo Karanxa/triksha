@@ -7,7 +7,7 @@ interface SetupCheckerProps {
   children: React.ReactNode;
 }
 
-export const SetupChecker: React.FC<SetupCheckerProps> = ({ children }) => {
+export const SetupChecker = ({ children }: SetupCheckerProps) => {
   const [isChecking, setIsChecking] = useState(true);
   const [setupComplete, setSetupComplete] = useState(false);
 
