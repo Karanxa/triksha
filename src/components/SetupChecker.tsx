@@ -3,7 +3,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { checkSupabaseSetup } from "@/utils/supabaseSetup";
 
-interface SetupCheckerProps {
+export interface SetupCheckerProps {
   children: React.ReactNode;
 }
 
