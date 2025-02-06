@@ -20,7 +20,7 @@ export const checkSupabaseSetup = async () => {
       'contextual_scans',
       'llm_scans',
       'llm_scan_results'
-    ];
+    ] as const;
 
     for (const table of requiredTables) {
       const { error } = await supabase

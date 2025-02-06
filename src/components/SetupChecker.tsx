@@ -3,7 +3,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { checkSupabaseSetup } from "@/utils/supabaseSetup";
 
-export const SetupChecker = ({ children }: { children: React.ReactNode }) => {
+interface SetupCheckerProps {
+  children: React.ReactNode;
+}
+
+export const SetupChecker = ({ children }: SetupCheckerProps) => {
   const [isChecking, setIsChecking] = useState(true);
   const [setupComplete, setSetupComplete] = useState(false);
 
