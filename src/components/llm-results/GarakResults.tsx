@@ -54,9 +54,11 @@ export const GarakResults = ({ scans }: GarakResultsProps) => {
         .insert({
           name: file.name,
           user_id: (await supabase.auth.getUser()).data.user?.id,
+          file_path: fileName,
           probes: Array.from(probes),
+          test_suites: [],
           results: results,
-          file_path: fileName
+          status: 'completed'
         });
 
       if (dbError) throw dbError;

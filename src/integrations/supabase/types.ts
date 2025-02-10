@@ -264,10 +264,12 @@ export type Database = {
         Row: {
           config: Json | null
           created_at: string
+          file_path: string | null
           id: string
-          model: string
+          model: string | null
           name: string
-          prompts: Json
+          probes: string[] | null
+          prompts: Json | null
           results: Json | null
           status: string
           test_suites: string[]
@@ -277,10 +279,12 @@ export type Database = {
         Insert: {
           config?: Json | null
           created_at?: string
+          file_path?: string | null
           id?: string
-          model: string
+          model?: string | null
           name: string
-          prompts: Json
+          probes?: string[] | null
+          prompts?: Json | null
           results?: Json | null
           status?: string
           test_suites: string[]
@@ -290,10 +294,12 @@ export type Database = {
         Update: {
           config?: Json | null
           created_at?: string
+          file_path?: string | null
           id?: string
-          model?: string
+          model?: string | null
           name?: string
-          prompts?: Json
+          probes?: string[] | null
+          prompts?: Json | null
           results?: Json | null
           status?: string
           test_suites?: string[]
