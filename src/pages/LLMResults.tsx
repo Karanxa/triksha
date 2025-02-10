@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
@@ -5,7 +6,7 @@ import { Shield } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
 import { ResultsContainer } from "@/components/llm-results/ResultsContainer";
-import { LLMScan, GeraideScan, Message } from "@/components/llm-results/types";
+import { LLMScan, GeraideScan } from "@/components/llm-results/types";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +85,25 @@ const LLMResults = () => {
     },
   });
 
+  // Query for Garak scans
+  const { data: garakScans, isLoading: isGarakLoading, error: garakError } = useQuery({
+    queryKey: ['garak-scans'],
+    queryFn: async () => {
+      console.log('Fetching Garak scans...');
+      const { data, error } = await supabase
+        .from('garak_scans')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching Garak scans:', error);
+        throw error;
+      }
+      console.log('Garak scans data:', data);
+      return data;
+    },
+  });
+
   // Filter regular scans
   const filteredScans = scans?.filter(scan => {
     const matchesSearch = searchQuery === "" || 
@@ -126,10 +146,13 @@ const LLMResults = () => {
             <ResultsContainer
               scans={scans}
               geraidScans={geraidScans}
+              garakScans={garakScans}
               isScansLoading={isScansLoading}
               isGeraideLoading={isGeraideLoading}
+              isGarakLoading={isGarakLoading}
               scansError={scansError as Error | null}
               geraideError={geraideError as Error | null}
+              garakError={garakError as Error | null}
               filteredScans={filteredScans}
               filteredContextualScans={filteredContextualScans}
               searchProps={{

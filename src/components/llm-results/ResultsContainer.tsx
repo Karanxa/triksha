@@ -1,3 +1,4 @@
+
 import { EmptyState } from "./EmptyState";
 import { ErrorState } from "./ErrorState";
 import { LoadingState } from "./LoadingState";
@@ -5,16 +6,20 @@ import { ResultsFilters, ResultsFiltersProps } from "./ResultsFilters";
 import { ResultsTable } from "./ResultsTable";
 import { ContextualFilters } from "./ContextualFilters";
 import { ContextualScanResults } from "./ContextualScanResults";
-import { LLMScan, GeraideScan } from "./types";
+import { GarakResults } from "./GarakResults";
+import { LLMScan, GeraideScan, GarakScan } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ResultsContainerProps {
   scans?: LLMScan[];
   geraidScans?: GeraideScan[];
+  garakScans?: GarakScan[];
   isScansLoading?: boolean;
   isGeraideLoading?: boolean;
+  isGarakLoading?: boolean;
   scansError?: Error | null;
   geraideError?: Error | null;
+  garakError?: Error | null;
   filteredScans?: LLMScan[];
   filteredContextualScans?: GeraideScan[];
   searchProps: ResultsFiltersProps;
@@ -31,23 +36,26 @@ interface ResultsContainerProps {
 export const ResultsContainer = ({
   scans,
   geraidScans,
+  garakScans,
   isScansLoading,
   isGeraideLoading,
+  isGarakLoading,
   scansError,
   geraideError,
+  garakError,
   filteredScans,
   filteredContextualScans,
   searchProps,
   contextualProps
 }: ResultsContainerProps) => {
-  if (isScansLoading || isGeraideLoading) return <LoadingState />;
-  if (scansError || geraideError) return <ErrorState error={scansError || geraideError} />;
-  if (!scans?.length && !geraidScans?.length) return <EmptyState />;
+  if (isScansLoading || isGeraideLoading || isGarakLoading) return <LoadingState />;
+  if (scansError || geraideError || garakError) return <ErrorState error={scansError || geraideError || garakError} />;
+  if (!scans?.length && !geraidScans?.length && !garakScans?.length) return <EmptyState />;
 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="regular" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="regular" className="flex items-center gap-2">
             Regular Scans
             <span className="text-xs text-muted-foreground">
@@ -58,6 +66,12 @@ export const ResultsContainer = ({
             Contextual Scans
             <span className="text-xs text-muted-foreground">
               ({filteredContextualScans?.length || 0})
+            </span>
+          </TabsTrigger>
+          <TabsTrigger value="garak" className="flex items-center gap-2">
+            Garak Results
+            <span className="text-xs text-muted-foreground">
+              ({garakScans?.length || 0})
             </span>
           </TabsTrigger>
         </TabsList>
@@ -85,6 +99,10 @@ export const ResultsContainer = ({
               No contextual scan results found
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="garak" className="space-y-6">
+          <GarakResults scans={garakScans || []} />
         </TabsContent>
       </Tabs>
     </div>
