@@ -6,7 +6,7 @@ import { Shield } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
 import { ResultsContainer } from "@/components/llm-results/ResultsContainer";
-import { LLMScan, GeraideScan } from "@/components/llm-results/types";
+import { LLMScan, GeraideScan, GarakScan, Message } from "@/components/llm-results/types";
 
 const LLMResults = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,7 +100,7 @@ const LLMResults = () => {
         throw error;
       }
       console.log('Garak scans data:', data);
-      return data;
+      return data as GarakScan[];
     },
   });
 

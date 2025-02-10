@@ -64,9 +64,8 @@ export interface GarakScan {
   user_id: string;
   name: string;
   file_path: string | null;
-  results: Json | null;
   probes: string[];
+  results: Json | null;
   created_at: string;
   updated_at: string;
 }
-
